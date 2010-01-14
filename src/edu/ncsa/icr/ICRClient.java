@@ -40,16 +40,22 @@ public class ICRClient
 	
 	/**
 	 * Retrieve a list of allowed inputs for a given application/operation.
-	 * @param application
-	 * @param operation
-	 * @return
+	 * @param application the application alias
+	 * @param operation the operation
+	 * @return a list of inputs accepted
 	 */
-	public String[] retrieveInputs(String application, String operation)
+	public Data[] retrieveInputs(String application, String operation)
 	{
 		return null;
 	}
 	
-	public String[] retrieveOutputs(String application, String operation)
+	/**
+	 * Retrieve a list of allowed outputs for a given application/operation.
+	 * @param application the application alias
+	 * @param operation the operation
+	 * @return a list of outputs provided
+	 */
+	public Data[] retrieveOutputs(String application, String operation)
 	{
 		return null;
 	}
