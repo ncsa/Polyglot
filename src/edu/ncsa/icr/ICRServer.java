@@ -2,19 +2,52 @@ package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
+import java.net.*;
 import java.util.*;
 
 /**
  * An Imposed Code Reuse server application.
  * @author Kenton McHenry
  */
-public class ICRServer
+public class ICRServer implements Runnable
 {
+	private ServerSocket server_socket;
 	private Vector<Application> applications = new Vector<Application>();
 	private int port;
+	private String data_path = "";
+	private String temp_path = "";
 	private int max_operation_time = 10000; 	//In milliseconds
+	private boolean ENABLE_MONITORS = false;
+	private boolean RUNNING;
 	
-  public void addAHKScripts(String ahk_path)
+	/**
+	 * Class constructor.
+	 */
+	public ICRServer()
+	{
+		this(null);
+	}
+	
+	/**
+	 * Class constructor.
+	 * @param filename the file name of an initialization file
+	 */
+	public ICRServer(String filename)
+	{
+		if(filename != null) loadINI(filename);
+		
+		try{
+			server_socket = new ServerSocket(port);
+		}catch(Exception e) {e.printStackTrace();}
+		
+		new Thread(this).start();
+	}
+	
+	/**
+	 * Add operations supported by AHK scripts within the given directory.
+	 * @param path the path to the AHK scripts
+	 */
+  public void addOperationsAHK(String path)
   {
     String filename;
     String alias;
@@ -36,7 +69,7 @@ public class ICRServer
       }
     };    
     
-    File dir = new File(ahk_path);
+    File dir = new File(path);
     File[] scripts = dir.listFiles(ahk_filter);
     
     if(scripts != null){
@@ -66,7 +99,7 @@ public class ICRServer
           
           //Examine script header
           try{
-            BufferedReader ins = new BufferedReader(new FileReader(ahk_path + filename + ".ahk"));
+            BufferedReader ins = new BufferedReader(new FileReader(path + filename + ".ahk"));
             
             //Get application pretty name
             line = ins.readLine();
@@ -153,37 +186,36 @@ public class ICRServer
           	operation.outputs.add(FileData.newFormat(output_formats.get(j)));
           }
           
-          operation.script = ahk_path + filename + ".ahk";
+          operation.script = path + filename + ".ahk";
           
           application.operations.add(operation);
         }
       }
     }
     
-    /*
-    //Execute all monitoring applications
-    for(int i=0; i<applications.size(); i++){
-    	application = applications.get(i);
-    	
-    	for(int j=0; j<application.operations.size(); j++){
-    		operation = application.operations.get(j);
-    		
-    		if(operation.name.equals("monitor")){
-    			script = operation.script;
-    			
-    			if(script.endsWith(".ahk")){
-    				script = script.substring(0, script.lastIndexOf('.')) + ".exe";
-    			}
-    			
-    			System.out.println("Running monitor for " + application.alias + "...");
-    			
-	        try{
-	          Runtime.getRuntime().exec(script);
-	        }catch(Exception e) {}
-    		}
-    	}
+    if(ENABLE_MONITORS){		//Execute all monitoring applications
+	    for(int i=0; i<applications.size(); i++){
+	    	application = applications.get(i);
+	    	
+	    	for(int j=0; j<application.operations.size(); j++){
+	    		operation = application.operations.get(j);
+	    		
+	    		if(operation.name.equals("monitor")){
+	    			script = operation.script;
+	    			
+	    			if(script.endsWith(".ahk")){
+	    				script = script.substring(0, script.lastIndexOf('.')) + ".exe";
+	    			}
+	    			
+	    			System.out.println("Running monitor for " + application.alias + "...");
+	    			
+		        try{
+		          Runtime.getRuntime().exec(script);
+		        }catch(Exception e) {}
+	    		}
+	    	}
+	    }
     }
-    */
   }
   
   /**
@@ -231,16 +263,95 @@ public class ICRServer
   	}
   }
   
-  /*
-  public void execute(String application, String operation, Data data)
+  /**
+   * Determine if a given operation is valid with a given piece of data.
+   * @param operation the operation
+   * @param data the data
+   * @return true if the given operation is valid with the given data
+   */
+  public boolean isValid(Operation operation, Data data)
   {
-  	Process process = Runtime.getRuntime().exec(path + "bin\\ahk\\" + input_command + ".exe \"" + filename_source + "\" \"" + filename_target + "\" \"" + path + "bin\\ahk\\tmp\\" + id + "\"");
-    TimedProcess timed_process = new TimedProcess(process);
-    boolean COMPLETE;
-    
-    COMPLETE = timed_process.waitFor(max_operation_time);
+  	return false;
   }
-  */
+  
+  /**
+   * Execute a given operation on the given data.
+   * @param operation the operation
+   * @param data the data
+   * @return the resulting data
+   */
+  public synchronized Data execute(Operation operation, Data data)
+  {
+  	Process process;
+  	TimedProcess timed_process;
+  	boolean COMPLETE;
+  	
+  	//process = Runtime.getRuntime().exec(operation.script + " \"" + source + "\" \"" + target + "\" \"" + tmp_path + "\"");
+  	
+  	//timed_process = new TimedProcess(process);    
+    //COMPLETE = timed_process.waitFor(max_operation_time);
+    
+    return null;
+  }
+  
+  /**
+   * Initialize based on parameters within the given *.ini file.
+   * @param filename the file name of the *.ini file
+   */
+  public void loadINI(String filename)
+  {
+    try{
+      BufferedReader ins = new BufferedReader(new FileReader(filename));
+      String line, key, value;
+      
+      while((line=ins.readLine()) != null){
+        if(line.contains("=")){
+          key = line.substring(0, line.indexOf('='));
+          value = line.substring(line.indexOf('=')+1);
+          
+          if(key.charAt(0) != '#'){
+          	if(key.equals("DataPath")){
+          		data_path = value + "/";
+          	}else if(key.equals("TempPath")){
+          		temp_path = value + "/";
+          	}else if(key.equals("AHKPath")){
+            	addOperationsAHK(value + "/");
+          	}else if(key.equals("Port")){
+          		port = Integer.valueOf(value);
+            }else if(key.equals("MaxOperationTime")){
+              max_operation_time = Integer.valueOf(value);
+            }else if(key.equals("EnableMonitors")){
+            	ENABLE_MONITORS = Boolean.valueOf(value);
+            }
+          }
+        }
+      }
+      
+      ins.close();
+    }catch(Exception e){}
+    
+		//printApplications();
+  }
+  
+  /**
+   * Process ICR requests.
+   */
+  public void run()
+  {				
+  	Socket client_socket;
+  	
+  	System.out.println("\nICR Server is running...");
+		RUNNING = true;
+		
+		while(RUNNING){
+			//Wait for a connection
+			try{
+				client_socket = server_socket.accept();
+			}catch(Exception e) {e.printStackTrace();}
+			
+			//Spawn a thread to handle this connection
+		}  	
+  }
   
 	/**
 	 * A main for the ICR service.
@@ -248,13 +359,6 @@ public class ICRServer
 	 */
 	public static void main(String args[])
 	{
-		ICRServer server = new ICRServer();
-		String ahk_path = "./ahk/";
-		
-		if(ahk_path != null){
-			server.addAHKScripts(ahk_path);
-		}
-		
-		//server.printApplications();
+		ICRServer server = new ICRServer("ICRServer.ini");
 	}
 }

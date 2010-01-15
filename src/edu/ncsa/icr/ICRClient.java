@@ -1,5 +1,7 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
+import java.io.*;
+import java.net.*;
 
 /**
  * An Imposed Code Reuse client interface.
@@ -7,16 +9,29 @@ import edu.ncsa.icr.ICRAuxiliary.*;
  */
 public class ICRClient
 {
-	private String server_name;
+	private Socket socket;
+	private String server;
 	private int port;
 	
 	/**
 	 * Class constructor.
-	 * @param server_name the name of the ICR server to connect to
 	 */
-	public ICRClient(String server_name)
+	public ICRClient()
 	{
+		this(null);
+	}
+	
+	/**
+	 * Class constructor.
+	 * @param filename the name of an initialization *.ini file
+	 */
+	public ICRClient(String filename)
+	{
+		if(filename != null) loadINI(filename);
 		
+		try{
+			socket = new Socket(server, port);
+		}catch(Exception e) {e.printStackTrace();}
 	}
 	
 	/**
@@ -134,13 +149,42 @@ public class ICRClient
 		return null;
 	}
 	
+  /**
+   * Initialize based on parameters within the given *.ini file.
+   * @param filename the file name of the *.ini file
+   */
+  public void loadINI(String filename)
+  {
+    try{
+      BufferedReader ins = new BufferedReader(new FileReader(filename));
+      String line, key, value;
+      
+      while((line=ins.readLine()) != null){
+        if(line.contains("=")){
+          key = line.substring(0, line.indexOf('='));
+          value = line.substring(line.indexOf('=')+1);
+          
+          if(key.charAt(0) != '#'){
+          	if(key.equals("Server")){
+            	server = InetAddress.getByName(value).getHostAddress();
+          	}else if(key.equals("Port")){
+          		port = Integer.valueOf(value);
+            }
+          }
+        }
+      }
+      
+      ins.close();
+    }catch(Exception e){}
+  }
+  
 	/**
 	 * A main for debug purposes.
 	 * @param args command line arguments
 	 */
 	public static void main(String args[])
 	{
-		ICRClient icr = new ICRClient("heath.ncsa.uiuc.edu:30");
+		ICRClient icr = new ICRClient("ICRClient.ini");
 		String[] applications = icr.retrieveApplications();
 		String[][] operations = new String[applications.length][];
 		
