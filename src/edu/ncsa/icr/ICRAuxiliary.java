@@ -1,5 +1,6 @@
 package edu.ncsa.icr;
 import edu.ncsa.utility.*;
+
 import java.util.*;
 import java.io.*;
 
@@ -9,7 +10,7 @@ import java.io.*;
  */
 public class ICRAuxiliary
 {
-	public static abstract class Data implements Serializable 
+	public static class Data implements Serializable 
 	{
 		protected boolean valid = false;
 		
@@ -177,6 +178,17 @@ public class ICRAuxiliary
 		}
 		
 		/**
+		 * Class copy constructor.
+		 * @param cached_file_data the data to copy
+		 * @param format the new format of this data
+		 */
+		public CachedFileData(CachedFileData cached_file_data, String format)
+		{
+			assign(cached_file_data);
+			this.format = format;
+		}
+		
+		/**
 		 * Assign data from another instance.
 		 * @param cached_file_data the instance to assign data from
 		 */
@@ -213,9 +225,18 @@ public class ICRAuxiliary
 		 * Get the name of the cached file.
 		 * @return the name of the cached file
 		 */
+		public String getCacheName()
+		{
+			return session + "_" + name;
+		}
+		
+		/**
+		 * Get the file name of the cached file.
+		 * @return the file name of the cached file
+		 */
 		public String getCacheFilename()
 		{
-			return session + "_" + name + "." + format;
+			return getCacheName() + "." + format;
 		}
 		
 		/**
@@ -267,41 +288,12 @@ public class ICRAuxiliary
     public static void print(Vector<Application> applications)
     {
     	Application application;
-    	Operation operation;
-    	Data data;
     	
     	for(int i=0; i<applications.size(); i++){
     		application = applications.get(i);
     		System.out.println("Applicaton: " + application.name);
     		System.out.println("Alias: " + application.alias);
-    		
-    		for(int j=0; j<application.operations.size(); j++){
-    			operation = application.operations.get(j);
-    			System.out.println("Operation: " + operation.name + "(" + operation.script + ")");
-    			System.out.print("  inputs:");
-    			
-    			for(int k=0; k<operation.inputs.size(); k++){
-    				data = operation.inputs.get(k);
-    				
-    				if(data instanceof FileData){
-    					System.out.print(" " + ((FileData)data).getFormat());
-    				}
-    			}
-    			
-    			System.out.println();
-    			System.out.print("  outputs:");
-    			
-    			for(int k=0; k<operation.outputs.size(); k++){
-    				data = operation.outputs.get(k);
-    				
-    				if(data instanceof FileData){
-    					System.out.print(" " + ((FileData)data).getFormat());
-    				}
-    			}
-    			
-    			System.out.println();
-    		}
-    		
+    		Operation.print(application.operations);
     		System.out.println();
     	}
     }
@@ -312,6 +304,7 @@ public class ICRAuxiliary
    */
   public static class Operation implements Serializable
   {
+  	public Application application;
   	public String name;
   	public Vector<Data> inputs = new Vector<Data>();
   	public Vector<Data> outputs = new Vector<Data>();
@@ -319,11 +312,50 @@ public class ICRAuxiliary
   	
   	/**
   	 * Class constructor.
+  	 * @param application the application to which this operation belongs
   	 * @param name the name of the operation
   	 */
-  	public Operation(String name)
+  	public Operation(Application application, String name)
   	{
+  		this.application = application;
   		this.name = name;
   	}
+  	
+    /**
+     * Display operation information.
+     * @param operations a list of operations
+     */
+    public static void print(Vector<Operation> operations)
+    {
+    	Operation operation;
+    	Data data;
+    	
+  		for(int i=0; i<operations.size(); i++){
+  			operation = operations.get(i);
+  			System.out.println("Operation: " + operation.name + "(" + operation.script + ")");
+  			System.out.print("  inputs:");
+  			
+  			for(int j=0; j<operation.inputs.size(); j++){
+  				data = operation.inputs.get(j);
+  				
+  				if(data instanceof FileData){
+  					System.out.print(" " + ((FileData)data).getFormat());
+  				}
+  			}
+  			
+  			System.out.println();
+  			System.out.print("  outputs:");
+  			
+  			for(int j=0; j<operation.outputs.size(); j++){
+  				data = operation.outputs.get(j);
+  				
+  				if(data instanceof FileData){
+  					System.out.print(" " + ((FileData)data).getFormat());
+  				}
+  			}
+  			
+  			System.out.println();
+  		}
+    }
   }
 }

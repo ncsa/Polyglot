@@ -214,8 +214,8 @@ public class ICRServer implements Runnable
           }
           
           //Add a new operation to the application
-          operation = new Operation(operation_name);
- 
+          operation = new Operation(application, operation_name);
+          
           for(int j=0; j<input_formats.size(); j++){
           	operation.inputs.add(FileData.newFormat(input_formats.get(j)));
           }
@@ -269,22 +269,62 @@ public class ICRServer implements Runnable
   
   /**
    * Execute a given operation on the given data.
+   * @param session the session id
+   * @param application the application
    * @param operation the operation
-   * @param data the data
+   * @param input_data the input data
+   * @param output_data the output data
    * @return the resulting data
    */
-  public synchronized Data execute(Operation operation, Data data)
+  public synchronized Data execute(int session, Application application, Operation operation, Data input_data, Data output_data)
   {
+  	Data result = new Data();
+  	CachedFileData cached_file_data;
+  	FileData file_data;
   	Process process;
   	TimedProcess timed_process;
+  	String script, source, target;
+  	String command = "";
   	boolean COMPLETE;
   	
-  	//process = Runtime.getRuntime().exec(operation.script + " \"" + source + "\" \"" + target + "\" \"" + tmp_path + "\"");
+  	//Set the script
+		script = operation.script;
+		
+		if(script.endsWith(".ahk")){
+			script = script.substring(0, script.lastIndexOf('.')) + ".exe";
+		}   		
+		
+		//Set the command
+  	if(operation.name.equals("convert")){
+  		if(input_data instanceof CachedFileData ){
+  			cached_file_data = (CachedFileData)input_data;
+  			file_data = (FileData)output_data;
+  			
+  			source = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheFilename();
+  			target = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheName() + "." + file_data.getFormat();
+	  		command = script + " \"" + source + "\" \"" + target + "\" \"" + Utility.windowsPath(temp_path) + session + "\"";
+	  		
+	  		result = new CachedFileData(cached_file_data, file_data.getFormat());
+	  	}
+  	}else if(operation.name.equals("open") || operation.name.equals("import")){
+  		if(input_data instanceof CachedFileData ){
+  			cached_file_data = (CachedFileData)input_data;
+  			
+  			source = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheFilename();
+	  		command = script + " \"" + source + "\"";
+	  	}
+  	}
   	
-  	//timed_process = new TimedProcess(process);    
-    //COMPLETE = timed_process.waitFor(max_operation_time);
-    
-    return null;
+  	System.out.println("Session " + session);
+  	System.out.println("\tcommand: " + command);
+  	
+  	try{
+	  	process = Runtime.getRuntime().exec(command);
+	  	timed_process = new TimedProcess(process);    
+	    COMPLETE = timed_process.waitFor(max_operation_time);
+  	}catch(Exception e) {e.printStackTrace();}
+  	
+    return result;
   }
   
   /**
@@ -322,9 +362,12 @@ public class ICRServer implements Runnable
 	public void serveConnection(int session, Socket client_socket)
 	{			
 		String message;
-		Data data;
+		Data data, input_data, output_data;
 		FileData file_data;
 		CachedFileData cached_file_data;
+		Application application;
+		Operation operation;
+		int application_index, operation_index;
 		
 		System.out.println("Session " + session + ": connection established...");
 
@@ -358,6 +401,21 @@ public class ICRServer implements Runnable
 						Utility.writeObject(outs, file_data);
 						System.out.println("Session " + session + ": sent file " + file_data.getName() + "." + file_data.getFormat());
 					}
+				}else if(message.equals("operation")){
+					application_index = (Integer)Utility.readObject(ins);
+					operation_index = (Integer)Utility.readObject(ins);
+					input_data = null;
+					output_data = null;
+					
+					if((Boolean)Utility.readObject(ins)) input_data = (Data)Utility.readObject(ins);
+					if((Boolean)Utility.readObject(ins)) output_data = (Data)Utility.readObject(ins);
+					
+					application = applications.get(application_index);
+					operation = application.operations.get(operation_index);
+					data = execute(session, application, operation, input_data, output_data);
+
+					Utility.writeObject(outs, data);
+					System.out.println("Session " + session + ": " + application.alias + " " + operation.name + " operation");
 				}else if(message.equals("close")){
 					Utility.writeObject(outs, "bye");
 					System.out.println("Session " + session + ": closing connection!\n");
