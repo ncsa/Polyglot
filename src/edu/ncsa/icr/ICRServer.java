@@ -14,8 +14,9 @@ public class ICRServer implements Runnable
 	private ServerSocket server_socket;
 	private Vector<Application> applications = new Vector<Application>();
 	private int port;
-	private String data_path = "";
-	private String temp_path = "";
+	private int session_counter = 0;
+	private String cache_path = "./";
+	private String temp_path = "./";
 	private int max_operation_time = 10000; 	//In milliseconds
 	private boolean ENABLE_MONITORS = false;
 	private boolean RUNNING;
@@ -43,6 +44,45 @@ public class ICRServer implements Runnable
 		new Thread(this).start();
 	}
 	
+	/**
+	 * Initialize based on parameters within the given *.ini file.
+	 * @param filename the file name of the *.ini file
+	 */
+	public void loadINI(String filename)
+	{
+	  try{
+	    BufferedReader ins = new BufferedReader(new FileReader(filename));
+	    String line, key, value;
+	    
+	    while((line=ins.readLine()) != null){
+	      if(line.contains("=")){
+	        key = line.substring(0, line.indexOf('='));
+	        value = line.substring(line.indexOf('=')+1);
+	        
+	        if(key.charAt(0) != '#'){
+	        	if(key.equals("CachePath")){
+	        		cache_path = value + "/";
+	        	}else if(key.equals("TempPath")){
+	        		temp_path = value + "/";
+	        	}else if(key.equals("AHKPath")){
+	          	addOperationsAHK(value + "/");
+	        	}else if(key.equals("Port")){
+	        		port = Integer.valueOf(value);
+	          }else if(key.equals("MaxOperationTime")){
+	            max_operation_time = Integer.valueOf(value);
+	          }else if(key.equals("EnableMonitors")){
+	          	ENABLE_MONITORS = Boolean.valueOf(value);
+	          }
+	        }
+	      }
+	    }
+	    
+	    ins.close();
+	  }catch(Exception e){}
+	  
+		//Application.print(applications);
+	}
+
 	/**
 	 * Add operations supported by AHK scripts within the given directory.
 	 * @param path the path to the AHK scripts
@@ -156,9 +196,7 @@ public class ICRServer implements Runnable
             
             ins.close();
           }catch(Exception e) {e.printStackTrace();}
-          
-          //Create a new operation
-          
+                    
           //Retrieve this application if it already exists
           application = null;
           
@@ -219,51 +257,6 @@ public class ICRServer implements Runnable
   }
   
   /**
-   * Display information on available applications.
-   */
-  public void printApplications()
-  {
-  	Application application;
-  	Operation operation;
-  	Data data;
-  	
-  	for(int i=0; i<applications.size(); i++){
-  		application = applications.get(i);
-  		System.out.println("Applicaton: " + application.name);
-  		System.out.println("Alias: " + application.alias);
-  		
-  		for(int j=0; j<application.operations.size(); j++){
-  			operation = application.operations.get(j);
-  			System.out.println("Operation: " + operation.name + "(" + operation.script + ")");
-  			System.out.print("  inputs:");
-  			
-  			for(int k=0; k<operation.inputs.size(); k++){
-  				data = operation.inputs.get(k);
-  				
-  				if(data instanceof FileData){
-  					System.out.print(" " + ((FileData)data).getFormat());
-  				}
-  			}
-  			
-  			System.out.println();
-  			System.out.print("  outputs:");
-  			
-  			for(int k=0; k<operation.outputs.size(); k++){
-  				data = operation.outputs.get(k);
-  				
-  				if(data instanceof FileData){
-  					System.out.print(" " + ((FileData)data).getFormat());
-  				}
-  			}
-  			
-  			System.out.println();
-  		}
-  		
-  		System.out.println();
-  	}
-  }
-  
-  /**
    * Determine if a given operation is valid with a given piece of data.
    * @param operation the operation
    * @param data the data
@@ -295,52 +288,13 @@ public class ICRServer implements Runnable
   }
   
   /**
-   * Initialize based on parameters within the given *.ini file.
-   * @param filename the file name of the *.ini file
-   */
-  public void loadINI(String filename)
-  {
-    try{
-      BufferedReader ins = new BufferedReader(new FileReader(filename));
-      String line, key, value;
-      
-      while((line=ins.readLine()) != null){
-        if(line.contains("=")){
-          key = line.substring(0, line.indexOf('='));
-          value = line.substring(line.indexOf('=')+1);
-          
-          if(key.charAt(0) != '#'){
-          	if(key.equals("DataPath")){
-          		data_path = value + "/";
-          	}else if(key.equals("TempPath")){
-          		temp_path = value + "/";
-          	}else if(key.equals("AHKPath")){
-            	addOperationsAHK(value + "/");
-          	}else if(key.equals("Port")){
-          		port = Integer.valueOf(value);
-            }else if(key.equals("MaxOperationTime")){
-              max_operation_time = Integer.valueOf(value);
-            }else if(key.equals("EnableMonitors")){
-            	ENABLE_MONITORS = Boolean.valueOf(value);
-            }
-          }
-        }
-      }
-      
-      ins.close();
-    }catch(Exception e){}
-    
-		//printApplications();
-  }
-  
-  /**
    * Process ICR requests.
    */
   public void run()
   {				
-  	Socket client_socket;
+  	Socket client_socket = null;
   	
-  	System.out.println("\nICR Server is running...");
+  	System.out.println("\nICR Server is running...\n");
 		RUNNING = true;
 		
 		while(RUNNING){
@@ -348,11 +302,73 @@ public class ICRServer implements Runnable
 			try{
 				client_socket = server_socket.accept();
 			}catch(Exception e) {e.printStackTrace();}
-			
+						
 			//Spawn a thread to handle this connection
+			final Socket client_socket_final = client_socket;
+			
+			new Thread(){
+				public void run(){
+					serveConnection(session_counter++, client_socket_final);
+				}
+			}.start();
 		}  	
   }
   
+  /**
+   * Process requests from the given connection.
+   * @param session the session id for this connection
+   * @param client_socket the connection to serve
+   */
+	public void serveConnection(int session, Socket client_socket)
+	{			
+		String message;
+		Data data;
+		FileData file_data;
+		CachedFileData cached_file_data;
+		
+		System.out.println("Session " + session + ": connection established...");
+
+		try{
+			InputStream ins = client_socket.getInputStream();
+			OutputStream outs = client_socket.getOutputStream();
+		
+			//Send applications
+			Utility.writeObject(outs, session);
+			Utility.writeObject(outs, applications);
+	  	
+			//Process requests
+			while(client_socket.isConnected()){
+				message = (String)Utility.readObject(ins);
+				
+				if(message.equals("send")){
+					data = (Data)Utility.readObject(ins);
+					
+					if(data instanceof FileData){
+						file_data = (FileData)data;
+						cached_file_data = file_data.cache(session, cache_path);
+						Utility.writeObject(outs, cached_file_data);
+						System.out.println("Session " + session + ": received file " + file_data.getName() + "." + file_data.getFormat());
+					}
+				}else if(message.equals("retrieve")){
+					data = (Data)Utility.readObject(ins);
+					
+					if(data instanceof CachedFileData){
+						cached_file_data = (CachedFileData)data;
+						file_data = cached_file_data.uncache();
+						Utility.writeObject(outs, file_data);
+						System.out.println("Session " + session + ": sent file " + file_data.getName() + "." + file_data.getFormat());
+					}
+				}else if(message.equals("close")){
+					Utility.writeObject(outs, "bye");
+					System.out.println("Session " + session + ": closing connection!\n");
+					break;
+				}
+				
+				Utility.pause(500);
+			}
+		}catch(Exception e) {e.printStackTrace();}
+	}
+
 	/**
 	 * A main for the ICR service.
 	 * @param args command line arguments

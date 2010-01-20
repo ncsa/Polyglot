@@ -1,7 +1,9 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
+import java.util.*;
 
 /**
  * An Imposed Code Reuse client interface.
@@ -9,10 +11,16 @@ import java.net.*;
  */
 public class ICRClient
 {
-	private Socket socket;
 	private String server;
 	private int port;
-	
+	private Socket socket;
+	private InputStream ins;
+	private OutputStream outs;
+	private int session = -1;
+	private Vector<Application> applications = new Vector<Application>();
+	private String data_path = "./";
+	private String temp_path = "./";
+
 	/**
 	 * Class constructor.
 	 */
@@ -26,93 +34,123 @@ public class ICRClient
 	 * @param filename the name of an initialization *.ini file
 	 */
 	public ICRClient(String filename)
-	{
+	{		
 		if(filename != null) loadINI(filename);
 		
 		try{
 			socket = new Socket(server, port);
+			ins = socket.getInputStream();
+			outs = socket.getOutputStream();
+			
+			//Get session and applications
+			session = (Integer)Utility.readObject(ins);
+			applications = (Vector<Application>)Utility.readObject(ins);
+			
+			if(true){
+				System.out.println("Connected (session=" + session + ")...\n");
+				Application.print(applications);
+			}			
 		}catch(Exception e) {e.printStackTrace();}
 	}
 	
 	/**
-	 * Retrieve a list of aliases for applications running on the ICR server.
-	 * @return a list of application aliases
+	 * Initialize based on parameters within the given *.ini file.
+	 * @param filename the file name of the *.ini file
 	 */
-	public String[] retrieveApplications()
+	public void loadINI(String filename)
 	{
-		return null;
+	  try{
+	    BufferedReader ins = new BufferedReader(new FileReader(filename));
+	    String line, key, value;
+	    
+	    while((line=ins.readLine()) != null){
+	      if(line.contains("=")){
+	        key = line.substring(0, line.indexOf('='));
+	        value = line.substring(line.indexOf('=')+1);
+	        
+	        if(key.charAt(0) != '#'){
+	        	if(key.equals("Server")){
+	          	server = InetAddress.getByName(value).getHostAddress();
+	        	}else if(key.equals("Port")){
+	        		port = Integer.valueOf(value);
+	          }else if(key.equals("DataPath")){
+	          	data_path = value + "/";
+	          }else if(key.equals("TempPath")){
+	          	temp_path = value + "/";
+	          }
+	        }
+	      }
+	    }
+	    
+	    ins.close();
+	  }catch(Exception e){}
+	}
+
+	/**
+	 * Synchronously send file data to the ICR server.
+	 * @param file_data the file data to send
+	 * @return a cached version of the given file data (i.e. a pointer to the data on the server)
+	 */
+	public CachedFileData sendDataAndWait(FileData file_data)
+	{			
+		Utility.writeObject(outs, "send");
+		Utility.writeObject(outs, file_data);
+		return (CachedFileData)Utility.readObject(ins);
 	}
 	
 	/**
-	 * Retrieve a list of operations supported by the given application alias on the ICR server.
-	 * @param application the application to retrieve operations for
-	 * @return a list of operations supported by the given application
+	 * Asynchronously send file data to the server.
+	 * @param file_data the file data to send
+	 * @return a cached version of the given file data (i.e. a pointer to the data on the server)
 	 */
-	public String[] retrieveOperations(String application)
+	public CachedFileData sendData(FileData file_data)
 	{
-		return null;
-	}
-	
-	/**
-	 * Retrieve a list of allowed inputs for a given application/operation.
-	 * @param application the application alias
-	 * @param operation the operation
-	 * @return a list of inputs accepted
-	 */
-	public Data[] retrieveInputs(String application, String operation)
-	{
-		return null;
-	}
-	
-	/**
-	 * Retrieve a list of allowed outputs for a given application/operation.
-	 * @param application the application alias
-	 * @param operation the operation
-	 * @return a list of outputs provided
-	 */
-	public Data[] retrieveOutputs(String application, String operation)
-	{
-		return null;
-	}
-	
-	/**
-	 * Synchronously send data to the ICR server.
-	 * @param data the data to send
-	 * @return a cached version of the given data (i.e. a pointer to the data on the server)
-	 */
-	public Data sendDataAndWait(Data data)
-	{		
-		return null;
-	}
-	
-	/**
-	 * Asynchronously send data to a server.
-	 * @param data the data to send
-	 * @return a cached version of the given data (i.e. a pointer to the data on the server)
-	 */
-	public Data sendData(Data data)
-	{
-		final Data data_final = data;
+		CachedFileData cached_file_data = new CachedFileData();
+		final FileData file_data_final = file_data;
+		final CachedFileData cached_file_data_final = cached_file_data;
 		
-		new Runnable(){
+		new Thread(){
 			public void run(){
-				sendDataAndWait(data_final);
+				cached_file_data_final.assign(sendDataAndWait(file_data_final));
 			}
-		};
+		}.start();
 		
-		return null;
+		return cached_file_data;
 	}
 	
 	/**
-	 * Retrieve cached data on the ICR server.
-	 * @param cached_data the cached data to retrieve
-	 * @return the actual data from the server
+	 * Synchronously retrieve cached file data from the ICR server.
+	 * @param cached_file_data the cached file data to retrieve
+	 * @return the actual file data from the server
 	 */
-	public Data retrieveData(Data cached_data)
+	public FileData retrieveDataAndWait(CachedFileData cached_file_data)
 	{
-		Data data = null;
+		cached_file_data.waitUntilValid();	//In case filled asynchronously!
 		
-		return data;
+		Utility.writeObject(outs, "retrieve");
+		Utility.writeObject(outs, cached_file_data);
+		return (FileData)Utility.readObject(ins);
+	}
+	
+	/**
+	 * Synchronously retrieve cached file data from the server.
+	 * @param cached_file_data the cached file data to retrieve
+	 * @return the file data
+	 */
+	public FileData retrieveData(CachedFileData cached_file_data)
+	{
+		FileData file_data = new FileData();
+		final CachedFileData cached_file_data_final = cached_file_data;
+		final FileData file_data_final = file_data;
+		
+		new Thread(){
+			public void run(){
+				cached_file_data_final.waitUntilValid();	//In case filled asynchronously!
+				file_data_final.assign(retrieveDataAndWait(cached_file_data_final));
+			}
+		}.start();
+		
+		return file_data;
 	}
 	
 	/**
@@ -140,56 +178,76 @@ public class ICRClient
 		final String operation_final = operation;
 		final Data data_final = data;
 		
-		new Runnable(){
+		new Thread(){
 			public void run(){
 				requestOperationAndWait(application_final, operation_final, data_final);
 			}
-		};
+		}.start();
 		
 		return null;
 	}
 	
-  /**
-   * Initialize based on parameters within the given *.ini file.
-   * @param filename the file name of the *.ini file
-   */
-  public void loadINI(String filename)
-  {
-    try{
-      BufferedReader ins = new BufferedReader(new FileReader(filename));
-      String line, key, value;
-      
-      while((line=ins.readLine()) != null){
-        if(line.contains("=")){
-          key = line.substring(0, line.indexOf('='));
-          value = line.substring(line.indexOf('=')+1);
-          
-          if(key.charAt(0) != '#'){
-          	if(key.equals("Server")){
-            	server = InetAddress.getByName(value).getHostAddress();
-          	}else if(key.equals("Port")){
-          		port = Integer.valueOf(value);
-            }
-          }
-        }
-      }
-      
-      ins.close();
-    }catch(Exception e){}
-  }
-  
 	/**
+	 * Close the connection to the ICR server.
+	 */
+	public void close()
+	{
+		Utility.writeObject(outs, "close");
+		Utility.readObject(ins);	//Wait for response
+	}
+	
+  /**
 	 * A main for debug purposes.
 	 * @param args command line arguments
 	 */
 	public static void main(String args[])
 	{
 		ICRClient icr = new ICRClient("ICRClient.ini");
-		String[] applications = icr.retrieveApplications();
-		String[][] operations = new String[applications.length][];
 		
-		for(int i=0; i<applications.length; i++){
-			operations[i] = icr.retrieveOperations(applications[i]);
+		//Test sending a file synchronously
+		if(false){	
+			FileData data0 = new FileData(icr.data_path + "heart.wrl", true);
+			CachedFileData data0_cached = icr.sendDataAndWait(data0);
+			System.out.println("Cached data\n" + data0_cached.toString());
 		}
+		
+		//Test sending a file asynchronously
+		if(false){
+			FileData data0 = new FileData(icr.data_path + "heart.wrl", true);
+			CachedFileData data0_cached = icr.sendData(data0);
+			
+			data0_cached.waitUntilValid();
+			System.out.println("Cached data\n" + data0_cached.toString());
+		}
+		
+		//Test retrieving a file synchronously
+		if(false){
+			FileData data0 = new FileData(icr.data_path + "heart.wrl", true);
+			CachedFileData data0_cached = icr.sendDataAndWait(data0);
+			FileData data1 = icr.retrieveDataAndWait(data0_cached);
+			data1.save(icr.temp_path, null);
+		}
+		
+		//Test retrieving a file asynchronously
+		if(false){
+			FileData data0 = new FileData(icr.data_path + "heart.wrl", true);
+			CachedFileData data0_cached = icr.sendDataAndWait(data0);
+			FileData data1 = icr.retrieveData(data0_cached);
+			
+			data1.waitUntilValid();
+			data1.save(icr.temp_path, null);
+		}
+		
+		//Test sending and retrieving a file asynchronously
+		if(true){
+			FileData data0 = new FileData(icr.data_path + "heart.wrl", true);
+			CachedFileData data0_cached = icr.sendData(data0);
+			FileData data1 = icr.retrieveData(data0_cached);
+			
+			data1.waitUntilValid();
+			data1.save(icr.temp_path, null);
+		}
+		
+		icr.close();
 	}
 }
