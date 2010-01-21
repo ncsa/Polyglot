@@ -130,6 +130,7 @@ public class ICRAuxiliary
   	 */
   	public void save(String path, String filename)
   	{
+  		waitUntilValid();		//In case filled asynchronously!
       if(filename == null) filename = name + "." + format;
       Utility.save(path + filename, data);
   	}
@@ -170,11 +171,10 @@ public class ICRAuxiliary
 			this.name = file_data.name;
 			this.format = file_data.format;
 			this.data = file_data.data;
+			valid = true;
 			
   		save(cache_path, getCacheFilename());
-  		unload();
-  		
-  		valid = true;
+  		unload();  		
 		}
 		
 		/**
@@ -269,6 +269,9 @@ public class ICRAuxiliary
     public String name = "";
     public String alias = "";
     public Vector<Operation> operations = new Vector<Operation>();
+    public Operation monitor_operation = null;
+    public Operation exit_operation = null;
+    public Operation kill_operation = null;
     
     /**
      * Class constructor.
@@ -279,6 +282,24 @@ public class ICRAuxiliary
     {
     	this.name = name;
       this.alias = alias;
+    }
+    
+    /**
+     * Add an operation to this application.
+     * @param operation the operation to add
+     */
+    public void add(Operation operation)
+    {
+    	operation.application = this;
+    	operations.add(operation);
+    	
+    	if(operation.name.equals("monitor")){
+    		monitor_operation = operation;
+    	}else if(operation.name.equals("exit")){
+    		exit_operation = operation;
+    	}else if(operation.name.equals("kill")){
+    		kill_operation = operation;
+    	}
     }
     
     /**
@@ -312,13 +333,45 @@ public class ICRAuxiliary
   	
   	/**
   	 * Class constructor.
-  	 * @param application the application to which this operation belongs
   	 * @param name the name of the operation
   	 */
-  	public Operation(Application application, String name)
+  	public Operation(String name)
   	{
-  		this.application = application;
   		this.name = name;
+  	}
+  	
+  	/**
+  	 * Get the executable for the operation.
+  	 * @return the name of the executable
+  	 */
+  	public String getScript()
+  	{
+			if(script.endsWith(".ahk")){
+				return script.substring(0, script.lastIndexOf('.')) + ".exe";
+			}
+			
+			return script;
+  	}
+  	
+  	/**
+  	 * Run the operation script with no arguments and wait until it completes.
+  	 */
+  	public void runScriptAndWait()
+  	{
+      try{
+        Process process = Runtime.getRuntime().exec(getScript());
+        process.waitFor();
+      }catch(Exception e) {}
+  	}
+  	
+  	/**
+  	 * Run the operation script with no arguments.
+  	 */
+  	public void runScript()
+  	{
+      try{
+        Runtime.getRuntime().exec(getScript());
+      }catch(Exception e) {}
   	}
   	
     /**
@@ -332,7 +385,7 @@ public class ICRAuxiliary
     	
   		for(int i=0; i<operations.size(); i++){
   			operation = operations.get(i);
-  			System.out.println("Operation: " + operation.name + "(" + operation.script + ")");
+  			System.out.println("Operation: " + operation.name + " (" + operation.script + ")");
   			System.out.print("  inputs:");
   			
   			for(int j=0; j<operation.inputs.size(); j++){
@@ -357,5 +410,31 @@ public class ICRAuxiliary
   			System.out.println();
   		}
     }
+  }
+  
+  /**
+   * A structure representing an application task.
+   */
+  public static class Task implements Serializable
+  {
+  	public int application;		//Use indices for security purposes, we don't want arbitrary script execution!
+  	public int operation;
+  	public Data input_data;
+  	public Data output_data;
+  	
+  	/**
+  	 * Class constructor.
+  	 * @param application the application index
+  	 * @param operation the operation index
+  	 * @param input_data the input data
+  	 * @param output_data the output data
+  	 */
+  	public Task(int application, int operation, Data input_data, Data output_data)
+  	{
+  		this.application = application;
+  		this.operation = operation;
+  		this.input_data = input_data;
+  		this.output_data = output_data;
+  	}
   }
 }

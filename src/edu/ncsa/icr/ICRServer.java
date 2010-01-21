@@ -18,6 +18,7 @@ public class ICRServer implements Runnable
 	private String cache_path = "./";
 	private String temp_path = "./";
 	private int max_operation_time = 10000; 	//In milliseconds
+	private int max_operation_attempts = 1;
 	private boolean ENABLE_MONITORS = false;
 	private boolean RUNNING;
 	
@@ -70,6 +71,8 @@ public class ICRServer implements Runnable
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("MaxOperationTime")){
 	            max_operation_time = Integer.valueOf(value);
+	          }else if(key.equals("MaxOperationAttempts")){
+	            max_operation_attempts = Integer.valueOf(value);
 	          }else if(key.equals("EnableMonitors")){
 	          	ENABLE_MONITORS = Boolean.valueOf(value);
 	          }
@@ -100,7 +103,6 @@ public class ICRServer implements Runnable
     Scanner scanner;
     Application application;
     Operation operation;
-    String script;
     
     //Examine AutoHotkey scripts
     FilenameFilter ahk_filter = new FilenameFilter(){
@@ -214,7 +216,7 @@ public class ICRServer implements Runnable
           }
           
           //Add a new operation to the application
-          operation = new Operation(application, operation_name);
+          operation = new Operation(operation_name);
           
           for(int j=0; j<input_formats.size(); j++){
           	operation.inputs.add(FileData.newFormat(input_formats.get(j)));
@@ -226,58 +228,39 @@ public class ICRServer implements Runnable
           
           operation.script = path + filename + ".ahk";
           
-          application.operations.add(operation);
+          application.add(operation);
         }
       }
     }
     
     if(ENABLE_MONITORS){		//Execute all monitoring applications
+    	System.out.println();
+    	
 	    for(int i=0; i<applications.size(); i++){
 	    	application = applications.get(i);
 	    	
-	    	for(int j=0; j<application.operations.size(); j++){
-	    		operation = application.operations.get(j);
-	    		
-	    		if(operation.name.equals("monitor")){
-	    			script = operation.script;
-	    			
-	    			if(script.endsWith(".ahk")){
-	    				script = script.substring(0, script.lastIndexOf('.')) + ".exe";
-	    			}
-	    			
-	    			System.out.println("Running monitor for " + application.alias + "...");
-	    			
-		        try{
-		          Runtime.getRuntime().exec(script);
-		        }catch(Exception e) {}
-	    		}
+	    	if(application.monitor_operation != null){
+	    		System.out.println("Running monitor for " + application.alias + "...");
+	    		application.monitor_operation.runScript();
 	    	}
 	    }
     }
   }
   
   /**
-   * Determine if a given operation is valid with a given piece of data.
-   * @param operation the operation
-   * @param data the data
-   * @return true if the given operation is valid with the given data
-   */
-  public boolean isValid(Operation operation, Data data)
-  {
-  	return false;
-  }
-  
-  /**
-   * Execute a given operation on the given data.
+   * Execute the given list of tasks.
    * @param session the session id
-   * @param application the application
-   * @param operation the operation
-   * @param input_data the input data
-   * @param output_data the output data
-   * @return the resulting data
+   * @param tasks a list of tasks to execute
+   * @return the data resulting from the final task
    */
-  public synchronized Data execute(int session, Application application, Operation operation, Data input_data, Data output_data)
+  public synchronized Data executeTasks(int session, Vector<Task> tasks)
   {
+  	Task task;
+  	Application application;
+  	TreeSet<Integer> application_set = new TreeSet<Integer>();
+  	Operation operation;
+  	Data input_data, output_data;
+  	
   	Data result = new Data();
   	CachedFileData cached_file_data;
   	FileData file_data;
@@ -287,42 +270,83 @@ public class ICRServer implements Runnable
   	String command = "";
   	boolean COMPLETE;
   	
-  	//Set the script
-		script = operation.script;
-		
-		if(script.endsWith(".ahk")){
-			script = script.substring(0, script.lastIndexOf('.')) + ".exe";
-		}   		
-		
-		//Set the command
-  	if(operation.name.equals("convert")){
-  		if(input_data instanceof CachedFileData ){
-  			cached_file_data = (CachedFileData)input_data;
-  			file_data = (FileData)output_data;
-  			
-  			source = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheFilename();
-  			target = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheName() + "." + file_data.getFormat();
-	  		command = script + " \"" + source + "\" \"" + target + "\" \"" + Utility.windowsPath(temp_path) + session + "\"";
-	  		
-	  		result = new CachedFileData(cached_file_data, file_data.getFormat());
+  	//Execute each task
+  	for(int i=0; i<tasks.size(); i++){
+  		task = tasks.get(i);
+  		application = applications.get(task.application); application_set.add(task.application);
+  		operation = application.operations.get(task.operation);
+  		input_data = task.input_data;
+  		output_data = task.output_data;
+			script = operation.getScript();		
+			
+			//Set the command and result
+	  	if(operation.name.equals("convert")){
+	  		if(input_data instanceof CachedFileData ){
+	  			cached_file_data = (CachedFileData)input_data;
+	  			file_data = (FileData)output_data;
+	  			
+	  			source = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheFilename();
+	  			target = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheName() + "." + file_data.getFormat();
+		  		command = script + " \"" + source + "\" \"" + target + "\" \"" + Utility.windowsPath(temp_path) + session + "\"";
+		  		
+		  		result = new CachedFileData(cached_file_data, file_data.getFormat());
+		  	}
+	  	}else if(operation.name.equals("open") || operation.name.equals("import")){
+	  		if(input_data instanceof CachedFileData ){
+	  			cached_file_data = (CachedFileData)input_data;
+	  			
+	  			source = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheFilename();
+		  		command = script + " \"" + source + "\"";
+		  	}
+	  	}else if(operation.name.equals("save") || operation.name.equals("export")){
+	  		if(input_data instanceof CachedFileData ){
+	  			cached_file_data = (CachedFileData)input_data;
+	  			file_data = (FileData)output_data;
+	
+	  			target = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheName() + "." + file_data.getFormat();
+		  		command = script + " \"" + target + "\"";
+		  		
+		  		result = new CachedFileData(cached_file_data, file_data.getFormat());
+		  	}
 	  	}
-  	}else if(operation.name.equals("open") || operation.name.equals("import")){
-  		if(input_data instanceof CachedFileData ){
-  			cached_file_data = (CachedFileData)input_data;
-  			
-  			source = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheFilename();
-	  		command = script + " \"" + source + "\"";
+	  	
+	  	System.out.println("Session " + session);
+	  	System.out.println("command: " + command);
+	  	
+	  	//Execute the command
+	  	if(!command.isEmpty()){
+	  		for(int j=0; j<max_operation_attempts; j++){
+			  	try{
+				  	process = Runtime.getRuntime().exec(command);
+				  	timed_process = new TimedProcess(process);    
+				    COMPLETE = timed_process.waitFor(max_operation_time); System.out.println();
+				  	
+				    //Try again if command failed
+	          if(!COMPLETE && application.kill_operation != null){
+	            if(j < (max_operation_attempts-1)){
+	              System.out.println("retrying...");
+	            }else{
+	              System.out.println("killing...");
+	            }
+	            
+	            application.kill_operation.runScriptAndWait();
+	          }else{
+	            break;
+	          }
+			  	}catch(Exception e) {e.printStackTrace();}
+	  		}
 	  	}
   	}
   	
-  	System.out.println("Session " + session);
-  	System.out.println("\tcommand: " + command);
-  	
-  	try{
-	  	process = Runtime.getRuntime().exec(command);
-	  	timed_process = new TimedProcess(process);    
-	    COMPLETE = timed_process.waitFor(max_operation_time);
-  	}catch(Exception e) {e.printStackTrace();}
+  	//Exit all used applications
+  	for(Iterator<Integer> itr=application_set.iterator(); itr.hasNext();){
+  		application = applications.get(itr.next());
+  		
+	    if(application.exit_operation != null){
+				System.out.println("exiting " + application.alias + "...");
+	      application.exit_operation.runScriptAndWait();
+	    }
+  	}
   	
     return result;
   }
@@ -362,12 +386,10 @@ public class ICRServer implements Runnable
 	public void serveConnection(int session, Socket client_socket)
 	{			
 		String message;
-		Data data, input_data, output_data;
+		Data data;
 		FileData file_data;
 		CachedFileData cached_file_data;
-		Application application;
-		Operation operation;
-		int application_index, operation_index;
+		Vector<Task> tasks;
 		
 		System.out.println("Session " + session + ": connection established...");
 
@@ -401,21 +423,11 @@ public class ICRServer implements Runnable
 						Utility.writeObject(outs, file_data);
 						System.out.println("Session " + session + ": sent file " + file_data.getName() + "." + file_data.getFormat());
 					}
-				}else if(message.equals("operation")){
-					application_index = (Integer)Utility.readObject(ins);
-					operation_index = (Integer)Utility.readObject(ins);
-					input_data = null;
-					output_data = null;
-					
-					if((Boolean)Utility.readObject(ins)) input_data = (Data)Utility.readObject(ins);
-					if((Boolean)Utility.readObject(ins)) output_data = (Data)Utility.readObject(ins);
-					
-					application = applications.get(application_index);
-					operation = application.operations.get(operation_index);
-					data = execute(session, application, operation, input_data, output_data);
-
+				}else if(message.equals("execute")){
+					tasks = (Vector<Task>)Utility.readObject(ins);
+					data = executeTasks(session, tasks);
 					Utility.writeObject(outs, data);
-					System.out.println("Session " + session + ": " + application.alias + " " + operation.name + " operation");
+					System.out.println("Session " + session + ": executed " + tasks.size() + " tasks");
 				}else if(message.equals("close")){
 					Utility.writeObject(outs, "bye");
 					System.out.println("Session " + session + ": closing connection!\n");
