@@ -251,9 +251,8 @@ public class ICRServer implements Runnable
    * Execute the given list of tasks.
    * @param session the session id
    * @param tasks a list of tasks to execute
-   * @return the data resulting from the final task
    */
-  public synchronized Data executeTasks(int session, Vector<Task> tasks)
+  public synchronized void executeTasks(int session, Vector<Task> tasks)
   {
   	Task task;
   	Application application;
@@ -261,9 +260,7 @@ public class ICRServer implements Runnable
   	Operation operation;
   	Data input_data, output_data;
   	
-  	Data result = new Data();
-  	CachedFileData cached_file_data;
-  	FileData file_data;
+  	CachedFileData input_file_data, output_file_data;
   	Process process;
   	TimedProcess timed_process;
   	String script, source, target;
@@ -282,31 +279,26 @@ public class ICRServer implements Runnable
 			//Set the command and result
 	  	if(operation.name.equals("convert")){
 	  		if(input_data instanceof CachedFileData ){
-	  			cached_file_data = (CachedFileData)input_data;
-	  			file_data = (FileData)output_data;
+	  			input_file_data = (CachedFileData)input_data;
+	  			output_file_data = (CachedFileData)output_data;
 	  			
-	  			source = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheFilename();
-	  			target = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheName() + "." + file_data.getFormat();
+	  			source = Utility.windowsPath(cache_path) + input_file_data.getCacheFilename(session);
+	  			target = Utility.windowsPath(cache_path) + output_file_data.getCacheFilename(session);
 		  		command = script + " \"" + source + "\" \"" + target + "\" \"" + Utility.windowsPath(temp_path) + session + "\"";
-		  		
-		  		result = new CachedFileData(cached_file_data, file_data.getFormat());
 		  	}
 	  	}else if(operation.name.equals("open") || operation.name.equals("import")){
 	  		if(input_data instanceof CachedFileData ){
-	  			cached_file_data = (CachedFileData)input_data;
+	  			input_file_data = (CachedFileData)input_data;
 	  			
-	  			source = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheFilename();
+	  			source = Utility.windowsPath(cache_path) + input_file_data.getCacheFilename(session);
 		  		command = script + " \"" + source + "\"";
 		  	}
 	  	}else if(operation.name.equals("save") || operation.name.equals("export")){
-	  		if(input_data instanceof CachedFileData ){
-	  			cached_file_data = (CachedFileData)input_data;
-	  			file_data = (FileData)output_data;
+	  		if(output_data instanceof CachedFileData ){
+	  			output_file_data = (CachedFileData)output_data;
 	
-	  			target = Utility.windowsPath(cached_file_data.getCachePath()) + cached_file_data.getCacheName() + "." + file_data.getFormat();
+	  			target = Utility.windowsPath(cache_path) + output_file_data.getCacheFilename(session);
 		  		command = script + " \"" + target + "\"";
-		  		
-		  		result = new CachedFileData(cached_file_data, file_data.getFormat());
 		  	}
 	  	}
 	  	
@@ -347,8 +339,6 @@ public class ICRServer implements Runnable
 	      application.exit_operation.runScriptAndWait();
 	    }
   	}
-  	
-    return result;
   }
   
   /**
@@ -419,14 +409,14 @@ public class ICRServer implements Runnable
 					
 					if(data instanceof CachedFileData){
 						cached_file_data = (CachedFileData)data;
-						file_data = cached_file_data.uncache();
+						file_data = cached_file_data.uncache(session, cache_path);
 						Utility.writeObject(outs, file_data);
 						System.out.println("Session " + session + ": sent file " + file_data.getName() + "." + file_data.getFormat());
 					}
 				}else if(message.equals("execute")){
 					tasks = (Vector<Task>)Utility.readObject(ins);
-					data = executeTasks(session, tasks);
-					Utility.writeObject(outs, data);
+					executeTasks(session, tasks);
+					Utility.writeObject(outs, new Integer(0));
 					System.out.println("Session " + session + ": executed " + tasks.size() + " tasks");
 				}else if(message.equals("close")){
 					Utility.writeObject(outs, "bye");

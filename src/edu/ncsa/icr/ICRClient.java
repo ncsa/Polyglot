@@ -1,7 +1,6 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -102,7 +101,7 @@ public class ICRClient
 	 * @param output_file_data output file data (can be null)
 	 * @return the index of the application and operation (null if none found)
 	 */
-	public Pair<Integer,Integer> getOperation(String application_alias, String operation_name, FileData input_file_data, FileData output_file_data)
+	public Pair<Integer,Integer> getOperation(String application_alias, String operation_name, CachedFileData input_file_data, CachedFileData output_file_data)
 	{
 		Application application;
 		Operation operation;
@@ -124,7 +123,7 @@ public class ICRClient
 								data = operation.inputs.get(k);
 								
 								if(data instanceof FileData){
-									if(((FileData)data).format.equals(input_file_data.format)){
+									if(((FileData)data).getFormat().equals(input_file_data.getFormat())){
 										FOUND_INPUT = true;
 										break;
 									}
@@ -139,7 +138,7 @@ public class ICRClient
 								data = operation.outputs.get(k);
 								
 								if(data instanceof FileData){
-									if(((FileData)data).format.equals(output_file_data.format)){
+									if(((FileData)data).getFormat().equals(output_file_data.getFormat())){
 										FOUND_OUTPUT = true;
 										break;
 									}
@@ -173,12 +172,12 @@ public class ICRClient
 	}
 
 	/**
-	 * Synchronously send file data to the ICR server.
+	 * Send file data to the ICR server.
 	 * @param file_data the file data to send
 	 * @return a cached version of the given file data (i.e. a pointer to the data on the server)
 	 */
-	public CachedFileData sendData(FileData file_data)
-	{			
+	public synchronized CachedFileData sendData(FileData file_data)
+	{							
 		Utility.writeObject(outs, "send");
 		Utility.writeObject(outs, file_data);
 		return (CachedFileData)Utility.readObject(ins);
@@ -189,30 +188,28 @@ public class ICRClient
 	 * @param file_data the file data to send
 	 * @return a cached version of the given file data (i.e. a pointer to the data on the server)
 	 */
-	public CachedFileData sendDataLater(FileData file_data)
+	public AsynchronousObject<CachedFileData> sendDataLater(FileData file_data)
 	{
-		CachedFileData cached_file_data = new CachedFileData();
+		AsynchronousObject<CachedFileData> async_object = new AsynchronousObject<CachedFileData>();
+		final AsynchronousObject<CachedFileData> async_object_final = async_object;
 		final FileData file_data_final = file_data;
-		final CachedFileData cached_file_data_final = cached_file_data;
-		
+
 		new Thread(){
 			public void run(){
-				cached_file_data_final.assign(sendData(file_data_final));
+				async_object_final.set(sendData(file_data_final));
 			}
 		}.start();
 		
-		return cached_file_data;
+		return async_object;
 	}
 	
 	/**
-	 * Synchronously retrieve cached file data from the ICR server.
+	 * Retrieve cached file data from the ICR server.
 	 * @param cached_file_data the cached file data to retrieve
 	 * @return the actual file data from the server
 	 */
-	public FileData retrieveData(CachedFileData cached_file_data)
+	public synchronized FileData retrieveData(CachedFileData cached_file_data)
 	{
-		cached_file_data.waitUntilValid();	//In case filled asynchronously!
-		
 		Utility.writeObject(outs, "retrieve");
 		Utility.writeObject(outs, cached_file_data);
 		return (FileData)Utility.readObject(ins);
@@ -223,60 +220,51 @@ public class ICRClient
 	 * @param cached_file_data the cached file data to retrieve
 	 * @return the file data
 	 */
-	public FileData retrieveDataLater(CachedFileData cached_file_data)
+	public AsynchronousObject<FileData> retrieveDataLater(CachedFileData cached_file_data)
 	{
-		FileData file_data = new FileData();
+		AsynchronousObject<FileData> async_object = new AsynchronousObject<FileData>();
+		final AsynchronousObject<FileData> async_object_final = async_object;
 		final CachedFileData cached_file_data_final = cached_file_data;
-		final FileData file_data_final = file_data;
-		
+						
 		new Thread(){
 			public void run(){
-				cached_file_data_final.waitUntilValid();	//In case filled asynchronously!
-				file_data_final.assign(retrieveData(cached_file_data_final));
+				async_object_final.set(retrieveData(cached_file_data_final));
 			}
 		}.start();
 		
-		return file_data;
+		return async_object;
 	}
 	
 	/**
-	 * Synchronously execute tasks on the ICR server.
+	 * Execute tasks on the ICR server.
 	 * @param tasks a list of tasks to execute (note, all input file data should be cached already!)
-	 * @return the resulting cached data created by the final task
+	 * @param status, 0=success
 	 */
-	public Data executeTasks(Vector<Task> tasks)
-	{
-		Data data;
-		
+	public synchronized int executeTasks(Vector<Task> tasks)
+	{		
 		Utility.writeObject(outs, "execute");
 		Utility.writeObject(outs, tasks);
-		data = (Data)Utility.readObject(ins);
-		
-		if(data instanceof CachedFileData){
-			return data;
-		}else{
-			return null;
-		}
+		return (Integer)Utility.readObject(ins);
 	}
 	
 	/**
 	 * Asynchronously execute tasks on the ICR server.
 	 * @param tasks a list of tasks to execute (note, all input file data should be cached already!)
-	 * @return the resulting cached file data created by the final task
+	 * @return status, 0=success
 	 */
-	public CachedFileData executeTasksLater(Vector<Task> tasks)
+	public AsynchronousObject<Integer> executeTasksLater(Vector<Task> tasks)
 	{
-		CachedFileData cached_file_data = new CachedFileData();
+		AsynchronousObject<Integer> async_object = new AsynchronousObject<Integer>();
+		final AsynchronousObject<Integer> async_object_final = async_object;
 		final Vector<Task> tasks_final = tasks;
-		final CachedFileData cached_file_data_final = cached_file_data;
 		
 		new Thread(){
 			public void run(){
-				cached_file_data_final.assign((CachedFileData)executeTasks(tasks_final));
+				async_object_final.set(executeTasks(tasks_final));
 			}
 		}.start();
 		
-		return cached_file_data;
+		return async_object;
 	}
 	
 	/**
@@ -300,50 +288,59 @@ public class ICRClient
 		if(false){	
 			FileData file_data0 = new FileData(icr.data_path + "heart.wrl", true);
 			CachedFileData cached_file_data0 = icr.sendData(file_data0);
-			//CachedFileData cached_file_data0 = icr.sendData(file_data0); cached_file_data0.waitUntilValid();
-			System.out.println("Cached data\n" + cached_file_data0.toString());
+			System.out.println("Cached data for " + cached_file_data0.getName() + "." + cached_file_data0.getFormat());
 		}
 		
 		//Test retrieving a file
 		if(false){
 			FileData file_data0 = new FileData(icr.data_path + "heart.wrl", true);
 			CachedFileData cached_file_data0 = icr.sendData(file_data0);
-			//CachedFileData cached_file_data0 = icr.sendData(file_data0);
 			FileData file_data1 = icr.retrieveData(cached_file_data0);
-			//FileData file_data1 = icr.retrieveData(cached_file_data0);
 			file_data1.save(icr.temp_path, null);
 		}
 		
 		//Test tasks execution
 		if(false){
 			FileData file_data0 = new FileData(icr.data_path + "heart.wrl", true);
-			//CachedFileData cached_file_data0 = icr.sendDataAndWait(file_data0);
-			CachedFileData cached_file_data0 = icr.sendDataLater(file_data0);
-			FileData output_format = FileData.newFormat("stp");		//stl, stp
+			CachedFileData cached_file_data0 = icr.sendData(file_data0);
+			CachedFileData cached_file_data1 = new CachedFileData(cached_file_data0, "stl");		//stl, stp
 			
-			Vector<Task> tasks = (new TaskList(icr, cached_file_data0, output_format)).getTasks();
-			//CachedFileData cached_file_data1 = (CachedFileData)icr.executeTasksAndWait(tasks);
-			CachedFileData cached_file_data1 = icr.executeTasksLater(tasks);
-			
-			//FileData file_data1 = icr.retrieveDataAndWait(cached_file_data1);
-			FileData file_data1 = icr.retrieveDataLater(cached_file_data1);
+			Vector<Task> tasks = (new TaskList(icr, cached_file_data0, cached_file_data1)).getTasks();
+			icr.executeTasks(tasks);
+						
+			FileData file_data1 = icr.retrieveData(cached_file_data1);
 			file_data1.save(icr.temp_path, null);
 		}
 		
-		//Test the simplicity of using for conversion
-		if(false){
+		//Test asynchronous usage
+		if(true){
 			FileData file_data0 = new FileData(icr.data_path + "heart.wrl", true);
-			Vector<Task> tasks = (new TaskList(icr, file_data0, FileData.newFormat("stl"))).getTasks();
-			FileData file_data1 = icr.retrieveDataLater(icr.executeTasksLater(tasks));
-			file_data1.save(icr.temp_path, null);
+			AsynchronousObject<CachedFileData> cached_file_data0 = icr.sendDataLater(file_data0);
+			CachedFileData cached_file_data1 = new CachedFileData(file_data0, "stl");		//stl, stp
+			
+			Vector<Task> tasks = (new TaskList(icr, (CachedFileData)cached_file_data0.get(), cached_file_data1)).getTasks();
+			AsynchronousObject<Integer> response = icr.executeTasksLater(tasks);
+						
+			response.waitUntilAvailable();
+			AsynchronousObject<FileData> file_data1 = icr.retrieveDataLater(cached_file_data1);
+			((FileData)file_data1.get()).save(icr.temp_path, null);
 		}
 
-		//Test the simplicity of using individual operations
-		if(true){
+		//Test tasks execution
+		if(false){
 			TaskList tasks = new TaskList(icr);
 			tasks.add("A3DReviewer", "open", icr.data_path + "heart.wrl", "");
-			tasks.add("A3DReviewer", "export", icr.data_path + "heart.wrl", "stp");
-			tasks.cache();
+			tasks.add("A3DReviewer", "export", "", "heart.stp");
+			tasks.print();
+			tasks.execute(icr.temp_path);
+		}
+		
+		//Test tasks execution
+		if(false){
+			TaskList tasks = new TaskList(icr);
+			tasks.add("Blender", "convert", icr.data_path + "heart.wrl", "heart.stl");
+			tasks.add("A3DReviewer", "open", "heart.stl", "");
+			tasks.add("A3DReviewer", "export", "", "heart.stp");
 			tasks.print();
 			tasks.execute(icr.temp_path);
 		}
