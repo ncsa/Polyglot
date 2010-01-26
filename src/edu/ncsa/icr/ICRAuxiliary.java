@@ -9,12 +9,30 @@ import java.io.*;
  */
 public class ICRAuxiliary
 {
-	public static class Data implements Serializable {}
+	/**
+	 * An container for some kind of data.
+	 */
+	public static class Data implements Serializable, Comparable
+	{
+		/**
+  	 * Compare this object to another object.
+  	 * @param object the object to compare to
+  	 * @return 0 if the same, -1 if less, and 1 if greater
+  	 */
+  	public int compareTo(Object object)
+  	{
+  		if(this == object){
+  			return 0;
+  		}else{
+  			return -1;
+  		}
+  	}
+	}
 	
 	/**
 	 * A buffered file.
 	 */
-	public static class FileData extends Data implements Serializable
+	public static class FileData extends Data implements Serializable, Comparable
 	{
 		private String absolute_name;
 		private String name;
@@ -47,8 +65,36 @@ public class ICRAuxiliary
   		
   		return data;
   	}
+  	
+  	/**
+		 * Get a string representation of this instance.
+		 */
+		public String toString()
+		{
+			if(name == null){
+				return format;
+			}else{
+				return name + "." + format;
+			}
+		}
 
 		/**
+  	 * Compare this object to another object.
+  	 * @param object the object to compare to
+  	 * @return 0 if the same, -1 if less, and 1 if greater
+  	 */
+  	public int compareTo(Object object)
+  	{
+  		if(this == object){
+  			return 0;
+  		}else if(object instanceof FileData){
+  			return format.compareTo(((FileData)object).format);
+  		}else{
+  			return -1;
+  		}
+  	}
+  	
+  	/**
   	 * Determine if this instance is empty or not.
   	 * @return true if this instance doesn't represent any data
   	 */
@@ -139,7 +185,7 @@ public class ICRAuxiliary
 	/**
 	 * A pointer to a file.
 	 */
-	public static class CachedFileData extends Data implements Serializable
+	public static class CachedFileData extends Data implements Serializable, Comparable
 	{		
 		private String name;
 		private String format;
@@ -191,6 +237,34 @@ public class ICRAuxiliary
 			
   		file_data.save(cache_path, getCacheFilename(session));
 		}
+		
+  	/**
+		 * Get a string representation of this instance.
+		 */
+		public String toString()
+		{
+			if(name == null){
+				return format;
+			}else{
+				return name + "." + format;
+			}
+		}
+
+		/**
+  	 * Compare this object to another object.
+  	 * @param object the object to compare to
+  	 * @return 0 if the same, -1 if less, and 1 if greater
+  	 */
+  	public int compareTo(Object object)
+  	{
+  		if(this == object){
+  			return 0;
+  		}else if(object instanceof CachedFileData){
+  			return format.compareTo(((CachedFileData)object).format);
+  		}else{
+  			return -1;
+  		}
+  	}
   	
   	/**
   	 * Get the files name.
@@ -269,6 +343,14 @@ public class ICRAuxiliary
     }
     
     /**
+		 * Get a string representation of this instance.
+		 */
+		public String toString()
+		{
+			return name;
+		}
+
+		/**
      * Add an operation to this application.
      * @param operation the operation to add
      */
@@ -286,7 +368,7 @@ public class ICRAuxiliary
     	}
     }
     
-    /**
+  	/**
      * Display information on available applications.
      * @param applications the list of applications available and their supported operations
      */
@@ -323,6 +405,14 @@ public class ICRAuxiliary
   	{
   		this.name = name;
   	}
+  	
+    /**
+		 * Get a string representation of this instance.
+		 */
+		public String toString()
+		{
+			return application.toString();
+		}
   	
   	/**
   	 * Get the executable for the operation.

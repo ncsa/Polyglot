@@ -107,7 +107,7 @@ public class ICRServer implements Runnable
     //Examine AutoHotkey scripts
     FilenameFilter ahk_filter = new FilenameFilter(){
       public boolean accept(File dir, String name){
-          return !name.startsWith(".") && name.endsWith(".ahk");
+      	return !name.startsWith(".") && name.endsWith(".ahk");
       }
     };    
     
@@ -203,7 +203,7 @@ public class ICRServer implements Runnable
           application = null;
           
           for(int j=0; j<applications.size(); j++){
-            if(applications.get(j).alias.equals(alias)){
+            if(applications.get(j).name.equals(application_name)){
               application = applications.get(j);
               break;
             }

@@ -318,15 +318,15 @@ public class ICRClient
 			AsynchronousObject<CachedFileData> cached_file_data0 = icr.sendDataLater(file_data0);
 			CachedFileData cached_file_data1 = new CachedFileData(file_data0, "stl");		//stl, stp
 			
-			Vector<Task> tasks = (new TaskList(icr, (CachedFileData)cached_file_data0.get(), cached_file_data1)).getTasks();
+			Vector<Task> tasks = (new TaskList(icr, cached_file_data0.get(), cached_file_data1)).getTasks();
 			AsynchronousObject<Integer> response = icr.executeTasksLater(tasks);
 						
 			response.waitUntilAvailable();
 			AsynchronousObject<FileData> file_data1 = icr.retrieveDataLater(cached_file_data1);
-			((FileData)file_data1.get()).save(icr.temp_path, null);
+			file_data1.get().save(icr.temp_path, null);
 		}
 
-		//Test tasks execution
+		//Test user specified tasks execution
 		if(false){
 			TaskList tasks = new TaskList(icr);
 			tasks.add("A3DReviewer", "open", icr.data_path + "heart.wrl", "");
@@ -335,7 +335,7 @@ public class ICRClient
 			tasks.execute(icr.temp_path);
 		}
 		
-		//Test tasks execution
+		//Test user specified tasks execution
 		if(false){
 			TaskList tasks = new TaskList(icr);
 			tasks.add("Blender", "convert", icr.data_path + "heart.wrl", "heart.stl");
