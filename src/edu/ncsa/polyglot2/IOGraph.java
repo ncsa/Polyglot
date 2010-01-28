@@ -1,5 +1,4 @@
 package edu.ncsa.polyglot2;
-import edu.ncsa.polyglot2.IOGraphViewerAuxiliary.*;
 import edu.ncsa.icr.*;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
@@ -8,9 +7,11 @@ import java.util.*;
 public class IOGraph<V extends Comparable,E>
 {
 	private Vector<V> vertices = new Vector<V>();
+  private TreeMap<String,Integer> vertex_map = new TreeMap<String,Integer>();  
 	private Vector<Vector<E>> edges = new Vector<Vector<E>>();
 	private Vector<Vector<Integer>> adjacency_list = new Vector<Vector<Integer>>();
 	private Vector<Vector<Double>> weights = new Vector<Vector<Double>>();
+	private Vector<Vector<Boolean>> active = new Vector<Vector<Boolean>>();
 
 	/**
 	 * Class constructor.
@@ -65,9 +66,11 @@ public class IOGraph<V extends Comparable,E>
 		if(index  == -1){
 			index = vertices.size();
 			vertices.add(vertex);
+			vertex_map.put(vertex.toString(), index);
 			edges.add(new Vector<E>());
 			adjacency_list.add(new Vector<Integer>());
 			weights.add(new Vector<Double>());
+			active.add(new Vector<Boolean>());
 		}
 		
 		return index;
@@ -87,8 +90,91 @@ public class IOGraph<V extends Comparable,E>
 		edges.get(source_index).add(edge);
 		adjacency_list.get(source_index).add(target_index);
 		weights.get(source_index).add(1.0);
+		active.get(source_index).add(true);
 	}
 	
+	/**
+	 * Set all edges to active.
+	 * @return the active edge list
+	 */
+	public Vector<Vector<Boolean>> setActiveEdges()
+	{
+		for(int i=0; i<edges.size(); i++){
+			for(int j=0; j<edges.get(i).size(); j++){
+				active.get(i).set(j,true);
+			}
+		}
+		
+		return active;
+	}
+	
+	/**
+	 * Set only listed edges to active.
+	 * @param selected_edges a set of strings associated with selected edges
+	 * @return the active edge list
+	 */
+	public Vector<Vector<Boolean>> setActiveEdges(TreeSet<String> selected_edges)
+	{		
+		for(int i=0; i<edges.size(); i++){
+			for(int j=0; j<edges.get(i).size(); j++){
+				if(selected_edges.contains(edges.get(i).get(j).toString())){
+					active.get(i).set(j,true);
+				}else{
+					active.get(i).set(j,false);
+				}
+			}
+		}
+		
+		return active;
+	}
+	
+	/**
+	 * Get the index associated with the vertex having the given string representation.
+	 * @param string a string representation for the vertex
+	 * @return the index of the vertex
+	 */
+	public int getVertexIndex(V v)
+	{
+		int index = -1;
+		
+	  for(int i=0; i<vertices.size(); i++){
+	    if(vertices.get(i).compareTo(v) == 0){
+	      index = i;
+	      break;
+	    }
+	  }
+	  
+	  return index;
+	}
+  
+  /**
+   * Get the index associated with the vertex having the given string representation.
+   * @param string a string representation for the vertex
+   * @return the index of the vertex
+   */
+  public int getVertexIndex(String string)
+  {
+  	return vertex_map.get(string);
+  }
+
+	/**
+	 * Get the adjacency list representing graph edges.
+	 * @return the edge adjacency list
+	 */
+	public Vector<Vector<Integer>> getAdjacencyList()
+	{
+		return adjacency_list;
+	}
+
+	/**
+	 * Get the list indicating which edges are currently active.
+	 * @return the active edge list
+	 */
+	public Vector<Vector<Boolean>> getActiveEdges()
+	{
+		return active;
+	}
+
 	/**
 	 * Get the string representations for the vertices.
 	 * @return the string representation for each vertex
@@ -116,23 +202,43 @@ public class IOGraph<V extends Comparable,E>
 			strings.add(new Vector<String>());
 			
 			for(int j=0; j<edges.get(i).size(); j++){
-				strings.get(i).add(edges.get(i).get(j).toString());
+				if(active.get(i).get(j)){
+					strings.get(i).add(edges.get(i).get(j).toString());
+				}
 			}
 		}
 		
 		return strings;
 	}
-	
+	  
 	/**
-	 * Get the adjacency list representing graph edges.
-	 * @return the edge adjacency list
+	 * Get the maximum weight along the edge specified.
+	 * @param v0 the index of the starting vertex
+	 * @param v1 the index of the ending vertex
+	 * @return the weight [0, 1]
 	 */
-	public Vector<Vector<Integer>> getAdjacencyList()
+	public double getMaxEdgeWeight(int v0, int v1)
 	{
-		return adjacency_list;
+		double maxr = -Double.MAX_VALUE;
+		int index = -1;
+		
+		for(int i=0; i<adjacency_list.get(v0).size(); i++){
+			if(active.get(v0).get(i) && adjacency_list.get(v0).get(i) == v1){
+				if(weights.get(v0).get(i) > maxr){
+					maxr = weights.get(v0).get(i);
+					index = i;
+				}
+			}
+		}
+		
+		if(index >= 0){
+			return weights.get(v0).get(index);
+		}
+		
+		return 0;
 	}
-	
-  /**
+
+	/**
    * Perform a breadth first search from the vertex at the given index and store the resulting paths.
    * @param source the index of the source vertex
    * @return the paths vector indicating from which vertex we must come to get to this vertex
@@ -154,7 +260,7 @@ public class IOGraph<V extends Comparable,E>
       source = queue.remove();
       
       for(int i=0; i<adjacency_list.get(source).size(); i++){
-        if(!visited.get(adjacency_list.get(source).get(i))){
+        if(active.get(source).get(i) && !visited.get(adjacency_list.get(source).get(i))){
           visited.set(adjacency_list.get(source).get(i), true);
           path.set(adjacency_list.get(source).get(i), source);
           queue.add(adjacency_list.get(source).get(i));
@@ -168,13 +274,13 @@ public class IOGraph<V extends Comparable,E>
   /**
    * Perform Dijkstra's algorithm from the vertex at the given source index and store the resulting paths.
    * @param source the index of the source vertex
-   * @return the paths vector indicating from which vertex we must come to get to this vertex and the quality along each path
+   * @return the paths vector indicating from which vertex we must come to get to this vertex and the weight along each path
    */
   public Pair<Vector<Integer>,Vector<Double>> getShortestWeightedPaths(int source)
   {    
   	Set<Integer> set = new TreeSet<Integer>();
     Vector<Integer> path = new Vector<Integer>();
-    Vector<Double> quality = new Vector<Double>();
+    Vector<Double> weight = new Vector<Double>();
     Iterator<Integer> itr;
     int u, v, tmpi;
     double maxr, tmpd;
@@ -185,9 +291,9 @@ public class IOGraph<V extends Comparable,E>
       path.add(-1); 
       
     	if(i == source){
-    		quality.add(1.0);
+    		weight.add(1.0);
     	}else{
-    		quality.add(0.0);
+    		weight.add(0.0);
     	}
     }
     
@@ -201,104 +307,79 @@ public class IOGraph<V extends Comparable,E>
     	while(itr.hasNext()){
     		tmpi = itr.next();
     		
-    		if(quality.get(tmpi) >= maxr){
+    		if(weight.get(tmpi) >= maxr){
     			u = tmpi;
-    			maxr = quality.get(tmpi);
+    			maxr = weight.get(tmpi);
     		}
     	}
     	
     	set.remove(u);
       
     	//Update quality to neighbors
-      if(quality.get(u) == 0){ 		//All remaining vertices are inaccessible
+      if(weight.get(u) == 0){ 		//All remaining vertices are inaccessible
       	break;
       }else{
 	      for(int i=0; i<adjacency_list.get(u).size(); i++){
-	      	v = adjacency_list.get(u).get(i);
-	      	tmpd = quality.get(u) * (weights.get(u).get(i)/100);	//Total quality = product of all traversed qualities!
-	      	
-	      	if(tmpd > quality.get(v)){
-	          path.set(v, u);
-	          quality.set(v, tmpd);
+	      	if(active.get(u).get(i)){
+		      	v = adjacency_list.get(u).get(i);
+		      	tmpd = weight.get(u) * (weights.get(u).get(i)/100);	//Total weight = product of all traversed weights!
+		      	
+		      	if(tmpd > weight.get(v)){
+		          path.set(v, u);
+		          weight.set(v, tmpd);
+		      	}
 	      	}
 	      }
       }
     }
     
     //Scale qualities back to [0,100]
-    for(int i=0; i<quality.size(); i++){
-    	quality.set(i, quality.get(i)*100);
+    for(int i=0; i<weight.size(); i++){
+    	weight.set(i, weight.get(i)*100);
     }
     
-    return new Pair<Vector<Integer>,Vector<Double>>(path, quality);
+    return new Pair<Vector<Integer>,Vector<Double>>(path, weight);
   }
   
   /**
-   * Get the weights along the path specified.
-   * @param path the indices of the conversion path
-   * @return a vector of weights along the given path
-   */
-  public Vector<Double> getPathQuality(Vector<Integer> path)
-  {
-  	Vector<Double> path_weights = new Vector<Double>();
-  	
-  	for(int i=0; i<path.size()-1; i++){
-  		path_weights.add(getMaxEdgeWeight(path.get(i), path.get(i+1)));
-  	}
-  	
-  	return path_weights;
-  }
- 
+	 * Convert a path into a string representation.
+	 * @param path the path from a source vertex to a target vertex
+	 * @return the string representation
+	 */
+	public String getPathString(Vector<Integer> path)
+	{
+		String output_string = "";
+		int index;
+	  int index_last = -1;
+	  
+	  for(int i=0; i<path.size(); i++){
+	    index = path.get(i);
+	    if(index_last >= 0) output_string += "(" + edges.get(index_last).get(adjacency_list.get(index_last).indexOf(index)).toString() + ") -> ";
+	    output_string += vertices.get(index).toString();
+	    if(i < path.size()-1) output_string += " -> ";
+	    index_last = index;
+	  }
+		
+		return output_string;
+	}
+		  
   /**
-   * Get the maximum weight along the edge specified.
-   * @param v0 the index of the starting vertex
-   * @param v1 the index of the ending vertex
-   * @return the weight [0, 1]
-   */
-  public double getMaxEdgeWeight(int v0, int v1)
-  {
-  	double maxr = -Double.MAX_VALUE;
-  	int index = -1;
-  	
-  	for(int i=0; i<adjacency_list.get(v0).size(); i++){
-  		if(adjacency_list.get(v0).get(i) == v1){
-  			if(weights.get(v0).get(i) > maxr){
-  				maxr = weights.get(v0).get(i);
-  				index = i;
-  			}
-  		}
-  	}
-  	
-  	if(index >= 0){
-  		return weights.get(v0).get(index);
-  	}
-  	
-  	return 0;
-  }
-  
-  /**
-   * Convert a path into a string representation.
-   * @param path the path from a source vertex to a target vertex
-   * @return the string representation
-   */
-  public String toString(Vector<Integer> path)
-  {
-  	String output_string = "";
-  	int index;
-    int index_last = -1;
-    
-    for(int i=0; i<path.size(); i++){
-      index = path.get(i);
-      if(index_last >= 0) output_string += "(" + edges.get(index_last).get(adjacency_list.get(index_last).indexOf(index)).toString() + ") -> ";
-      output_string += vertices.get(index).toString();
-      if(i < path.size()-1) output_string += " -> ";
-      index_last = index;
-    }
-  	
-  	return output_string;
-  }
-  
-  /**
+	 * Get the weights along the path specified.
+	 * @param path the indices of the conversion path
+	 * @return a vector of weights along the given path
+	 */
+	public Vector<Double> getPathWeights(Vector<Integer> path)
+	{
+		Vector<Double> path_weights = new Vector<Double>();
+		
+		for(int i=0; i<path.size()-1; i++){
+			path_weights.add(getMaxEdgeWeight(path.get(i), path.get(i+1)));
+		}
+		
+		return path_weights;
+	}
+
+	/**
    * Return a set of all reachable vertices from the given source.
    * @param index the index of the source vertex
    * @return the set of reachable vertex indices
@@ -319,10 +400,10 @@ public class IOGraph<V extends Comparable,E>
   
   /**
    * Returns a vector of vertex abbreviations that are reachable from a given source vertex.
-   * @param name the input vertex name
+   * @param string string associated with the input vertex
    * @return the vector of reachable vertices
    */
-  public Vector<String> getSpanningTree(String name)
+  public Vector<String> getSpanningTree(String string)
   {
     Vector<String> span = new Vector<String>();
     Set<Integer> set;
@@ -330,7 +411,7 @@ public class IOGraph<V extends Comparable,E>
     int index = -1;
     
     for(int i=0; i<vertices.size(); i++){
-      if(vertices.get(i).toString().equals(name)){
+      if(vertices.get(i).toString().equals(string)){
         index = i;
         break;
       }
@@ -368,284 +449,152 @@ public class IOGraph<V extends Comparable,E>
   	return domain;
   }
   
-//  /**
-//   * Get a list of all vertices that can reach the target vertex.
-//   * @param target the target vertex name
-//   * @return the vector of vertices which can reach the target
-//   */
-//  public Vector<String> getDomain(String target)
-//  {
-//  	Vector<String> domain = new Vector<String>();
-//  	Vector<Integer> tmpv = getDomain(vmap.get(target));
-//  	
-//  	for(int i=0; i<tmpv.size(); i++){
-//  		domain.add(vertices.get(tmpv.get(i)).toString());
-//  	}
-//  	
-//  	return domain;
-//  }
-  
-//  /**
-//   * Get the conversions task for the Polyglot daemon.
-//   *  @param s0 the input type
-//   *  @param s1 the output type
-//   *  @param ENABLE_WEIGHTED_PATHS use edge quality to determine conversion paths
-//   *  @return the line seperated task, with each line containing an IOObject name and the IO fields and types to perform the conversion
-//   */
-//  public String getTask(String s0, String s1, boolean ENABLE_WEIGHTED_PATHS)
-//  {
-//    String task = "";
-//    Converter converter;    
-//    Vector<Integer> v0_paths;
-//    Vector<Integer> v01 = new Vector<Integer>();
-//    int v0 = -1;
-//    int v1 = -1;
-//    int i0, i1;
-//    
-//    for(int i=0; i<vertices.size(); i++){
-//      if(vertices.get(i).equals(s0)) v0 = i;
-//      if(vertices.get(i).equals(s1)) v1 = i;
-//      if(v0 >= 0 && v1 >= 0) break;
-//    }
-//    
-//    if(v0 >= 0 && v1 >= 0){
-//    	if(!ENABLE_WEIGHTED_PATHS){
-//    		v0_paths = getShortestPaths(v0);
-//    	}else{
-//    		v0_paths = getShortestWeightedPaths(v0).first;
-//    	}
-//    	
-//    	v01 = getPath(v0, v1, v0_paths);
-//        
-//      if(v01.size() <= 1){
-//        task = "null\n";
-//      }else{
-//        for(int i=1; i<v01.size(); i++){
-//          i0 = v01.get(i-1);
-//          i1 = v01.get(i);
-//          converter = converters.get(edge_converters.get(i0).get(edges.get(i0).indexOf(i1)));
-//          
-//          if(converter.alias.isEmpty()){
-//            task += "\"" + converter.name + "\" ";
-//          }else{
-//            task += converter.alias + " ";
-//          }
-//          
-//          task += converter.input_fields.get(converter.inputs.indexOf(vertices.get(i0))) + " ";
-//          task += vertices.get(i0) + " ";
-//          task += converter.output_fields.get(converter.outputs.indexOf(vertices.get(i1))) + " ";
-//          task += vertices.get(i1);
-//          task += "\n";
-//        }
-//      }
-//    }
-//    
-//    return task;
-//  }
-//  
-//  /**
-//   * Get the conversions tasks for the Polyglot daemon.
-//   * Note: this version returns all paths along the shortest path from the source
-//   * to the target (using all parrallel edges along the way).
-//   *  @param s0 the input type
-//   *  @param s1 the output type
-//   *  @return A vector of line seperated tasks, with each line containing an IOObject name and the IO fields and types to perform the conversion
-//   */
-//  public Vector<String> getTasks(String s0, String s1)
-//  {
-//    Vector<String> tasks = new Vector<String>();
-//    String task;
-//    Vector<String> task_buffer;
-//    Vector<String> task_buffer_new;
-//    Vector<Integer> edge_converter_indices = new Vector<Integer>();
-//    Converter converter;
-//    Vector<Integer> v0_paths;
-//    Vector<Integer> v01 = new Vector<Integer>();
-//    int v0 = -1;
-//    int v1 = -1;
-//    int i0, i1;
-//    
-//    for(int i=0; i<vertices.size(); i++){
-//      if(vertices.get(i).equals(s0)) v0 = i;
-//      if(vertices.get(i).equals(s1)) v1 = i;
-//      if(v0 >= 0 && v1 >= 0) break;
-//    }
-//    
-//    if(v0 >= 0 && v1 >= 0){
-//    	v0_paths = getShortestPaths(v0);
-//    	v01 = getPath(v0, v1, v0_paths);
-//        
-//      if(!v01.isEmpty()){
-//        task_buffer = new Vector<String>();
-//        
-//        if(v01.size() == 1){
-//          task_buffer.add("null\n");
-//        }else{
-//          task_buffer.add("");
-//          
-//          for(int i=1; i<v01.size(); i++){
-//            i0 = v01.get(i-1);
-//            i1 = v01.get(i);
-//            edge_converter_indices.clear();
-//            
-//            //Find all parrallel edges
-//            for(int j=0; j<edges.get(i0).size(); j++){
-//              if(edges.get(i0).get(j) == i1){
-//              	edge_converter_indices.add(j);
-//              }
-//            }
-//                        
-//            //Add tasks for each parrallel edge
-//            task_buffer_new = new Vector<String>();
-//            
-//            for(int j=0; j<edge_converter_indices.size(); j++){
-//              converter = converters.get(edge_converters.get(i0).get(edge_converter_indices.get(j)));
-//              
-//              for(int k=0; k<task_buffer.size(); k++){
-//                task = task_buffer.get(k);
-//                
-//                if(converter.alias.isEmpty()){
-//                  task += "\"" + converter.name + "\" ";
-//                }else{
-//                  task += converter.alias + " ";
-//                }
-//                
-//                task += converter.input_fields.get(converter.inputs.indexOf(vertices.get(i0))) + " ";
-//                task += vertices.get(i0) + " ";
-//                task += converter.output_fields.get(converter.outputs.indexOf(vertices.get(i1))) + " ";
-//                task += vertices.get(i1);
-//                task += "\n";
-//                
-//                task_buffer_new.add(task);
-//              }
-//            }
-//            
-//            task_buffer = task_buffer_new;
-//          }
-//        }
-//        
-//        for(int i=0; i<task_buffer.size(); i++){
-//          tasks.add(task_buffer.get(i));
-//        }
-//      }
-//    }
-//    
-//    return tasks;
-//  }
-  
   /**
-   * Get the index associated with the vertex having the given string representation.
-   * @param string a string representation for the vertex
-   * @return the index of the vertex
+   * Get a list of all vertices that can reach the target vertex.
+   * @param target the target vertex name
+   * @return the vector of vertices which can reach the target
    */
-  public int getVertexIndex(String string)
+  public Vector<String> getDomain(String target)
   {
-  	int index = -1;
+  	Vector<String> domain = new Vector<String>();
+  	Vector<Integer> tmpv = getDomain(vertex_map.get(target));
   	
-    for(int i=0; i<vertices.size(); i++){
-      if(vertices.get(i).toString().equals(string)){
-        index = i;
-        break;
-      }
-    }
-    
-    return index;
+  	for(int i=0; i<tmpv.size(); i++){
+  		domain.add(vertices.get(tmpv.get(i)).toString());
+  	}
+  	
+  	return domain;
   }
   
   /**
-   * Get the index associated with the vertex having the given string representation.
-   * @param string a string representation for the vertex
-   * @return the index of the vertex
-   */
-  public int getVertexIndex(V v)
-  {
-  	int index = -1;
-  	
-    for(int i=0; i<vertices.size(); i++){
-      if(vertices.get(i).compareTo(v) == 0){
-        index = i;
-        break;
-      }
-    }
-    
-    return index;
-  }
-  
-//  /**
-//   * Display results obtained from quality information such as optimal path, etc...
-//   */
-//  public void printQualityInfo()
-//  {
-//  	if(true){		//Get optimal single conversion
-//	  	double maxr = 0;
-//	  	int maxi = 0;
-//	  	int maxj = 0;
-//	  	
-//	  	for(int i=0; i<edge_quality.size(); i++){
-//	  		for(int j=0; j<edge_quality.get(i).size(); j++){
-//		  	  if(edge_quality.get(i).get(j) > maxr){
-//		  	  	maxr = edge_quality.get(i).get(j);
-//		  	  	maxi = i;
-//		  	  	maxj = j;
-//		  	  }
-//	  		}
-//	  	}
-//	  	  	
-//	  	System.out.println("Optimal single conversion: \"" + converters.get(edge_converters.get(maxi).get(maxj)).name + "\" " + vertices.get(maxi) + "->" + vertices.get(edges.get(maxi).get(maxj)) + " (" + maxr + ")");
-//  	}
-//  	
-//  	if(true){		//Get optimal format to convert to
-//  		Pair<Vector<Integer>,Vector<Double>> tmpp;
-//  		Vector<Integer> path;
-//  		Vector<Double> quality;
-//  		Vector<Double> mean_quality = new Vector<Double>();
-//  		Vector<Integer> domain_count = new Vector<Integer>();
-//  		double maxr = 0;
-//  		int maxi = 0;
-// 		
-//  		for(int i=0; i<vertices.size(); i++){
-//  			mean_quality.add(0.0);
-//  			domain_count.add(0);
-//  		}
-//  		
-//  		for(int i=0; i<vertices.size(); i++){
-//  		  tmpp = getShortestWeightedPaths(i);
-//  		  path = tmpp.first;
-//  		  quality = tmpp.second;
-//  		  
-//  		  for(int j=0; j<vertices.size(); j++){
-//  		  	if(i!=j && quality.get(j)>0){
-//  		  		mean_quality.set(j, mean_quality.get(j)+quality.get(j));
-//  		  		domain_count.set(j, domain_count.get(j)+1);
-//  		  	}
-//  		  }
-//  		}
-//  		
-//  		for(int i=0; i<vertices.size(); i++){
-//  			if(domain_count.get(i) > 0){
-//  				mean_quality.set(i, mean_quality.get(i)/domain_count.get(i));
-//  			}
-//  		}
-//  		
-//  		for(int i=0; i<mean_quality.size(); i++){
-//  			if(mean_quality.get(i) > maxr){
-//  				maxr = mean_quality.get(i);
-//  				maxi = i;
-//  			}
-//  		}
-//  		
-//  		System.out.println("Optimal format: " + vertices.get(maxi) + " (" + maxr + "), n=" + domain_count.get(maxi));
-//  	}
-//  }
-  
-  /**
+	 * Get a list of the conversions tasks required to convert from a given input to a given output.
+	 * @param source_string a string representing the input type
+	 * @param target_string a string representing the output type
+	 * @param ENABLE_WEIGHTED_PATHS use edge weights to determine conversion paths
+	 * @return the line separated tasks, with each line containing an edge, input, and output
+	 */
+	public String getConversionTask(String source_string, String target_string, boolean ENABLE_WEIGHTED_PATHS)
+	{
+	  String task = "";
+	  Vector<Integer> paths;
+	  Vector<Integer> path = new Vector<Integer>();
+	  E edge;        
+	  int source = getVertexIndex(source_string);
+	  int target = getVertexIndex(target_string);
+	  int i0, i1;
+	  
+	  if(source >= 0 && target >= 0){
+	  	if(!ENABLE_WEIGHTED_PATHS){
+	  		paths = getShortestPaths(source);
+	  	}else{
+	  		paths = getShortestWeightedPaths(source).first;
+	  	}
+	  	
+	  	path = getPath(paths, source, target);
+	      
+	    if(path.size() <= 1){
+	      task = "null\n";
+	    }else{
+	      for(int i=1; i<path.size(); i++){
+	        i0 = path.get(i-1);
+	        i1 = path.get(i);
+	        edge = edges.get(i0).get(adjacency_list.get(i0).indexOf(i1));
+	        
+	        task += edge.toString() + " ";
+	        task += vertices.get(i0) + " ";
+	        task += vertices.get(i1);
+	        task += "\n";
+	      }
+	    }
+	  }
+	  
+	  return task;
+	}
+
+	/**
+	 * Get a list of the conversions tasks required to convert from a given input to a given output.
+	 * Note: this version returns all paths along the shortest path from the source
+	 * @param source_string a string representing the input type
+	 * @param target_string a string representing the output type
+	 * @return a vector of line separated tasks, with each line containing an edge, input, and output
+	 */
+	public Vector<String> getConversionTasks(String source_string, String target_string)
+	{
+	  Vector<String> tasks = new Vector<String>();
+	  String task;
+	  Vector<String> task_buffer;
+	  Vector<String> task_buffer_new;
+	  Vector<Integer> edge_converter_indices = new Vector<Integer>();
+	  Vector<Integer> paths;
+	  Vector<Integer> path = new Vector<Integer>();
+	  E edge;
+	  int source = getVertexIndex(source_string);
+	  int target = getVertexIndex(target_string);
+	  int i0, i1;
+	  
+	  if(source >= 0 && target >= 0){
+	  	paths = getShortestPaths(source);
+	  	path = getPath(paths, source, target);
+	      
+	    if(!path.isEmpty()){
+	      task_buffer = new Vector<String>();
+	      
+	      if(path.size() == 1){
+	        task_buffer.add("null\n");
+	      }else{
+	        task_buffer.add("");
+	        
+	        for(int i=1; i<path.size(); i++){
+	          i0 = path.get(i-1);
+	          i1 = path.get(i);
+	          edge_converter_indices.clear();
+	          
+	          //Find all parallel edges
+	          for(int j=0; j<adjacency_list.get(i0).size(); j++){
+	            if(adjacency_list.get(i0).get(j) == i1){
+	            	edge_converter_indices.add(j);
+	            }
+	          }
+	                      
+	          //Add tasks for each parallel edge
+	          task_buffer_new = new Vector<String>();
+	          
+	          for(int j=0; j<edge_converter_indices.size(); j++){
+	            edge = edges.get(i0).get(edge_converter_indices.get(j));
+	            
+	            for(int k=0; k<task_buffer.size(); k++){
+	              task = task_buffer.get(k);
+	              
+	              task += edge.toString() + " ";
+	              task += vertices.get(i0).toString() + " ";
+	              task += vertices.get(i1).toString();
+	              task += "\n";
+	              
+	              task_buffer_new.add(task);
+	            }
+	          }
+	          
+	          task_buffer = task_buffer_new;
+	        }
+	      }
+	      
+	      for(int i=0; i<task_buffer.size(); i++){
+	        tasks.add(task_buffer.get(i));
+	      }
+	    }
+	  }
+	  
+	  return tasks;
+	}
+
+	/**
 	 * Follow a path back from target to source given the single source shortest paths from the source.
+	 * @param paths the single source shortest paths from the source
 	 * @param source the source vertex
 	 * @param target the destination vertex
-	 * @param paths the single source shortest paths from the source
 	 * @return the path from source to target represented as indices to vertices
 	 */
-	public static Vector<Integer> getPath(int source, int target, Vector<Integer> paths)
+	public static Vector<Integer> getPath(Vector<Integer> paths, int source, int target)
 	{
 		Vector<Integer> path = new Vector<Integer>();
 		Stack<Integer> stack = new Stack<Integer>();
@@ -679,8 +628,54 @@ public class IOGraph<V extends Comparable,E>
   public static void main(String args[])
   {
   	ICRClient icr = new ICRClient("ICRClient.ini");
-  	IOGraph<Data,Application> iograph = new IOGraph<Data,Application>(icr);
-  	System.out.println("Vertices: " + iograph.vertices.size());
-  	icr.close();
+  	IOGraph<Data,Application> iograph = new IOGraph<Data,Application>(icr); icr.close();
+    Vector<String> tmpv;
+    boolean ALL = false;
+    boolean DOMAIN = false;
+    int count = 0;
+    
+    //Set some test arguments if none provided
+    if(args.length == 0){	
+    	//args = new String[]{"obj"};
+    	//args = new String[]{"obj", "-domain"};
+    	//args = new String[]{"obj", "x3d"};
+    	args = new String[]{"obj", "x3d", "-all"};
+    }
+    
+    //Parse command line arguments
+    for(int i=0; i<args.length; i++){
+      if(args[i].charAt(0) == '-'){
+        if(args[i].equals("-all")){
+          ALL = true;
+        }else if(args[i].equals("-domain")){
+          DOMAIN = true;
+        }
+      }else{
+        count++;
+      }
+    }
+  
+    //Query I/O-Graph
+    if(count == 1){
+    	if(DOMAIN){	//Domain
+    		tmpv = iograph.getDomain(args[0]);
+    	}else{			//Span/range
+        tmpv = iograph.getSpanningTree(args[0]);
+    	}
+    	
+      for(int i=0; i<tmpv.size(); i++){
+        System.out.println(tmpv.get(i));
+      }
+    }else if(count == 2){
+      if(ALL){		//All parallel shortest paths
+        tmpv = iograph.getConversionTasks(args[0], args[1]);
+        
+        for(int i=0; i<tmpv.size(); i++){
+          System.out.println(tmpv.get(i));
+        }
+      }else{			//Shortest path
+      	System.out.print(iograph.getConversionTask(args[0], args[1], false));
+      }
+    }
   }
 }

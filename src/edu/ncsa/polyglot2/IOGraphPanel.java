@@ -1,0 +1,709 @@
+package edu.ncsa.polyglot2;
+import edu.ncsa.icr.*;
+import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.image.*;
+import edu.ncsa.utility.*;
+import javax.swing.*;
+import javax.swing.tree.*;
+import javax.swing.event.*;
+import javax.swing.border.*;
+import java.awt.*;
+import java.awt.event.*;
+import java.util.*;
+
+/**
+ * A panel/program that displays a graph of input/output operations and allows for the exploration of paths
+ * among them from a source to a target.
+ * @author Kenton McHenry
+ */
+public class IOGraphPanel<V extends Comparable,E> extends JPanel implements TreeSelectionListener, MouseListener, MouseMotionListener, ActionListener
+{
+  private static int graph_panel_width;
+  private static int graph_panel_height;
+  private static int top_pane_width;
+  private static int top_pane_height;
+  private Graphics bg;
+  private Image offscreen;
+  private int clicked_button = 0;
+  private int clicked_x = -1;
+  private int clicked_y = -1;
+  private double theta = 0;
+  private double theta_offset = 0;
+  
+	private IOGraph<V,E> iograph;  
+  private Vector<Point2D> vertices = new Vector<Point2D>();
+  private Vector<Vector<Integer>> edges = new Vector<Vector<Integer>>();
+  private Vector<Vector<Boolean>> active_edges = new Vector<Vector<Boolean>>();
+  private TreeSet<String> selected_edges = new TreeSet<String>();
+  private int source = -1;
+  private int target = -1;
+  private Vector<Integer> paths;
+  private Vector<Integer> domain;
+  private Vector<Integer> highlighted_path = new Vector<Integer>();
+  private Vector<Double> highlighted_path_quality = new Vector<Double>();
+  private int highlighted_edge_v0 = -1;
+  private int highlighted_edge_v1 = -1;  
+  private Set<Integer> working_set = new TreeSet<Integer>();
+  private Set<Integer> working_set_outputs = new TreeSet<Integer>();
+  private String output_string = "";
+  
+  private JPanel converter_panel; 
+  private TextPanel output_panel;
+  private JTree converter_tree;
+  private JSplitPane splitpane1;  
+  private JSplitPane splitpane2;
+  private JPopupMenu popup_menu;
+  private JMenuItem menuitem_SET_SOURCE;
+  private JMenuItem menuitem_SET_TARGET;
+  private JCheckBoxMenuItem menuitem_VIEW_SPANNING_TREE;
+  private JCheckBoxMenuItem menuitem_VIEW_DOMAIN;
+  private JMenuItem menuitem_WORKINGSET_ADD;
+  private JMenuItem menuitem_WORKINGSET_REMOVE;
+  private Stroke thin_stroke = new BasicStroke(1);
+  private Stroke wide_stroke = new BasicStroke(4);
+  
+  private boolean VIEW_SPANNING_TREE = false;
+  private boolean VIEW_DOMAIN = false;
+  private boolean VIEW_EDGE_QUALITY = false;
+  private boolean ENABLE_WEIGHTED_PATHS = false;
+  
+  /**
+   * Class constructor.
+   */
+  public IOGraphPanel(IOGraph<V,E> iograph)
+  {
+  	this(iograph, 600, 600);
+  }
+  
+  /**
+   * Class constructor.
+   * @param iograph the IO-Graph
+   * @param w the width of the panel
+   * @param h the height of the panel
+   */
+  public IOGraphPanel(IOGraph<V,E> iograph, int w, int h)
+  {
+    graph_panel_width = w;
+    graph_panel_height = h;
+    top_pane_width = graph_panel_width + (int)Math.round(0.4*graph_panel_width);
+    top_pane_height = graph_panel_height + (int)Math.round(0.175*graph_panel_height);
+    
+    setPreferredSize(new Dimension(graph_panel_width, graph_panel_height));
+    setFont(new Font("Times New Roman", Font.BOLD, 12));
+    addMouseListener(this);
+    addMouseMotionListener(this);
+    
+    converter_panel = new JPanel();
+    converter_panel.setBackground(Color.white);
+    
+    output_panel = new TextPanel();
+    
+    splitpane1 = new JSplitPane();  
+    splitpane1.setOrientation(JSplitPane.VERTICAL_SPLIT);
+    splitpane1.setDividerSize(0);
+    splitpane1.setBorder(new EmptyBorder(0, 0, 0, 0));
+    splitpane2 = new JSplitPane();
+    splitpane2.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
+    splitpane2.setDividerSize(0);
+    splitpane2.setBorder(new EmptyBorder(0, 0, 0, 0));
+    splitpane2.setSize(new Dimension(top_pane_width, top_pane_height));
+    splitpane1.setTopComponent(this);
+    splitpane1.setBottomComponent(output_panel);
+    splitpane2.setLeftComponent(converter_panel);
+    splitpane2.setRightComponent(splitpane1);
+    
+    //Setup menus
+    JPopupMenu.setDefaultLightWeightPopupEnabled(false);
+    
+    popup_menu = new JPopupMenu(); 
+    menuitem_SET_SOURCE = new JMenuItem("Source"); menuitem_SET_SOURCE.addActionListener(this); popup_menu.add(menuitem_SET_SOURCE);
+    menuitem_SET_TARGET = new JMenuItem("Target"); menuitem_SET_TARGET.addActionListener(this); popup_menu.add(menuitem_SET_TARGET);
+    popup_menu.addSeparator();
+    menuitem_VIEW_SPANNING_TREE = new JCheckBoxMenuItem("Spanning Tree"); menuitem_VIEW_SPANNING_TREE.addActionListener(this); popup_menu.add(menuitem_VIEW_SPANNING_TREE); menuitem_VIEW_SPANNING_TREE.setState(VIEW_SPANNING_TREE);
+    menuitem_VIEW_DOMAIN = new JCheckBoxMenuItem("Domain"); menuitem_VIEW_DOMAIN.addActionListener(this); popup_menu.add(menuitem_VIEW_DOMAIN); menuitem_VIEW_DOMAIN.setState(VIEW_DOMAIN);
+    popup_menu.addSeparator();
+    menuitem_WORKINGSET_ADD = new JMenuItem("Add to Working Set"); menuitem_WORKINGSET_ADD.addActionListener(this); popup_menu.add(menuitem_WORKINGSET_ADD);
+    menuitem_WORKINGSET_REMOVE = new JMenuItem("Remove from Working Set"); menuitem_WORKINGSET_REMOVE.addActionListener(this); popup_menu.add(menuitem_WORKINGSET_REMOVE);
+    
+  	setGraph(iograph);
+  }
+  
+  /**
+   * Set up the GUI and graph based on the loaded IOGraph data.
+   * @param iograph the IO-Graph to use
+   */
+  private void setGraph(IOGraph<V,E> iograph)
+  {
+  	this.iograph = iograph;
+    vertices = Point2D.getVertices(iograph.getVertexStrings());
+    edges = iograph.getAdjacencyList();
+    active_edges = iograph.getActiveEdges();
+    Point2D.setCircularGraph(vertices, graph_panel_width+63, graph_panel_height, theta);
+
+    //Build converter JTree    
+    Vector<Vector<String>> converters = iograph.getEdgeStrings();
+    TreeSet<String> set = new TreeSet<String>();
+    DefaultMutableTreeNode root = new DefaultMutableTreeNode("Applications");
+    DefaultMutableTreeNode child;
+    
+    child = new DefaultMutableTreeNode("ALL");
+    root.add(child);
+    
+    for(int i=0; i<converters.size(); i++){
+    	for(int j=0; j<converters.get(i).size(); j++){
+	    	if(!set.contains(converters.get(i).get(j).toString())){
+	    		set.add(converters.get(i).get(j).toString());
+		      child = new DefaultMutableTreeNode(converters.get(i).get(j).toString());
+		      root.add(child);
+	    	}
+    	}
+    }
+    
+    converter_tree = new JTree(root);
+    converter_tree.addTreeSelectionListener(this);
+    converter_panel.add(converter_tree, BorderLayout.WEST);
+  }
+  
+  /**
+   * Enable/disable the display of edge quality information in the graph.
+   * @param b enable/disable edge quality values
+   */
+  public void setViewEdgeQuality(boolean b)
+  {
+  	VIEW_EDGE_QUALITY = b;
+  }
+  
+  /**
+   * Enable/disable the use of weighted paths when searching for conversions in the graph.
+   * @param b enable/disable weighted paths
+   */
+  public void setEnableWeightedPaths(boolean b)
+  {
+  	ENABLE_WEIGHTED_PATHS = b;
+  }
+  
+  /**
+   * Return an auxiliary interface pane.
+   * @return the top most pane
+   */
+  public JSplitPane getAuxiliaryInterfacePane()
+  {
+    return splitpane2;
+  }
+  
+  /**
+	 * Highlight the adjacent source edge that is nearest to the given location.
+	 * @param x the x-coordinate of the clicked point
+	 * @param y the y-coordinate of the clicked point
+	 */
+	private void highlightAdjacentSourceEdge(int x, int y)
+	{
+		if(source >= 0 && VIEW_SPANNING_TREE){
+	  	int mini = -1;
+	  	double mind = Double.MAX_VALUE;
+	  	double tmpd;
+	  	
+	  	for(int i=0; i<paths.size(); i++){
+	  		if(paths.get(i) == source && i != source){
+	    		tmpd = ImageUtility.distance(x, y, vertices.get(i).x, vertices.get(i).y, vertices.get(source).x, vertices.get(source).y);
+	    		
+	    		if(tmpd < mind){
+	    			mind = tmpd;
+	    			mini = i;
+	    		}
+	  		}
+	  	}
+	  	
+	  	if(mini >= 0){
+	    	highlighted_edge_v0 = source;
+	    	highlighted_edge_v1 = mini;
+	    	repaint();
+	  	}
+	  }
+	}
+
+	/**
+	 * Draw an arrow to the given graphics context.
+	 * @param g the graphics context to draw to
+	 * @param x0 the starting x coordinate
+	 * @param y0 the starting y coordinate
+	 * @param x1 the ending x coordinate
+	 * @param y1 the ending y coordinate
+	 * @param DRAW_ARROWHEAD true if the arrow head should be drawn
+	 */
+	private void drawArrow(Graphics g, int x0, int y0, int x1,int y1, boolean DRAW_ARROWHEAD)
+	{
+	  double arrow_h = 5;
+	  double arrow_w = 5;
+	  double dx, dy, length;
+	  double alpha, beta;
+	  
+	  dx = x1 - x0;
+	  dy = y1 - y0;
+	  length = Math.sqrt(dx*dx+dy*dy);
+	  dx /= length;
+	  dy /= length;
+	
+	  g.drawLine(x0, y0, x1, y1);
+	  
+	  if(DRAW_ARROWHEAD){
+	  	alpha = (1-arrow_h/length)*length;
+	  	beta = arrow_w;
+	  	
+	    g.drawLine(x0 + (int)(alpha*dx + beta*dy), y0 + (int)(alpha*dy - beta*dx), x1, y1);
+	    g.drawLine(x0 + (int)(alpha*dx - beta*dy), y0 + (int)(alpha*dy + beta*dx), x1, y1);
+	  }
+	}
+
+	/**
+	 * Draw an arrow to the given graphics context.
+	 * @param g the graphics context to draw to
+	 * @param x0 the starting x coordinate
+	 * @param y0 the starting y coordinate
+	 * @param x1 the ending x coordinate
+	 * @param y1 the ending y coordinate
+	 * @param DRAW_ARROWHEAD true if the arrow head should be drawn
+	 * @param label a label to be drawn over the arrow
+	 */
+	private void drawArrow(Graphics g, int x0, int y0, int x1,int y1, boolean DRAW_ARROWHEAD, String label)
+	{
+	  drawArrow(g, x0, y0, x1, y1, DRAW_ARROWHEAD);
+	  
+	  FontMetrics fm = g.getFontMetrics();
+	  int ascent = fm.getMaxAscent();
+	  int descent= fm.getMaxDescent();
+	  int msg_width = fm.stringWidth(label);
+	  int x = (x1 + x0) / 2;
+	  int y = (y1 + y0) / 2;
+	  int w = (int)Math.round(1.5* msg_width);
+	  int h = (int)Math.round(1.25 * (descent + ascent));
+	  Color color = g.getColor();
+	      
+	  g.setColor(Color.white);
+	  g.fillRect(x-w/2, y-h/2, w, h);
+	  g.setColor(color);
+	  g.drawRect(x-w/2, y-h/2, w, h);
+	  g.setColor(Color.black);
+	  g.drawString(label, x-msg_width/2, y-descent/2+ascent/2);
+	  g.setColor(color);
+	}
+
+	/**
+   * Draw the graph to the given graphics context.
+   * @param g the graphics context to draw to
+   */
+  public void paint(Graphics g)
+  {
+    int width = getSize().width;
+    int height = getSize().height;
+    FontMetrics fm;
+    int ascent, descent, msg_width;
+    int x, y, x0, y0, x1, y1;
+        
+    //Update background buffer if needed
+    if(offscreen == null || width != offscreen.getWidth(null) || height != offscreen.getHeight(null)){ 
+      offscreen = createImage(width, height);
+      bg = offscreen.getGraphics();
+	    splitpane1.setDividerLocation((float)graph_panel_height/(float)(top_pane_height-40));
+    }
+    
+    super.paint(bg);
+    bg.setColor(Color.white);
+    bg.fillRect(0, 0, width, height);
+    
+    fm = bg.getFontMetrics();
+    ascent = fm.getMaxAscent();
+    descent= fm.getMaxDescent();
+    
+    //Draw edges
+    bg.setColor(new Color(0x00cccccc));
+    
+    for(int i=0; i<edges.size(); i++){
+      for(int j=0; j<edges.get(i).size(); j++){
+      	if(active_edges.get(i).get(j)){
+	        x0 = vertices.get(i).x;
+	        y0 = vertices.get(i).y;
+	        x1 = vertices.get(edges.get(i).get(j)).x;
+	        y1 = vertices.get(edges.get(i).get(j)).y;
+	        
+	        drawArrow(bg, x0, y0, x1, y1, true);
+      	}
+      }
+    }
+    
+    //Draw spanning tree
+    if(VIEW_SPANNING_TREE && (source >= 0)){
+    	((Graphics2D)bg).setStroke(wide_stroke);
+      bg.setColor(new Color(0x00c0c0c0));
+      
+      for(int i=0; i<paths.size(); i++){
+        if(paths.get(i) >= 0){
+          x0 = vertices.get(paths.get(i)).x;
+          y0 = vertices.get(paths.get(i)).y;
+          x1 = vertices.get(i).x;
+          y1 = vertices.get(i).y;
+          
+          drawArrow(bg, x0, y0, x1, y1, true);
+        }
+      }
+      
+      //Indicate adjacent edges
+      bg.setColor(new Color(0x00a0a0a0));
+      
+      for(int i=0; i<paths.size(); i++){
+        if(paths.get(i) == source && i != source){
+          x0 = vertices.get(paths.get(i)).x;
+          y0 = vertices.get(paths.get(i)).y;
+          x1 = vertices.get(i).x;
+          y1 = vertices.get(i).y;
+          
+          drawArrow(bg, x0, y0, x1, y1, true);
+        }
+      }
+      
+	    ((Graphics2D)bg).setStroke(thin_stroke);
+    }
+    
+    //Draw vertices
+    for(int i=0; i<vertices.size(); i++){
+      if(i == source){
+        bg.setColor(Color.red);
+      }else if(i == target){
+        bg.setColor(Color.blue);
+      }else if(working_set.contains(i)){
+        bg.setColor(new Color(0xa000a0));
+      }else{
+        bg.setColor(Color.black);
+      }
+      
+      x = vertices.get(i).x;
+      y = vertices.get(i).y;
+      msg_width = fm.stringWidth(vertices.get(i).text);
+      bg.drawString(vertices.get(i).text, x-msg_width/2, y-descent/2+ascent/2);
+    }
+    
+    //Draw domain
+    if(VIEW_DOMAIN && (target >= 0)){
+      bg.setColor(Color.lightGray);
+      
+    	for(int i=0; i<vertices.size(); i++){
+	      x = vertices.get(i).x;
+	      y = vertices.get(i).y;
+	      msg_width = fm.stringWidth(vertices.get(i).text);
+	      bg.drawString(vertices.get(i).text, x-msg_width/2, y-descent/2+ascent/2);
+	    }
+    	
+      bg.setColor(Color.black);
+  	
+      for(int i=0; i<domain.size(); i++){
+        x = vertices.get(domain.get(i)).x;
+        y = vertices.get(domain.get(i)).y;
+        msg_width = fm.stringWidth(vertices.get(domain.get(i)).text);
+        bg.drawString(vertices.get(domain.get(i)).text, x-msg_width/2, y-descent/2+ascent/2);
+      }
+    }
+    
+    //Draw path
+    ((Graphics2D)bg).setStroke(wide_stroke);
+    bg.setColor(new Color(0x00c3a3bd));
+    
+    for(int i=0; i<highlighted_path.size()-1; i++){
+      x0 = vertices.get(highlighted_path.get(i)).x;
+      y0 = vertices.get(highlighted_path.get(i)).y;
+      x1 = vertices.get(highlighted_path.get(i+1)).x;
+      y1 = vertices.get(highlighted_path.get(i+1)).y;
+      
+      if(VIEW_EDGE_QUALITY){
+      	drawArrow(bg, x0, y0, x1, y1, i==(highlighted_path.size()-2), Utility.round(highlighted_path_quality.get(i), 2));
+      }else{
+      	drawArrow(bg, x0, y0, x1, y1, i==(highlighted_path.size()-2));
+      }
+    }
+    
+    ((Graphics2D)bg).setStroke(thin_stroke);
+    
+    //Draw selected edges
+    if(highlighted_edge_v0 >= 0 && highlighted_edge_v1 >= 0){
+	    ((Graphics2D)bg).setStroke(wide_stroke);
+	    bg.setColor(new Color(0x00fff38f));
+	    
+	    x0 = vertices.get(highlighted_edge_v0).x;
+	    y0 = vertices.get(highlighted_edge_v0).y;
+	    x1 = vertices.get(highlighted_edge_v1).x;
+	    y1 = vertices.get(highlighted_edge_v1).y;
+	    
+	    if(VIEW_EDGE_QUALITY){
+	    	drawArrow(bg, x0, y0, x1, y1, true, Utility.round(iograph.getMaxEdgeWeight(highlighted_edge_v0, highlighted_edge_v1), 2));
+	    }else{
+	    	drawArrow(bg, x0, y0, x1, y1, true);
+	    }
+	
+	    ((Graphics2D)bg).setStroke(thin_stroke);
+    }
+    
+    //Redraw converted path points
+    bg.setColor(Color.black); 
+    
+    for(int i=0; i<highlighted_path.size(); i++){
+      x = vertices.get(highlighted_path.get(i)).x;
+      y = vertices.get(highlighted_path.get(i)).y;
+      msg_width = fm.stringWidth(vertices.get(highlighted_path.get(i)).text);
+      bg.drawString(vertices.get(highlighted_path.get(i)).text, x-msg_width/2, y-descent/2+ascent/2);
+    }
+    
+    //Redraw path covered end points
+    if(source >= 0){
+      x = vertices.get(source).x;
+      y = vertices.get(source).y;
+      msg_width = fm.stringWidth(vertices.get(source).text);
+      bg.setColor(Color.white);
+      bg.drawString(vertices.get(source).text, x-msg_width/2-1, y-descent/2+ascent/2+1);
+      bg.setColor(new Color(0x00cf0000));
+      bg.drawString(vertices.get(source).text, x-msg_width/2, y-descent/2+ascent/2);
+    }
+    
+    if(target >= 0){
+      x = vertices.get(target).x;
+      y = vertices.get(target).y;
+      msg_width = fm.stringWidth(vertices.get(target).text);
+    	bg.setColor(Color.white);      
+      bg.drawString(vertices.get(target).text, x-msg_width/2-1, y-descent/2+ascent/2+1);
+    	bg.setColor(new Color(0x00586cff));      
+      bg.drawString(vertices.get(target).text, x-msg_width/2, y-descent/2+ascent/2);
+    }
+    
+    if(highlighted_edge_v1 >= 0){
+      x = vertices.get(highlighted_edge_v1).x;
+      y = vertices.get(highlighted_edge_v1).y;
+      msg_width = fm.stringWidth(vertices.get(highlighted_edge_v1).text);
+      bg.setColor(Color.black);      
+      bg.drawString(vertices.get(highlighted_edge_v1).text, x-msg_width/2, y-descent/2+ascent/2);
+    }
+    
+    output_panel.setText(output_string);
+    
+    //Draw background  buffer
+    g.drawImage(offscreen, 0, 0, this);
+  }
+  
+  /**
+	 * The action listener used to handle menu events.
+	 * @param e the action event
+	 */
+	public void actionPerformed(ActionEvent e)
+	{
+	  JMenuItem event_source = (JMenuItem)e.getSource();
+	  
+	  if(event_source == menuitem_SET_SOURCE || event_source == menuitem_SET_TARGET || event_source == menuitem_WORKINGSET_ADD || event_source == menuitem_WORKINGSET_REMOVE){
+	    int tmpx, tmpy, tmpd;
+	    int mini = -1;
+	    int mind = Integer.MAX_VALUE;
+	    
+	    for(int i=0; i<vertices.size(); i++){
+	      tmpx = clicked_x - vertices.get(i).x;
+	      tmpy = clicked_y - vertices.get(i).y;
+	      tmpd = tmpx*tmpx + tmpy*tmpy;
+	      
+	      if(tmpd < mind){
+	        mini = i;
+	        mind = tmpd;
+	      }
+	    }
+	  
+	    if(event_source == menuitem_SET_SOURCE || event_source == menuitem_SET_TARGET){
+	      if(event_source == menuitem_SET_SOURCE){
+	        source = mini;
+	        
+	        if(!ENABLE_WEIGHTED_PATHS){
+	        	paths = iograph.getShortestPaths(source);
+	        }else{
+	        	paths = iograph.getShortestWeightedPaths(source).first;
+	        }
+	      }else if(event_source == menuitem_SET_TARGET){
+	        target = mini;
+	        domain = iograph.getDomain(target);
+	      }
+	    
+	      if((source >= 0) && (target >= 0)){
+	        highlighted_path = IOGraph.getPath(paths, source, target);
+	        highlighted_path_quality = iograph.getPathWeights(highlighted_path);
+	        output_string = iograph.getPathString(highlighted_path);
+	          
+	        if(!highlighted_path.isEmpty()){
+	        	output_string = "\n" + output_string;
+	        }else{
+	          output_string = "\nNo path exists!";
+	        }
+	        
+	        output_panel.alignCenter(true);
+	      }
+	    }else if(event_source == menuitem_WORKINGSET_ADD || event_source == menuitem_WORKINGSET_REMOVE){
+	      if(event_source == menuitem_WORKINGSET_ADD){
+	        working_set.add(mini);
+	        
+	        if(working_set.size() == 1){
+	          working_set_outputs = iograph.getSpanningTree(mini);
+	        }else{
+	          working_set_outputs.retainAll(iograph.getSpanningTree(mini));
+	        }
+	      }else if(event_source == menuitem_WORKINGSET_REMOVE){
+	        working_set.remove(mini);
+	        working_set_outputs.clear();
+	        Object[] arr = working_set.toArray();
+	        
+	        for(int i=0; i<arr.length; i++){
+	          if(i == 0){
+	            working_set_outputs = iograph.getSpanningTree((Integer)arr[i]);
+	          }else{
+	            working_set_outputs.retainAll(iograph.getSpanningTree((Integer)arr[i]));
+	          }
+	        }
+	      }
+	      
+	      //Print out output set
+	      Object[] arr = (Object[])working_set_outputs.toArray();
+	      output_string = "Intersection: ";
+	      
+	      for(int i=0; i<arr.length; i++){
+	        if(i > 0) output_string += ", ";
+	        output_string += vertices.get((Integer)arr[i]).text;  
+	      }
+	      
+	      output_panel.alignCenter(false);
+	    }
+	  }else if(event_source == menuitem_VIEW_SPANNING_TREE){
+	    VIEW_SPANNING_TREE = !VIEW_SPANNING_TREE;
+	    menuitem_VIEW_SPANNING_TREE.setState(VIEW_SPANNING_TREE);
+	  }else if(event_source == menuitem_VIEW_DOMAIN){
+	    VIEW_DOMAIN = !VIEW_DOMAIN;
+	    menuitem_VIEW_DOMAIN.setState(VIEW_DOMAIN);
+	  }
+	
+	  repaint();
+	}
+
+	/**
+   * The tree selection listener used to handle selections in the side tree.
+   * @param e the tree selection event
+   */
+  public void valueChanged(TreeSelectionEvent e)
+  {
+    String name;
+    
+    TreePath[] treepaths = e.getPaths();
+    for(int i=0; i<treepaths.length; i++){
+      if(treepaths[i].getPathCount() > 1){
+        name = treepaths[i].getPathComponent(1).toString();
+        
+        if(selected_edges.contains(name)){
+          selected_edges.remove(name);
+        }else{
+          selected_edges.add(name);
+        }
+      }
+    }
+    
+    //Reset state
+    source = -1;
+    target = -1;
+    highlighted_path.clear();
+    if(paths != null) paths.clear();
+    highlighted_edge_v0 = -1;
+    highlighted_edge_v1 = -1;
+    working_set.clear();
+    working_set_outputs.clear();
+    output_string = "";
+    
+    //Update edges
+    if(selected_edges.contains("ALL")){	
+  		active_edges = iograph.setActiveEdges();
+    }else{
+    	active_edges = iograph.setActiveEdges(selected_edges);
+    }
+    
+    edges = iograph.getAdjacencyList();
+    
+    repaint();
+  }
+  
+  /**
+   * The mouse pressed listener used to open the popup menu.
+   * @param e the mouse event
+   */
+  public void mousePressed(MouseEvent e)
+  {
+  	clicked_x = e.getX();
+  	clicked_y = e.getY();  	
+  	
+    if(e.getButton() == MouseEvent.BUTTON1){
+    	clicked_button = 1;
+    	
+    	if(source >= 0 && VIEW_SPANNING_TREE){
+    		highlightAdjacentSourceEdge(e.getX(), e.getY());
+    	}
+    }else if(e.getButton() == MouseEvent.BUTTON3){
+    	clicked_button = 3;
+      popup_menu.show(e.getComponent(), e.getX(), e.getY());
+    }
+  }
+  
+  /**
+   * The mouse dragged listener used to select edges.
+   * @param e the mouse event
+   */
+  public void mouseDragged(MouseEvent e)
+  {  	
+  	if(clicked_button == 1){
+	  	if(source >= 0 && VIEW_SPANNING_TREE){
+	  		highlightAdjacentSourceEdge(e.getX(), e.getY());
+	  	}else{
+	  		theta_offset = 0.25 * 360.0 * (e.getY() - clicked_y) / (double)graph_panel_width;
+	  		Point2D.setCircularGraph(vertices, getSize().width, getSize().height, theta + theta_offset);
+	  		repaint();
+	  	}
+  	}
+  }
+  
+  /**
+   * The mouse released listener used to de-select edges.
+   * @param e the mouse event
+   */
+  public void mouseReleased(MouseEvent e)
+  {
+    if(e.getButton() == MouseEvent.BUTTON1){
+    	if(source >= 0 && VIEW_SPANNING_TREE){
+	      highlighted_edge_v0 = -1;
+	      highlighted_edge_v1 = -1;
+	      repaint();
+    	}else{
+    		theta += theta_offset;
+    		theta_offset = 0;
+    		repaint();
+    	}
+    }
+    
+    clicked_button = 0;
+  }
+
+  public void mouseExited(MouseEvent e) {}
+  public void mouseEntered(MouseEvent e) {}
+  public void mouseClicked(MouseEvent e) {}
+  public void mouseMoved(MouseEvent e) {}
+	
+  /**
+   * The main starting point for this program.
+   * @param command line arguments
+   */
+  public static void main(String args[])
+  {
+  	final ICRClient icr = new ICRClient("ICRClient.ini");
+  	IOGraph<Data,Application> iograph = new IOGraph<Data,Application>(icr); icr.close();
+    IOGraphPanel<Data,Application> iograph_viewer = new IOGraphPanel<Data,Application>(iograph);
+ 
+    JFrame frame = new JFrame("IOGraph Viewer");
+    frame.setSize(top_pane_width, top_pane_height);
+    frame.add(iograph_viewer.getAuxiliaryInterfacePane());
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
+    frame.setVisible(true);
+  }
+}
