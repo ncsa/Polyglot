@@ -1,4 +1,4 @@
-package edu.ncsa.polyglot2;
+package edu.ncsa.icr;
 import javax.swing.*;
 import javax.swing.filechooser.*;
 import java.awt.*;
