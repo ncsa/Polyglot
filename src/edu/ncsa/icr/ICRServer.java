@@ -65,8 +65,8 @@ public class ICRServer implements Runnable
 	        		cache_path = value + "/";
 	        	}else if(key.equals("TempPath")){
 	        		temp_path = value + "/";
-	        	}else if(key.equals("AHKPath")){
-	          	addOperationsAHK(value + "/");
+	        	}else if(key.equals("AHKScripts")){
+	          	addScriptedOperations(value + "/", "ahk");
 	        	}else if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("MaxOperationTime")){
@@ -87,10 +87,12 @@ public class ICRServer implements Runnable
 	}
 
 	/**
-	 * Add operations supported by AHK scripts within the given directory.
-	 * @param path the path to the AHK scripts
+	 * Add operation scripts within the given directory.
+	 * Note: all scripts must follow the text header convention
+	 * @param path the path to the scripts
+	 * @param extension the script file extension
 	 */
-  public void addOperationsAHK(String path)
+  public void addScriptedOperations(String path, String extension)
   {
     String filename;
     String alias;
@@ -103,11 +105,12 @@ public class ICRServer implements Runnable
     Scanner scanner;
     Application application;
     Operation operation;
+    final String extension_final = extension;
     
     //Examine AutoHotkey scripts
     FilenameFilter ahk_filter = new FilenameFilter(){
       public boolean accept(File dir, String name){
-      	return !name.startsWith(".") && name.endsWith(".ahk");
+      	return !name.startsWith(".") && name.endsWith("." + extension_final);
       }
     };    
     

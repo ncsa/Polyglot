@@ -9,6 +9,7 @@ import java.io.*;
 public class FileLabel extends JLabel implements Comparable
 {
 	private File file;
+	private int selection_color = 0x00aad1f3;
 	
 	public FileLabel(File file, MouseListener mouse_listener)
 	{
@@ -19,6 +20,11 @@ public class FileLabel extends JLabel implements Comparable
 		addMouseListener(mouse_listener);
 	}
 	
+	public void setSelectionColor(int selection_color)
+	{
+		this.selection_color = selection_color;
+	}
+	
 	public void setDeselected()
 	{
 		setOpaque(false);		
@@ -26,7 +32,7 @@ public class FileLabel extends JLabel implements Comparable
 	
 	public void setSelected()
 	{
-		setBackground(new Color(0x00ddddff));
+		setBackground(new Color(selection_color));
 		setOpaque(true);		
 	}
 	

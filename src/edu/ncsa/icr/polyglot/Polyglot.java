@@ -1,24 +1,10 @@
 package edu.ncsa.icr.polyglot;
-import edu.ncsa.icr.*;
-import edu.ncsa.icr.ICRAuxiliary.*;
-import java.util.*;
 
 /**
- * An API for performing file format conversions via ICR clients.
+ * An interface for file format conversion services.
  * @author Kenton McHenry
  */
-public class Polyglot
+public interface Polyglot
 {
-	private Vector<ICRClient> icr_clients = new Vector<ICRClient>();
-	
-	public Polyglot() {}
-	
-	/**
-	 * Add an ICR client.
-	 * @param icr an ICR client
-	 */
-	public void add(ICRClient icr)
-	{
-		icr_clients.add(icr);
-	}
+
 }

@@ -1,27 +1,28 @@
-package edu.ncsa.icr.polyglot;
-import edu.ncsa.icr.*;
+package edu.ncsa.icr;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.datatransfer.*;
+import java.awt.dnd.*;
 import javax.swing.*;
+import java.io.*;
 import java.util.*;
+import java.util.List;
 
 /**
- * A panel with a file manager look and feel designed for convenient file format conversions.
+ * A program for creating AHK scripts (monkey see, monkey do)
  * @author Kenton McHenry
  */
-public class PolyglotPanel extends JPanel implements MouseListener
+public class ICRMonkey extends JPanel implements DropTargetListener, MouseListener
 {
 	private TreeSet<FileLabel> files = new TreeSet<FileLabel>();
 	private TreeSet<FileLabel> selected_files = new TreeSet<FileLabel>();
   private Graphics bg;
   private Image offscreen;
   
-  /**
-   * Class constructor.
-   */
-	public PolyglotPanel()
+	public ICRMonkey()
 	{
-    setBackground(Color.white);
+    setBackground(new Color(0x0072b2e8));
+    new DropTarget(this, this);
     addMouseListener(this);
 	}
 	
@@ -45,6 +46,39 @@ public class PolyglotPanel extends JPanel implements MouseListener
     //Draw background  buffer
     g.drawImage(offscreen, 0, 0, this);
   }
+  	
+  /**
+   * Handle drop events.
+   * @param e the drop event
+   */
+  public void drop(DropTargetDropEvent e)
+	{
+    e.acceptDrop(e.getDropAction());
+    
+    if(e.getTransferable() != null){
+	  	try{    	
+	      if(e.getTransferable().isDataFlavorSupported(DataFlavor.javaFileListFlavor)){
+	        List<File> list = (List<File>)e.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+	        Iterator<File> itr = list.iterator();
+	        FileLabel file_label;
+	        
+	        while(itr.hasNext()){
+	        	file_label = new FileLabel(itr.next(), this);
+	        	
+	        	if(!files.contains(file_label)){
+	        		file_label.setLargeIcon();
+	        		add(file_label);
+	        		files.add(file_label);
+	        	}
+	        }
+	      }
+	      
+	      revalidate();
+	    }catch(Exception ex) {ex.printStackTrace();}
+    }
+        
+    e.dropComplete(true);
+	}
   	
   /**
    * Handle mouse pressed events.
@@ -79,26 +113,24 @@ public class PolyglotPanel extends JPanel implements MouseListener
   	repaint();
   }
 
+  public void dragEnter(DropTargetDragEvent e) {}
+	public void dragExit(DropTargetEvent e) {}
+	public void dragOver(DropTargetDragEvent e) {}
+	public void dropActionChanged(DropTargetDragEvent e) {}
 	public void mouseClicked(MouseEvent e) {}
 	public void mouseEntered(MouseEvent e) {}
 	public void mouseExited(MouseEvent e) {}
 	public void mouseReleased(MouseEvent e) {}	
 	
 	/**
-	 * Start the Polyglot file manager, essentially an instance of a PolyglotPanel.
+	 * Start the ICRMonkey.
 	 * @param args command line arguments
 	 */
 	public static void main(String args[])
 	{
-		/*
-		try{
-      UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-		}catch(Exception e) {e.printStackTrace();}
-  	*/
+		ICRMonkey polyglot_panel = new ICRMonkey();
 		
-		PolyglotPanel polyglot_panel = new PolyglotPanel();
-		
-    JFrame frame = new JFrame("Polyglot File Manager");
+    JFrame frame = new JFrame("ICR Monkey");
     frame.setSize(600, 600);
     frame.add(polyglot_panel);
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
