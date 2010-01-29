@@ -696,7 +696,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
    */
   public static void main(String args[])
   {
-  	final ICRClient icr = new ICRClient("ICRClient.ini");
+  	ICRClient icr = new ICRClient("ICRClient.ini");
   	IOGraph<Data,Application> iograph = new IOGraph<Data,Application>(icr); icr.close();
     IOGraphPanel<Data,Application> iograph_viewer = new IOGraphPanel<Data,Application>(iograph);
  
