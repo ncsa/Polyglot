@@ -1,4 +1,4 @@
-package edu.ncsa.icr.polyglot2;
+package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.*;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.image.*;

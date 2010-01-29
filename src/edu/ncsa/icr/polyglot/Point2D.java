@@ -1,4 +1,4 @@
-package edu.ncsa.icr.polyglot2;
+package edu.ncsa.icr.polyglot;
 import java.util.*;
 
 /**
