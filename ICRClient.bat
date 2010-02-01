@@ -1,1 +1,1 @@
-java -cp lib/ncsa/Utilities.jar;bin edu.ncsa.icr.ICRClient
+java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0bin" edu.ncsa.icr.ICRClient %1 %2 %3

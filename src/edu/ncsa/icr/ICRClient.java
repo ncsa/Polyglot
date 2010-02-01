@@ -313,7 +313,7 @@ public class ICRClient
 		}
 		
 		//Test asynchronous usage
-		if(true){
+		if(false){
 			FileData file_data0 = new FileData(icr.data_path + "heart.wrl", true);
 			AsynchronousObject<CachedFileData> cached_file_data0 = icr.sendDataLater(file_data0);
 			CachedFileData cached_file_data1 = new CachedFileData(file_data0, "stl");		//stl, stp
@@ -336,7 +336,7 @@ public class ICRClient
 		}
 		
 		//Test user specified tasks execution
-		if(false){
+		if(true){
 			TaskList tasks = new TaskList(icr);
 			tasks.add("Blender", "convert", icr.data_path + "heart.wrl", "heart.stl");
 			tasks.add("A3DReviewer", "open", "heart.stl", "");
