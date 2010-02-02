@@ -330,7 +330,8 @@ public class ICRAuxiliary
     public Operation monitor_operation = null;
     public Operation exit_operation = null;
     public Operation kill_operation = null;
-    
+  	public ICRClient icr = null;		//An application belongs to an ICR server (set by the client)!
+
     /**
      * Class constructor.
      * @param name the name of the application
@@ -391,7 +392,7 @@ public class ICRAuxiliary
    */
   public static class Operation implements Serializable
   {
-  	public Application application;
+  	public Application application;		//An operation belongs to an application!
   	public String name;
   	public Vector<Data> inputs = new Vector<Data>();
   	public Vector<Data> outputs = new Vector<Data>();

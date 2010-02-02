@@ -696,13 +696,13 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
    */
   public static void main(String args[])
   {
-  	ICRClient icr = new ICRClient("ICRClient.ini");
+  	ICRClient icr = new ICRClient("localhost", 30);
   	IOGraph<Data,Application> iograph = new IOGraph<Data,Application>(icr); icr.close();
-    IOGraphPanel<Data,Application> iograph_viewer = new IOGraphPanel<Data,Application>(iograph);
+    IOGraphPanel<Data,Application> iograph_panel = new IOGraphPanel<Data,Application>(iograph);
  
     JFrame frame = new JFrame("IOGraph Viewer");
     frame.setSize(top_pane_width, top_pane_height);
-    frame.add(iograph_viewer.getAuxiliaryInterfacePane());
+    frame.add(iograph_panel.getAuxiliaryInterfacePane());
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
     frame.setVisible(true);
   }

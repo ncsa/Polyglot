@@ -7,12 +7,15 @@ import java.util.*;
 public class IOGraph<V extends Comparable,E>
 {
 	private Vector<V> vertices = new Vector<V>();
-  private TreeMap<String,Integer> vertex_map = new TreeMap<String,Integer>();  
+	private TreeMap<V,Integer> vertex_map = new TreeMap<V,Integer>();
+  private TreeMap<String,Integer> vertex_string_map = new TreeMap<String,Integer>();  
 	private Vector<Vector<E>> edges = new Vector<Vector<E>>();
 	private Vector<Vector<Integer>> adjacency_list = new Vector<Vector<Integer>>();
 	private Vector<Vector<Double>> weights = new Vector<Vector<Double>>();
 	private Vector<Vector<Boolean>> active = new Vector<Vector<Boolean>>();
-
+	
+	public IOGraph() {}
+	
 	/**
 	 * Class constructor.
 	 * @param icr an ICR client
@@ -37,7 +40,7 @@ public class IOGraph<V extends Comparable,E>
 	
 							for(int j=0; j<operation.outputs.size(); j++){
 								output = operation.outputs.get(j);
-								addEdge((E)application, (V)input, (V)output);
+								addEdge((V)input, (V)output, (E)operation);
 							}
 						}
 					}else{															//Open/Import operation
@@ -48,7 +51,7 @@ public class IOGraph<V extends Comparable,E>
 									
 									for(int k=0; k<application.operations.get(i).outputs.size(); k++){
 										output = application.operations.get(i).outputs.get(k);
-										addEdge((E)application, (V)input, (V)output);
+										addEdge((V)input, (V)output, (E)operation);
 									}
 								}
 							}
@@ -59,14 +62,20 @@ public class IOGraph<V extends Comparable,E>
 		}
 	}
 	
+	/**
+	 * Add a vertex to the graph if not already present.
+	 * @param vertex a vertex to add
+	 * @return the index of the vertex
+	 */
 	public int addVertex(V vertex)
 	{
-		int index = getVertexIndex(vertex);
+		Integer index = vertex_map.get(vertex);
 		
-		if(index  == -1){
+		if(index  == null){
 			index = vertices.size();
 			vertices.add(vertex);
-			vertex_map.put(vertex.toString(), index);
+			vertex_map.put(vertex, index);
+			vertex_string_map.put(vertex.toString(), index);
 			edges.add(new Vector<E>());
 			adjacency_list.add(new Vector<Integer>());
 			weights.add(new Vector<Double>());
@@ -78,11 +87,11 @@ public class IOGraph<V extends Comparable,E>
 	
 	/**
 	 * Add an edge to the graph.
-	 * @param edge the edge
 	 * @param source the source vertex
 	 * @param target the target vertex
+	 * @param edge the edge
 	 */
-	public void addEdge(E edge, V source, V target)
+	public void addEdge(V source, V target, E edge)
 	{
 		int source_index = addVertex(source);
 		int target_index = addVertex(target);
@@ -91,6 +100,32 @@ public class IOGraph<V extends Comparable,E>
 		adjacency_list.get(source_index).add(target_index);
 		weights.get(source_index).add(1.0);
 		active.get(source_index).add(true);
+	}
+	
+	/**
+	 * Merge another I/O-graph into this one.
+	 * @param iograph another I/O-graph
+	 */
+	public void addGraph(IOGraph<V,E> iograph)
+	{
+		V v0, v1;
+		
+		//Add unique vertices
+		for(int i=0; i<iograph.vertices.size(); i++){
+			if(vertex_map.get(iograph.vertices.get(i)) == null){
+				addVertex(iograph.vertices.get(i));
+			}
+		}
+		
+		//Add all edges (should not add same ICR twice!)
+		for(int i=0; i<iograph.adjacency_list.size(); i++){
+			v0 = iograph.vertices.get(i);
+
+			for(int j=0; j<iograph.adjacency_list.get(i).size(); j++){
+				v1 = iograph.vertices.get(adjacency_list.get(i).get(j));
+				addEdge(v0, v1, iograph.edges.get(i).get(j));
+			}
+		}
 	}
 	
 	/**
@@ -127,35 +162,6 @@ public class IOGraph<V extends Comparable,E>
 		
 		return active;
 	}
-	
-	/**
-	 * Get the index associated with the vertex having the given string representation.
-	 * @param string a string representation for the vertex
-	 * @return the index of the vertex
-	 */
-	public int getVertexIndex(V v)
-	{
-		int index = -1;
-		
-	  for(int i=0; i<vertices.size(); i++){
-	    if(vertices.get(i).compareTo(v) == 0){
-	      index = i;
-	      break;
-	    }
-	  }
-	  
-	  return index;
-	}
-  
-  /**
-   * Get the index associated with the vertex having the given string representation.
-   * @param string a string representation for the vertex
-   * @return the index of the vertex
-   */
-  public int getVertexIndex(String string)
-  {
-  	return vertex_map.get(string);
-  }
 
 	/**
 	 * Get the adjacency list representing graph edges.
@@ -457,7 +463,7 @@ public class IOGraph<V extends Comparable,E>
   public Vector<String> getDomain(String target)
   {
   	Vector<String> domain = new Vector<String>();
-  	Vector<Integer> tmpv = getDomain(vertex_map.get(target));
+  	Vector<Integer> tmpv = getDomain(vertex_string_map.get(target));
   	
   	for(int i=0; i<tmpv.size(); i++){
   		domain.add(vertices.get(tmpv.get(i)).toString());
@@ -467,20 +473,61 @@ public class IOGraph<V extends Comparable,E>
   }
   
   /**
-	 * Get a list of the conversions tasks required to convert from a given input to a given output.
+	 * Get the shortest list of the conversion tasks required to convert from a given input to a given output.
+	 * @param source_string a string representing the input type
+	 * @param target_string a string representing the output type
+	 * @param ENABLE_WEIGHTED_PATHS use edge weights to determine conversion paths
+	 * @return a vector of conversions containing an edge, input, and output (null if no conversions found)
+	 */
+	public Vector<Conversion<V,E>> getShortestConversionPath(String source_string, String target_string, boolean ENABLE_WEIGHTED_PATHS)
+	{
+		Vector<Conversion<V,E>> conversions = null;
+	  Vector<Integer> paths;
+	  Vector<Integer> path = new Vector<Integer>();
+	  E edge;        
+	  int source = vertex_string_map.get(source_string);
+	  int target = vertex_string_map.get(target_string);
+	  int i0, i1;
+	  
+	  if(source >= 0 && target >= 0){
+	  	if(!ENABLE_WEIGHTED_PATHS){
+	  		paths = getShortestPaths(source);
+	  	}else{
+	  		paths = getShortestWeightedPaths(source).first;
+	  	}
+	  	
+	  	path = getPath(paths, source, target);
+	      
+	    if(path.size() > 1){
+	    	conversions = new Vector<Conversion<V,E>>();
+	    	
+	      for(int i=1; i<path.size(); i++){
+	        i0 = path.get(i-1);
+	        i1 = path.get(i);
+	        edge = edges.get(i0).get(adjacency_list.get(i0).indexOf(i1));
+	        conversions.add(new Conversion<V,E>(vertices.get(i0), vertices.get(i1), edge));
+	      }
+	    }
+	  }
+	  
+	  return conversions;
+	}
+	
+  /**
+	 * Get the shortest list of the conversion tasks required to convert from a given input to a given output.
 	 * @param source_string a string representing the input type
 	 * @param target_string a string representing the output type
 	 * @param ENABLE_WEIGHTED_PATHS use edge weights to determine conversion paths
 	 * @return the line separated tasks, with each line containing an edge, input, and output
 	 */
-	public String getConversionTask(String source_string, String target_string, boolean ENABLE_WEIGHTED_PATHS)
+	public String getShortestConversionPathString(String source_string, String target_string, boolean ENABLE_WEIGHTED_PATHS)
 	{
 	  String task = "";
 	  Vector<Integer> paths;
 	  Vector<Integer> path = new Vector<Integer>();
 	  E edge;        
-	  int source = getVertexIndex(source_string);
-	  int target = getVertexIndex(target_string);
+	  int source = vertex_string_map.get(source_string);
+	  int target = vertex_string_map.get(target_string);
 	  int i0, i1;
 	  
 	  if(source >= 0 && target >= 0){
@@ -512,13 +559,13 @@ public class IOGraph<V extends Comparable,E>
 	}
 
 	/**
-	 * Get a list of the conversions tasks required to convert from a given input to a given output.
+	 * Get the shortest list of the conversion tasks required to convert from a given input to a given output.
 	 * Note: this version returns all paths along the shortest path from the source
 	 * @param source_string a string representing the input type
 	 * @param target_string a string representing the output type
 	 * @return a vector of line separated tasks, with each line containing an edge, input, and output
 	 */
-	public Vector<String> getConversionTasks(String source_string, String target_string)
+	public Vector<String> getShortestConversionPathStrings(String source_string, String target_string)
 	{
 	  Vector<String> tasks = new Vector<String>();
 	  String task;
@@ -528,8 +575,8 @@ public class IOGraph<V extends Comparable,E>
 	  Vector<Integer> paths;
 	  Vector<Integer> path = new Vector<Integer>();
 	  E edge;
-	  int source = getVertexIndex(source_string);
-	  int target = getVertexIndex(target_string);
+	  int source = vertex_string_map.get(source_string);
+	  int target = vertex_string_map.get(target_string);
 	  int i0, i1;
 	  
 	  if(source >= 0 && target >= 0){
@@ -627,7 +674,7 @@ public class IOGraph<V extends Comparable,E>
    */
   public static void main(String args[])
   {
-  	ICRClient icr = new ICRClient("ICRClient.ini");
+  	ICRClient icr = new ICRClient("localhost", 30);
   	IOGraph<Data,Application> iograph = new IOGraph<Data,Application>(icr); icr.close();
     Vector<String> tmpv;
     boolean ALL = false;
@@ -668,13 +715,13 @@ public class IOGraph<V extends Comparable,E>
       }
     }else if(count == 2){
       if(ALL){		//All parallel shortest paths
-        tmpv = iograph.getConversionTasks(args[0], args[1]);
+        tmpv = iograph.getShortestConversionPathStrings(args[0], args[1]);
         
         for(int i=0; i<tmpv.size(); i++){
           System.out.println(tmpv.get(i));
         }
       }else{			//Shortest path
-      	System.out.print(iograph.getConversionTask(args[0], args[1], false));
+      	System.out.print(iograph.getShortestConversionPathString(args[0], args[1], false));
       }
     }
   }

@@ -6,5 +6,5 @@ package edu.ncsa.icr.polyglot;
  */
 public interface Polyglot
 {
-
+	public void convert(String input_filename, String output_type);
 }

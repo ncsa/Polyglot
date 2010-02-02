@@ -41,7 +41,7 @@ public class FileLabel extends JLabel implements Comparable
 		setHorizontalTextPosition(JLabel.CENTER);
 		addMouseListener(mouse_listener);
 	}
-	
+  
 	/**
 	 * Get the stored file.
 	 * @return the file

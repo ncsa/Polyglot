@@ -27,22 +27,23 @@ public class TaskList
 	
 	/**
 	 * Class constructor, create a sequence of tasks that will allow an application to go from the input file to the output format.
+	 * @param application_string an applications string representation (can be null)
 	 * @param input_file_data the input file
 	 * @param output_file_data the output file
 	 */
-	public TaskList(ICRClient icr, CachedFileData input_file_data, CachedFileData output_file_data)
+	public TaskList(ICRClient icr, String application_string, CachedFileData input_file_data, CachedFileData output_file_data)
 	{
 		this(icr);
 		Pair<Integer,Integer> apop, apop0, apop1;
 		
 		//Attempt a direct conversion operation
-		apop = icr.getOperation(null, "convert", input_file_data, output_file_data);
+		apop = icr.getOperation(application_string, "convert", input_file_data, output_file_data);
 		
 		if(apop != null){
 			tasks.add(new Task(apop.first, apop.second, input_file_data, output_file_data));
 		}else{	//Attempt two part open/import -> save/export
-			apop0 = icr.getOperation(null, "open", input_file_data, null);
-			if(apop0 == null) apop0 = icr.getOperation(null, "import", input_file_data, null);
+			apop0 = icr.getOperation(application_string, "open", input_file_data, null);
+			if(apop0 == null) apop0 = icr.getOperation(application_string, "import", input_file_data, null);
 			
 			if(apop0 != null){
 				apop1 = icr.getOperation(applications.get(apop0.first).alias, "save", null, output_file_data);
@@ -81,6 +82,15 @@ public class TaskList
 		}
 	}
 
+	/**
+	 * Get the associated ICR client.
+	 * @return the associated ICR client
+	 */
+	public ICRClient getICRClient()
+	{
+		return icr;
+	}
+	
 	/**
 	 * Get a task from the list.
 	 * @param index the index of the desired task
@@ -175,6 +185,19 @@ public class TaskList
 		}
 
 		add(application_alias, operation_name, input_file_data, output_file_data);
+	}
+	
+	/**
+	 * Merge this task list with another.
+	 * @param task_list another task list (must have same ICR client!)
+	 */
+	public void add(TaskList task_list)
+	{
+		if(icr == task_list.icr){
+			for(int i=0; i<task_list.size(); i++){
+				add(task_list.get(i));
+			}
+		}
 	}
 
 	/**

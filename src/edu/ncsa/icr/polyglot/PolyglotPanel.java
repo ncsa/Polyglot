@@ -6,6 +6,7 @@ import java.awt.event.*;
 import java.awt.datatransfer.*;
 import java.awt.dnd.*;
 import javax.swing.*;
+
 import java.io.*;
 import java.util.*;
 import java.util.List;
@@ -18,6 +19,7 @@ public class PolyglotPanel extends JPanel implements MouseListener, DropTargetLi
 {
 	private Polyglot polyglot;
 	private JFrame frame;
+	private JPopupMenu popup_menu;
 	private String path;
 	private TreeSet<FileLabel> files = new TreeSet<FileLabel>();
 	private TreeSet<FileLabel> selected_files = new TreeSet<FileLabel>();
@@ -143,6 +145,77 @@ public class PolyglotPanel extends JPanel implements MouseListener, DropTargetLi
 	}
 	
 	/**
+   * Set the popup menu.
+   */
+  private void setPopupMenu()
+  {
+    JPopupMenu.setDefaultLightWeightPopupEnabled(false);
+    JMenu submenu1, submenu2, submenu3;
+    ButtonGroup group1, group2;
+    JLabel label;
+    
+    popup_menu = new JPopupMenu(); 
+
+    //Convert menu
+    submenu1 = new JMenu("Convert");
+    
+    /*
+    //View group menu
+    if(!mesh.getGroups().isEmpty()){
+    	Iterator<String> itr;
+    	JCheckBoxMenuItem item;
+    	int m = 0;
+    	int n = 0;
+    	int total_menuitems = mesh.getGroups().keySet().size();
+    	int max_menuitems = 40;
+    	int digits = (total_menuitems < 100) ? 2 : 3;
+    	int tmpi;
+    	
+    	submenu2 = new JMenu("Groups");
+  		menuitem_VIEW_GROUPS_ALL = new JMenuItem("All"); menuitem_VIEW_GROUPS_ALL.addActionListener(this); submenu2.add(menuitem_VIEW_GROUPS_ALL);
+  		submenu2.addSeparator();
+    	submenu3 = null;
+    	
+    	if(total_menuitems > max_menuitems){
+    		submenu3 = new JMenu("Groups " + Utility.toString(1, digits) + "-" + Utility.toString(max_menuitems, digits));
+    		m = 1;
+    	}
+    	
+    	itr = mesh.getGroups().keySet().iterator();
+    	menuitem_VIEW_GROUPS.clear();
+    	
+    	while(itr.hasNext()){
+    		if(submenu3 != null && n >= max_menuitems){
+    			tmpi = (m+1) * max_menuitems - 1;
+    			if(tmpi > total_menuitems) tmpi = total_menuitems;
+    			
+    			submenu2.add(submenu3);
+    			submenu3 = new JMenu("Groups " + Utility.toString(m*max_menuitems+1, digits) + "-" + Utility.toString(tmpi, digits));
+    			m++;
+    			n = 0;
+    		}
+    		
+    		item = new JCheckBoxMenuItem(itr.next()); item.addActionListener(this);	item.setState(true); menuitem_VIEW_GROUPS.add(item);
+    		
+    		if(submenu3 == null){
+    			submenu2.add(item);
+    		}else{
+    			submenu3.add(item);
+    		}
+    		
+    		n++;
+    	}
+      
+    	if(submenu3 != null && n > 0) submenu2.add(submenu3);
+      submenu1.add(submenu2);
+      submenu1.addSeparator();
+    }
+    */    
+    
+    popup_menu.add(submenu1);    
+  }
+  
+	/**
 	 * Get the scroll pane for this panel.
 	 * @return the scroll pane
 	 */
@@ -205,18 +278,26 @@ public class PolyglotPanel extends JPanel implements MouseListener, DropTargetLi
   	if(object instanceof FileLabel){
   		file_label = (FileLabel)object;
   		
-  		if(e.isControlDown()){
-	  		if(selected_files.contains(file_label)){
-	  			selected_files.remove(file_label);
-	  			file_label.setDeselected();
+  		if(!file_label.getFile().isDirectory()){
+	  		if(e.isControlDown()){
+		  		if(selected_files.contains(file_label)){
+		  			selected_files.remove(file_label);
+		  			file_label.setDeselected();
+		  		}else{
+		  			selected_files.add(file_label);
+		  			file_label.setSelected();
+		  		}
 	  		}else{
+	  			deselectAll();
 	  			selected_files.add(file_label);
 	  			file_label.setSelected();
 	  		}
-  		}else{
-  			deselectAll();
-  			selected_files.add(file_label);
-  			file_label.setSelected();
+  		}
+  		
+  		//Show popup menu with conversion options
+  		if(e.getButton() == 3){
+  			setPopupMenu();
+  			popup_menu.show(e.getComponent(), e.getX(), e.getY());
   		}
   	}else{
   		deselectAll();

@@ -18,24 +18,16 @@ public class ICRClient
 	private OutputStream outs;
 	private int session = -1;
 	private Vector<Application> applications = new Vector<Application>();
-	private String data_path = "./";
-	private String temp_path = "./";
-
-	/**
-	 * Class constructor.
-	 */
-	public ICRClient()
-	{
-		this(null);
-	}
 	
 	/**
 	 * Class constructor.
-	 * @param filename the name of an initialization *.ini file
+	 * @param server the name of the ICR server
+	 * @param port the port used for the connection
 	 */
-	public ICRClient(String filename)
-	{		
-		if(filename != null) loadINI(filename);
+	public ICRClient(String server, int port)
+	{				
+		this.server = server;
+		this.port = port;
 		
 		try{
 			socket = new Socket(server, port);
@@ -46,42 +38,14 @@ public class ICRClient
 			session = (Integer)Utility.readObject(ins);
 			applications = (Vector<Application>)Utility.readObject(ins);
 			
+			//Set client entry in applications
+			for(int i=0; i<applications.size(); i++){
+				applications.get(i).icr = this;
+			}
+			
 			//System.out.println("Connected (session=" + session + ")...\n");
 			//Application.print(applications);	
 		}catch(Exception e) {e.printStackTrace();}
-	}
-	
-	/**
-	 * Initialize based on parameters within the given *.ini file.
-	 * @param filename the file name of the *.ini file
-	 */
-	public void loadINI(String filename)
-	{
-	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader(filename));
-	    String line, key, value;
-	    
-	    while((line=ins.readLine()) != null){
-	      if(line.contains("=")){
-	        key = line.substring(0, line.indexOf('='));
-	        value = line.substring(line.indexOf('=')+1);
-	        
-	        if(key.charAt(0) != '#'){
-	        	if(key.equals("Server")){
-	          	server = InetAddress.getByName(value).getHostAddress();
-	        	}else if(key.equals("Port")){
-	        		port = Integer.valueOf(value);
-	          }else if(key.equals("DataPath")){
-	          	data_path = value + "/";
-	          }else if(key.equals("TempPath")){
-	          	temp_path = value + "/";
-	          }
-	        }
-	      }
-	    }
-	    
-	    ins.close();
-	  }catch(Exception e){}
 	}
 
 	/**
@@ -95,13 +59,13 @@ public class ICRClient
 
 	/**
 	 * Find a suitable application/operation given the desired application, operation, and data.
-	 * @param application_alias the application alias (can be null)
+	 * @param application_string the application string representation (can be null)
 	 * @param operation_name the operation name
 	 * @param input_file_data input file data (can be null)
 	 * @param output_file_data output file data (can be null)
 	 * @return the index of the application and operation (null if none found)
 	 */
-	public Pair<Integer,Integer> getOperation(String application_alias, String operation_name, CachedFileData input_file_data, CachedFileData output_file_data)
+	public Pair<Integer,Integer> getOperation(String application_string, String operation_name, CachedFileData input_file_data, CachedFileData output_file_data)
 	{
 		Application application;
 		Operation operation;
@@ -111,7 +75,7 @@ public class ICRClient
 		for(int i=0; i<applications.size(); i++){
 			application = applications.get(i);
 			
-			if(application_alias == null || application.alias.equals(application_alias)){
+			if(application_string == null || application.toString().equals(application_string)){
 				for(int j=0; j<application.operations.size(); j++){
 					operation = application.operations.get(j);
 					
@@ -282,69 +246,103 @@ public class ICRClient
 	 */
 	public static void main(String args[])
 	{
-		ICRClient icr = new ICRClient("ICRClient.ini");
+		String server = "localhost";
+		int port = 30;
+		String debug_input_path = "./";
+		String debug_output_path = "./";
+		
+		//Read in *.ini file
+	  try{
+	    BufferedReader ins = new BufferedReader(new FileReader("IOClient.ini"));
+	    String line, key, value;
+	    
+	    while((line=ins.readLine()) != null){
+	      if(line.contains("=")){
+	        key = line.substring(0, line.indexOf('='));
+	        value = line.substring(line.indexOf('=')+1);
+	        
+	        if(key.charAt(0) != '#'){
+	        	if(key.equals("Server")){
+	          	server = InetAddress.getByName(value).getHostAddress();
+	        	}else if(key.equals("Port")){
+	        		port = Integer.valueOf(value);
+	          }else if(key.equals("DebugInputPath")){
+	          	debug_input_path = value + "/";
+	          }else if(key.equals("DebugOutputPath")){
+	          	debug_output_path = value + "/";
+	          }
+	        }
+	      }
+	    }
+	    
+	    ins.close();
+	  }catch(Exception e){}
+
+	  //Establish connection
+		ICRClient icr = new ICRClient(server, port);
 		
 		//Test sending a file
 		if(false){	
-			FileData file_data0 = new FileData(icr.data_path + "heart.wrl", true);
+			FileData file_data0 = new FileData(debug_input_path + "heart.wrl", true);
 			CachedFileData cached_file_data0 = icr.sendData(file_data0);
 			System.out.println("Cached data for " + cached_file_data0.getName() + "." + cached_file_data0.getFormat());
 		}
 		
 		//Test retrieving a file
 		if(false){
-			FileData file_data0 = new FileData(icr.data_path + "heart.wrl", true);
+			FileData file_data0 = new FileData(debug_input_path + "heart.wrl", true);
 			CachedFileData cached_file_data0 = icr.sendData(file_data0);
 			FileData file_data1 = icr.retrieveData(cached_file_data0);
-			file_data1.save(icr.temp_path, null);
+			file_data1.save(debug_output_path, null);
 		}
 		
 		//Test tasks execution
 		if(false){
-			FileData file_data0 = new FileData(icr.data_path + "heart.wrl", true);
+			FileData file_data0 = new FileData(debug_input_path + "heart.wrl", true);
 			CachedFileData cached_file_data0 = icr.sendData(file_data0);
 			CachedFileData cached_file_data1 = new CachedFileData(cached_file_data0, "stl");		//stl, stp
 			
-			Vector<Task> tasks = (new TaskList(icr, cached_file_data0, cached_file_data1)).getTasks();
+			Vector<Task> tasks = (new TaskList(icr, null, cached_file_data0, cached_file_data1)).getTasks();
 			icr.executeTasks(tasks);
 						
 			FileData file_data1 = icr.retrieveData(cached_file_data1);
-			file_data1.save(icr.temp_path, null);
+			file_data1.save(debug_output_path, null);
 		}
 		
 		//Test asynchronous usage
 		if(false){
-			FileData file_data0 = new FileData(icr.data_path + "heart.wrl", true);
+			FileData file_data0 = new FileData(debug_input_path + "heart.wrl", true);
 			AsynchronousObject<CachedFileData> cached_file_data0 = icr.sendDataLater(file_data0);
 			CachedFileData cached_file_data1 = new CachedFileData(file_data0, "stl");		//stl, stp
 			
-			Vector<Task> tasks = (new TaskList(icr, cached_file_data0.get(), cached_file_data1)).getTasks();
+			Vector<Task> tasks = (new TaskList(icr, null, cached_file_data0.get(), cached_file_data1)).getTasks();
 			AsynchronousObject<Integer> response = icr.executeTasksLater(tasks);
 						
 			response.waitUntilAvailable();
 			AsynchronousObject<FileData> file_data1 = icr.retrieveDataLater(cached_file_data1);
-			file_data1.get().save(icr.temp_path, null);
+			file_data1.get().save(debug_output_path, null);
 		}
 
 		//Test user specified tasks execution
 		if(false){
 			TaskList tasks = new TaskList(icr);
-			tasks.add("A3DReviewer", "open", icr.data_path + "heart.wrl", "");
+			tasks.add("A3DReviewer", "open", debug_input_path + "heart.wrl", "");
 			tasks.add("A3DReviewer", "export", "", "heart.stp");
 			tasks.print();
-			tasks.execute(icr.temp_path);
+			tasks.execute(debug_output_path);
 		}
 		
 		//Test user specified tasks execution
 		if(true){
 			TaskList tasks = new TaskList(icr);
-			tasks.add("Blender", "convert", icr.data_path + "heart.wrl", "heart.stl");
+			tasks.add("Blender", "convert", debug_input_path + "heart.wrl", "heart.stl");
 			tasks.add("A3DReviewer", "open", "heart.stl", "");
 			tasks.add("A3DReviewer", "export", "", "heart.stp");
 			tasks.print();
-			tasks.execute(icr.temp_path);
+			tasks.execute(debug_output_path);
 		}
 		
+		//Close connection
 		icr.close();
 	}
 }
