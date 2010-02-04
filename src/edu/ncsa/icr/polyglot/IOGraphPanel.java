@@ -38,13 +38,13 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   private int source = -1;
   private int target = -1;
   private Vector<Integer> paths;
-  private Vector<Integer> domain;
+  private TreeSet<Integer> domain;
   private Vector<Integer> highlighted_path = new Vector<Integer>();
   private Vector<Double> highlighted_path_quality = new Vector<Double>();
   private int highlighted_edge_v0 = -1;
   private int highlighted_edge_v1 = -1;  
-  private Set<Integer> working_set = new TreeSet<Integer>();
-  private Set<Integer> working_set_outputs = new TreeSet<Integer>();
+  private TreeSet<Integer> working_set = new TreeSet<Integer>();
+  private TreeSet<Integer> working_set_range_intersection = new TreeSet<Integer>();
   private String output_string = "";
   
   private JPanel converter_panel; 
@@ -55,14 +55,14 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   private JPopupMenu popup_menu;
   private JMenuItem menuitem_SET_SOURCE;
   private JMenuItem menuitem_SET_TARGET;
-  private JCheckBoxMenuItem menuitem_VIEW_SPANNING_TREE;
+  private JCheckBoxMenuItem menuitem_VIEW_RANGE;
   private JCheckBoxMenuItem menuitem_VIEW_DOMAIN;
   private JMenuItem menuitem_WORKINGSET_ADD;
   private JMenuItem menuitem_WORKINGSET_REMOVE;
   private Stroke thin_stroke = new BasicStroke(1);
   private Stroke wide_stroke = new BasicStroke(4);
   
-  private boolean VIEW_SPANNING_TREE = false;
+  private boolean VIEW_RANGE = false;
   private boolean VIEW_DOMAIN = false;
   private boolean VIEW_EDGE_QUALITY = false;
   private boolean ENABLE_WEIGHTED_PATHS = false;
@@ -119,7 +119,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     menuitem_SET_SOURCE = new JMenuItem("Source"); menuitem_SET_SOURCE.addActionListener(this); popup_menu.add(menuitem_SET_SOURCE);
     menuitem_SET_TARGET = new JMenuItem("Target"); menuitem_SET_TARGET.addActionListener(this); popup_menu.add(menuitem_SET_TARGET);
     popup_menu.addSeparator();
-    menuitem_VIEW_SPANNING_TREE = new JCheckBoxMenuItem("Spanning Tree"); menuitem_VIEW_SPANNING_TREE.addActionListener(this); popup_menu.add(menuitem_VIEW_SPANNING_TREE); menuitem_VIEW_SPANNING_TREE.setState(VIEW_SPANNING_TREE);
+    menuitem_VIEW_RANGE = new JCheckBoxMenuItem("Range"); menuitem_VIEW_RANGE.addActionListener(this); popup_menu.add(menuitem_VIEW_RANGE); menuitem_VIEW_RANGE.setState(VIEW_RANGE);
     menuitem_VIEW_DOMAIN = new JCheckBoxMenuItem("Domain"); menuitem_VIEW_DOMAIN.addActionListener(this); popup_menu.add(menuitem_VIEW_DOMAIN); menuitem_VIEW_DOMAIN.setState(VIEW_DOMAIN);
     popup_menu.addSeparator();
     menuitem_WORKINGSET_ADD = new JMenuItem("Add to Working Set"); menuitem_WORKINGSET_ADD.addActionListener(this); popup_menu.add(menuitem_WORKINGSET_ADD);
@@ -198,7 +198,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	 */
 	private void highlightAdjacentSourceEdge(int x, int y)
 	{
-		if(source >= 0 && VIEW_SPANNING_TREE){
+		if(source >= 0 && VIEW_RANGE){
 	  	int mini = -1;
 	  	double mind = Double.MAX_VALUE;
 	  	double tmpd;
@@ -294,11 +294,12 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
    */
   public void paint(Graphics g)
   {
+  	Iterator<Integer> itr;
     int width = getSize().width;
     int height = getSize().height;
     FontMetrics fm;
     int ascent, descent, msg_width;
-    int x, y, x0, y0, x1, y1;
+    int x, y, x0, y0, x1, y1, index;
         
     //Update background buffer if needed
     if(offscreen == null || width != offscreen.getWidth(null) || height != offscreen.getHeight(null)){ 
@@ -331,8 +332,8 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
       }
     }
     
-    //Draw spanning tree
-    if(VIEW_SPANNING_TREE && (source >= 0)){
+    //Draw range spanning tree
+    if(VIEW_RANGE && (source >= 0)){
     	((Graphics2D)bg).setStroke(wide_stroke);
       bg.setColor(new Color(0x00c0c0c0));
       
@@ -394,12 +395,14 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	    }
     	
       bg.setColor(Color.black);
-  	
-      for(int i=0; i<domain.size(); i++){
-        x = vertices.get(domain.get(i)).x;
-        y = vertices.get(domain.get(i)).y;
-        msg_width = fm.stringWidth(vertices.get(domain.get(i)).text);
-        bg.drawString(vertices.get(domain.get(i)).text, x-msg_width/2, y-descent/2+ascent/2);
+      itr = domain.iterator();
+      
+      while(itr.hasNext()){
+      	index = itr.next();
+        x = vertices.get(index).x;
+        y = vertices.get(index).y;
+        msg_width = fm.stringWidth(vertices.get(index).text);
+        bg.drawString(vertices.get(index).text, x-msg_width/2, y-descent/2+ascent/2);
       }
     }
     
@@ -542,26 +545,17 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	        working_set.add(mini);
 	        
 	        if(working_set.size() == 1){
-	          working_set_outputs = iograph.getSpanningTree(mini);
+	          working_set_range_intersection = iograph.getRange(mini);
 	        }else{
-	          working_set_outputs.retainAll(iograph.getSpanningTree(mini));
+	          working_set_range_intersection.retainAll(iograph.getRange(mini));
 	        }
 	      }else if(event_source == menuitem_WORKINGSET_REMOVE){
 	        working_set.remove(mini);
-	        working_set_outputs.clear();
-	        Object[] arr = working_set.toArray();
-	        
-	        for(int i=0; i<arr.length; i++){
-	          if(i == 0){
-	            working_set_outputs = iograph.getSpanningTree((Integer)arr[i]);
-	          }else{
-	            working_set_outputs.retainAll(iograph.getSpanningTree((Integer)arr[i]));
-	          }
-	        }
+	        working_set_range_intersection = iograph.getRangeIntersection(working_set);
 	      }
 	      
 	      //Print out output set
-	      Object[] arr = (Object[])working_set_outputs.toArray();
+	      Object[] arr = (Object[])working_set_range_intersection.toArray();
 	      output_string = "Intersection: ";
 	      
 	      for(int i=0; i<arr.length; i++){
@@ -571,9 +565,9 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	      
 	      output_panel.alignCenter(false);
 	    }
-	  }else if(event_source == menuitem_VIEW_SPANNING_TREE){
-	    VIEW_SPANNING_TREE = !VIEW_SPANNING_TREE;
-	    menuitem_VIEW_SPANNING_TREE.setState(VIEW_SPANNING_TREE);
+	  }else if(event_source == menuitem_VIEW_RANGE){
+	    VIEW_RANGE = !VIEW_RANGE;
+	    menuitem_VIEW_RANGE.setState(VIEW_RANGE);
 	  }else if(event_source == menuitem_VIEW_DOMAIN){
 	    VIEW_DOMAIN = !VIEW_DOMAIN;
 	    menuitem_VIEW_DOMAIN.setState(VIEW_DOMAIN);
@@ -611,7 +605,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     highlighted_edge_v0 = -1;
     highlighted_edge_v1 = -1;
     working_set.clear();
-    working_set_outputs.clear();
+    working_set_range_intersection.clear();
     output_string = "";
     
     //Update edges
@@ -638,7 +632,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     if(e.getButton() == MouseEvent.BUTTON1){
     	clicked_button = 1;
     	
-    	if(source >= 0 && VIEW_SPANNING_TREE){
+    	if(source >= 0 && VIEW_RANGE){
     		highlightAdjacentSourceEdge(e.getX(), e.getY());
     	}
     }else if(e.getButton() == MouseEvent.BUTTON3){
@@ -654,7 +648,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   public void mouseDragged(MouseEvent e)
   {  	
   	if(clicked_button == 1){
-	  	if(source >= 0 && VIEW_SPANNING_TREE){
+	  	if(source >= 0 && VIEW_RANGE){
 	  		highlightAdjacentSourceEdge(e.getX(), e.getY());
 	  	}else{
 	  		theta_offset = 0.25 * 360.0 * (e.getY() - clicked_y) / (double)graph_panel_width;
@@ -671,7 +665,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   public void mouseReleased(MouseEvent e)
   {
     if(e.getButton() == MouseEvent.BUTTON1){
-    	if(source >= 0 && VIEW_SPANNING_TREE){
+    	if(source >= 0 && VIEW_RANGE){
 	      highlighted_edge_v0 = -1;
 	      highlighted_edge_v1 = -1;
 	      repaint();

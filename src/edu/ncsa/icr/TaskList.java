@@ -1,6 +1,7 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
+
 import java.util.*;
 
 /**
@@ -26,37 +27,17 @@ public class TaskList
 	}
 	
 	/**
-	 * Class constructor, create a sequence of tasks that will allow an application to go from the input file to the output format.
+	 * Class constructor, create a sequence of tasks that will allow an application to go from the input to the output format.
 	 * @param application_string an applications string representation (can be null)
-	 * @param input_file_data the input file
-	 * @param output_file_data the output file
+	 * @param input_data the input file
+	 * @param output_data the output file
 	 */
-	public TaskList(ICRClient icr, String application_string, CachedFileData input_file_data, CachedFileData output_file_data)
+	public TaskList(ICRClient icr, String application_string, Data input_data, Data output_data)
 	{
 		this(icr);
-		Pair<Integer,Integer> apop, apop0, apop1;
-		
-		//Attempt a direct conversion operation
-		apop = icr.getOperation(application_string, "convert", input_file_data, output_file_data);
-		
-		if(apop != null){
-			tasks.add(new Task(apop.first, apop.second, input_file_data, output_file_data));
-		}else{	//Attempt two part open/import -> save/export
-			apop0 = icr.getOperation(application_string, "open", input_file_data, null);
-			if(apop0 == null) apop0 = icr.getOperation(application_string, "import", input_file_data, null);
-			
-			if(apop0 != null){
-				apop1 = icr.getOperation(applications.get(apop0.first).alias, "save", null, output_file_data);
-				if(apop1 == null) apop1 = icr.getOperation(applications.get(apop0.first).alias, "export", null, output_file_data);
-
-				if(apop1 != null){
-					tasks.add(new Task(apop0.first, apop0.second, input_file_data, null));
-					tasks.add(new Task(apop1.first, apop1.second, input_file_data, output_file_data));
-				}
-			}
-		}
+		add(application_string, input_data, output_data);
 	}
-	  	
+	
 	/**
 	 * Get the number of tasks in the list.
 	 * @return the number of tasks
@@ -188,6 +169,37 @@ public class TaskList
 	}
 	
 	/**
+	 * Add a sequence of tasks that will allow an application to go from the input to the output format.
+	 * @param application_string an applications string representation (can be null)
+	 * @param input_data the input file
+	 * @param output_data the output file
+	 */
+	public void add(String application_string, Data input_data, Data output_data)
+	{
+		Pair<Integer,Integer> apop, apop0, apop1;
+		
+		//Attempt a direct conversion operation
+		apop = icr.getOperation(application_string, "convert", input_data, output_data);
+		
+		if(apop != null){
+			tasks.add(new Task(apop.first, apop.second, input_data, output_data));
+		}else{	//Attempt two part open/import -> save/export
+			apop0 = icr.getOperation(application_string, "open", input_data, null);
+			if(apop0 == null) apop0 = icr.getOperation(application_string, "import", input_data, null);
+			
+			if(apop0 != null){
+				apop1 = icr.getOperation(applications.get(apop0.first).toString(), "save", null, output_data);
+				if(apop1 == null) apop1 = icr.getOperation(applications.get(apop0.first).toString(), "export", null, output_data);
+	
+				if(apop1 != null){
+					tasks.add(new Task(apop0.first, apop0.second, input_data, null));
+					tasks.add(new Task(apop1.first, apop1.second, input_data, output_data));
+				}
+			}
+		}
+	}
+
+	/**
 	 * Merge this task list with another.
 	 * @param task_list another task list (must have same ICR client!)
 	 */
@@ -227,18 +239,24 @@ public class TaskList
 	}
 	
 	/**
+	 * Execute the this task list and return the result of the last task.
+	 * @return the data resulting from the last task (will be cached!)
+	 */
+	public Data execute()
+	{
+		icr.executeTasks(getTasks());
+		return tasks.lastElement().output_data;
+	}
+	
+	/**
 	 * Execute the this task list and save the result of the last task to the specified path.
 	 * @param output_path the path to save results into
 	 */
 	public void execute(String output_path)
 	{
-		Data data;
+		Data data = execute();
 		FileData file_data;
 		CachedFileData cached_file_data;
-		
-		icr.executeTasks(getTasks());
-		
-		data = tasks.lastElement().output_data;
 		
 		if(data instanceof CachedFileData){
 			cached_file_data = (CachedFileData)data;

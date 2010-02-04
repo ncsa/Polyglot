@@ -40,7 +40,7 @@ public class IOGraph<V extends Comparable,E>
 	
 							for(int j=0; j<operation.outputs.size(); j++){
 								output = operation.outputs.get(j);
-								addEdge((V)input, (V)output, (E)operation);
+								addEdge((V)input, (V)output, (E)application);
 							}
 						}
 					}else{															//Open/Import operation
@@ -51,7 +51,7 @@ public class IOGraph<V extends Comparable,E>
 									
 									for(int k=0; k<application.operations.get(i).outputs.size(); k++){
 										output = application.operations.get(i).outputs.get(k);
-										addEdge((V)input, (V)output, (E)operation);
+										addEdge((V)input, (V)output, (E)application);
 									}
 								}
 							}
@@ -122,7 +122,7 @@ public class IOGraph<V extends Comparable,E>
 			v0 = iograph.vertices.get(i);
 
 			for(int j=0; j<iograph.adjacency_list.get(i).size(); j++){
-				v1 = iograph.vertices.get(adjacency_list.get(i).get(j));
+				v1 = iograph.vertices.get(iograph.adjacency_list.get(i).get(j));
 				addEdge(v0, v1, iograph.edges.get(i).get(j));
 			}
 		}
@@ -390,59 +390,52 @@ public class IOGraph<V extends Comparable,E>
    * @param index the index of the source vertex
    * @return the set of reachable vertex indices
    */
-  public Set<Integer> getSpanningTree(int index)
+  public TreeSet<Integer> getRange(int index)
   {
-    Set<Integer> set = new TreeSet<Integer>(); 
+    TreeSet<Integer> range = new TreeSet<Integer>(); 
     Vector<Integer> path = getShortestPaths(index);
     
     for(int j=0; j<path.size(); j++){
       if(path.get(j)>=0 && j!=index){
-        set.add(j);    
+        range.add(j);    
       }
     }
     
-    return set;
+    return range;
   }
   
   /**
-   * Returns a vector of vertex abbreviations that are reachable from a given source vertex.
+   * Returns a set of vertex strings that are reachable from a given source vertex.
    * @param string string associated with the input vertex
-   * @return the vector of reachable vertices
+   * @return the set of reachable vertex strings
    */
-  public Vector<String> getSpanningTree(String string)
+  public TreeSet<String> getRangeStrings(String string)
   {
-    Vector<String> span = new Vector<String>();
-    Set<Integer> set;
-    Iterator<Integer> itr; 
-    int index = -1;
+    TreeSet<String> range = new TreeSet<String>();
+    Set<Integer> range_indices;
+    Iterator<Integer> itr;
+    Integer index = vertex_string_map.get(string);
     
-    for(int i=0; i<vertices.size(); i++){
-      if(vertices.get(i).toString().equals(string)){
-        index = i;
-        break;
-      }
-    }
-    
-    if(index >= 0){
-      set = getSpanningTree(index);
-      itr = set.iterator();
+    if(index != null){
+      range_indices = getRange(index);
+      itr = range_indices.iterator();
       
       while(itr.hasNext()){
-        span.add(vertices.get(itr.next()).toString());
+        range.add(vertices.get(itr.next()).toString());
       }
     }
     
-    return span;
+    return range;
   }
   
   /**
-   * Get a list of all vertices that can reach the target vertex.
+   * Get the set of all vertices that can reach the target vertex.
    * @param target the index of the target vertex
-   * @return the vector of vertices which can reach the target
+   * @return the set of vertices which can reach the target
    */
-  public Vector<Integer> getDomain(int target)
+  public TreeSet<Integer> getDomain(int target)
   {
-  	Vector<Integer> domain = new Vector<Integer>();
+  	TreeSet<Integer> domain = new TreeSet<Integer>();
   	Vector<Integer> paths;
   	
   	for(int i=0; i<vertices.size(); i++){
@@ -456,20 +449,63 @@ public class IOGraph<V extends Comparable,E>
   }
   
   /**
-   * Get a list of all vertices that can reach the target vertex.
-   * @param target the target vertex name
-   * @return the vector of vertices which can reach the target
+   * Get a set of all vertices that can reach the target vertex.
+   * @param target the target vertex string
+   * @return the set of vertices which can reach the target
    */
-  public Vector<String> getDomain(String target)
+  public TreeSet<String> getDomainStrings(String target)
   {
-  	Vector<String> domain = new Vector<String>();
-  	Vector<Integer> tmpv = getDomain(vertex_string_map.get(target));
+  	TreeSet<String> domain = new TreeSet<String>();
+  	TreeSet<Integer> domain_indices = getDomain(vertex_string_map.get(target));
+  	Iterator<Integer> itr = domain_indices.iterator();
   	
-  	for(int i=0; i<tmpv.size(); i++){
-  		domain.add(vertices.get(tmpv.get(i)).toString());
+  	while(itr.hasNext()){
+  		domain.add(vertices.get(itr.next()).toString());
   	}
   	
   	return domain;
+  }
+  
+  /**
+   * Get the range intersection of the vertices in the given set.
+   * @param set a set of vertex indices
+   * @return a set of vertex indices within the given sets range intersection
+   */
+  public TreeSet<Integer> getRangeIntersection(TreeSet<Integer> set)
+  {
+  	TreeSet<Integer> intersection = null;
+  	Iterator<Integer> itr = set.iterator();
+  	
+  	while(itr.hasNext()){
+  		if(intersection == null){
+  			intersection = getRange(itr.next());
+  		}else{
+  			intersection.retainAll(getRange(itr.next()));
+  		}
+  	}
+  	
+  	return intersection;
+  }
+  
+  /**
+   * Get the range intersection of the vertices in the given set.
+   * @param set a set of vertex strings
+   * @return a set of vertex strings within the given sets range intersection
+   */
+  public TreeSet<String> getRangeIntersectionStrings(TreeSet<String> set)
+  {
+  	TreeSet<String> intersection = null;
+  	Iterator<String> itr = set.iterator();
+  	
+  	while(itr.hasNext()){
+  		if(intersection == null){
+  			intersection = getRangeStrings(itr.next());
+  		}else{
+  			intersection.retainAll(getRangeStrings(itr.next()));
+  		}
+  	}
+  	
+  	return intersection;
   }
   
   /**
@@ -676,7 +712,9 @@ public class IOGraph<V extends Comparable,E>
   {
   	ICRClient icr = new ICRClient("localhost", 30);
   	IOGraph<Data,Application> iograph = new IOGraph<Data,Application>(icr); icr.close();
-    Vector<String> tmpv;
+  	Vector<String> vector;
+  	TreeSet<String> set;
+  	Iterator<String> itr;
     boolean ALL = false;
     boolean DOMAIN = false;
     int count = 0;
@@ -705,20 +743,22 @@ public class IOGraph<V extends Comparable,E>
     //Query I/O-Graph
     if(count == 1){
     	if(DOMAIN){	//Domain
-    		tmpv = iograph.getDomain(args[0]);
+    		set = iograph.getDomainStrings(args[0]);
     	}else{			//Span/range
-        tmpv = iograph.getSpanningTree(args[0]);
+        set = iograph.getRangeStrings(args[0]);
     	}
     	
-      for(int i=0; i<tmpv.size(); i++){
-        System.out.println(tmpv.get(i));
+    	itr = set.iterator();
+    	
+    	while(itr.hasNext()){
+        System.out.println(itr.next());
       }
     }else if(count == 2){
       if(ALL){		//All parallel shortest paths
-        tmpv = iograph.getShortestConversionPathStrings(args[0], args[1]);
+        vector = iograph.getShortestConversionPathStrings(args[0], args[1]);
         
-        for(int i=0; i<tmpv.size(); i++){
-          System.out.println(tmpv.get(i));
+        for(int i=0; i<vector.size(); i++){
+          System.out.println(vector.get(i));
         }
       }else{			//Shortest path
       	System.out.print(iograph.getShortestConversionPathString(args[0], args[1], false));

@@ -61,11 +61,11 @@ public class ICRClient
 	 * Find a suitable application/operation given the desired application, operation, and data.
 	 * @param application_string the application string representation (can be null)
 	 * @param operation_name the operation name
-	 * @param input_file_data input file data (can be null)
-	 * @param output_file_data output file data (can be null)
+	 * @param input_data input data (can be null)
+	 * @param output_data output data (can be null)
 	 * @return the index of the application and operation (null if none found)
 	 */
-	public Pair<Integer,Integer> getOperation(String application_string, String operation_name, CachedFileData input_file_data, CachedFileData output_file_data)
+	public Pair<Integer,Integer> getOperation(String application_string, String operation_name, Data input_data, Data output_data)
 	{
 		Application application;
 		Operation operation;
@@ -80,14 +80,15 @@ public class ICRClient
 					operation = application.operations.get(j);
 					
 					if(operation.name.equals(operation_name)){
-						FOUND_INPUT = input_file_data == null;
+						FOUND_INPUT = input_data == null;
 						
 						if(!FOUND_INPUT){		//Check for a matching input
 							for(int k=0; k<operation.inputs.size(); k++){
 								data = operation.inputs.get(k);
 								
-								if(data instanceof FileData){
-									if(((FileData)data).getFormat().equals(input_file_data.getFormat())){
+								if(data instanceof FileData){		//FileData
+									if((input_data instanceof FileData && ((FileData)data).getFormat().equals(((FileData)input_data).getFormat())) ||
+										 (input_data instanceof CachedFileData && ((FileData)data).getFormat().equals(((CachedFileData)input_data).getFormat()))){
 										FOUND_INPUT = true;
 										break;
 									}
@@ -95,21 +96,22 @@ public class ICRClient
 							}
 						}
 						
-						FOUND_OUTPUT = output_file_data == null;
+						FOUND_OUTPUT = output_data == null;
 						
 						if(!FOUND_OUTPUT){		//Check for a matching output
 							for(int k=0; k<operation.outputs.size(); k++){
 								data = operation.outputs.get(k);
 								
-								if(data instanceof FileData){
-									if(((FileData)data).getFormat().equals(output_file_data.getFormat())){
+								if(data instanceof FileData){		//FileData
+									if((output_data instanceof FileData && ((FileData)data).getFormat().equals(((FileData)output_data).getFormat())) ||
+										 (output_data instanceof CachedFileData && ((FileData)data).getFormat().equals(((CachedFileData)output_data).getFormat()))){
 										FOUND_OUTPUT = true;
 										break;
 									}
 								}
 							}
 						}
-						
+												
 						if(FOUND_INPUT && FOUND_OUTPUT){
 							return new Pair<Integer,Integer>(i,j);
 						}
@@ -253,7 +255,7 @@ public class ICRClient
 		
 		//Read in *.ini file
 	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader("IOClient.ini"));
+	    BufferedReader ins = new BufferedReader(new FileReader("ICRClient.ini"));
 	    String line, key, value;
 	    
 	    while((line=ins.readLine()) != null){
@@ -300,7 +302,7 @@ public class ICRClient
 		if(false){
 			FileData file_data0 = new FileData(debug_input_path + "heart.wrl", true);
 			CachedFileData cached_file_data0 = icr.sendData(file_data0);
-			CachedFileData cached_file_data1 = new CachedFileData(cached_file_data0, "stl");		//stl, stp
+			CachedFileData cached_file_data1 = new CachedFileData(cached_file_data0, "stp");		//stl, stp
 			
 			Vector<Task> tasks = (new TaskList(icr, null, cached_file_data0, cached_file_data1)).getTasks();
 			icr.executeTasks(tasks);
