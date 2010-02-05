@@ -15,8 +15,9 @@ public class ICRServer implements Runnable
 	private Vector<Application> applications = new Vector<Application>();
 	private int port;
 	private int session_counter = 0;
-	private String cache_path = "./";
-	private String temp_path = "./";
+	private String root_path = "./";
+	private String cache_path = root_path + "Cache";
+	private String temp_path = root_path + "Temp";
 	private int max_operation_time = 10000; 	//In milliseconds
 	private int max_operation_attempts = 1;
 	private boolean ENABLE_MONITORS = false;
@@ -54,6 +55,7 @@ public class ICRServer implements Runnable
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader(filename));
 	    String line, key, value;
+	    int tmpi;
 	    
 	    while((line=ins.readLine()) != null){
 	      if(line.contains("=")){
@@ -61,10 +63,24 @@ public class ICRServer implements Runnable
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#'){
-	        	if(key.equals("CachePath")){
-	        		cache_path = value + "/";
-	        	}else if(key.equals("TempPath")){
-	        		temp_path = value + "/";
+	        	if(key.equals("RootPath")){
+	        		root_path = value + "/";
+	        		tmpi = 0;
+	        		
+	        		while(Utility.exists(root_path + "Cache" + Utility.toString(tmpi,3))){
+	        			tmpi++;
+	        		}
+	        		
+	        		cache_path = root_path + "Cache" + Utility.toString(tmpi,3) + "/";
+	        		new File(cache_path).mkdir();
+	        		tmpi = 0;
+	        		
+	        		while(Utility.exists(root_path + "Temp" + Utility.toString(tmpi,3))){
+	        			tmpi++;
+	        		}
+	        		
+	        		temp_path = root_path + "Temp" + Utility.toString(tmpi,3) + "/";
+	        		new File(temp_path).mkdir();
 	        	}else if(key.equals("AHKScripts")){
 	          	addScriptedOperations(value + "/", "ahk");
 	        	}else if(key.equals("Port")){
@@ -429,7 +445,10 @@ public class ICRServer implements Runnable
 				
 				Utility.pause(500);
 			}
-		}catch(Exception e) {e.printStackTrace();}
+		}catch(Exception e){
+			System.out.println("Session " + session + ": connection lost!");
+			//e.printStackTrace();
+		}
 	}
 
 	/**

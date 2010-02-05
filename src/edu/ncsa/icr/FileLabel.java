@@ -1,9 +1,10 @@
 package edu.ncsa.icr;
 import javax.swing.*;
 import javax.swing.filechooser.*;
+
+import edu.ncsa.utility.Utility;
+
 import java.awt.*;
-import java.awt.dnd.*;
-import java.awt.datatransfer.*;
 import java.awt.event.*;
 import sun.awt.shell.*;
 import java.io.*;
@@ -50,6 +51,24 @@ public class FileLabel extends JLabel implements Comparable
 	{
 		return file;
 	}
+	
+	/**
+	 * Get the file name.
+	 * @return the associated files name
+	 */
+	public String getName()
+	{
+		return file.getName();
+	}
+	
+	/**
+	 * Get the file name extension.
+	 * @return the associated files extension
+	 */
+	public String getExtension()
+	{
+		return Utility.getFilenameExtension(file.getName());
+	}
 
 	/**
 	 * Set the color when this label is selected.
@@ -75,6 +94,15 @@ public class FileLabel extends JLabel implements Comparable
 	{
 		setBackground(new Color(selection_color));
 		setOpaque(true);		
+	}
+	
+	/**
+	 * Return true if this label is currently selected.
+	 * @return true if selected
+	 */
+	public boolean isSelected()
+	{
+		return this.isOpaque();
 	}
 	
 	/**
@@ -111,5 +139,14 @@ public class FileLabel extends JLabel implements Comparable
 		}else{
 			return -1;
 		}
+	}
+	
+	/**
+	 * Return a string representation of this file label.
+	 * @return a string representation of this file label
+	 */
+	public String toString()
+	{
+		return file.getAbsolutePath();
 	}
 }

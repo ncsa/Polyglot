@@ -4,6 +4,7 @@ import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.atomic.*;
 
 /**
  * An Imposed Code Reuse client interface.
@@ -18,6 +19,7 @@ public class ICRClient
 	private OutputStream outs;
 	private int session = -1;
 	private Vector<Application> applications = new Vector<Application>();
+	private AtomicInteger pending_asynchronous_calls = new AtomicInteger();
 	
 	/**
 	 * Class constructor.
@@ -144,9 +146,15 @@ public class ICRClient
 	 */
 	public synchronized CachedFileData sendData(FileData file_data)
 	{							
-		Utility.writeObject(outs, "send");
-		Utility.writeObject(outs, file_data);
-		return (CachedFileData)Utility.readObject(ins);
+		CachedFileData cached_file_data = null;
+		
+		try{
+			Utility.writeObject(outs, "send");
+			Utility.writeObject(outs, file_data);
+			cached_file_data = (CachedFileData)Utility.readObject(ins);
+		}catch(Exception e) {e.printStackTrace();}
+		
+		return cached_file_data;
 	}
 	
 	/**
@@ -160,9 +168,12 @@ public class ICRClient
 		final AsynchronousObject<CachedFileData> async_object_final = async_object;
 		final FileData file_data_final = file_data;
 
+		pending_asynchronous_calls.incrementAndGet();
+		
 		new Thread(){
 			public void run(){
 				async_object_final.set(sendData(file_data_final));
+				pending_asynchronous_calls.decrementAndGet();
 			}
 		}.start();
 		
@@ -176,9 +187,15 @@ public class ICRClient
 	 */
 	public synchronized FileData retrieveData(CachedFileData cached_file_data)
 	{
-		Utility.writeObject(outs, "retrieve");
-		Utility.writeObject(outs, cached_file_data);
-		return (FileData)Utility.readObject(ins);
+		FileData file_data = null;
+		
+		try{
+			Utility.writeObject(outs, "retrieve");
+			Utility.writeObject(outs, cached_file_data);
+			file_data = (FileData)Utility.readObject(ins);
+		}catch(Exception e) {e.printStackTrace();}
+		
+		return file_data;
 	}
 	
 	/**
@@ -192,9 +209,12 @@ public class ICRClient
 		final AsynchronousObject<FileData> async_object_final = async_object;
 		final CachedFileData cached_file_data_final = cached_file_data;
 						
+		pending_asynchronous_calls.incrementAndGet();
+
 		new Thread(){
 			public void run(){
 				async_object_final.set(retrieveData(cached_file_data_final));
+				pending_asynchronous_calls.decrementAndGet();
 			}
 		}.start();
 		
@@ -208,9 +228,15 @@ public class ICRClient
 	 */
 	public synchronized int executeTasks(Vector<Task> tasks)
 	{		
-		Utility.writeObject(outs, "execute");
-		Utility.writeObject(outs, tasks);
-		return (Integer)Utility.readObject(ins);
+		Integer response = null;
+		
+		try{
+			Utility.writeObject(outs, "execute");
+			Utility.writeObject(outs, tasks);
+			response = (Integer)Utility.readObject(ins);
+		}catch(Exception e) {e.printStackTrace();}
+		
+		return response;
 	}
 	
 	/**
@@ -224,9 +250,12 @@ public class ICRClient
 		final AsynchronousObject<Integer> async_object_final = async_object;
 		final Vector<Task> tasks_final = tasks;
 		
+		pending_asynchronous_calls.incrementAndGet();
+
 		new Thread(){
 			public void run(){
 				async_object_final.set(executeTasks(tasks_final));
+				pending_asynchronous_calls.decrementAndGet();
 			}
 		}.start();
 		
@@ -234,15 +263,29 @@ public class ICRClient
 	}
 	
 	/**
+	 * Wait for all pending asynchronous calls to complete.
+	 */
+	public void waitOnPending()
+	{
+		while(pending_asynchronous_calls.get() > 0){
+			Utility.pause(500);
+		}
+	}
+
+	/**
 	 * Close the connection to the ICR server.
 	 */
-	public void close()
-	{
-		Utility.writeObject(outs, "close");
-		Utility.readObject(ins);	//Wait for response
+	public synchronized void close()
+	{			
+		waitOnPending();
+
+		try{
+			Utility.writeObject(outs, "close");
+			Utility.readObject(ins);	//Wait for response
+		}catch(Exception e) {e.printStackTrace();}
 	}
 	
-  /**
+	/**
 	 * A main for debug purposes.
 	 * @param args command line arguments
 	 */
