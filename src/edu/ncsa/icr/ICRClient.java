@@ -47,7 +47,9 @@ public class ICRClient
 			
 			//System.out.println("Connected (session=" + session + ")...\n");
 			//Application.print(applications);	
-		}catch(Exception e) {e.printStackTrace();}
+		}catch(Exception e){
+			System.out.println("Unable to connect to ICR server: " + server);
+		}
 	}
 
 	/**
@@ -276,13 +278,15 @@ public class ICRClient
 	 * Close the connection to the ICR server.
 	 */
 	public synchronized void close()
-	{			
-		waitOnPending();
+	{
+		if(outs != null && ins != null){
+			waitOnPending();
 
-		try{
-			Utility.writeObject(outs, "close");
-			Utility.readObject(ins);	//Wait for response
-		}catch(Exception e) {e.printStackTrace();}
+			try{
+				Utility.writeObject(outs, "close");
+				Utility.readObject(ins);	//Wait for response
+			}catch(Exception e) {e.printStackTrace();}
+		}
 	}
 	
 	/**

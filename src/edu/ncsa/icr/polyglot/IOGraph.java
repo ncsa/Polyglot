@@ -2,6 +2,7 @@ package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.*;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
+import java.sql.*;
 import java.util.*;
 
 public class IOGraph<V extends Comparable,E>
@@ -61,6 +62,49 @@ public class IOGraph<V extends Comparable,E>
 			}
 		}
 	}
+	
+  /**
+   * Class constructor (loads data from a CSR database).
+   * @param server the server containing the database
+   * @param user the user name to use
+   * @param password the password for this user
+   */
+  public IOGraph(String server, String user, String password)
+  {
+  	Connection connection = null;
+  	Statement statement;
+  	ResultSet result;
+  	String application, input_format, output_format, tmp;
+  	
+  	try{
+  		//Open connection to database
+  		connection = DriverManager.getConnection(server, user, password);
+  		
+  		//Query the database
+  		statement = connection.createStatement();
+  		statement.executeQuery("SELECT software.name, inputs.default_extension, outputs.default_extension FROM conversions, software, formats AS inputs, formats AS outputs WHERE conversions.software=software.software_id AND conversions.input_format=inputs.format_id AND conversions.output_format=outputs.format_id");
+  		result = statement.getResultSet();
+  		
+  		while(result.next()){
+  			application = result.getString("software.name");
+  			input_format = result.getString("inputs.default_extension");
+  			output_format = result.getString("outputs.default_extension");
+  			
+  			//System.out.println(application +", " + input_format + ", " + output_format);
+  			
+  			addVertex((V)input_format);
+  			addVertex((V)output_format);
+  			addEdge((V)input_format, (V)output_format, (E)application);
+  		}
+  	
+	  	//Close connection
+  		result.close();
+  		statement.close();
+			connection.close();  		
+  	}catch(Exception e) {e.printStackTrace();}
+  	
+
+  }
 	
 	/**
 	 * Add a vertex to the graph if not already present.
@@ -709,15 +753,22 @@ public class IOGraph<V extends Comparable,E>
    * @param args command line arguments
    */
   public static void main(String args[])
-  {
-  	ICRClient icr = new ICRClient("localhost", 30);
-  	IOGraph<Data,Application> iograph = new IOGraph<Data,Application>(icr); icr.close();
+  {  
+  	IOGraph iograph = null;
   	Vector<String> vector;
   	TreeSet<String> set;
   	Iterator<String> itr;
     boolean ALL = false;
     boolean DOMAIN = false;
     int count = 0;
+    
+    if(true){
+    	ICRClient icr = new ICRClient("localhost", 30);
+    	iograph = new IOGraph<Data,Application>(icr);
+    	icr.close();
+    }else{
+    	iograph = new IOGraph<String,String>("jdbc:mysql://isda.ncsa.uiuc.edu/csr", "demo", "demo");
+    }
     
     //Set some test arguments if none provided
     if(args.length == 0){	

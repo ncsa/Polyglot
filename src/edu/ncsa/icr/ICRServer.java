@@ -447,7 +447,6 @@ public class ICRServer implements Runnable
 			}
 		}catch(Exception e){
 			System.out.println("Session " + session + ": connection lost!");
-			//e.printStackTrace();
 		}
 	}
 

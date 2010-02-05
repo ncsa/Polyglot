@@ -14,7 +14,7 @@ import java.util.List;
  * A panel with a file manager look and feel designed for convenient file format conversions.
  * @author Kenton McHenry
  */
-public class PolyglotPanel extends JPanel implements MouseListener, DropTargetListener, ActionListener
+public class PolyglotPanel extends JPanel implements MouseListener, MouseMotionListener, DropTargetListener, ActionListener
 {
 	private Polyglot polyglot;
 	private JFrame frame;
@@ -27,6 +27,10 @@ public class PolyglotPanel extends JPanel implements MouseListener, DropTargetLi
   private Graphics bg;
   private Image offscreen;
   
+  private int selection_box_x0, selection_box_y0, selection_box_x1, selection_box_y1;
+  private int selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy;
+  private boolean DRAGGING_SELECTION_BOX;
+
   /**
    * Class constructor.
    * @param filename the name of a *.ini file
@@ -39,6 +43,7 @@ public class PolyglotPanel extends JPanel implements MouseListener, DropTargetLi
 		setBackground(Color.white);
     setLayout(new FlowLayout(FlowLayout.LEADING));
     addMouseListener(this);
+    this.addMouseMotionListener(this);
     new DropTarget(this, this);
 
     scroll_pane = new JScrollPane(this);
@@ -118,6 +123,7 @@ public class PolyglotPanel extends JPanel implements MouseListener, DropTargetLi
 		//Load files
 		if(file.isDirectory()){
 			this.path = Utility.unixPath(path);
+			if(this.path.charAt(this.path.length()-1) != '/') this.path += "/";
 			if(frame != null) frame.setTitle("Polyglot File Manager [" + path + "]");
 			
 			//Add ".."
@@ -262,7 +268,17 @@ public class PolyglotPanel extends JPanel implements MouseListener, DropTargetLi
       bg = offscreen.getGraphics();
     }
     
+    //Draw the panel
     super.paint(bg);
+    
+    //Draw selection box
+    if(DRAGGING_SELECTION_BOX){
+    	bg.setColor(Color.blue);
+  	  bg.drawLine(selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_miny);		//Top
+  	  bg.drawLine(selection_box_minx, selection_box_maxy, selection_box_maxx, selection_box_maxy);		//Bottom
+  	  bg.drawLine(selection_box_minx, selection_box_miny, selection_box_minx, selection_box_maxy);		//Left
+  	  bg.drawLine(selection_box_maxx, selection_box_miny, selection_box_maxx, selection_box_maxy);		//Right
+    }
     
     //Draw background  buffer
     g.drawImage(offscreen, 0, 0, this);
@@ -324,12 +340,72 @@ public class PolyglotPanel extends JPanel implements MouseListener, DropTargetLi
   		}
   	}else{
   		deselectAll();
+  		selection_box_x0 = e.getX();
+  		selection_box_y0 = e.getY();
   	}
   	
   	repaint();
   }
 
   /**
+   * Handle mouse motion events.
+   * @param e the mouse event
+   */
+  public void mouseDragged(MouseEvent e)
+  {
+  	selection_box_x1 = e.getX();
+  	selection_box_y1 = e.getY();
+  	
+  	//Set selection box
+  	if(selection_box_x0 < selection_box_x1){
+  		selection_box_minx = selection_box_x0;
+  		selection_box_maxx = selection_box_x1;
+  	}else{
+  		selection_box_minx = selection_box_x1;
+  		selection_box_maxx = selection_box_x0;
+  	}
+  	
+  	if(selection_box_y0 < selection_box_y1){
+  		selection_box_miny = selection_box_y0;
+  		selection_box_maxy = selection_box_y1;
+  	}else{
+  		selection_box_miny = selection_box_y1;
+  		selection_box_maxy = selection_box_y0;
+  	}
+  	
+  	DRAGGING_SELECTION_BOX = true;
+  	repaint();
+  }
+
+  /**
+   * Handle mouse release events.
+   * @param e the mouse event
+   */
+	public void mouseReleased(MouseEvent e)
+	{
+		FileLabel file_label;
+		Rectangle rectangle;
+		int x, y;
+		
+		if(DRAGGING_SELECTION_BOX){		//Find selected components
+			for(Iterator<FileLabel> itr=files.iterator(); itr.hasNext();){
+				file_label = itr.next();
+				rectangle = file_label.getBounds();
+				x = (int)rectangle.getCenterX();
+				y = (int)rectangle.getCenterY();
+				
+				if(x>selection_box_minx && x<selection_box_maxx && y>selection_box_miny && y<selection_box_maxy){
+					selected_files.add(file_label);
+					file_label.setSelected();
+				}
+			}
+			
+			DRAGGING_SELECTION_BOX = false;
+			repaint();
+		}
+	}
+
+	/**
    * Handle mouse click events.
    * @param e the mouse event
    */
@@ -412,7 +488,7 @@ public class PolyglotPanel extends JPanel implements MouseListener, DropTargetLi
 
 	public void mouseEntered(MouseEvent e) {}
 	public void mouseExited(MouseEvent e) {}
-	public void mouseReleased(MouseEvent e) {}	
+	public void mouseMoved(MouseEvent e) {}
   public void dragEnter(DropTargetDragEvent e) {}
 	public void dragExit(DropTargetEvent e) {}
 	public void dragOver(DropTargetDragEvent e) {}

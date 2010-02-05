@@ -690,9 +690,19 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
    */
   public static void main(String args[])
   {
-  	ICRClient icr = new ICRClient("localhost", 30);
-  	IOGraph<Data,Application> iograph = new IOGraph<Data,Application>(icr); icr.close();
-    IOGraphPanel<Data,Application> iograph_panel = new IOGraphPanel<Data,Application>(iograph);
+  	IOGraph iograph = null;
+  	IOGraphPanel iograph_panel = null;
+  	
+  	if(false){
+	  	ICRClient icr = new ICRClient("localhost", 30);
+	  	iograph = new IOGraph<Data,Application>(icr);
+	  	icr.close();
+	  	
+    	iograph_panel = new IOGraphPanel<Data,Application>(iograph);
+  	}else{
+    	iograph = new IOGraph<String,String>("jdbc:mysql://isda.ncsa.uiuc.edu/csr", "demo", "demo");
+    	iograph_panel = new IOGraphPanel<String,String>(iograph);
+  	}
  
     JFrame frame = new JFrame("IOGraph Viewer");
     frame.setSize(top_pane_width, top_pane_height);
