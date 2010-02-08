@@ -1,9 +1,7 @@
 package edu.ncsa.icr;
 import javax.swing.*;
 import javax.swing.filechooser.*;
-
-import edu.ncsa.utility.Utility;
-
+import edu.ncsa.utility.*;
 import java.awt.*;
 import java.awt.event.*;
 import sun.awt.shell.*;
@@ -68,6 +66,15 @@ public class FileLabel extends JLabel implements Comparable
 	public String getExtension()
 	{
 		return Utility.getFilenameExtension(file.getName());
+	}
+	
+	/**
+	 * Set the foreground.
+	 * @param color the color of the foreground
+	 */
+	public void setForeground(Color color)
+	{
+		super.setForeground(color);
 	}
 
 	/**

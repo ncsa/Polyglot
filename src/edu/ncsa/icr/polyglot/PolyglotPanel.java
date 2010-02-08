@@ -41,7 +41,7 @@ public class PolyglotPanel extends JPanel implements MouseListener, MouseMotionL
 		this.frame = frame;
 
 		setBackground(Color.white);
-    setLayout(new FlowLayout(FlowLayout.LEADING));
+    setLayout(new edu.ncsa.icr.FlowLayout(java.awt.FlowLayout.LEADING));
     addMouseListener(this);
     this.addMouseMotionListener(this);
     new DropTarget(this, this);
@@ -157,6 +157,7 @@ public class PolyglotPanel extends JPanel implements MouseListener, MouseMotionL
 			}
 		}
 		
+		revalidate();
 		repaint();
 	}
 	
@@ -252,16 +253,9 @@ public class PolyglotPanel extends JPanel implements MouseListener, MouseMotionL
    */
   public void paint(Graphics g)
   {
-  	int width, height;
-  	
-		if(scroll_pane != null){
-			setPreferredSize(new Dimension(scroll_pane.getWidth(), getSize().height));
-			revalidate();
-		}
-		    
     //Update background buffer if needed
-    width = getSize().width;
-    height = getSize().height;    
+    int width = getSize().width;
+    int height = getSize().height;    
     
     if(offscreen == null || width != offscreen.getWidth(null) || height != offscreen.getHeight(null)){ 
       offscreen = createImage(width, height);
