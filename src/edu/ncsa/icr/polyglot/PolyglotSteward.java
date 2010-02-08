@@ -141,27 +141,6 @@ public class PolyglotSteward extends Polyglot
 				}
 			}
 		}
-		
-    //Set some test arguments if none provided
-    if(args.length == 0){	
-    	args = new String[]{"C:/Kenton/Data/Temp/PolyglotDemo/heart.wrl", "ply", "C:/Kenton/Data/Temp/"};		//stl, ply
-    }
-	  
-	  //Parse command line arguments
-    for(int i=0; i<args.length; i++){
-      if(args[i].charAt(0) == '-'){
-      }else{
-      	if(count == 0){
-      		input_filename = args[i];
-      	}else if(count == 1){
-      		output_extension = args[i];
-      	}else if(count == 2){
-      		output_path = args[i];
-      	}
-      	
-        count++;
-      }
-    }
 	  
 		//Load parameters from a *.ini file
 	  try{
@@ -191,6 +170,27 @@ public class PolyglotSteward extends Polyglot
 	    
 	    ins.close();
 	  }catch(Exception e) {e.printStackTrace();}
+	  
+    //Set some test arguments if none provided
+    if(args.length == 0){	
+    	args = new String[]{"C:/Kenton/Data/Temp/PolyglotDemo/heart.wrl", "ply", "C:/Kenton/Data/Temp/"};		//stl, ply
+    }
+	  
+	  //Parse command line arguments
+    for(int i=0; i<args.length; i++){
+      if(args[i].charAt(0) == '-'){
+      }else{
+      	if(count == 0){
+      		input_filename = args[i];
+      	}else if(count == 1){
+      		output_extension = args[i];
+      	}else if(count == 2){
+      		output_path = args[i];
+      	}
+      	
+        count++;
+      }
+    }
 		
 	  //Perform conversion
 		polyglot.convertLater(input_filename, output_path, output_extension);

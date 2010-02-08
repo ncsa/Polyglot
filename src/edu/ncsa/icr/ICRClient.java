@@ -290,45 +290,13 @@ public class ICRClient
 	}
 	
 	/**
-	 * A main for debug purposes.
-	 * @param args command line arguments
+	 * Debug tests for an ICRClient.
+	 * @param icr an ICR client
 	 */
-	public static void main(String args[])
+	public static void debug(ICRClient icr)
 	{
-		String server = "localhost";
-		int port = 30;
-		String debug_input_path = "./";
-		String debug_output_path = "./";
-		
-		//Read in *.ini file
-	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader("ICRClient.ini"));
-	    String line, key, value;
-	    
-	    while((line=ins.readLine()) != null){
-	      if(line.contains("=")){
-	        key = line.substring(0, line.indexOf('='));
-	        value = line.substring(line.indexOf('=')+1);
-	        
-	        if(key.charAt(0) != '#'){
-	        	if(key.equals("Server")){
-	          	server = InetAddress.getByName(value).getHostAddress();
-	        	}else if(key.equals("Port")){
-	        		port = Integer.valueOf(value);
-	          }else if(key.equals("DebugInputPath")){
-	          	debug_input_path = value + "/";
-	          }else if(key.equals("DebugOutputPath")){
-	          	debug_output_path = value + "/";
-	          }
-	        }
-	      }
-	    }
-	    
-	    ins.close();
-	  }catch(Exception e){}
-
-	  //Establish connection
-		ICRClient icr = new ICRClient(server, port);
+		String debug_input_path = "C:/Kenton/Data/NARA/DataSets/PolyglotDemo/";
+		String debug_output_path = "C:/Kenton/Data/Temp/";
 		
 		//Test sending a file
 		if(false){	
@@ -389,6 +357,120 @@ public class ICRClient
 			tasks.add("A3DReviewer", "export", "", "heart.stp");
 			tasks.print();
 			tasks.execute(debug_output_path);
+		}
+	}
+	
+	/**
+	 * Startup an ICR client command prompt.
+	 * @param args command line arguments
+	 */
+	public static void main(String args[])
+	{
+		boolean DEBUG = false;
+		TaskList tasks = null;
+		Console console;
+		String cwd = Utility.unixPath(System.getProperty("user.dir")) + "/";
+		String line, alias, operation, input, output;
+		String server = "localhost";
+		int port = 30;
+				
+		//Read in *.ini file
+	  try{
+	    BufferedReader ins = new BufferedReader(new FileReader("ICRClient.ini"));
+	    String key, value;
+	    
+	    while((line=ins.readLine()) != null){
+	      if(line.contains("=")){
+	        key = line.substring(0, line.indexOf('='));
+	        value = line.substring(line.indexOf('=')+1);
+	        
+	        if(key.charAt(0) != '#'){
+	        	if(key.equals("Server")){
+	          	server = InetAddress.getByName(value).getHostAddress();
+	        	}else if(key.equals("Port")){
+	        		port = Integer.valueOf(value);
+	          }else if(key.equals("DefaultPath")){
+	          	cwd = value + "/";
+	          }
+	        }
+	      }
+	    }
+	    
+	    ins.close();
+	  }catch(Exception e) {e.printStackTrace();}
+	  
+	  //Parse command line arguments
+    for(int i=0; i<args.length; i++){
+      if(args[i].charAt(0) == '-'){
+      	if(args[i].equals("-dbg")){
+      		DEBUG = true;
+      	}
+      }
+    }
+    
+	  //Establish connection
+		ICRClient icr = new ICRClient(server, port);
+		
+		//Process ICR requests
+		if(DEBUG){
+			debug(icr);
+		}else{
+			console = System.console();
+			
+			if(console != null){				
+				while(true){
+					line = console.readLine("\nicr> ");
+	
+					if(line.equals("pwd")){
+						System.out.println(cwd);
+					}else if(line.equals("ls")){
+						File[] cwd_files = new File(cwd).listFiles();
+						
+						for(int i=0; i<cwd_files.length; i++){
+							System.out.println(cwd_files[i].getName());
+						}
+					}else if(line.equals("cd ..")){
+						cwd = Utility.pathDotDot(cwd) + "/";
+					}else if(line.startsWith("cd ")){
+						cwd += line.substring(3) + "/";
+					}else if(line.startsWith("send ")){
+						icr.sendData(new FileData(cwd + line.substring(5), true));
+					}else if(line.startsWith("retrieve ")){
+						FileData file_data = icr.retrieveData(new CachedFileData(line.substring(9)));
+						file_data.save(cwd, null);
+					}else if(line.equals("help")){
+						System.out.println();
+						Application.print(icr.getApplications());
+					}else if(line.equals("tasks")){
+						tasks = new TaskList(icr);
+						
+						while(true){
+							line = console.readLine("task " + (tasks.size()+1) + "> ");
+							
+							if(line.equals("end")){
+								tasks.execute(cwd);
+								break;
+							}else{
+								String[] strings = line.split(" ");
+								alias = strings[0];
+								operation = strings[1];
+								input = strings[2];
+								output = strings[3];
+								
+								if(input.startsWith("./")){
+									input = cwd + input.substring(2);
+								}
+								
+								tasks.add(alias, operation, input, output);
+							}
+						}
+					}else if(line.equals("quit") || line.equals("exit")){
+						break;
+					}
+				}
+			}else{
+				System.out.println("No console available!");
+			}
 		}
 		
 		//Close connection

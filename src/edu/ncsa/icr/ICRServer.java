@@ -446,7 +446,7 @@ public class ICRServer implements Runnable
 				Utility.pause(500);
 			}
 		}catch(Exception e){
-			System.out.println("Session " + session + ": connection lost!");
+			System.out.println("Session " + session + ": connection lost!\n");
 		}
 	}
 

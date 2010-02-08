@@ -1,1 +1,1 @@
-java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0bin" edu.ncsa.icr.ICRClient %1 %2 %3
+cmd /c java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0bin" edu.ncsa.icr.ICRClient %1
