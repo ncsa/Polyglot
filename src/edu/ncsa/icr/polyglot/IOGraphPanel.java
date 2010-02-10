@@ -16,17 +16,14 @@ import java.util.*;
  * among them from a source to a target.
  * @author Kenton McHenry
  */
-public class IOGraphPanel<V extends Comparable,E> extends JPanel implements TreeSelectionListener, MouseListener, MouseMotionListener, ActionListener
+public class IOGraphPanel<V extends Comparable,E> extends JPanel implements TreeSelectionListener, MouseListener, MouseMotionListener, MouseWheelListener, ActionListener
 {
-  private static int graph_panel_width;
-  private static int graph_panel_height;
-  private static int top_pane_width;
-  private static int top_pane_height;
   private Graphics bg;
   private Image offscreen;
   private int clicked_button = 0;
   private int clicked_x = -1;
   private int clicked_y = -1;
+  private int rings = 1;
   private double theta = 0;
   private double theta_offset = 0;
   
@@ -47,9 +44,9 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   private TreeSet<Integer> working_set_range_intersection = new TreeSet<Integer>();
   private String output_string = "";
   
-  private JPanel converter_panel; 
+  private JTree edge_string_tree;
+  private JScrollPane edge_string_pane;
   private TextPanel output_panel;
-  private JTree converter_tree;
   private JSplitPane splitpane1;  
   private JSplitPane splitpane2;
   private JPopupMenu popup_menu;
@@ -62,6 +59,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   private Stroke thin_stroke = new BasicStroke(1);
   private Stroke wide_stroke = new BasicStroke(4);
   
+  private boolean SET_VERTEX_POSITIONS = false;
   private boolean VIEW_RANGE = false;
   private boolean VIEW_DOMAIN = false;
   private boolean VIEW_EDGE_QUALITY = false;
@@ -69,47 +67,52 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   
   /**
    * Class constructor.
+   * @param iograph the I/O-Graph
+   * @parma rings the number of rings used when displaying the graph
    */
-  public IOGraphPanel(IOGraph<V,E> iograph)
+  public IOGraphPanel(IOGraph<V,E> iograph, int rings)
   {
-  	this(iograph, 600, 600);
+  	this(iograph, 600, 600, rings);
   }
   
   /**
    * Class constructor.
-   * @param iograph the IO-Graph
-   * @param w the width of the panel
-   * @param h the height of the panel
+   * @param iograph the I/O-Graph
+   * @param width the width of the panel
+   * @param height the height of the panel
+   * @param rings the number of rings used when displaying the graph
    */
-  public IOGraphPanel(IOGraph<V,E> iograph, int w, int h)
-  {
-    graph_panel_width = w;
-    graph_panel_height = h;
-    top_pane_width = graph_panel_width + (int)Math.round(0.4*graph_panel_width);
-    top_pane_height = graph_panel_height + (int)Math.round(0.175*graph_panel_height);
+  public IOGraphPanel(IOGraph<V,E> iograph, int width, int height, int rings)
+  {      	
+    int side_pane_width = (int)Math.round(0.3*width);
+    int output_panel_height = (int)Math.round(0.1*height);  	
+  	
+    setGraph(iograph);
+  	this.rings = rings;
     
-    setPreferredSize(new Dimension(graph_panel_width, graph_panel_height));
+    setPreferredSize(new Dimension(width, height));
     setFont(new Font("Times New Roman", Font.BOLD, 12));
     addMouseListener(this);
     addMouseMotionListener(this);
+    addMouseWheelListener(this);
     
-    converter_panel = new JPanel();
-    converter_panel.setBackground(Color.white);
-    
+    edge_string_pane.setBorder(new EmptyBorder(0, 0, 0, 0));
+    edge_string_pane.setMinimumSize(new Dimension(side_pane_width, 0));
     output_panel = new TextPanel();
-    
-    splitpane1 = new JSplitPane();  
+    output_panel.setMinimumSize(new Dimension(0, output_panel_height));
+
+    splitpane1 = new JSplitPane();
+    splitpane1.setBorder(new EmptyBorder(0, 0, 0, 0));
     splitpane1.setOrientation(JSplitPane.VERTICAL_SPLIT);
     splitpane1.setDividerSize(0);
-    splitpane1.setBorder(new EmptyBorder(0, 0, 0, 0));
+    splitpane1.setResizeWeight(0.9);
     splitpane2 = new JSplitPane();
+    splitpane2.setBorder(new EmptyBorder(0, 0, 0, 0));
     splitpane2.setOrientation(JSplitPane.HORIZONTAL_SPLIT);
     splitpane2.setDividerSize(0);
-    splitpane2.setBorder(new EmptyBorder(0, 0, 0, 0));
-    splitpane2.setSize(new Dimension(top_pane_width, top_pane_height));
     splitpane1.setTopComponent(this);
     splitpane1.setBottomComponent(output_panel);
-    splitpane2.setLeftComponent(converter_panel);
+    splitpane2.setLeftComponent(edge_string_pane);
     splitpane2.setRightComponent(splitpane1);
     
     //Setup menus
@@ -124,8 +127,6 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     popup_menu.addSeparator();
     menuitem_WORKINGSET_ADD = new JMenuItem("Add to Working Set"); menuitem_WORKINGSET_ADD.addActionListener(this); popup_menu.add(menuitem_WORKINGSET_ADD);
     menuitem_WORKINGSET_REMOVE = new JMenuItem("Remove from Working Set"); menuitem_WORKINGSET_REMOVE.addActionListener(this); popup_menu.add(menuitem_WORKINGSET_REMOVE);
-    
-  	setGraph(iograph);
   }
   
   /**
@@ -138,30 +139,33 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     vertices = Point2D.getVertices(iograph.getVertexStrings());
     edges = iograph.getAdjacencyList();
     active_edges = iograph.getActiveEdges();
-    Point2D.setCircularGraph(vertices, graph_panel_width+63, graph_panel_height, theta);
 
     //Build converter JTree    
-    Vector<Vector<String>> converters = iograph.getEdgeStrings();
+    Vector<Vector<String>> edge_strings = iograph.getEdgeStrings();
     TreeSet<String> set = new TreeSet<String>();
-    DefaultMutableTreeNode root = new DefaultMutableTreeNode("Applications");
+    DefaultMutableTreeNode root = new DefaultMutableTreeNode("Edges");
     DefaultMutableTreeNode child;
     
     child = new DefaultMutableTreeNode("ALL");
     root.add(child);
     
-    for(int i=0; i<converters.size(); i++){
-    	for(int j=0; j<converters.get(i).size(); j++){
-	    	if(!set.contains(converters.get(i).get(j).toString())){
-	    		set.add(converters.get(i).get(j).toString());
-		      child = new DefaultMutableTreeNode(converters.get(i).get(j).toString());
-		      root.add(child);
+    for(int i=0; i<edge_strings.size(); i++){
+    	for(int j=0; j<edge_strings.get(i).size(); j++){
+	    	if(!set.contains(edge_strings.get(i).get(j).toString())){
+	    		set.add(edge_strings.get(i).get(j).toString());
 	    	}
     	}
     }
     
-    converter_tree = new JTree(root);
-    converter_tree.addTreeSelectionListener(this);
-    converter_panel.add(converter_tree, BorderLayout.WEST);
+    for(Iterator<String> itr=set.iterator(); itr.hasNext();){
+      child = new DefaultMutableTreeNode(itr.next());
+      root.add(child);
+    }
+    
+    edge_string_tree = new JTree(root);
+    edge_string_tree.addTreeSelectionListener(this);
+    edge_string_pane = new JScrollPane(edge_string_tree);
+    SET_VERTEX_POSITIONS = true;
   }
   
   /**
@@ -287,7 +291,17 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	  g.drawString(label, x-msg_width/2, y-descent/2+ascent/2);
 	  g.setColor(color);
 	}
-
+	
+	/**
+	 * Draw this component (called during resizing!)
+	 * @param g the graphics context to draw to
+	 */
+	public void paintComponent(Graphics g)
+	{		
+		super.paintComponent(g);
+	  SET_VERTEX_POSITIONS = true;
+	}
+	
 	/**
    * Draw the graph to the given graphics context.
    * @param g the graphics context to draw to
@@ -305,7 +319,6 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     if(offscreen == null || width != offscreen.getWidth(null) || height != offscreen.getHeight(null)){ 
       offscreen = createImage(width, height);
       bg = offscreen.getGraphics();
-	    splitpane1.setDividerLocation((float)graph_panel_height/(float)(top_pane_height-40));
     }
     
     super.paint(bg);
@@ -316,6 +329,11 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     ascent = fm.getMaxAscent();
     descent= fm.getMaxDescent();
     
+    if(SET_VERTEX_POSITIONS){
+    	arrangePointsInRings(vertices, width, height, rings, theta + theta_offset);
+    	SET_VERTEX_POSITIONS = false;
+    }
+
     //Draw edges
     bg.setColor(new Color(0x00cccccc));
     
@@ -651,8 +669,8 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	  	if(source >= 0 && VIEW_RANGE){
 	  		highlightAdjacentSourceEdge(e.getX(), e.getY());
 	  	}else{
-	  		theta_offset = 0.25 * 360.0 * (e.getY() - clicked_y) / (double)graph_panel_width;
-	  		Point2D.setCircularGraph(vertices, getSize().width, getSize().height, theta + theta_offset);
+	  		theta_offset = 0.25 * 360.0 * (e.getY() - clicked_y) / (double)getHeight();
+	  		SET_VERTEX_POSITIONS = true;
 	  		repaint();
 	  	}
   	}
@@ -679,12 +697,53 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     clicked_button = 0;
   }
 
-  public void mouseExited(MouseEvent e) {}
+  /**
+	 * Handle mouse wheel events.
+	 * @param e a mouse wheel event
+	 */
+	public void mouseWheelMoved(MouseWheelEvent e)
+	{		
+		if(e.getWheelRotation() < 0){
+			rings++;
+		}else{
+			if(rings > 1) rings--;
+		}
+		
+		SET_VERTEX_POSITIONS = true;
+		repaint();
+	}
+
+	public void mouseExited(MouseEvent e) {}
   public void mouseEntered(MouseEvent e) {}
   public void mouseClicked(MouseEvent e) {}
   public void mouseMoved(MouseEvent e) {}
 	
   /**
+	 * Set vertex positions to form a circular graph.
+	 * @param vertices the vertices
+	 * @param width the width of the panel graph will be displayed in
+	 * @param height the height of the panel graph will be displayed in
+	 * @param rings the number of rings
+	 * @param theta0 the initial offset angle to start placing vertices (in degrees)
+	 */
+	public static void arrangePointsInRings(Vector<Point2D> vertices, int width, int height, int rings, double theta0)
+	{
+		Vector<Point2D> sorted_vertices = new Vector<Point2D>(vertices);
+		int half_width = width / 2;
+		int half_height = height / 2;
+		double radius;
+		
+		Collections.sort(sorted_vertices);
+		theta0 = Math.PI * theta0 / 180.0;
+		
+		for(int i=0; i<sorted_vertices.size(); i++){
+			radius = Math.pow(0.9, (i%rings)+1);
+			sorted_vertices.get(i).x = (int)Math.round(Math.cos((2.0*Math.PI*i)/sorted_vertices.size()+theta0)*radius*half_width + half_width);
+			sorted_vertices.get(i).y = (int)Math.round(Math.sin((2.0*Math.PI*i)/sorted_vertices.size()+theta0)*radius*half_height + half_height);
+		}
+	}
+
+	/**
    * The main starting point for this program.
    * @param command line arguments
    */
@@ -693,20 +752,20 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   	IOGraph iograph = null;
   	IOGraphPanel iograph_panel = null;
   	
-  	if(false){
+  	if(true){
 	  	ICRClient icr = new ICRClient("localhost", 30);
 	  	iograph = new IOGraph<Data,Application>(icr);
 	  	icr.close();
 	  	
-    	iograph_panel = new IOGraphPanel<Data,Application>(iograph);
+    	iograph_panel = new IOGraphPanel<Data,Application>(iograph, 2);
   	}else{
     	iograph = new IOGraph<String,String>("jdbc:mysql://isda.ncsa.uiuc.edu/csr", "demo", "demo");
-    	iograph_panel = new IOGraphPanel<String,String>(iograph);
+    	iograph_panel = new IOGraphPanel<String,String>(iograph, 2);
   	}
  
     JFrame frame = new JFrame("IOGraph Viewer");
-    frame.setSize(top_pane_width, top_pane_height);
     frame.add(iograph_panel.getAuxiliaryInterfacePane());
+    frame.pack();
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
     frame.setVisible(true);
   }

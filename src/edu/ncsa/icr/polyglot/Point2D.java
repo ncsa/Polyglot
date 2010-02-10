@@ -52,31 +52,4 @@ public class Point2D implements Comparable
   	
   	return vertices;
   }
-  
-  /**
-   * Set vertex positions to form a circular graph.
-   * @param vertices the vertices
-   * @param offset the initial offset angle to start placing vertices (in degrees)
-   */
-  public static void setCircularGraph(Vector<Point2D> vertices, int width, int height, double offset)
-  {
-  	Vector<Point2D> sorted_vertices = new Vector<Point2D>(vertices);
-  	int half_width = width / 2;
-  	int half_height = height / 2;
-  	double radius;
-  	
-  	Collections.sort(sorted_vertices);
-  	offset = Math.PI * offset / 180.0;
-  	
-  	for(int i=0; i<sorted_vertices.size(); i++){
-      if(i%2 == 0){
-        radius = 0.81;
-      }else{
-        radius = 0.9;
-      }
-      
-  		sorted_vertices.get(i).x = (int)Math.round(Math.cos((2.0*Math.PI*i)/sorted_vertices.size()+offset)*radius*half_width + half_width);
-  		sorted_vertices.get(i).y = (int)Math.round(Math.sin((2.0*Math.PI*i)/sorted_vertices.size()+offset)*radius*half_height + half_height);
-  	}
-  }
 }

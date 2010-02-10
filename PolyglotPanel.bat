@@ -1,0 +1,1 @@
+java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0bin" edu.ncsa.icr.polyglot.PolyglotPanel
