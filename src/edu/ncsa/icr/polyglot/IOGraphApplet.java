@@ -13,22 +13,15 @@ public class IOGraphApplet extends JApplet
   public void init()
   {
   	String url = getParameter("url");
-  	String user = getParameter("user");
-  	String password = getParameter("password");
-  	String graph_width = getParameter("graph_width");
-  	String graph_height = getParameter("graph_height");
-  	String graph_rings = getParameter("graph_rings");
+  	String side_pane_width = getParameter("side_pane_width");
+  	String ouput_panel_height = getParameter("output_panel_height");
   	
-  	if(url == null) url = "jdbc:mysql://isda.ncsa.uiuc.edu/csr";
-  	if(user == null) user = "demo";
-  	if(password == null) password = "demo";
-  	if(graph_width == null) graph_width = "600";
-  	if(graph_height == null) graph_height = "600";
-  	if(graph_rings == null) graph_rings = "2";
-    
-    IOGraph iograph = new IOGraph(url, user, password);
-    IOGraphPanel iograph_panel = new IOGraphPanel(iograph, Integer.valueOf(graph_width), Integer.valueOf(graph_height), Integer.valueOf(graph_rings));
-    setSize(Integer.valueOf(graph_width) + 250, Integer.valueOf(graph_height) + 100);
-    add(iograph_panel.getAuxiliaryInterfacePane());
+  	if(url != null){
+	    IOGraph iograph = new IOGraph(url);
+	    IOGraphPanel iograph_panel = new IOGraphPanel(iograph, getWidth(), getHeight(), 2);
+	    if(side_pane_width != null) iograph_panel.setSidePaneWidth(Integer.valueOf(side_pane_width));
+	    if(ouput_panel_height != null) iograph_panel.setOutputPanelHeight(Integer.valueOf(ouput_panel_height));
+	    add(iograph_panel.getAuxiliaryInterfacePane());
+  	}
   }
 }

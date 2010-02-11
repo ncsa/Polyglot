@@ -2,6 +2,8 @@ package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.*;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
+import java.io.*;
+import java.net.*;
 import java.sql.*;
 import java.util.*;
 
@@ -102,8 +104,48 @@ public class IOGraph<V extends Comparable,E>
   		statement.close();
 			connection.close();  		
   	}catch(Exception e) {e.printStackTrace();}
+  }
+  
+  /**
+   * Class constructor (loads data from a CSR database via a web script to bypass database access restrictions).
+   * @param url the URL of the web script
+   */
+  public IOGraph(String url)
+  {   
+  	HttpURLConnection conn = null;
+    BufferedReader ins;
+  	String application, input_format, output_format;
+  	String line;
+  	int tmpi;
   	
+    HttpURLConnection.setFollowRedirects(false);
 
+    try{
+      conn = (HttpURLConnection)new URL(url).openConnection();
+      conn.connect();
+      ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+     
+      while((line = ins.readLine()) != null){
+				tmpi = line.lastIndexOf(" ");
+				output_format = line.substring(tmpi+1, line.length()-4);
+				line = line.substring(0, tmpi);
+				tmpi = line.lastIndexOf(" ");
+				input_format = line.substring(tmpi+1, line.length());
+				application = line.substring(0, tmpi);
+				
+				//System.out.println(application +", " + input_format + ", " + output_format);
+				
+				addVertex((V)input_format);
+				addVertex((V)output_format);
+				addEdge((V)input_format, (V)output_format, (E)application);       
+      }
+ 
+      conn.disconnect();
+    }catch(Exception e){
+      e.printStackTrace();
+    }finally{
+      if(conn != null) conn.disconnect();
+    }	
   }
 	
 	/**

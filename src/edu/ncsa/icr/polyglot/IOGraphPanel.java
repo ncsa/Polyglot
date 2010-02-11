@@ -23,6 +23,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   private int clicked_button = 0;
   private int clicked_x = -1;
   private int clicked_y = -1;
+    
   private int rings = 1;
   private double theta = 0;
   private double theta_offset = 0;
@@ -83,10 +84,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
    * @param rings the number of rings used when displaying the graph
    */
   public IOGraphPanel(IOGraph<V,E> iograph, int width, int height, int rings)
-  {      	
-    int side_pane_width = (int)Math.round(0.3*width);
-    int output_panel_height = (int)Math.round(0.1*height);  	
-  	
+  {
     setGraph(iograph);
   	this.rings = rings;
     
@@ -97,9 +95,9 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     addMouseWheelListener(this);
     
     edge_string_pane.setBorder(new EmptyBorder(0, 0, 0, 0));
-    edge_string_pane.setMinimumSize(new Dimension(side_pane_width, 0));
+    edge_string_pane.setMinimumSize(new Dimension(180, 0));
     output_panel = new TextPanel();
-    output_panel.setMinimumSize(new Dimension(0, output_panel_height));
+    output_panel.setMinimumSize(new Dimension(0, 60));
 
     splitpane1 = new JSplitPane();
     splitpane1.setBorder(new EmptyBorder(0, 0, 0, 0));
@@ -166,6 +164,24 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     edge_string_tree.addTreeSelectionListener(this);
     edge_string_pane = new JScrollPane(edge_string_tree);
     SET_VERTEX_POSITIONS = true;
+  }
+  
+  /**
+   * Set the width of the auxiliary side pane.
+   * @param width the desired width of the auxiliary side pane
+   */
+  public void setSidePaneWidth(int width)
+  {
+  	edge_string_pane.setMinimumSize(new Dimension(width, 0));
+  }
+  
+  /**
+   * Set the height of the output panel.
+   * @param height the desired height of the output panel
+   */
+  public void setOutputPanelHeight(int height)
+  {
+    output_panel.setMinimumSize(new Dimension(0, height));
   }
   
   /**
@@ -752,14 +768,17 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   	IOGraph iograph = null;
   	IOGraphPanel iograph_panel = null;
   	
-  	if(true){
+  	if(false){
 	  	ICRClient icr = new ICRClient("localhost", 30);
 	  	iograph = new IOGraph<Data,Application>(icr);
 	  	icr.close();
 	  	
     	iograph_panel = new IOGraphPanel<Data,Application>(iograph, 2);
-  	}else{
+  	}else if(false){
     	iograph = new IOGraph<String,String>("jdbc:mysql://isda.ncsa.uiuc.edu/csr", "demo", "demo");
+    	iograph_panel = new IOGraphPanel<String,String>(iograph, 2);
+  	}else{
+    	iograph = new IOGraph<String,String>("http://isda.ncsa.uiuc.edu/NARA/CSR_test/get_conversions.php");
     	iograph_panel = new IOGraphPanel<String,String>(iograph, 2);
   	}
  
