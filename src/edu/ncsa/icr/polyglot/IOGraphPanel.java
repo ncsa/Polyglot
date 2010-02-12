@@ -69,7 +69,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   /**
    * Class constructor.
    * @param iograph the I/O-Graph
-   * @parma rings the number of rings used when displaying the graph
+   * @param rings the number of rings used when displaying the graph
    */
   public IOGraphPanel(IOGraph<V,E> iograph, int rings)
   {
@@ -96,6 +96,8 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     
     edge_string_pane.setBorder(new EmptyBorder(0, 0, 0, 0));
     edge_string_pane.setMinimumSize(new Dimension(180, 0));
+    edge_string_pane.getVerticalScrollBar().setOpaque(false);
+    edge_string_pane.getVerticalScrollBar().setUI(new FadedScrollBarUI());
     output_panel = new TextPanel();
     output_panel.setMinimumSize(new Dimension(0, 60));
 

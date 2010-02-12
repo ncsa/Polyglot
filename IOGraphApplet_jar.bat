@@ -2,6 +2,7 @@ mkdir tmp\snapshot\IOGraphApplet_jar\edu\ncsa\icr\polyglot
 xcopy bin\edu\ncsa\icr\polyglot\IOGraph*.class tmp\snapshot\IOGraphApplet_jar\edu\ncsa\icr\polyglot /i /y
 xcopy bin\edu\ncsa\icr\polyglot\Conversion*.class tmp\snapshot\IOGraphApplet_jar\edu\ncsa\icr\polyglot /i /y
 xcopy bin\edu\ncsa\icr\polyglot\Point2D*.class tmp\snapshot\IOGraphApplet_jar\edu\ncsa\icr\polyglot /i /y
+xcopy bin\edu\ncsa\icr\polyglot\FadedScrollBarUI*.class tmp\snapshot\IOGraphApplet_jar\edu\ncsa\icr\polyglot /i /y
 
 cd tmp/snapshot/IOGraphApplet_jar
 jar xf ../../../lib/ncsa/Utilities.jar
