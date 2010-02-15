@@ -27,6 +27,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   private int rings = 1;
   private double theta = 0;
   private double theta_offset = 0;
+  private String edges_alias = "software"; //"edges";
   
 	private IOGraph<V,E> iograph;  
   private Vector<Point2D> vertices = new Vector<Point2D>();
@@ -86,7 +87,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
    */
   public IOGraphPanel(IOGraph<V,E> iograph, int width, int height, int rings)
   {
-    setGraph(iograph);
+    setGraph(iograph, false);
   	this.rings = rings;
     
     setPreferredSize(new Dimension(width, height));
@@ -133,23 +134,22 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   /**
    * Set up the GUI and graph based on the loaded IOGraph data.
    * @param iograph the IO-Graph to use
+   * @param VIEW_ALL true if by default all data should be drawn
    */
-  private void setGraph(IOGraph<V,E> iograph)
+  private void setGraph(IOGraph<V,E> iograph, boolean VIEW_ALL)
   {
   	this.iograph = iograph;
-    vertices = Point2D.getVertices(iograph.getVertexStrings());
-    edges = iograph.getAdjacencyList();
-    active_edges = iograph.getActiveEdges();
-    active_vertices = iograph.getActiveVertices();
 
     //Build converter JTree    
     Vector<Vector<String>> edge_strings = iograph.getEdgeStrings();
     TreeSet<String> set = new TreeSet<String>();
-    DefaultMutableTreeNode root = new DefaultMutableTreeNode("Edges");
+    DefaultMutableTreeNode root = new DefaultMutableTreeNode(Utility.capitalize(edges_alias));
     DefaultMutableTreeNode child;
     
-    child = new DefaultMutableTreeNode("ALL");
-    root.add(child);
+    if(VIEW_ALL){
+    	child = new DefaultMutableTreeNode("ALL");
+    	root.add(child);
+    }
     
     for(int i=0; i<edge_strings.size(); i++){
     	for(int j=0; j<edge_strings.get(i).size(); j++){
@@ -167,6 +167,13 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     edge_string_tree = new JTree(root);
     edge_string_tree.addTreeSelectionListener(this);
     edge_string_pane = new JScrollPane(edge_string_tree);
+    
+    //Get required graph information
+    vertices = Point2D.getVertices(iograph.getVertexStrings());
+    edges = iograph.getAdjacencyList();
+    active_edges = iograph.setActiveEdges(VIEW_ALL);
+    active_vertices = iograph.getActiveVertices();
+  	
     SET_VERTEX_POSITIONS = true;
   }
   
@@ -332,8 +339,10 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     int width = getSize().width;
     int height = getSize().height;
     FontMetrics fm;
+    String msg;
     int ascent, descent, msg_width;
     int x, y, x0, y0, x1, y1, index;
+    boolean BLANK = true;
         
     //Update background buffer if needed
     if(offscreen == null || width != offscreen.getWidth(null) || height != offscreen.getHeight(null)){ 
@@ -353,7 +362,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     	arrangePointsInRings(vertices, active_vertices, width, height, rings, theta + theta_offset);
     	SET_VERTEX_POSITIONS = false;
     }
-
+    
     //Draw edges
     bg.setColor(new Color(0x00cccccc));
     
@@ -406,6 +415,8 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     //Draw vertices
     for(int i=0; i<vertices.size(); i++){
     	if(active_vertices.get(i)){
+    		BLANK = false;
+    		
 	      if(i == source){
 	        bg.setColor(Color.red);
 	      }else if(i == target){
@@ -523,6 +534,17 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
       bg.drawString(vertices.get(highlighted_edge_v1).text, x-msg_width/2, y-descent/2+ascent/2);
     }
     
+    //Message if no active edges
+    if(BLANK){
+    	x = width/2;
+    	y = height/2;
+    	msg = "Select from the left pane the " + edges_alias + " to consider.";
+      msg_width = fm.stringWidth(msg);
+    	bg.setColor(Color.black);
+      bg.drawString(msg, x-msg_width/2, y-descent/2+ascent/2);
+    }
+    
+    //Set output message
     output_panel.setText(output_string);
     
     //Draw background  buffer
@@ -650,7 +672,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     
     //Update edges
     if(selected_edges.contains("ALL")){	
-  		active_edges = iograph.setActiveEdges();
+  		active_edges = iograph.setActiveEdges(true);
     }else{
     	active_edges = iograph.setActiveEdges(selected_edges);
     }

@@ -215,14 +215,14 @@ public class IOGraph<V extends Comparable,E>
 	}
 	
 	/**
-	 * Set all edges to active.
+	 * Set all edges to the given value.
 	 * @return the active edge list
 	 */
-	public Vector<Vector<Boolean>> setActiveEdges()
+	public Vector<Vector<Boolean>> setActiveEdges(Boolean value)
 	{
 		for(int i=0; i<edges.size(); i++){
 			for(int j=0; j<edges.get(i).size(); j++){
-				active.get(i).set(j,true);
+				active.get(i).set(j,value);
 			}
 		}
 		
