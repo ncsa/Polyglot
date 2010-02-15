@@ -248,6 +248,35 @@ public class IOGraph<V extends Comparable,E>
 		
 		return active;
 	}
+	
+	/**
+	 * Determine and return which vertices are being used by the currently active edges.
+	 * @return the active vertices
+	 */
+	public Vector<Boolean> getActiveVertices()
+	{
+		Vector<Boolean> active_vertices = new Vector<Boolean>();
+		TreeSet<Integer> set = new TreeSet<Integer>();
+		
+		for(int i=0; i<adjacency_list.size(); i++){
+			for(int j=0; j<adjacency_list.get(i).size(); j++){
+				if(active.get(i).get(j)){
+					set.add(i);
+					set.add(adjacency_list.get(i).get(j));
+				}
+			}
+		}
+		
+		for(int i=0; i<vertices.size(); i++){
+			if(set.contains(i)){
+				active_vertices.add(true);
+			}else{
+				active_vertices.add(false);
+			}
+		}
+		
+		return active_vertices;
+	}
 
 	/**
 	 * Get the adjacency list representing graph edges.

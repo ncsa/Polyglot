@@ -169,21 +169,32 @@ public class IOGraphPanel_JUNG<V extends Comparable,E> extends JPanel
   	
   	//Collapse vertices alphabetically
   	if(true){
+  		TreeSet<Character> set = new TreeSet<Character>();
+	  	Vector<String> cluster_vertices = new Vector<String>();
 	  	GraphCollapser collapser = new GraphCollapser(graph);
 	  	Graph cluster;
-	  	Vector<String> tmpv = new Vector<String>();
+	  	char c;
 	  	
-	  	for(char c='a'; c<='z'; c++){
-	  		tmpv.clear();
+	  	//Find all first letters
+	  	for(int i=0; i<vertices.size(); i++){
+	  		if(vertices.get(i).length() > 0){
+	  			set.add(vertices.get(i).charAt(0));
+	  		}
+	  	}
+	  	
+	  	//Clusters vertices with the same first letter
+	  	for(Iterator<Character> itr=set.iterator(); itr.hasNext();){
+	  		c = itr.next();
+	  		cluster_vertices.clear();
 	  		
 	  		for(int i=0; i<vertices.size(); i++){
-		  		if(vertices.get(i).charAt(0) == c){
-		  			tmpv.add(vertices.get(i));
+		  		if(vertices.get(i).length() > 0 && vertices.get(i).charAt(0) == c){
+		  			cluster_vertices.add(vertices.get(i));
 		  		}
 		  	}	
 	  		
-	  		if(!tmpv.isEmpty()){
-		  		cluster = collapser.getClusterGraph(graph, tmpv);
+	  		if(!cluster_vertices.isEmpty()){
+		  		cluster = collapser.getClusterGraph(graph, cluster_vertices);
 		  		graph = collapser.collapse(graph, cluster);
 	  		}
 	  	}

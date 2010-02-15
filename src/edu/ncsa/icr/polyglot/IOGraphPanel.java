@@ -31,6 +31,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	private IOGraph<V,E> iograph;  
   private Vector<Point2D> vertices = new Vector<Point2D>();
   private Vector<Vector<Integer>> edges = new Vector<Vector<Integer>>();
+  private Vector<Boolean> active_vertices = new Vector<Boolean>();
   private Vector<Vector<Boolean>> active_edges = new Vector<Vector<Boolean>>();
   private TreeSet<String> selected_edges = new TreeSet<String>();
   private int source = -1;
@@ -139,6 +140,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     vertices = Point2D.getVertices(iograph.getVertexStrings());
     edges = iograph.getAdjacencyList();
     active_edges = iograph.getActiveEdges();
+    active_vertices = iograph.getActiveVertices();
 
     //Build converter JTree    
     Vector<Vector<String>> edge_strings = iograph.getEdgeStrings();
@@ -348,7 +350,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     descent= fm.getMaxDescent();
     
     if(SET_VERTEX_POSITIONS){
-    	arrangePointsInRings(vertices, width, height, rings, theta + theta_offset);
+    	arrangePointsInRings(vertices, active_vertices, width, height, rings, theta + theta_offset);
     	SET_VERTEX_POSITIONS = false;
     }
 
@@ -403,20 +405,22 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     
     //Draw vertices
     for(int i=0; i<vertices.size(); i++){
-      if(i == source){
-        bg.setColor(Color.red);
-      }else if(i == target){
-        bg.setColor(Color.blue);
-      }else if(working_set.contains(i)){
-        bg.setColor(new Color(0xa000a0));
-      }else{
-        bg.setColor(Color.black);
-      }
-      
-      x = vertices.get(i).x;
-      y = vertices.get(i).y;
-      msg_width = fm.stringWidth(vertices.get(i).text);
-      bg.drawString(vertices.get(i).text, x-msg_width/2, y-descent/2+ascent/2);
+    	if(active_vertices.get(i)){
+	      if(i == source){
+	        bg.setColor(Color.red);
+	      }else if(i == target){
+	        bg.setColor(Color.blue);
+	      }else if(working_set.contains(i)){
+	        bg.setColor(new Color(0xa000a0));
+	      }else{
+	        bg.setColor(Color.black);
+	      }
+	      
+	      x = vertices.get(i).x;
+	      y = vertices.get(i).y;
+	      msg_width = fm.stringWidth(vertices.get(i).text);
+	      bg.drawString(vertices.get(i).text, x-msg_width/2, y-descent/2+ascent/2);
+    	}
     }
     
     //Draw domain
@@ -651,8 +655,8 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     	active_edges = iograph.setActiveEdges(selected_edges);
     }
     
-    edges = iograph.getAdjacencyList();
-    
+    active_vertices = iograph.getActiveVertices();
+    SET_VERTEX_POSITIONS = true;
     repaint();
   }
   
@@ -739,18 +743,31 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   /**
 	 * Set vertex positions to form a circular graph.
 	 * @param vertices the vertices
+	 * @param active_vertices a list of currently active vertices
 	 * @param width the width of the panel graph will be displayed in
 	 * @param height the height of the panel graph will be displayed in
 	 * @param rings the number of rings
 	 * @param theta0 the initial offset angle to start placing vertices (in degrees)
 	 */
-	public static void arrangePointsInRings(Vector<Point2D> vertices, int width, int height, int rings, double theta0)
+	public static void arrangePointsInRings(Vector<Point2D> vertices, Vector<Boolean> active_vertices, int width, int height, int rings, double theta0)
 	{
-		Vector<Point2D> sorted_vertices = new Vector<Point2D>(vertices);
+		Vector<Point2D> sorted_vertices = new Vector<Point2D>();
 		int half_width = width / 2;
 		int half_height = height / 2;
 		double radius;
 		
+		for(int i=0; i<active_vertices.size(); i++){
+			//Set all vertices to an invalid position
+			vertices.get(i).x = -1;
+			vertices.get(i).y = -1;
+			
+			//Consider only active vertices
+			if(active_vertices.get(i)){
+				sorted_vertices.add(vertices.get(i));
+			}
+		}
+		
+		//Sort vertices and place on a circular graph
 		Collections.sort(sorted_vertices);
 		theta0 = Math.PI * theta0 / 180.0;
 		
@@ -770,7 +787,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   	IOGraph iograph = null;
   	IOGraphPanel iograph_panel = null;
   	
-  	if(false){
+  	if(true){
 	  	ICRClient icr = new ICRClient("localhost", 30);
 	  	iograph = new IOGraph<Data,Application>(icr);
 	  	icr.close();
