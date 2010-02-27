@@ -644,12 +644,12 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
    */
   public void valueChanged(TreeSelectionEvent e)
   {
+    TreePath[] tree_paths = e.getPaths();
     String name;
-    
-    TreePath[] treepaths = e.getPaths();
-    for(int i=0; i<treepaths.length; i++){
-      if(treepaths[i].getPathCount() > 1){
-        name = treepaths[i].getPathComponent(1).toString();
+
+    for(int i=0; i<tree_paths.length; i++){
+      if(tree_paths[i].getPathCount() > 1){
+        name = tree_paths[i].getPathComponent(1).toString();
         
         if(selected_edges.contains(name)){
           selected_edges.remove(name);
@@ -809,7 +809,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   	IOGraph iograph = null;
   	IOGraphPanel iograph_panel = null;
   	
-  	if(true){
+  	if(false){
 	  	ICRClient icr = new ICRClient("localhost", 30);
 	  	iograph = new IOGraph<Data,Application>(icr);
 	  	icr.close();

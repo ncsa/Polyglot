@@ -472,10 +472,22 @@ public class IOGraph<V extends Comparable,E>
 		String output_string = "";
 		int index;
 	  int index_last = -1;
+	  int edge_index = 0;
 	  
 	  for(int i=0; i<path.size(); i++){
 	    index = path.get(i);
-	    if(index_last >= 0) output_string += "(" + edges.get(index_last).get(adjacency_list.get(index_last).indexOf(index)).toString() + ") -> ";
+	    
+	    //Find edge
+	    if(index_last >= 0){
+	    	for(int j=0; j<adjacency_list.get(index_last).size(); j++){
+	    		if(active.get(index_last).get(j) && adjacency_list.get(index_last).get(j) == index){
+	    			edge_index = j;
+	    		}
+	    	}
+	    	
+	    	output_string += "(" + edges.get(index_last).get(edge_index).toString() + ") -> ";
+	    }
+	    
 	    output_string += vertices.get(index).toString();
 	    if(i < path.size()-1) output_string += " -> ";
 	    index_last = index;
