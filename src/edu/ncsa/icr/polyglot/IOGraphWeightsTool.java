@@ -54,7 +54,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private JMenuItem item_ABOUT;
     
   private FilenameFilter filename_filter;
-  private Vector<FileInfo> fileinfo = new Vector<FileInfo>();
+  private Vector<FileInfo> file_info = new Vector<FileInfo>();
   private LinkedList<FileInfo> working_set = new LinkedList<FileInfo>();
   private Vector<Pair<String,String>> jobs = new Vector<Pair<String,String>>();	//Made up of two polyglot jobs (to and from a format)
   private Vector<Integer> job_status = new Vector<Integer>();
@@ -297,12 +297,12 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	  Collections.sort(files, new FileNameComparer());
 	  
 	  //Create file information list and tree
-	  fileinfo.clear();
+	  file_info.clear();
 	  
 	  for(int i=0; i<files.size(); i++){
-	    fileinfo.add(new FileInfo(files.get(i)));
-	    working_set.add(fileinfo.get(i));
-	    child = new DefaultMutableTreeNode(fileinfo.get(i));
+	    file_info.add(new FileInfo(files.get(i)));
+	    working_set.add(file_info.get(i));
+	    child = new DefaultMutableTreeNode(file_info.get(i));
 	    root.add(child);
 	  }
 	  
@@ -322,7 +322,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	  scrollpane.setPreferredSize(new Dimension(window_width-10, top_height-2*gap));
 	  file_panel.add(scrollpane);
 	  
-	  if(frame != null) frame.setTitle("I/O-Graph Weights Tool [" + path + "] - " + fileinfo.size() + " files");
+	  if(frame != null) frame.setTitle("I/O-Graph Weights Tool [" + path + "] - " + file_info.size() + " files");
 	  
 	  tree.revalidate();
 	  updateUI();
@@ -967,7 +967,6 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	    File folder = new File(foldername);
 	    File[] folder_files = folder.listFiles(filename_filter);
 	    TreeSet<String> set = new TreeSet<String>();
-	    Iterator<FileInfo> itr;
 	    FileInfo fi;
 	    int count_old = 0;
 	    int count_new = 0;
@@ -979,9 +978,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	      }
 	    }
 	    
-	    itr = working_set.iterator();
-	    
-	    while(itr.hasNext()){
+	    for(Iterator<FileInfo> itr=working_set.iterator(); itr.hasNext();){
 	      fi = itr.next();
 	      
 	      if(!set.contains(fi.filename)){

@@ -72,6 +72,7 @@ public class PolyglotSteward extends Polyglot
 					}
 					
 					icr = application.icr;
+					icr.requestNewSession();	//Request a new session to avoid using files with similar names (e.g. weights tool having a failed conversion after a good conversion on the same type)
 					task_list = new TaskList(icr, application.toString(), data_last, data_next);
 				}
 				

@@ -1,6 +1,7 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -264,6 +265,17 @@ public class ICRClient
 		return async_object;
 	}
 	
+	/**
+	 * Request a new session.
+	 */
+	public synchronized void requestNewSession()
+	{
+		try{
+			Utility.writeObject(outs, "new_session");
+			session = (Integer)Utility.readObject(ins);
+		}catch(Exception e) {e.printStackTrace();}
+	}
+
 	/**
 	 * Wait for all pending asynchronous calls to complete.
 	 */

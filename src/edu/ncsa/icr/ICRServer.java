@@ -4,6 +4,7 @@ import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * An Imposed Code Reuse server application.
@@ -14,7 +15,7 @@ public class ICRServer implements Runnable
 	private ServerSocket server_socket;
 	private Vector<Application> applications = new Vector<Application>();
 	private int port;
-	private int session_counter = 0;
+	private AtomicInteger session_counter = new AtomicInteger();
 	private String root_path = "./";
 	private String cache_path = root_path + "Cache";
 	private String temp_path = root_path + "Temp";
@@ -381,7 +382,7 @@ public class ICRServer implements Runnable
 			
 			new Thread(){
 				public void run(){
-					serveConnection(session_counter++, client_socket_final);
+					serveConnection(session_counter.incrementAndGet(), client_socket_final);
 				}
 			}.start();
 		}  	
@@ -437,6 +438,9 @@ public class ICRServer implements Runnable
 					executeTasks(session, tasks);
 					Utility.writeObject(outs, new Integer(0));
 					System.out.println("Session " + session + ": executed " + tasks.size() + " tasks");
+				}else if(message.equals("new_session")){
+					session = session_counter.incrementAndGet();
+					Utility.writeObject(outs, session);
 				}else if(message.equals("close")){
 					Utility.writeObject(outs, "bye");
 					System.out.println("Session " + session + ": closing connection!\n");
