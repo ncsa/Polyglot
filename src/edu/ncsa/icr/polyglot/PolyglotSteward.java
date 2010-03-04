@@ -13,7 +13,6 @@ import java.util.*;
 public class PolyglotSteward extends Polyglot
 {
 	private Vector<ICRClient> icr_clients = new Vector<ICRClient>();
-	private IOGraph<Data,Application> iograph = new IOGraph<Data,Application>();
 	
 	/**
 	 * Add an ICR client.
@@ -40,19 +39,19 @@ public class PolyglotSteward extends Polyglot
 	 * Convert a files format.
 	 * @param input_filename the absolute name of the input file
 	 * @param output_path the output path
-	 * @param output_type the name of the output type
+	 * @param conversions the conversions to perform
 	 */
-	public void convert(String input_filename, String output_path, String output_type)
+	public void convert(String input_filename, String output_path, Vector<Conversion<Data,Application>> conversions)
 	{
-		String input_path = Utility.getFilenamePath(input_filename);
-		String input_type = Utility.getFilenameExtension(input_filename);
-		Vector<Conversion<Data,Application>> conversions = iograph.getShortestConversionPath(input_type, output_type, false);
 		TaskList task_list = null;
 		Application application;
 		FileData input, output;
 		FileData input_file_data;
 		Data data_last, data_next;
 		ICRClient icr = null;
+		
+		input_filename = Utility.unixPath(input_filename);
+		output_path = Utility.unixPath(output_path);
 		
 		if(conversions != null){
 			input_file_data = new FileData(input_filename, true);
@@ -63,7 +62,7 @@ public class PolyglotSteward extends Polyglot
 				input = (FileData)conversions.get(i).input;
 				output = (FileData)conversions.get(i).output;
 				data_next = new CachedFileData(input_file_data, output.getFormat());
-
+	
 				if(application.icr == icr){
 					task_list.add(application.toString(), data_last, data_next);
 				}else{
@@ -82,24 +81,6 @@ public class PolyglotSteward extends Polyglot
 			//task_list.print();
 			task_list.execute(output_path);
 		}
-	}
-	
-	/**
-	 * Get the outputs available for the given input type.
-	 * @param string a string representing the input type
-	 */
-	public TreeSet<String> getOutputs(String string)
-	{
-		return iograph.getRangeStrings(string);
-	}
-	
-	/**
-	 * Get the common outputs available for the given input types.
-	 * @param set a set of strings representing the input types
-	 */
-	public TreeSet<String> getOutputs(TreeSet<String> set)
-	{
-		return iograph.getRangeIntersectionStrings(set);
 	}
 	
 	/**

@@ -358,7 +358,7 @@ public class IOGraph<V extends Comparable,E>
 		
 		return 0;
 	}
-
+	
 	/**
    * Perform a breadth first search from the vertex at the given index and store the resulting paths.
    * @param source the index of the source vertex
@@ -636,6 +636,56 @@ public class IOGraph<V extends Comparable,E>
   }
   
   /**
+	 * Get the conversion possessing the given name, input, and output
+	 * @param edge_string the string associated with the conversion edge
+	 * @param input_string the input
+	 * @param output_string the output
+	 * @return the conversion from input to output
+	 */
+	public Conversion<V,E> getConversion(String edge_string, String input_string, String output_string)
+	{
+	  int input = vertex_string_map.get(input_string);
+	  int output = vertex_string_map.get(output_string);
+	  
+	  if(input >= 0 && output >= 0){
+	  	for(int i=0; i<edges.get(input).size(); i++){
+	  		if(edges.get(input).get(i).toString().equals(edge_string) && adjacency_list.get(input).get(i) == output){
+	  			return new Conversion<V,E>(vertices.get(input), vertices.get(output), edges.get(input).get(i));
+	  		}
+	  	}
+	  }
+	  
+	  return null;
+	}
+	
+	/**
+	 * Parse a string containing conversion information
+	 * @param conversions_string a string containing line separated conversions of the form: Application input output
+	 * @return a vector of conversions corresponding to the given string
+	 */
+	public Vector<Conversion<V,E>> getConversions(String conversions_string)
+	{
+		Vector<Conversion<V,E>> conversions = new Vector<Conversion<V,E>>();
+	  Vector<String> lines = Utility.split(conversions_string, '\n', false);
+	  String line, edge_string, input_string, output_string;
+	  int tmpi;
+	  
+	  for(int i=0; i<lines.size(); i++){
+	  	line = lines.get(i);
+	  	tmpi = line.lastIndexOf(' ');
+	  	output_string = line.substring(tmpi+1);
+	  	line = line.substring(0, tmpi);
+	  	tmpi = line.lastIndexOf(' ');
+	  	input_string = line.substring(tmpi+1);
+	  	edge_string = line.substring(0, tmpi);
+	  	
+	  	conversions.add(getConversion(edge_string, input_string, output_string));
+	  }
+	  
+		return conversions;
+	}
+
+	/**
 	 * Get the shortest list of the conversion tasks required to convert from a given input to a given output.
 	 * @param source_string a string representing the input type
 	 * @param target_string a string representing the output type
@@ -685,56 +735,36 @@ public class IOGraph<V extends Comparable,E>
 	 */
 	public String getShortestConversionPathString(String source_string, String target_string, boolean ENABLE_WEIGHTED_PATHS)
 	{
+		Vector<Conversion<V,E>> conversions = getShortestConversionPath(source_string, target_string, ENABLE_WEIGHTED_PATHS);
 	  String task = "";
-	  Vector<Integer> paths;
-	  Vector<Integer> path = new Vector<Integer>();
-	  E edge;        
-	  int source = vertex_string_map.get(source_string);
-	  int target = vertex_string_map.get(target_string);
-	  int i0, i1;
-	  
-	  if(source >= 0 && target >= 0){
-	  	if(!ENABLE_WEIGHTED_PATHS){
-	  		paths = getShortestPaths(source);
-	  	}else{
-	  		paths = getShortestWeightedPaths(source).first;
-	  	}
-	  	
-	  	path = getPath(paths, source, target);
-	      
-	    if(path.size() <= 1){
-	      task = "null\n";
-	    }else{
-	      for(int i=1; i<path.size(); i++){
-	        i0 = path.get(i-1);
-	        i1 = path.get(i);
-	        edge = edges.get(i0).get(adjacency_list.get(i0).indexOf(i1));
-	        
-	        task += edge.toString() + " ";
-	        task += vertices.get(i0) + " ";
-	        task += vertices.get(i1);
-	        task += "\n";
-	      }
-	    }
-	  }
+
+    if(conversions.isEmpty()){
+      task = "null\n";
+    }else{
+      for(int i=0; i<conversions.size(); i++){
+        task += conversions.get(i).edge.toString() + " ";
+        task += conversions.get(i).input + " ";
+        task += conversions.get(i).output;
+        task += "\n";
+      }
+    }
 	  
 	  return task;
 	}
 
 	/**
 	 * Get the shortest list of the conversion tasks required to convert from a given input to a given output.
-	 * Note: this version returns all paths along the shortest path from the source
+	 * Note: this version returns all parallel paths along the shortest path from the source
 	 * @param source_string a string representing the input type
 	 * @param target_string a string representing the output type
-	 * @return a vector of line separated tasks, with each line containing an edge, input, and output
+	 * @return a vector of conversions containing an edge, input, and output (null if no conversions found)
 	 */
-	public Vector<String> getShortestConversionPathStrings(String source_string, String target_string)
+	public Vector<Vector<Conversion<V,E>>> getShortestConversionPaths(String source_string, String target_string)
 	{
-	  Vector<String> tasks = new Vector<String>();
-	  String task;
-	  Vector<String> task_buffer;
-	  Vector<String> task_buffer_new;
-	  Vector<Integer> edge_converter_indices = new Vector<Integer>();
+		Vector<Vector<Conversion<V,E>>> conversions_buffer = new Vector<Vector<Conversion<V,E>>>();
+		Vector<Vector<Conversion<V,E>>> conversions_buffer_new;
+		Vector<Conversion<V,E>> conversions;
+	  Vector<Integer> edge_indices = new Vector<Integer>();
 	  Vector<Integer> paths;
 	  Vector<Integer> path = new Vector<Integer>();
 	  E edge;
@@ -746,53 +776,69 @@ public class IOGraph<V extends Comparable,E>
 	  	paths = getShortestPaths(source);
 	  	path = getPath(paths, source, target);
 	      
-	    if(!path.isEmpty()){
-	      task_buffer = new Vector<String>();
-	      
-	      if(path.size() == 1){
-	        task_buffer.add("null\n");
-	      }else{
-	        task_buffer.add("");
-	        
-	        for(int i=1; i<path.size(); i++){
-	          i0 = path.get(i-1);
-	          i1 = path.get(i);
-	          edge_converter_indices.clear();
-	          
-	          //Find all parallel edges
-	          for(int j=0; j<adjacency_list.get(i0).size(); j++){
-	            if(adjacency_list.get(i0).get(j) == i1){
-	            	edge_converter_indices.add(j);
-	            }
-	          }
-	                      
-	          //Add tasks for each parallel edge
-	          task_buffer_new = new Vector<String>();
-	          
-	          for(int j=0; j<edge_converter_indices.size(); j++){
-	            edge = edges.get(i0).get(edge_converter_indices.get(j));
-	            
-	            for(int k=0; k<task_buffer.size(); k++){
-	              task = task_buffer.get(k);
-	              
-	              task += edge.toString() + " ";
-	              task += vertices.get(i0).toString() + " ";
-	              task += vertices.get(i1).toString();
-	              task += "\n";
-	              
-	              task_buffer_new.add(task);
-	            }
-	          }
-	          
-	          task_buffer = task_buffer_new;
-	        }
-	      }
-	      
-	      for(int i=0; i<task_buffer.size(); i++){
-	        tasks.add(task_buffer.get(i));
-	      }
-	    }
+      if(path.size() > 1){
+        conversions_buffer.add(new Vector<Conversion<V,E>>());
+        
+        for(int i=1; i<path.size(); i++){
+          i0 = path.get(i-1);
+          i1 = path.get(i);
+          edge_indices.clear();
+          
+          //Find all parallel edges
+          for(int j=0; j<adjacency_list.get(i0).size(); j++){
+            if(adjacency_list.get(i0).get(j) == i1){
+            	edge_indices.add(j);
+            }
+          }
+                      
+          //Add tasks for each parallel edge
+          conversions_buffer_new = new Vector<Vector<Conversion<V,E>>>();
+          
+          for(int j=0; j<edge_indices.size(); j++){
+            edge = edges.get(i0).get(edge_indices.get(j));
+            
+            for(int k=0; k<conversions_buffer.size(); k++){
+              conversions = new Vector<Conversion<V,E>>(conversions_buffer.get(k));
+              conversions.add(new Conversion<V,E>(vertices.get(i0), vertices.get(i1), edge));
+              conversions_buffer_new.add(conversions);
+            }
+          }
+          
+          conversions_buffer = conversions_buffer_new;
+        }
+      }
 	  }
+	  
+	  return conversions_buffer;
+	}
+	
+	/**
+	 * Get the shortest list of the conversion tasks required to convert from a given input to a given output.
+	 * Note: this version returns all parallel paths along the shortest path from the source
+	 * @param source_string a string representing the input type
+	 * @param target_string a string representing the output type
+	 * @return a vector of line separated tasks, with each line containing an edge, input, and output
+	 */
+	public Vector<String> getShortestConversionPathStrings(String source_string, String target_string)
+	{
+		Vector<Vector<Conversion<V,E>>> conversions = getShortestConversionPaths(source_string, target_string);
+		Vector<Conversion<V,E>> conversion;
+		Vector<String> tasks = new Vector<String>();
+		String task;
+
+		for(int i=0; i<conversions.size(); i++){
+			conversion = conversions.get(i);
+			task = "";
+			
+			for(int j=0; j<conversion.size(); j++){
+				task += conversion.get(j).edge.toString() + " ";
+				task += conversion.get(j).input.toString() + " ";
+				task += conversion.get(j).output.toString();
+				task += "\n";
+			}
+			
+			tasks.add(task);
+		}
 	  
 	  return tasks;
 	}

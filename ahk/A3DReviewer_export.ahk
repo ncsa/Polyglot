@@ -64,13 +64,13 @@ Loop
   }
 
   ;Click "Yes" if asked to overwrite files
-  IfWinExist, Export
+  IfWinExist, Confirm
   {
-    ControlGetText, tmp, Button1, Export
+    ControlGetText, tmp, Button1, Confirm
 
     if(tmp = "&Yes")
     {
-      ControlClick, Button1, Export
+      ControlClick, Button1, Confirm
     }
   }
 
