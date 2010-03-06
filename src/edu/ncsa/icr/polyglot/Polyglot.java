@@ -13,10 +13,8 @@ import java.util.concurrent.atomic.*;
 public abstract class Polyglot
 {
 	protected IOGraph<Data,Application> iograph = new IOGraph<Data,Application>();
+	protected int application_flexibility = 0;
 	private AtomicInteger pending_asynchronous_calls = new AtomicInteger();
-	
-	public abstract void convert(String input_filename, String output_path, Vector<Conversion<Data,Application>> conversions);
-	public abstract void close();
 	
 	/**
 	 * Get the I/O-graph.
@@ -25,6 +23,17 @@ public abstract class Polyglot
 	public IOGraph<Data,Application> getIOGraph()
 	{
 		return iograph;
+	}
+	
+	/**
+	 * Set the flexibility when choosing an application where 0=none (default), 1=allow parallel applications with
+	 * the same name (different ICR servers), 2=allow all parallel applications.  The higher the value the more 
+	 * parallelism can be taken advantage of.
+	 * @param value the flexibility value
+	 */
+	public void setApplicationFlexibility(int value)
+	{
+		application_flexibility = value;
 	}
 	
 	/**
@@ -45,6 +54,8 @@ public abstract class Polyglot
 		return iograph.getRangeIntersectionStrings(set);
 	}
 	
+	public abstract void convert(String input_filename, String output_path, Vector<Conversion<Data,Application>> conversions);
+	
 	/**
 	 * Convert a files format.
 	 * @param input_filename the absolute name of the input file
@@ -59,6 +70,27 @@ public abstract class Polyglot
 		convert(input_filename, output_path, conversions);
 	}
 	
+	/**
+	 * Convert a files format(asynchronously).
+	 * @param input_filename the absolute name of the input file
+	 * @param output_path the output path
+	 * @param conversions the conversions to perform
+	 */
+	public void convertLater(String input_filename, String output_path, Vector<Conversion<Data,Application>> conversions)
+	{
+		final String input_filename_final = input_filename;
+		final String output_path_final = output_path;
+		final Vector<Conversion<Data,Application>> conversions_final = conversions;
+		
+		pending_asynchronous_calls.incrementAndGet();
+		
+		new Thread(){
+			public void run(){
+				convert(input_filename_final, output_path_final, conversions_final);
+				pending_asynchronous_calls.decrementAndGet();
+			}
+		}.start();
+	}
 	/**
 	 * Convert a files format(asynchronously).
 	 * @param input_filename the absolute name of the input file
@@ -90,4 +122,6 @@ public abstract class Polyglot
 			Utility.pause(500);
 		}
 	}
+
+	public abstract void close();
 }

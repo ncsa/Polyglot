@@ -44,7 +44,6 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private JScrollPane scrollpane = null;
   private JTree tree;
   private JButton new_button;
-  private JButton runtime_button;
   private JButton run_button;
   private JButton measure_button;
   private JButton log_button;
@@ -61,9 +60,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private int working_set_size = 0;
   private String test_root = "";
   private String test = null;
-  private boolean TESTING_RUNTIME = false;
-  private boolean RUNNING_TEST = false;
-  private boolean MEASURING_RESULTS = false;
+  private boolean RUNNING_CONVERSIONS = false;
+  private boolean MEASUREING_QUALITY = false;
   
   private String data_path = "./";
   private Class Descriptor = null;
@@ -108,12 +106,6 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
     new_button.setLocation(component_x, component_y);
     component_y += 1.1*component_height;
     
-    runtime_button = new JButton("Measure Runtime");
-    runtime_button.addActionListener(this);
-    runtime_button.setSize(component_width, component_height);
-    runtime_button.setLocation(component_x, component_y);
-    component_y += 1.1*component_height;
-    
     run_button = new JButton("Run Conversions");
     run_button.addActionListener(this);
     run_button.setSize(component_width, component_height);
@@ -132,7 +124,6 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
     log_button.setLocation(component_x, component_y);
     
     button_panel.add(new_button);
-    button_panel.add(runtime_button);
     button_panel.add(run_button);
     button_panel.add(measure_button);
     button_panel.add(log_button);
@@ -738,7 +729,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
       about.setLocation(100, 100);
       about.setVisible(true);
     }else if(e.getSource() == new_button){
-      if(RUNNING_TEST){
+      if(RUNNING_CONVERSIONS){
         output_panel.addText("<br><b><font color=red>A test is running!</font></b>");
       }else{
         Calendar calendar = new GregorianCalendar();
@@ -765,22 +756,18 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   
         output_panel.addText("<br><br><b>New test created: </b>" + test);
       }
-    }else if(e.getSource() == runtime_button || e.getSource() == run_button || e.getSource() == measure_button){
+    }else if(e.getSource() == run_button || e.getSource() == measure_button){
     	if(test == null){
         output_panel.addText("<br><b><font color=red>No tests found!</font></b>");
-    	}else if(TESTING_RUNTIME){
-        output_panel.addText("<br><b><font color=red>A runtime test is running!</font></b>");
-      }else if(RUNNING_TEST){
+      }else if(RUNNING_CONVERSIONS){
         output_panel.addText("<br><b><font color=red>A test is running!</font></b>");
-      }else if(MEASURING_RESULTS){
+      }else if(MEASUREING_QUALITY){
         output_panel.addText("<br><b><font color=red>Results are being measured!</font></b>");
       }else{
-      	if(e.getSource() == runtime_button){
-      		TESTING_RUNTIME = true;
-      	}else if(e.getSource() == run_button){
-	        RUNNING_TEST = true;
+      	if(e.getSource() == run_button){
+	        RUNNING_CONVERSIONS = true;
 	      }else if(e.getSource() == measure_button){
-	    		MEASURING_RESULTS = true;
+	    		MEASUREING_QUALITY = true;
 	      }
       	
     		(new Thread(this)).start();   	
@@ -840,108 +827,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	 */
 	public void run()
 	{
-		if(TESTING_RUNTIME){
-			/*
-	    output_panel.addText("<br><br><b><font color=blue>Testing Runtime...</font></b><br>");
-	    
-	    //Run the test
-	    LinkedList<Pair<Integer,String>> tests = new LinkedList<Pair<Integer,String>>();
-	    String upload_folder, download_folder;
-	    String timestamp;
-	    FileInfo fi;
-	    long t0, t1;
-	    double dt;
-	    int count;
-	
-	    //Reset job status
-	    for(int i=0; i<job_status.size(); i++){
-	      job_status.set(i, -1);
-	    }
-	    
-	    displayJobs();
-	    
-	    //Set starting time
-	    t0 = (new Date()).getTime();
-	    
-	    //Submit jobs  
-	    for(int i=0; i<jobs.size(); i++){
-	      //Create upload polyglot folder for part-1 of this job
-	      timestamp = (new Long((new Date()).getTime())).toString(); 
-	      upload_folder = polyglot_uploads + "Local_" + timestamp + "/";
-	      download_folder = polyglot_downloads + "Local_" + timestamp + "/";
-	                
-	      new File(upload_folder).mkdir();
-	      
-	      //Copy data into upload directory
-	      Iterator<FileInfo> itr = working_set.iterator();
-	      count = 0;
-	      
-	      while(itr.hasNext()){
-	        fi = itr.next();
-	        Utility.copyFile(fi.absolutename, upload_folder + "/" + fi.filename);
-	        count++;
-	      }
-	                
-	      //Create "tasks" file
-	      try{
-	        FileWriter outs = new FileWriter(upload_folder + "tasks");
-	        outs.write(jobs.get(i).first);
-	        outs.close();
-	      }catch(Exception exception) {}
-	      
-	      //Create "commit" file
-	      try{
-	        FileWriter outs = new FileWriter(upload_folder + "commit");
-	        outs.close();
-	      }catch(Exception exception) {}
-	      
-	      tests.add(new Pair<Integer,String>(i, download_folder));
-	      output_panel.addText("<br><b>Submitted Job-" + (i+1) + "A </b> (" + count + " files)");
-	    }
-	    
-	    output_panel.addText("<br>");
-	    
-	    //Wait for jobs
-	    Pair<Integer,String> tmpp;
-	    boolean CHANGE = false;
-	    
-	    while(!tests.isEmpty()){
-	    	Iterator<Pair<Integer,String>> itr = tests.iterator();
-	    	
-	    	while(itr.hasNext()){
-	    		tmpp = itr.next();
-	    		
-	    		if(Utility.exists(tmpp.second)){
-	    			if(job_status.get(tmpp.first) == -1){
-	      			job_status.set(tmpp.first, 0);
-	      			CHANGE = true;
-	    			}
-	    			
-	      		if(Utility.exists(tmpp.second + "complete")){
-	            output_panel.addText("<br><b>Completed Job-" + (tmpp.first+1) + "</b>");
-	      			job_status.set(tmpp.first, 1);
-	      			CHANGE = true;
-	      			itr.remove();
-	      		}
-	    		}
-	    	}
-	    	
-	    	if(CHANGE){
-	    		displayJobs();
-	    		CHANGE = false;
-	    	}
-	    	
-	    	Utility.pause(500);
-	    }
-	    
-	    t1 = (new Date()).getTime();
-	    dt = (t1-t0) / 1000.0;
-	          
-	    output_panel.addText("<br><br><b><font color=blue>Test completed in " + dt + " seconds.</font></b><br>");
-	    TESTING_RUNTIME = false;
-	    */
-		}else if(RUNNING_TEST){
-	    output_panel.addText("<br><br><b><font color=blue>Running Test...</font></b>");
+		if(RUNNING_CONVERSIONS){
+	    output_panel.addText("<br><br><b><font color=blue>Executing conversions...</font></b>");
 	    
 	    //Backup old jobs map
 	    if(Utility.exists(test_path + test + "/jobs.txt")){
@@ -970,6 +857,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	    FileInfo fi;
 	    int count_old = 0;
 	    int count_new = 0;
+	    long t0, t1;
+	    double dt;
 	    
 	    if(folder_files != null){
 	      for(int i=0; i<folder_files.length; i++){
@@ -995,6 +884,9 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        job_status.set(i, jobFolderStatus(i+1));
 	      }
 	    }
+	    
+	    //Set starting time
+	    t0 = (new Date()).getTime();
 	  
 	    //Run the test
 	    Vector<Conversion<Data,Application>> conversions;
@@ -1050,11 +942,14 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	      }
 	    }
 	    
+	    //Set end time
+	    t1 = (new Date()).getTime();
+	    dt = (t1-t0) / 1000.0;
+	          	    
 	    displayJobs();
-	    
-	    output_panel.addText("<br><b><font color=blue>Test completed!</font></b><br>");
-	    RUNNING_TEST = false;
-	  }else if(MEASURING_RESULTS){
+	    output_panel.addText("<br><b><font color=blue>Test completed in " + dt + " seconds.</font></b><br>");
+	    RUNNING_CONVERSIONS = false;
+	  }else if(MEASUREING_QUALITY){
 	  	/*
 	  	String path0 = test_path + test + "/0/";
 	  	String pathi;
@@ -1160,8 +1055,9 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	    }
 	    
 	  	output_panel.addText("<br><b><font color=blue>Measurments completed.</font></b><br>");
-	  	MEASURING_RESULTS = false;
-	  	*/
+	  	*/	  	
+	  	
+	  	MEASUREING_QUALITY = false;
 	  }
 	}
 

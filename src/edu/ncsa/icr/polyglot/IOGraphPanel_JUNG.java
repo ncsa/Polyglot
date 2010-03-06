@@ -229,7 +229,7 @@ public class IOGraphPanel_JUNG<V extends Comparable,E> extends JPanel
   
 	/**
    * The main starting point for this program.
-   * @param command line arguments
+   * @param args command line arguments
    */
 	public static void main(String args[])
 	{

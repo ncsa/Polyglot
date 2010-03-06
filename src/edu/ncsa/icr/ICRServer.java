@@ -23,6 +23,7 @@ public class ICRServer implements Runnable
 	private int max_operation_attempts = 1;
 	private boolean ENABLE_MONITORS = false;
 	private boolean RUNNING;
+	private boolean BUSY = false;
 	
 	/**
 	 * Class constructor.
@@ -287,6 +288,8 @@ public class ICRServer implements Runnable
   	String command = "";
   	boolean COMPLETE;
   	
+  	BUSY = true;  
+  	
   	//Execute each task
   	for(int i=0; i<tasks.size(); i++){
   		task = tasks.get(i);
@@ -359,6 +362,8 @@ public class ICRServer implements Runnable
 	      application.exit_operation.runScriptAndWait();
 	    }
   	}
+  	
+  	BUSY = false;
   }
   
   /**
@@ -441,6 +446,8 @@ public class ICRServer implements Runnable
 				}else if(message.equals("new_session")){
 					session = session_counter.incrementAndGet();
 					Utility.writeObject(outs, session);
+				}else if(message.equals("is_busy")){
+					Utility.writeObject(outs, BUSY);
 				}else if(message.equals("close")){
 					Utility.writeObject(outs, "bye");
 					System.out.println("Session " + session + ": closing connection!\n");

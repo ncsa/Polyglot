@@ -44,7 +44,7 @@ public class ICRAuxiliary
 		/**
 		 * Class constructor.
 		 * @param absolute_name the absolute name of the file
-		 * @LOAD true if the data should be loaded into memory
+		 * @param LOAD true if the data should be loaded into memory
 		 */
 		public FileData(String absolute_name, boolean LOAD)
 		{
@@ -162,7 +162,6 @@ public class ICRAuxiliary
   	 * Save the file data to a file.
   	 * @param path the path to save to
   	 * @param filename the name of the file (can be null)
-  	 * @return a pointer to the saved file
   	 */
   	public void save(String path, String filename)
   	{

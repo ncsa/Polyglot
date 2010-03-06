@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Polyglot2" default="archive">
+	<property name="classes" location="build/classes"/>
+	<property name="javadocs" location="build/javadocs"/>
+
+	<target name="init">
+		<mkdir dir="build/classes"/>
+	</target>	
+
+	<path id="classpath">
+		<fileset dir="lib">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+	
+	<target name="compile" depends="init" description="Compiles the Java source code">
+		<javac srcdir="src" destdir="${classes}" classpathref="classpath"/>
+	</target>
+	
+	<target name="archive" depends="compile" description="Creates the JAR file">
+		<jar destfile="build/Polyglot2.jar" basedir="${classes}"/>
+	</target>
+	
+	<target name="javadocs" description="Make javadocs">
+		<mkdir dir="${javadocs}"/>
+		<javadoc sourcepath="src" destdir="${javadocs}" packagenames="edu.ncsa.icr.*" classpathref="classpath"/>
+	</target>
+	
+	<target name="clean" depends="init" description="Deletes all generated files">
+		<delete dir="build"/>
+	</target>
+</project>

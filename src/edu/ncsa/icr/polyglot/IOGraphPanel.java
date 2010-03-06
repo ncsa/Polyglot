@@ -802,7 +802,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 
 	/**
    * The main starting point for this program.
-   * @param command line arguments
+   * @param args command line arguments
    */
   public static void main(String args[])
   {

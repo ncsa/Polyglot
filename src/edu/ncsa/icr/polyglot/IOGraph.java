@@ -360,6 +360,30 @@ public class IOGraph<V extends Comparable,E>
 	}
 	
 	/**
+	 * Get a list of edges parallel to the given edge
+	 * @param source the source vertex
+	 * @param target the target vertex
+	 * @param edge the actual edge (can be null)
+	 * @return a list of parallel edges
+	 */
+	public Vector<E> getParallelEdges(V source, V target, E edge)
+	{
+		Vector<E> parallel_edges = new Vector<E>();
+		int v0 = vertex_map.get(source);
+		int v1 = vertex_map.get(target);
+		
+		for(int i=0; i<adjacency_list.get(v0).size(); i++){
+			if(adjacency_list.get(v0).get(i) == v1){
+				if(edge==null || edges.get(v0).get(i).toString().equals(edge.toString())){
+					parallel_edges.add(edges.get(v0).get(i));
+				}
+			}
+		}
+		
+		return parallel_edges;
+	}
+	
+	/**
    * Perform a breadth first search from the vertex at the given index and store the resulting paths.
    * @param source the index of the source vertex
    * @return the paths vector indicating from which vertex we must come to get to this vertex

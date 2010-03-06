@@ -1,7 +1,6 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -227,7 +226,7 @@ public class ICRClient
 	/**
 	 * Execute tasks on the ICR server.
 	 * @param tasks a list of tasks to execute (note, all input file data should be cached already!)
-	 * @param status, 0=success
+	 * @return server response (0=success)
 	 */
 	public synchronized int executeTasks(Vector<Task> tasks)
 	{		
@@ -274,6 +273,22 @@ public class ICRClient
 			Utility.writeObject(outs, "new_session");
 			session = (Integer)Utility.readObject(ins);
 		}catch(Exception e) {e.printStackTrace();}
+	}
+	
+	/**
+	 * Check if the ICR Server is busy executing another task.
+	 * @return true if the ICR Server is currently busy
+	 */
+	public synchronized boolean isBusy()
+	{
+		Boolean BUSY = true;
+		
+		try{
+			Utility.writeObject(outs, "is_busy");
+			BUSY = (Boolean)Utility.readObject(ins);
+		}catch(Exception e) {e.printStackTrace();}
+		
+		return BUSY;
 	}
 
 	/**

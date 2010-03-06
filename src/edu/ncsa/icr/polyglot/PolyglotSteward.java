@@ -45,6 +45,7 @@ public class PolyglotSteward extends Polyglot
 	{
 		TaskList task_list = null;
 		Application application;
+		Vector<Application> application_options = null;
 		FileData input, output;
 		FileData input_file_data;
 		Data data_last, data_next;
@@ -63,6 +64,20 @@ public class PolyglotSteward extends Polyglot
 				output = (FileData)conversions.get(i).output;
 				data_next = new CachedFileData(input_file_data, output.getFormat());
 	
+				//Attempt to avoid busy ICR servers
+				if(application_flexibility > 0 && application.icr.isBusy()){
+					if(application_flexibility == 1){
+						application_options = iograph.getParallelEdges(input, output, application);
+					}else if(application_flexibility == 2){
+						application_options = iograph.getParallelEdges(input, output, null);
+					}
+					
+					for(int j=0; j<application_options.size(); j++){
+						application = application_options.get(i);
+						if(!application.icr.isBusy()) break;
+					}
+				}
+				
 				if(application.icr == icr){
 					task_list.add(application.toString(), data_last, data_next);
 				}else{
