@@ -1,11 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="Polyglot2" default="archive">
 	<property name="classes" location="build/classes"/>
+	<property name="IOGraphApplet" location="build/IOGraphApplet"/>
 	<property name="javadocs" location="build/javadocs"/>
-
-	<target name="init">
-		<mkdir dir="build/classes"/>
-	</target>	
 
 	<path id="classpath">
 		<fileset dir="lib">
@@ -13,12 +10,20 @@
 		</fileset>
 	</path>
 	
-	<target name="compile" depends="init" description="Compiles the Java source code">
+	<target name="compile" description="Compiles the Java source code">
+		<mkdir dir="${classes}"/>
 		<javac srcdir="src" destdir="${classes}" classpathref="classpath"/>
 	</target>
 	
+	<!--
+	<target name="IOGraphApplet" description="Compile the code needed for IOGraphApplet">
+		<mkdir dir="${IOGraphApplet}"/>
+		<javac srcdir="src" destdir="${IOGraphApplet}" includes="**/IOGraph*.java" classpathref="classpath"/>
+	</target>
+	-->
+	
 	<target name="archive" depends="compile" description="Creates the JAR file">
-		<jar destfile="build/Polyglot2.jar" basedir="${classes}"/>
+		<jar basedir="${classes}" destfile="build/Polyglot2.jar"/>
 	</target>
 	
 	<target name="javadocs" description="Make javadocs">
@@ -26,7 +31,7 @@
 		<javadoc sourcepath="src" destdir="${javadocs}" packagenames="edu.ncsa.icr.*" classpathref="classpath"/>
 	</target>
 	
-	<target name="clean" depends="init" description="Deletes all generated files">
+	<target name="clean" description="Deletes all generated files">
 		<delete dir="build"/>
 	</target>
 </project>
