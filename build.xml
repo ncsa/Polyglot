@@ -19,7 +19,7 @@
 		<jar basedir="${classes}" destfile="build/Polyglot2.jar"/>
 	</target>	
 	
-	<target name="iograph archive" depends="compile" description="Compile the code needed for IOGraphApplet">
+	<target name="iograph_archive" depends="compile" description="Archive the code needed for the I/O-graph applet">
 		<mkdir dir="${tmp}"/>
 		<copy todir="${tmp}">
 			<fileset dir="${classes}">
