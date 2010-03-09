@@ -1,5 +1,5 @@
 ;3Ds Max (v11.0, 2009 Educational)
-;3d
+;model
 ;max
 
 ;check for the opened window

@@ -1,5 +1,5 @@
 ;Google SketchUp (v7.0)
-;3d
+;model
 ;3ds, ddf, dem, dwg, dxf, skp
 
 ;Run program if not already running

@@ -1,5 +1,5 @@
 ;3Ds Max (v11.0, 2009 Educational)
-;3d
+;model
 ;3ds, ai, ddf, dem, dwg, dxf, fbx, flt, iam, ige, iges, igs, ipt, lp, ls, obj, shp, stl, vw, wrl, wrz
 
 ;Run program if not already running

@@ -1,5 +1,5 @@
 ;Wings 3D (v0.99.02)
-;3d
+;model
 ;wings
 
 ;Activate the window

@@ -1,5 +1,5 @@
 ;Wings 3D (v0.99.02)
-;3d
+;model
 ;3ds, ai, fbx, lwo, lxo, ndo, obj, stl
 
 ;Run program if not already running

@@ -1,5 +1,5 @@
 ;NIST VRML<->X3D (v1.0)
-;3d
+;model
 ;wrl, x3d
 ;wrl, x3d
 

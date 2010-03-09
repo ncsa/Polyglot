@@ -1,5 +1,5 @@
 ;Google SketchUp (v7.0)
-;3d
+;model
 ;skp
 
 ;Parse input format

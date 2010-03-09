@@ -1,5 +1,5 @@
 ;3Ds Max (v11.0, 2009 Educational)
-;3d
+;model
 ;3ds, ai, dae, dwf, dwg, dxf, fbx, flt, igs, lay, lp, m3g, obj, stl, vw, w3d, wrl
 
 ;check for the opened window

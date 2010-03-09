@@ -1,5 +1,5 @@
 ;Blender (v2.46)
-;3d
+;model
 ;blend, stl, wrl
 ;blend, dxf, stl, wrl
 

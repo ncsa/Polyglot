@@ -1,5 +1,5 @@
 ;VTK (v5.2.1)
-;3d
+;model
 ;3ds, obj, pdb, ply, stl
 ;iv, ply, rib, stl, wrl
 

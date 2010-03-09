@@ -1,5 +1,5 @@
 ;Adobe 3D Reviewer (v9)
-;3d
+;model
 ;3ds, 3dxml, arc, asm, bdl, catdrawing, catpart, catproduct, catshape, cgr, dae, dlv, exp, hgl, hp, hpgl, hpl, iam, ifc, igs, iges, ipt, jt, kmz, mf1, model, neu, obj, _pd, par, pdf, pkg, plt, prc, prt, prw, psm, pwd, sab, sat, sda, sdac, sdp, sdpc, sds, sdsc, sdw, sdwc, ses, session, sldasm, sldlfp, sldprt, stl, step, stp, u3d, unv, wrl, vrml, x_b, x_t, xas, xpr, xmt, xmt_txt, xv0, xv3
 
 ;Run program if not already running

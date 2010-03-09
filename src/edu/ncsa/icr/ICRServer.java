@@ -112,11 +112,11 @@ public class ICRServer implements Runnable
 	 */
   public void addScriptedOperations(String path, String extension)
   {
-    String filename;
+    String name;
     String alias;
     String application_name = "";
     String operation_name;
-    Vector<String> domains = new Vector<String>();
+    Vector<String> types = new Vector<String>();
     Vector<String> input_formats = new Vector<String>();
     Vector<String> output_formats = new Vector<String>();
     String line;
@@ -125,27 +125,27 @@ public class ICRServer implements Runnable
     Operation operation;
     final String extension_final = extension;
     
-    //Examine AutoHotkey scripts
-    FilenameFilter ahk_filter = new FilenameFilter(){
+    //Examine scripts with the given extension
+    FilenameFilter extension_filter = new FilenameFilter(){
       public boolean accept(File dir, String name){
       	return !name.startsWith(".") && name.endsWith("." + extension_final);
       }
     };    
     
     File dir = new File(path);
-    File[] scripts = dir.listFiles(ahk_filter);
+    File[] scripts = dir.listFiles(extension_filter);
     
     if(scripts != null){
       for(int i=0; i<scripts.length; i++){
-        filename = Utility.getFilenameName(scripts[i].getName());
+        name = Utility.getFilenameName(scripts[i].getName());
         
-        if(filename.charAt(0) != '#'){		//If not "commented out" script
-          domains.clear();
+        if(name.charAt(0) != '#'){		//If not "commented out" script
+          types.clear();
           input_formats.clear();
           output_formats.clear();        	
         	
         	//Examine script name
-	        String[] tokens = filename.split("_");
+	        String[] tokens = name.split("_");
 	        alias = tokens[0];
 	        operation_name = tokens[1];
           
@@ -162,7 +162,7 @@ public class ICRServer implements Runnable
           
           //Examine script header
           try{
-            BufferedReader ins = new BufferedReader(new FileReader(path + filename + ".ahk"));
+            BufferedReader ins = new BufferedReader(new FileReader(path + name + "." + extension));
             
             //Get application pretty name
             line = ins.readLine();
@@ -181,7 +181,7 @@ public class ICRServer implements Runnable
               scanner.useDelimiter("[\\s,]+");
               
               while(scanner.hasNext()){
-              	domains.add(scanner.next());
+              	types.add(scanner.next());
               }         	
             
               //Extract supported file formats
@@ -247,7 +247,7 @@ public class ICRServer implements Runnable
           	operation.outputs.add(FileData.newFormat(output_formats.get(j)));
           }
           
-          operation.script = path + filename + ".ahk";
+          operation.script = path + name + "." + extension;
           
           application.add(operation);
         }

@@ -1,5 +1,5 @@
 ;ParaView (v3.4.0)
-;3d
+;model
 ;cube, dem, facet, g, ply, pvd, raw, stl, vtk, xyz
 
 ;Run program if not already running

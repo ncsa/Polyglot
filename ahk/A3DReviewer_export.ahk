@@ -1,5 +1,5 @@
 ;Adobe 3D Reviewer (v9)
-;3d
+;model
 ;igs, pdf, stl, stp, u3d, wrl, x_t
 
 ;Parse input format

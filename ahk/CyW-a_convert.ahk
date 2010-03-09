@@ -1,5 +1,5 @@
 ;Cyberware PlyTool (v1.7)
-;3d
+;model
 ;ply
 ;3ds, asc, dxf, iges, iv, obj, rag, stl, wrl
 

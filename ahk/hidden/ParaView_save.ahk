@@ -1,5 +1,5 @@
 ;ParaView (v3.4.0)
-;3d
+;model
 ;ply, pvd, stl, vtk
 
 ;check for the opened window

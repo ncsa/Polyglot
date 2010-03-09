@@ -1,5 +1,5 @@
 ;K-3D (v0.6.7)
-;3d
+;model
 ;k3d, obj
 ;k3d, obj
 

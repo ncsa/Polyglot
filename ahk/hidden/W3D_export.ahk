@@ -1,5 +1,5 @@
 ;Wings 3D (v0.99.02)
-;3d
+;model
 ;3ds, eps, fbx, lwo, lxo, ndo, obj, pov, rwx, stl, wrl, x
 
 ;Activate the window

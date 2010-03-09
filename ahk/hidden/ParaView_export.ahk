@@ -1,5 +1,5 @@
 ;ParaView (v3.4.0)
-;3d
+;model
 ;pov, vrml, x3d, x3db
 
 ;check for the opened window

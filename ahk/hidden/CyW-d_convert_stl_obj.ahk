@@ -1,5 +1,5 @@
 ;Cyberware PlyTool (v1.7)
-;3d
+;model
 ;stl
 ;obj
 
