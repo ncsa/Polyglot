@@ -360,7 +360,7 @@ public class IOGraph<V extends Comparable,E>
 	}
 	
 	/**
-	 * Get a list of edges parallel to the given edge
+	 * Get a list of edges parallel to the given edge.
 	 * @param source the source vertex
 	 * @param target the target vertex
 	 * @param edge the actual edge (can be null)

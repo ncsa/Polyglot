@@ -1,6 +1,7 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
+import edu.illinois.ncsa.versus.engine.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -64,7 +65,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private boolean MEASUREING_QUALITY = false;
   
   private String data_path = "./";
-  private Class Descriptor = null;
+  private String signature = null;
   private String extension = "";
   private String test_path = "./";
   private int retry_level = 0;	//0=none, 1=all, 2=partials, 3=failures
@@ -215,8 +216,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	          	}
 	        	}else if(key.equals("DataPath")){
 	            data_path = Utility.unixPath(value) + "/";
-	          }else if(key.equals("Descriptor")){
-	            //Descriptor = Class.forName(value);
+	          }else if(key.equals("Signature")){
+	            signature = value;
 	          }else if(key.equals("Extension")){
 	            extension = value;
 	          }else if(key.equals("TestPath")){
@@ -611,37 +612,44 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	}
 
 	/**
-	 * Given the quality of a job create the corresponding entries for the quality data file.
+	 * Given the comparison result from a job create the corresponding entries for the output file.
 	 * @param job the job
-	 * @param quality the quality value
-	 * @return the entries for the quality file
+	 * @param result the result of the comparison
+	 * @return the entries for the output file
 	 */
-	public String getQualityEntries(Pair<String,String> job, double quality)
+	public String getOutputEntries(Pair<String,String> job, double result)
 	{
-		Scanner sc1, sc2;
-		String alias, input, output;
-		String string = "";
+	  Vector<String> lines;
+		String application, input, output;
+		String line, string = "";
+		int tmpi;
 		
-		sc1 = new Scanner(job.first);
+		lines = Utility.split(job.first, '\n', false);
 		
-		while(sc1.hasNextLine()){
-			sc2 = new Scanner(sc1.nextLine());
-			alias = sc2.next(); sc2.next();
-			input = sc2.next(); sc2.next();
-			output = sc2.next();
+		for(int i=0; i<lines.size(); i++){
+			line = lines.get(i);
+	  	tmpi = line.lastIndexOf(' ');
+	  	output = line.substring(tmpi+1);
+	  	line = line.substring(0, tmpi);
+	  	tmpi = line.lastIndexOf(' ');
+	  	input = line.substring(tmpi+1);
+	  	application = line.substring(0, tmpi);
 			
-			string += alias + " " + input + " " + output + " " + quality + "\n";
+			string += application + " " + input + " " + output + " " + result + "\n";
 		}
 		
-		sc1 = new Scanner(job.second);
+		lines = Utility.split(job.second, '\n', false);
 		
-		while(sc1.hasNextLine()){
-			sc2 = new Scanner(sc1.nextLine());
-			alias = sc2.next(); sc2.next();
-			input = sc2.next(); sc2.next();
-			output = sc2.next();
+		for(int i=0; i<lines.size(); i++){
+			line = lines.get(i);
+	  	tmpi = line.lastIndexOf(' ');
+	  	output = line.substring(tmpi+1);
+	  	line = line.substring(0, tmpi);
+	  	tmpi = line.lastIndexOf(' ');
+	  	input = line.substring(tmpi+1);
+	  	application = line.substring(0, tmpi);
 			
-			string += alias + " " + input + " " + output + " " + quality + "\n";
+			string += application + " " + input + " " + output + " " + result + "\n";
 		}
 		
 		return string;
@@ -950,17 +958,13 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	    output_panel.addText("<br><b><font color=blue>Test completed in " + dt + " seconds.</font></b><br>");
 	    RUNNING_CONVERSIONS = false;
 	  }else if(MEASUREING_QUALITY){
-	  	/*
 	  	String path0 = test_path + test + "/0/";
 	  	String pathi;
-	  	String quality_data = "";
+	  	String output_data = "";
 	  	File folder;
 	  	File[] folder_files;
 	  	String filename0, filenamei;
-	  	Mesh m0 = null;
-	  	Mesh mi = null;
-	  	double magnitude = 100;
-	  	double quality;
+	  	double result;
 	  	
 	    output_panel.addText("<br><br><b><font color=blue>Beginning measurments...</font></b><br><br>");
 	  	
@@ -969,58 +973,45 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	    
 	    if(folder_files != null){
 	      for(int i=0; i<folder_files.length; i++){
-	    		output_panel.addText("<b>" + (i+1) + ") </b><i>" + folder_files[i].getName());
+	    		output_panel.addText("<b>" + (i+1) + ") </b><i>" + folder_files[i].getName() + "</i>: <b>");
 	      	filename0 = path0 + folder_files[i].getName();
 	      	
-	      	try{
-	      		if(Descriptor != null){
-		        	m0 = new Mesh();
-		        	m0.load(filename0);
-		        	m0.setDescriptor(Descriptor);
-		        	magnitude = m0.getDescriptor().magnitude();
-	      		}
-	
-	      		output_panel.addText("&nbsp;(" + Utility.round(magnitude,2) + "</i>): <b>");
-	
+	      	try{	
 	        	for(int j=0; j<jobs.size(); j++){
 	        		//-1=No status, 0=Running, 1=Complete, 2=Partially completed, 3=Failed
 	        		if(job_status.get(j) == 1 || job_status.get(j) == 2){
 	        			pathi = test_path + test + "/" + (j+1) + "/";
 	        			filenamei = pathi + folder_files[i].getName();
+	        			result = 0;
 	        			
 	        			if(Utility.exists(filenamei)){
 		        			try{
-		        				if(Descriptor != null){
-				            	mi = new Mesh();
-				            	mi.load(filenamei);
-				  	        	mi.setDescriptor(Descriptor);
-				  	          
-				  	        	//quality = 100.0 * Math.exp(-m0.compareTo(mi)/magnitude);
-				  	        	quality = 100.0*(1.0-m0.compareTo(mi)/magnitude);
-				  	        	
-				  	        	if(quality < 0) quality = 0;
-				  	        	if(quality > 100) quality = 100;
+		        				if(signature != null){
+		        					result = VersusDiff.compare(filename0, filenamei, signature);
 		        				}else{
-		        					quality = 100;	//Quality is based on the existence of the output file
+		        					result = 1;	//Result is based on the existence of the output file
 		        				}
-			  	        	
-			  	        	quality_data += getQualityEntries(jobs.get(j), quality);
+		        				
+		        				System.out.println("Result: " + result);
+			  	        	output_data += getOutputEntries(jobs.get(j), result);
 			            	output_panel.addText(".");
 		            	}catch(Exception e){
-		          			quality_data += getQualityEntries(jobs.get(j), 0);
+		          			output_data += getOutputEntries(jobs.get(j), 0);
 		                output_panel.addText("<font color=red>x</font>");
+		                e.printStackTrace();
 		            	}	
 	        			}else{
-	          			quality_data += getQualityEntries(jobs.get(j), 0);
+	          			output_data += getOutputEntries(jobs.get(j), 0);
 	        				output_panel.addText("x");
 	        			}
 	        		}else{
-	        			quality_data += getQualityEntries(jobs.get(j), 0);
+	        			output_data += getOutputEntries(jobs.get(j), 0);
 	      				output_panel.addText("x");
 	        		}
 	        	}
 	      	}catch(Exception e){
 	      		output_panel.addText("<font color=red>failed!</font>");
+	      		e.printStackTrace();
 	      	}
 	      	
 	    		output_panel.addText("</b><br>");
@@ -1031,7 +1022,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	    	String quality_filename = "";
 	    	
 	    	try{
-	    		quality_filename = test_root + "_" + ((MeshDescriptor)Descriptor.newInstance()).getType();
+	    		quality_filename = test_root + "_" + signature;
 	    	}catch(Exception e) {e.printStackTrace();}
 	    	
 	      quality_filename += "." +  calendar.get(Calendar.YEAR);
@@ -1042,20 +1033,21 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	      quality_filename += Utility.toString(calendar.get(Calendar.SECOND), 2);
 	      quality_filename += ".txt";
 	    	
-	      Utility.save(test_path + test + "/" + quality_filename, quality_data);
+	      Utility.save(test_path + test + "/" + quality_filename, output_data);
 	    
+	      /*
 	      if(true){
-	      	IOGraphViewer iograph_viewer = new IOGraphViewer();
-		     	iograph_viewer.load(graph_location + "/fields.txt", graph_location + "/conversions.txt", graph_location + "/aliases.txt", test_path + test + "/" + quality_filename);
+	      	IOGraphPanel iograph_panel = new IOGraphPanel();
+		     	iograph_panel.load(graph_location + "/fields.txt", graph_location + "/conversions.txt", graph_location + "/aliases.txt", test_path + test + "/" + quality_filename);
 		      JFrame frame = new JFrame("IOGraph Viewer");
-		      frame.setSize(iograph_viewer.getAuxInterfacePane().getWidth(), iograph_viewer.getAuxInterfacePane().getHeight());
-		      frame.add(iograph_viewer.getAuxInterfacePane());
+		      frame.setSize(iograph_panel.getAuxInterfacePane().getWidth(), iograph_panel.getAuxInterfacePane().getHeight());
+		      frame.add(iograph_panel.getAuxInterfacePane());
 		      frame.setVisible(true);
 	      }
+	      */
 	    }
 	    
-	  	output_panel.addText("<br><b><font color=blue>Measurments completed.</font></b><br>");
-	  	*/	  	
+	  	output_panel.addText("<br><b><font color=blue>Measurments completed.</font></b><br>");  	
 	  	
 	  	MEASUREING_QUALITY = false;
 	  }
