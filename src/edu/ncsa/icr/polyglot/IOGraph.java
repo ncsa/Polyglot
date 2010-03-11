@@ -384,6 +384,56 @@ public class IOGraph<V extends Comparable,E>
 	}
 	
 	/**
+	 * Set the weight of the given edge.
+	 * @param source the source vertex string
+	 * @param target the target vertex string
+	 * @param edge the edge string
+	 * @param weight the weight for this edge
+	 * @return a list of parallel edges
+	 */
+	public void setEdgeWeight(String source, String target, String edge, double weight)
+	{
+		int v0 = vertex_string_map.get(source);
+		int v1 = vertex_string_map.get(target);
+		
+		for(int i=0; i<adjacency_list.get(v0).size(); i++){
+			if(adjacency_list.get(v0).get(i) == v1){
+				if(edges.get(v0).get(i).toString().equals(edge)){
+					weights.get(v0).set(i, weight);
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Load edge weights from the given file.
+	 * @param filename a file containing lines with: edge source target weight
+	 */
+	public void loadEdgeWeights(String filename)
+	{
+		String buffer = Utility.loadToString(filename);
+		Vector<String> lines = Utility.split(buffer, '\n', false);
+		String line, application, input, output;
+		double weight;
+		int tmpi;
+		
+		for(int i=0; i<lines.size(); i++){
+	  	line = lines.get(i);
+	  	tmpi = line.lastIndexOf(' ');
+	  	weight = Double.valueOf(line.substring(tmpi+1));
+	  	line = line.substring(0, tmpi);
+	  	tmpi = line.lastIndexOf(' ');
+	  	output = line.substring(tmpi+1);
+	  	line = line.substring(0, tmpi);
+	  	tmpi = line.lastIndexOf(' ');
+	  	input = line.substring(tmpi+1);
+	  	application = line.substring(0, tmpi);
+	  	
+	  	setEdgeWeight(input, output, application, weight);
+		}
+	}
+	
+	/**
    * Perform a breadth first search from the vertex at the given index and store the resulting paths.
    * @param source the index of the source vertex
    * @return the paths vector indicating from which vertex we must come to get to this vertex
