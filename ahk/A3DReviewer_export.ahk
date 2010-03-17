@@ -2,7 +2,7 @@
 ;model
 ;igs, pdf, stl, stp, u3d, wrl, x_t
 
-;Parse input format
+;Parse output format
 arg1 = %1%
 StringGetPos, index, arg1, ., R
 ifLess, index, 0, ExitApp
