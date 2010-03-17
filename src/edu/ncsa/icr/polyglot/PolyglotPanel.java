@@ -124,7 +124,7 @@ public class PolyglotPanel extends JPanel implements MouseListener, MouseMotionL
 		if(file.isDirectory()){
 			this.path = Utility.unixPath(path);
 			if(this.path.charAt(this.path.length()-1) != '/') this.path += "/";
-			if(frame != null) frame.setTitle("Polyglot File Manager [" + path + "]");
+			if(frame != null) frame.setTitle("Polyglot File Manager [" + this.path + "]");
 			
 			//Add ".."
 			if(file.getParentFile() != null){

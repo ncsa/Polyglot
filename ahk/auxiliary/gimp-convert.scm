@@ -1,0 +1,7 @@
+(define (gimp-convert input output)
+	(let* ((image (car (gimp-file-load RUN-NONINTERACTIVE input input)))
+				 (drawable (car (gimp-image-flatten image))))
+		(gimp-file-save RUN-NONINTERACTIVE image drawable output output)
+		(gimp-quit 0)
+	)
+)
