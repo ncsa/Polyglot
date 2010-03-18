@@ -1,7 +1,7 @@
 ;Paint (v6.1)
 ;image
 ;bmp, dib, gif, ico, jpg, png, tif
-;bmp, dib, gif, jpg, png
+;bmp, dib, gif, jpg, png, tif
 
 ;Parse input filename
 arg1 = %1%
@@ -39,21 +39,23 @@ Loop
 
 ;Save image
 Send, !f
-Send, !v
+Send, !a
+WinWait, Save As
 
 if(out = "bmp" or out = "dib"){
-  Send, !b
+  ControlSend, ComboBox2, m
 }else if(out = "gif"){
-  Send, !g
+  ControlSend, ComboBox2, g
 }else if(out = "jpg"){
-  Send, !j
+  ControlSend, ComboBox2, j
 }else if(out = "png"){
-  Send, !p
+  ControlSend, ComboBox2, p
+}else if(out = "tif"){
+  ControlSend, ComboBox2, t
 }
 
-WinWait, Save As
-ControlSetText, Edit1, %2%
-ControlSend, Edit1, {Enter}
+;ControlSetText, Edit1, %2%
+;ControlSend, Edit1, {Enter}
 
 ;Return to main window before exiting
 Loop
@@ -78,5 +80,5 @@ Loop
   Sleep, 500
 }
 
-Send, !f
-Send, !x
+;Send, !f
+;Send, !x

@@ -1,7 +1,7 @@
-;Paint (v6.1)
-;image
-;bmp, dib, gif, ico, jpg, png, tif
-;bmp, dib, gif, jpg, png
+;Microsoft Word (2007)
+;document
+;doc, docx, html, odt, rtf, txt, wpd, wps
+;doc, docx, odt
 
 ;Parse input filename
 arg1 = %1%
@@ -24,12 +24,12 @@ index += 2
 out := SubStr(arg2, index)
 
 ;Run program
-Run, mspaint "%1%"
+Run, C:\Program Files\Microsoft Office\Office12\WINWORD.EXE "%1%"
 
 ;Make sure image is loaded before continuing
 Loop
 {
-  IfWinExist, %input_filename% - Paint
+  IfWinExist, %input_filename% - Microsoft Word
   {
     break
   }
@@ -37,18 +37,19 @@ Loop
   Sleep, 500
 }
 
-;Save image
-Send, !f
-Send, !v
+Sleep, 1000
 
-if(out = "bmp" or out = "dib"){
-  Send, !b
-}else if(out = "gif"){
-  Send, !g
-}else if(out = "jpg"){
-  Send, !j
-}else if(out = "png"){
-  Send, !p
+;Save document
+Send, !f
+Send, !f
+
+if(out = "docx"){
+  Send, !w
+}else if(out = "doc"){
+  Send, !9
+}else if(out = "odt"){
+  Send, !d
+
 }
 
 WinWait, Save As
@@ -59,20 +60,9 @@ ControlSend, Edit1, {Enter}
 Loop
 {
   ;Continue on if main window is active
-  IfWinActive, %output_filename% - Paint
+  IfWinActive, %output_filename% - Microsoft Word
   { 
     break
-  }
-
-  ;Click "Yes" if asked to overwrite files
-  IfWinExist, Confirm
-  {
-    ControlGetText, tmp, Button1, Confirm
-
-    if(tmp = "&Yes")
-    {
-      ControlClick, Button1, Confirm
-    }
   }
 
   Sleep, 500
