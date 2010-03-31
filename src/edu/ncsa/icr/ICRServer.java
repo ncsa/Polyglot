@@ -22,6 +22,7 @@ public class ICRServer implements Runnable
 	private int max_operation_time = 10000; 	//In milliseconds
 	private int max_operation_attempts = 1;
 	private boolean ENABLE_MONITORS = false;
+	private boolean STARTED_MONITORS = false;
 	private boolean RUNNING;
 	private boolean BUSY = false;
 	
@@ -38,7 +39,7 @@ public class ICRServer implements Runnable
 	 * @param filename the file name of an initialization file
 	 */
 	public ICRServer(String filename)
-	{
+	{		
 		if(filename != null) loadINI(filename);
 		
 		try{
@@ -111,7 +112,8 @@ public class ICRServer implements Runnable
 	 * @param extension the script file extension
 	 */
   public void addScriptedOperations(String path, String extension)
-  {
+  {    
+  	TreeSet<String> alias_list = new TreeSet<String>();
     String name;
     String alias;
     String application_name = "";
@@ -125,10 +127,25 @@ public class ICRServer implements Runnable
     Operation operation;
     final String extension_final = extension;
     
+    //Read in aliases file if available
+    if(Utility.exists(path + ".aliases.txt")){
+    	try{
+    		scanner = new Scanner(new File(path + ".aliases.txt"));
+    		
+    		while(scanner.hasNextLine()){
+    			line = scanner.nextLine();
+    			
+    			if(line.charAt(0) != '#'){
+    				alias_list.add(line);
+    			}
+    		}
+    	}catch(Exception e) {e.printStackTrace();}
+    }
+    
     //Examine scripts with the given extension
     FilenameFilter extension_filter = new FilenameFilter(){
       public boolean accept(File dir, String name){
-      	return !name.startsWith(".") && name.endsWith("." + extension_final);
+      	return !name.startsWith(".") && !name.startsWith("#") && name.endsWith("." + extension_final);
       }
     };    
     
@@ -137,18 +154,18 @@ public class ICRServer implements Runnable
     
     if(scripts != null){
       for(int i=0; i<scripts.length; i++){
-        name = Utility.getFilenameName(scripts[i].getName());
+        name = Utility.getFilenameName(scripts[i].getName());      	
+      	
+      	//Examine script name
+        String[] tokens = name.split("_");
+        alias = tokens[0];
+        operation_name = tokens[1];
+
+        if(alias_list.isEmpty() || alias_list.contains(alias)){
+        	types.clear();
+        	input_formats.clear();
+        	output_formats.clear();  
         
-        if(name.charAt(0) != '#'){		//If not "commented out" script
-          types.clear();
-          input_formats.clear();
-          output_formats.clear();        	
-        	
-        	//Examine script name
-	        String[] tokens = name.split("_");
-	        alias = tokens[0];
-	        operation_name = tokens[1];
-          
           if(tokens.length > 2){
             if(operation_name.equals("open") || operation_name.equals("import")){
               input_formats.add(tokens[2]);
@@ -250,19 +267,19 @@ public class ICRServer implements Runnable
           operation.script = path + name + "." + extension;
           
           application.add(operation);
-        }
+      	}
       }
     }
     
     if(ENABLE_MONITORS){		//Execute all monitoring applications
-    	System.out.println();
-    	
 	    for(int i=0; i<applications.size(); i++){
 	    	application = applications.get(i);
 	    	
 	    	if(application.monitor_operation != null){
-	    		System.out.println("Running monitor for " + application.alias + "...");
+	    		if(!STARTED_MONITORS) System.out.println();
+	    		System.out.println("Starting monitor for " + application.alias + "...");
 	    		application.monitor_operation.runScript();
+	    		STARTED_MONITORS = true;
 	    	}
 	    }
     }
@@ -373,6 +390,14 @@ public class ICRServer implements Runnable
   {				
   	Socket client_socket = null;
   	
+  	//Display software being used
+  	System.out.println("\nAvailable Software:");
+  	
+  	for(int i=0; i<applications.size(); i++){
+  		System.out.println("  " + applications.get(i).name + " (" + applications.get(i).alias + ")");
+  	}
+  	
+  	//Begin accepting connections
   	System.out.println("\nICR Server is running...\n");
 		RUNNING = true;
 		
