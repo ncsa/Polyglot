@@ -1,13 +1,10 @@
 package edu.ncsa.icr;
+import edu.ncsa.utility.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.datatransfer.*;
 import java.awt.dnd.*;
-
 import javax.swing.*;
-
-import edu.ncsa.utility.Utility;
-
 import java.io.*;
 import java.util.*;
 import java.util.List;
@@ -16,7 +13,7 @@ import java.util.List;
  * A program for creating AHK scripts (monkey see, monkey do)
  * @author Kenton McHenry
  */
-public class ICRMonkey extends JPanel implements DropTargetListener, MouseListener
+public class ICRMonkey extends JPanel implements Runnable, DropTargetListener, MouseListener
 {
 	private TreeSet<FileLabel> files = new TreeSet<FileLabel>();
 	private FileLabel selected_file;
@@ -32,6 +29,22 @@ public class ICRMonkey extends JPanel implements DropTargetListener, MouseListen
     setBackground(new Color(0x003a6ea5));
     new DropTarget(this, this);
     addMouseListener(this);
+    
+    new Thread(this).start();
+	}
+	
+	/**
+	 * Background thread to record user interaction.
+	 */
+	public void run()
+	{
+		//Create invisible window the size of the screen
+		
+		while(true){
+			Point point = MouseInfo.getPointerInfo().getLocation();
+			System.out.println(point.x + ", " + point.y);
+			Utility.pause(1000);
+		}
 	}
 	
 	/**

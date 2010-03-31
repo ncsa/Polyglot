@@ -65,7 +65,9 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private boolean MEASUREING_QUALITY = false;
   
   private String data_path = "./";
-  private String signature = null;
+  private String adapter = null;
+  private String extractor = null;
+  private String measure = null;
   private String extension = "";
   private String test_path = "./";
   private int retry_level = 0;	//0=none, 1=all, 2=partials, 3=failures
@@ -199,7 +201,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        key = line.substring(0, line.indexOf('='));
 	        value = line.substring(line.indexOf('=')+1);
 	        
-	        if(key.charAt(0) != '#'){
+	        if(key.charAt(0) != '#' && key.charAt(0) != ';'){
 	          if(key.equals("PolyglotType")){
 	          	if(value.equals("PolyglotSteward")){
 	          		polyglot = new PolyglotSteward();
@@ -216,8 +218,12 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	          	}
 	        	}else if(key.equals("DataPath")){
 	            data_path = Utility.unixPath(value) + "/";
-	          }else if(key.equals("Signature")){
-	            signature = value;
+	          }else if(key.equals("Adapter")){
+	            adapter = value;
+	          }else if(key.equals("Extractor")){
+	            extractor = value;
+	          }else if(key.equals("Measure")){
+	            measure = value;
 	          }else if(key.equals("Extension")){
 	            extension = value;
 	          }else if(key.equals("TestPath")){
@@ -991,8 +997,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        			
 	        			if(Utility.exists(filenamei)){
 		        			try{
-		        				if(signature != null){
-		        					result = VersusDiff.compare(filename0, filenamei, signature);
+		        				if(extractor != null){
+		        					result = VersusDiff.compare(filename0, filenamei, adapter, extractor, measure);
 		        				}else{
 		        					result = 1;	//Result is based on the existence of the output file
 		        				}
@@ -1031,7 +1037,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	    	String output_filename = "";
 	    	
 	    	try{
-	    		output_filename = test_root + "_" + signature;
+	    		output_filename = test_root + "_" + extractor;
 	    	}catch(Exception e) {e.printStackTrace();}
 	    	
 	      output_filename += "." +  calendar.get(Calendar.YEAR);
