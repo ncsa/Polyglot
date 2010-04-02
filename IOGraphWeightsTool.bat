@@ -1,0 +1,1 @@
+java -cp "%~dp0lib/ncsa/3DUtilities.jar;%~dp0lib/ncsa/versus.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/MatrixUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0bin" -Xmx1024m edu.ncsa.icr.polyglot.IOGraphWeightsTool

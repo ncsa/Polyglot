@@ -1,7 +1,7 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
-import edu.illinois.ncsa.versus.engine.*;
+import edu.illinois.ncsa.versus.engine.impl.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -47,6 +47,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private JButton new_button;
   private JButton run_button;
   private JButton measure_button;
+  private JButton view_button;
   private JButton log_button;
   private JMenuBar menubar;
   private JMenuItem item_OPEN;
@@ -62,7 +63,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private String test_root = "";
   private String test = null;
   private boolean RUNNING_CONVERSIONS = false;
-  private boolean MEASUREING_QUALITY = false;
+  private boolean MEASURING_QUALITY = false;
   
   private String data_path = "./";
   private String adapter = null;
@@ -121,6 +122,12 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
     measure_button.setLocation(component_x, component_y);
     component_y += 1.1*component_height;
     
+    view_button = new JButton("View Results");
+    view_button.addActionListener(this);
+    view_button.setSize(component_width, component_height);
+    view_button.setLocation(component_x, component_y);
+    component_y += 1.1*component_height;
+    
     log_button = new JButton("Write Log");
     log_button.addActionListener(this);
     log_button.setSize(component_width, component_height);
@@ -129,6 +136,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
     button_panel.add(new_button);
     button_panel.add(run_button);
     button_panel.add(measure_button);
+    button_panel.add(view_button);
     button_panel.add(log_button);
 
     splitpane_tlr = new JSplitPane();
@@ -743,7 +751,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
       about.setLocation(100, 100);
       about.setVisible(true);
     }else if(e.getSource() == new_button){
-      if(RUNNING_CONVERSIONS){
+      if(RUNNING_CONVERSIONS || MEASURING_QUALITY){
         output_panel.addText("<br><b><font color=red>A test is running!</font></b>");
       }else{
         Calendar calendar = new GregorianCalendar();
@@ -775,31 +783,67 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
         output_panel.addText("<br><b><font color=red>No tests found!</font></b>");
       }else if(RUNNING_CONVERSIONS){
         output_panel.addText("<br><b><font color=red>A test is running!</font></b>");
-      }else if(MEASUREING_QUALITY){
+      }else if(MEASURING_QUALITY){
         output_panel.addText("<br><b><font color=red>Results are being measured!</font></b>");
       }else{
       	if(e.getSource() == run_button){
 	        RUNNING_CONVERSIONS = true;
 	      }else if(e.getSource() == measure_button){
-	    		MEASUREING_QUALITY = true;
+	    		MEASURING_QUALITY = true;
 	      }
       	
     		(new Thread(this)).start();   	
       }
+    }else if(e.getSource() == view_button){
+     	if(test == null){
+        output_panel.addText("<br><b><font color=red>No tests found!</font></b>");
+      }else{
+        FilenameFilter filename_filter = new FilenameFilter(){
+          public boolean accept(File dir, String name){
+            return name.startsWith(test_root + "_" + extractor);
+          }
+        };
+        
+  	    File folder = new File(test_path + test);
+  	    File[] folder_files = folder.listFiles(filename_filter);
+  	   	String output_filename = null;
+        
+  	   	//Use the newest results
+  	   	for(int i=0; i<folder_files.length; i++){  	   		
+  	   		if(output_filename == null || folder_files[i].getName().compareTo(output_filename) > 0){
+  	   			output_filename = folder_files[i].getName();
+  	   		}
+  	   	}
+
+  	   	//Set and display the I/O-graph
+      	iograph.loadEdgeWeights(test_path + test + "/" + output_filename);
+      	IOGraphPanel<Data,Application> iograph_panel = new IOGraphPanel<Data,Application>(iograph, 2);
+      	iograph_panel.setViewEdgeQuality(true);
+      	
+	      JFrame frame = new JFrame("IOGraph Viewer");
+	      frame.add(iograph_panel.getAuxiliaryInterfacePane());
+	      frame.pack();
+	      frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
+	      frame.setVisible(true);
+      }
     }else if(e.getSource() == log_button){
-      Calendar calendar = new GregorianCalendar();
-      String log_filename;
-      
-      log_filename = "log";
-      log_filename += "." +  calendar.get(Calendar.YEAR);
-      log_filename += Utility.toString((calendar.get(Calendar.MONTH) + 1), 2);
-      log_filename += Utility.toString(calendar.get(Calendar.DAY_OF_MONTH), 2);
-      log_filename += Utility.toString(calendar.get(Calendar.HOUR_OF_DAY), 2);
-      log_filename += Utility.toString(calendar.get(Calendar.MINUTE), 2);
-      log_filename += Utility.toString(calendar.get(Calendar.SECOND), 2);
-      log_filename += ".html";
-      
-      Utility.save(test_path + test + "/" + log_filename, output_panel.getText());
+     	if(test == null){
+        output_panel.addText("<br><b><font color=red>No tests found!</font></b>");
+      }else{ 
+	      Calendar calendar = new GregorianCalendar();
+	      String log_filename;
+	      
+	      log_filename = "log";
+	      log_filename += "." +  calendar.get(Calendar.YEAR);
+	      log_filename += Utility.toString((calendar.get(Calendar.MONTH) + 1), 2);
+	      log_filename += Utility.toString(calendar.get(Calendar.DAY_OF_MONTH), 2);
+	      log_filename += Utility.toString(calendar.get(Calendar.HOUR_OF_DAY), 2);
+	      log_filename += Utility.toString(calendar.get(Calendar.MINUTE), 2);
+	      log_filename += Utility.toString(calendar.get(Calendar.SECOND), 2);
+	      log_filename += ".html";
+	      
+	      Utility.save(test_path + test + "/" + log_filename, output_panel.getText());
+      }
     }
   }
   
@@ -964,10 +1008,11 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	    displayJobs();
 	    output_panel.addText("<br><b><font color=blue>Test completed in " + dt + " seconds.</font></b><br>");
 	    RUNNING_CONVERSIONS = false;
-	  }else if(MEASUREING_QUALITY){
+	  }else if(MEASURING_QUALITY){
 	  	String path0 = test_path + test + "/0/";
 	  	String pathi;
 	  	String output_data = "";
+	  	String output_filename;
 	  	File folder;
 	  	File[] folder_files;
 	  	String filename0, filenamei;
@@ -993,7 +1038,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        		if(job_status.get(j) == 1 || job_status.get(j) == 2){
 	        			pathi = test_path + test + "/" + (j+1) + "/";
 	        			filenamei = pathi + folder_files[i].getName();
-	        			result = 0;
+	        			result = -1;
 	        			
 	        			if(Utility.exists(filenamei)){
 		        			try{
@@ -1034,12 +1079,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 		          	    	      
 	    	//Set the filename and save results
 	      Calendar calendar = new GregorianCalendar();
-	    	String output_filename = "";
 	    	
-	    	try{
-	    		output_filename = test_root + "_" + extractor;
-	    	}catch(Exception e) {e.printStackTrace();}
-	    	
+	      output_filename = test_root + "_" + extractor;	    	
 	      output_filename += "." +  calendar.get(Calendar.YEAR);
 	      output_filename += Utility.toString((calendar.get(Calendar.MONTH) + 1), 2);
 	      output_filename += Utility.toString(calendar.get(Calendar.DAY_OF_MONTH), 2);
@@ -1049,23 +1090,11 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	      output_filename += ".txt";
 	    	
 	      Utility.save(test_path + test + "/" + output_filename, output_data);
-	    
-	      if(true){		//View results in an I/O-graph
-	      	iograph.loadEdgeWeights(test_path + test + "/" + output_filename);
-	      	IOGraphPanel<Data,Application> iograph_panel = new IOGraphPanel<Data,Application>(iograph, 2);
-	      	iograph_panel.setViewEdgeQuality(true);
-	      	
-		      JFrame frame = new JFrame("IOGraph Viewer");
-		      frame.add(iograph_panel.getAuxiliaryInterfacePane());
-		      frame.pack();
-		      frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
-		      frame.setVisible(true);
-	      }
 	    }
 	    
 	  	output_panel.addText("<br><b><font color=blue>Measurments completed in " + dt + " seconds.</font></b><br>");  	
 	  	
-	  	MEASUREING_QUALITY = false;
+	  	MEASURING_QUALITY = false;
 	  }
 	}
 

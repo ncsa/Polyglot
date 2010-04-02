@@ -25,17 +25,11 @@ out := SubStr(arg2, index)
 
 ;Run program
 Run, mspaint "%1%"
+WinWait, %input_filename% - Paint
 
-;Make sure image is loaded before continuing
-Loop
-{
-  IfWinExist, %input_filename% - Paint
-  {
-    break
-  }
-
-  Sleep, 500
-}
+;Activate the window
+WinActivate, %input_filename% - Paint
+WinWaitActive, %input_filename% - Paint
 
 ;Save image
 Send, !f
@@ -72,6 +66,17 @@ Loop
     if(tmp = "&Yes")
     {
       ControlClick, Button1, Confirm
+    }
+  }
+
+  ;Click "OK" if asked to continue when quality reduction occurs
+  IfWinExist, Paint
+  {
+    ControlGetText, tmp, Button1, Paint
+
+    if(tmp = "OK")
+    {
+      ControlClick, Button1, Paint
     }
   }
 

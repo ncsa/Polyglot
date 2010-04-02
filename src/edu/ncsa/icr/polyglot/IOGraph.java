@@ -184,7 +184,7 @@ public class IOGraph<V extends Comparable,E>
 		
 		edges.get(source_index).add(edge);
 		adjacency_list.get(source_index).add(target_index);
-		weights.get(source_index).add(1.0);
+		weights.get(source_index).add(-1.0);
 		active.get(source_index).add(true);
 	}
 	
@@ -413,21 +413,52 @@ public class IOGraph<V extends Comparable,E>
 	{
 		String buffer = Utility.loadToString(filename);
 		Vector<String> lines = Utility.split(buffer, '\n', false);
-		String line, application, input, output;
-		double weight;
+		TreeMap<String,Vector<Double>> edge_weights = new TreeMap<String,Vector<Double>>();
+		Vector<Double> vector;
+		String string, edge_string, application, input, output;
+		double weight = -1;
 		int tmpi;
 		
+		//Accumulate weights for each edge
 		for(int i=0; i<lines.size(); i++){
-	  	line = lines.get(i);
-	  	tmpi = line.lastIndexOf(' ');
-	  	weight = Double.valueOf(line.substring(tmpi+1));
-	  	line = line.substring(0, tmpi);
-	  	tmpi = line.lastIndexOf(' ');
-	  	output = line.substring(tmpi+1);
-	  	line = line.substring(0, tmpi);
-	  	tmpi = line.lastIndexOf(' ');
-	  	input = line.substring(tmpi+1);
-	  	application = line.substring(0, tmpi);
+	  	string = lines.get(i);
+	  	tmpi = string.lastIndexOf(' ');
+	  	weight = Double.valueOf(string.substring(tmpi+1));
+	  	edge_string = string.substring(0, tmpi);
+	  	
+	  	vector = edge_weights.get(edge_string);
+	  	
+	  	if(vector == null){
+	  		vector = new Vector<Double>();
+	  		edge_weights.put(edge_string, vector);
+	  	}
+	  	
+	  	vector.add(weight);
+		}
+		
+		//Average weights for each edge
+		for(Iterator<String> itr=edge_weights.keySet().iterator(); itr.hasNext();){
+			edge_string = itr.next();
+	  	tmpi = edge_string.lastIndexOf(' ');
+	  	output = edge_string.substring(tmpi+1);
+	  	string = edge_string.substring(0, tmpi);
+	  	tmpi = string.lastIndexOf(' ');
+	  	input = string.substring(tmpi+1);
+	  	application = string.substring(0, tmpi);
+	  	
+	  	vector = edge_weights.get(edge_string);
+	  	
+	  	if(!vector.isEmpty()){
+		  	weight = 0;
+		  	
+		  	for(int i=0; i<vector.size(); i++){
+		  		weight += vector.get(i);
+		  	}
+		  	
+		  	weight /= vector.size();
+	  	}else{
+	  		weight = -1;
+	  	}
 	  	
 	  	setEdgeWeight(input, output, application, weight);
 		}
