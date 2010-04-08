@@ -591,7 +591,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	    
 	      if((source >= 0) && (target >= 0)){
 	        highlighted_path = IOGraph.getPath(paths, source, target);
-	        highlighted_path_quality = iograph.getPathWeights(highlighted_path);
+	        highlighted_path_quality = iograph.getMaxPathWeights(highlighted_path);
 	        output_string = iograph.getPathString(highlighted_path);
 	          
 	        if(!highlighted_path.isEmpty()){

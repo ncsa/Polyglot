@@ -461,7 +461,12 @@ public class ICRServer implements Runnable
 						cached_file_data = (CachedFileData)data;
 						file_data = cached_file_data.uncache(session, cache_path);
 						Utility.writeObject(outs, file_data);
-						System.out.println("Session " + session + ": sent file " + file_data.getName() + "." + file_data.getFormat());
+						
+						if(file_data != null){
+							System.out.println("Session " + session + ": sent file " + file_data.getName() + "." + file_data.getFormat());
+						}else{
+							System.out.println("Session " + session + ": requested file doesn't exist!");
+						}
 					}
 				}else if(message.equals("execute")){
 					tasks = (Vector<Task>)Utility.readObject(ins);

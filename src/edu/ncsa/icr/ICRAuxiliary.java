@@ -311,8 +311,13 @@ public class ICRAuxiliary
 		 */
 		public FileData uncache(int session, String cache_path)
 		{
-			FileData file_data = new FileData(cache_path + getCacheFilename(session), true);
-			file_data.name = name;	//Remove session id
+			FileData file_data = null;
+			String filename = cache_path + getCacheFilename(session);
+			
+			if(Utility.exists(filename)){
+				file_data = new FileData(filename, true);
+				file_data.name = name;	//Remove session id
+			}
 			
 			return file_data;
 		}

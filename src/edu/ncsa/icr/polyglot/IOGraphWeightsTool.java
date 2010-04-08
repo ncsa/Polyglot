@@ -69,6 +69,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private String adapter = null;
   private String extractor = null;
   private String measure = null;
+  private Double invalid_value = null;
   private String extension = "";
   private String test_path = "./";
   private int retry_level = 0;	//0=none, 1=all, 2=partials, 3=failures
@@ -232,6 +233,12 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	            extractor = value;
 	          }else if(key.equals("Measure")){
 	            measure = value;
+	          }else if(key.equals("InvalidValue")){
+	          	if(value.equals("null")){
+	          		invalid_value = null;
+	          	}else{
+	          		invalid_value = Double.valueOf(value);
+	          	}
 	          }else if(key.equals("Extension")){
 	            extension = value;
 	          }else if(key.equals("TestPath")){
@@ -631,7 +638,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	 * @param result the result of the comparison
 	 * @return the entries for the output file
 	 */
-	public String getOutputEntries(Pair<String,String> job, double result)
+	public String getOutputEntries(Pair<String,String> job, Double result)
 	{
 	  Vector<String> lines;
 		String application, input, output;
@@ -816,7 +823,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   	   	}
 
   	   	//Set and display the I/O-graph
-      	iograph.loadEdgeWeights(test_path + test + "/" + output_filename);
+      	iograph.loadEdgeWeights(test_path + test + "/" + output_filename, invalid_value);
       	IOGraphPanel<Data,Application> iograph_panel = new IOGraphPanel<Data,Application>(iograph, 2);
       	iograph_panel.setViewEdgeQuality(true);
       	
@@ -965,18 +972,13 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        new File(tmp_path).mkdir();
 	        	                  
 	        //Convert files to target format
-	        folder = new File(test_path + test + "/0");
-	        folder_files = folder.listFiles(filename_filter);
+	        output_panel.addText("<br><b>Performing Job-" + (i+1) + "A </b> (" + working_set.size() + " files)");
 	        
-	        output_panel.addText("<br><b>Performing Job-" + (i+1) + "A </b> (" + folder_files.length + " files)");
-	        
-	        if(folder_files != null){
-	          for(int j=0; j<folder_files.length; j++){
-	          	conversions = iograph.getConversions(jobs.get(i).first);
-	          	polyglot.convert(folder_files[j].getAbsolutePath(), tmp_path, conversions);
-	          	output_panel.addText(".");
-	          }
-	        }  
+	        for(Iterator<FileInfo> itr=working_set.iterator(); itr.hasNext();){
+          	conversions = iograph.getConversions(jobs.get(i).first);
+          	polyglot.convert(test_path + test + "/0/" + itr.next().filename, tmp_path, conversions);
+          	output_panel.addText(".");
+	        }
 	        
 	        //Convert files back to source format
 	        folder = new File(tmp_path);
@@ -1016,7 +1018,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	  	File folder;
 	  	File[] folder_files;
 	  	String filename0, filenamei;
-	  	double result;
+	  	Double result;
 	  	
 	    output_panel.addText("<br><br><b><font color=blue>Beginning measurments...</font></b><br><br>");
 
@@ -1038,30 +1040,23 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        		if(job_status.get(j) == 1 || job_status.get(j) == 2){
 	        			pathi = test_path + test + "/" + (j+1) + "/";
 	        			filenamei = pathi + folder_files[i].getName();
-	        			result = -1;
 	        			
 	        			if(Utility.exists(filenamei)){
-		        			try{
-		        				if(extractor != null){
-		        					result = VersusDiff.compare(filename0, filenamei, adapter, extractor, measure);
-		        				}else{
-		        					result = 1;	//Result is based on the existence of the output file
-		        				}
-		        				
-		        				System.out.println("Result: " + result);
-			  	        	output_data += getOutputEntries(jobs.get(j), result);
-			            	output_panel.addText(".");
-		            	}catch(Exception e){
-		          			output_data += getOutputEntries(jobs.get(j), 0);
-		                output_panel.addText("<font color=red>x</font>");
-		                e.printStackTrace();
-		            	}	
-	        			}else{
-	          			output_data += getOutputEntries(jobs.get(j), 0);
+	        				if(extractor != null){
+	        					result = VersusDiff.compare(filename0, filenamei, adapter, extractor, measure);
+	        				}else{
+	        					result = 1.0;	//Result is based on the existence of the output file
+	        				}
+	        				
+	        				System.out.println("Result: " + result);
+		  	        	output_data += getOutputEntries(jobs.get(j), result);
+		            	output_panel.addText(".");
+	        			}else{	//Output file doesn't exist
+	          			output_data += getOutputEntries(jobs.get(j), null);
 	        				output_panel.addText("x");
 	        			}
-	        		}else{
-	        			output_data += getOutputEntries(jobs.get(j), 0);
+	        		}else{		//Failed jobs
+	        			output_data += getOutputEntries(jobs.get(j), null);
 	      				output_panel.addText("x");
 	        		}
 	        	}

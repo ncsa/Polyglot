@@ -261,7 +261,12 @@ public class TaskList
 		if(data instanceof CachedFileData){
 			cached_file_data = (CachedFileData)data;
 			file_data = icr.retrieveData(cached_file_data);
-			file_data.save(output_path, null);
+			
+			if(file_data != null){
+				file_data.save(output_path, null);
+			}else{
+				System.out.println("Output was null!");
+			}
 		}
 	}
 }

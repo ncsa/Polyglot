@@ -184,7 +184,7 @@ public class IOGraph<V extends Comparable,E>
 		
 		edges.get(source_index).add(edge);
 		adjacency_list.get(source_index).add(target_index);
-		weights.get(source_index).add(-1.0);
+		weights.get(source_index).add(null);
 		active.get(source_index).add(true);
 	}
 	
@@ -333,30 +333,28 @@ public class IOGraph<V extends Comparable,E>
 	}
 	  
 	/**
-	 * Get the maximum weight along the edge specified.
+	 * Get the maximum weight among parallel edges between the vertices specified.
 	 * @param v0 the index of the starting vertex
 	 * @param v1 the index of the ending vertex
-	 * @return the weight [0, 1]
+	 * @return the weight
 	 */
-	public double getMaxEdgeWeight(int v0, int v1)
+	public Double getMaxEdgeWeight(int v0, int v1)
 	{
-		double maxr = -Double.MAX_VALUE;
+		Double maxw = -Double.MAX_VALUE;
 		int index = -1;
 		
 		for(int i=0; i<adjacency_list.get(v0).size(); i++){
 			if(active.get(v0).get(i) && adjacency_list.get(v0).get(i) == v1){
-				if(weights.get(v0).get(i) > maxr){
-					maxr = weights.get(v0).get(i);
+				if(weights.get(v0).get(i) != null && weights.get(v0).get(i) > maxw){
+					maxw = weights.get(v0).get(i);
 					index = i;
 				}
 			}
 		}
 		
-		if(index >= 0){
-			return weights.get(v0).get(index);
-		}
+		if(index == -1) maxw = null;
 		
-		return 0;
+		return maxw;
 	}
 	
 	/**
@@ -391,7 +389,7 @@ public class IOGraph<V extends Comparable,E>
 	 * @param weight the weight for this edge
 	 * @return a list of parallel edges
 	 */
-	public void setEdgeWeight(String source, String target, String edge, double weight)
+	public void setEdgeWeight(String source, String target, String edge, Double weight)
 	{
 		int v0 = vertex_string_map.get(source);
 		int v1 = vertex_string_map.get(target);
@@ -408,32 +406,41 @@ public class IOGraph<V extends Comparable,E>
 	/**
 	 * Load edge weights from the given file.
 	 * @param filename a file containing lines with: edge source target weight
+	 * @param invalid_value the value to use for null weights (can be null indicating they should be ignored)
 	 */
-	public void loadEdgeWeights(String filename)
+	public void loadEdgeWeights(String filename, Double invalid_value)
 	{
 		String buffer = Utility.loadToString(filename);
 		Vector<String> lines = Utility.split(buffer, '\n', false);
 		TreeMap<String,Vector<Double>> edge_weights = new TreeMap<String,Vector<Double>>();
 		Vector<Double> vector;
-		String string, edge_string, application, input, output;
-		double weight = -1;
+		String string, weight_string, edge_string, application, input, output;
+		Double weight;
 		int tmpi;
 		
 		//Accumulate weights for each edge
 		for(int i=0; i<lines.size(); i++){
 	  	string = lines.get(i);
 	  	tmpi = string.lastIndexOf(' ');
-	  	weight = Double.valueOf(string.substring(tmpi+1));
+	  	weight_string = string.substring(tmpi+1);
 	  	edge_string = string.substring(0, tmpi);
 	  	
-	  	vector = edge_weights.get(edge_string);
-	  	
-	  	if(vector == null){
-	  		vector = new Vector<Double>();
-	  		edge_weights.put(edge_string, vector);
-	  	}
-	  	
-	  	vector.add(weight);
+	  	if(weight_string.equals("null")){		//A measurement failed!
+	  		weight = invalid_value;
+		  }else{
+		  	weight = Double.valueOf(weight_string);
+		  }
+	
+	  	if(weight != null){
+		  	vector = edge_weights.get(edge_string);
+		  	
+		  	if(vector == null){
+		  		vector = new Vector<Double>();
+		  		edge_weights.put(edge_string, vector);
+		  	}
+		  	
+		  	vector.add(weight);
+			}
 		}
 		
 		//Average weights for each edge
@@ -447,19 +454,13 @@ public class IOGraph<V extends Comparable,E>
 	  	application = string.substring(0, tmpi);
 	  	
 	  	vector = edge_weights.get(edge_string);
+	  	weight = 0.0;
 	  	
-	  	if(!vector.isEmpty()){
-		  	weight = 0;
-		  	
-		  	for(int i=0; i<vector.size(); i++){
-		  		weight += vector.get(i);
-		  	}
-		  	
-		  	weight /= vector.size();
-	  	}else{
-	  		weight = -1;
+	  	for(int i=0; i<vector.size(); i++){
+	  		weight += vector.get(i);
 	  	}
 	  	
+	  	weight /= vector.size();
 	  	setEdgeWeight(input, output, application, weight);
 		}
 	}
@@ -504,67 +505,50 @@ public class IOGraph<V extends Comparable,E>
    */
   public Pair<Vector<Integer>,Vector<Double>> getShortestWeightedPaths(int source)
   {    
-  	Set<Integer> set = new TreeSet<Integer>();
-    Vector<Integer> path = new Vector<Integer>();
-    Vector<Double> weight = new Vector<Double>();
-    Iterator<Integer> itr;
-    int u, v, tmpi;
-    double maxr, tmpd;
+  	PriorityQueue<Pair<Double,Integer>> queue = new PriorityQueue<Pair<Double,Integer>>();
+  	Pair<Double,Integer> pair;
+    Vector<Integer> paths = new Vector<Integer>();
+    Vector<Double> path_weights = new Vector<Double>();
+    int u, v;
+    double tmpd;
     
     //Initialize structures
     for(int i=0; i<vertices.size(); i++){
-    	set.add(i);
-      path.add(-1); 
+      paths.add(-1); 
       
     	if(i == source){
-    		weight.add(1.0);
+    		path_weights.add(0.0);
     	}else{
-    		weight.add(0.0);
+    		path_weights.add(Double.MAX_VALUE);
     	}
+    	
+    	queue.add(new Pair<Double,Integer>(path_weights.get(i), i));
     }
     
     //Update shortest paths
-    while(!set.isEmpty()){    	
-    	u = 0;
-    	maxr = 0;
-    	itr = set.iterator();
-    	
-    	//Find vertex with shortest distance
-    	while(itr.hasNext()){
-    		tmpi = itr.next();
-    		
-    		if(weight.get(tmpi) >= maxr){
-    			u = tmpi;
-    			maxr = weight.get(tmpi);
-    		}
-    	}
-    	
-    	set.remove(u);
+    while(!queue.isEmpty()){
+    	pair = queue.poll();
+    	u = pair.second;
       
     	//Update quality to neighbors
-      if(weight.get(u) == 0){ 		//All remaining vertices are inaccessible
+      if(path_weights.get(u) == Double.MAX_VALUE){ 		//All remaining vertices are inaccessible
       	break;
       }else{
 	      for(int i=0; i<adjacency_list.get(u).size(); i++){
-	      	if(active.get(u).get(i)){
+	      	if(active.get(u).get(i) && weights.get(u).get(i) != null){
 		      	v = adjacency_list.get(u).get(i);
-		      	tmpd = weight.get(u) * (weights.get(u).get(i)/100);	//Total weight = product of all traversed weights!
+		      	tmpd = weights.get(u).get(i) + path_weights.get(u);
 		      	
-		      	if(tmpd > weight.get(v)){
-		          path.set(v, u);
-		          weight.set(v, tmpd);
+		      	if(tmpd < path_weights.get(v)){
+		          paths.set(v, u);
+		          path_weights.set(v, tmpd);
 		      	}
 	      	}
 	      }
       }
     }
     
-    //Scale qualities back to [0,100]
-    for(int i=0; i<weight.size(); i++){
-    	weight.set(i, weight.get(i)*100);
-    }
-    
-    return new Pair<Vector<Integer>,Vector<Double>>(path, weight);
+    return new Pair<Vector<Integer>,Vector<Double>>(paths, path_weights);
   }
   
   /**
@@ -602,11 +586,11 @@ public class IOGraph<V extends Comparable,E>
 	}
 		  
   /**
-	 * Get the weights along the path specified.
+	 * Get the maximum weights along the path specified.
 	 * @param path the indices of the conversion path
 	 * @return a vector of weights along the given path
 	 */
-	public Vector<Double> getPathWeights(Vector<Integer> path)
+	public Vector<Double> getMaxPathWeights(Vector<Integer> path)
 	{
 		Vector<Double> path_weights = new Vector<Double>();
 		
@@ -981,8 +965,104 @@ public class IOGraph<V extends Comparable,E>
 		
 		return path;
 	}
-
-	/**
+	
+  /**
+   * Find the edge with the smallest weight.
+   */
+  public void printMinWeightedEdge()
+  {
+  	double minw = Double.MAX_VALUE;
+  	int mini = 0;
+  	int minj = 0;
+  	
+  	for(int i=0; i<weights.size(); i++){
+  		for(int j=0; j<weights.get(i).size(); j++){
+	  	  if(weights.get(i).get(j) != null && weights.get(i).get(j) < minw){
+	  	  	minw = weights.get(i).get(j);
+	  	  	mini = i;
+	  	  	minj = j;
+	  	  }
+  		}
+  	}
+  	  	
+  	System.out.println("Min weighted edge: \"" + edges.get(mini).get(minj).toString() + "\" " + vertices.get(mini) + "->" + vertices.get(adjacency_list.get(mini).get(minj)) + " (" + minw + ")");
+  }
+  
+  /**
+   * Find the edge with the largest weight.
+   */
+  public void printMaxWeightedEdge()
+  {
+  	double maxw = Double.MAX_VALUE;
+  	int maxi = 0;
+  	int maxj = 0;
+  	
+  	for(int i=0; i<weights.size(); i++){
+  		for(int j=0; j<weights.get(i).size(); j++){
+	  	  if(weights.get(i).get(j) != null && weights.get(i).get(j) > maxw){
+	  	  	maxw = weights.get(i).get(j);
+	  	  	maxi = i;
+	  	  	maxj = j;
+	  	  }
+  		}
+  	}
+  	  	
+  	System.out.println("Max weighted edge: \"" + edges.get(maxi).get(maxj).toString() + "\" " + vertices.get(maxi) + "->" + vertices.get(adjacency_list.get(maxi).get(maxj)) + " (" + maxw + ")");
+  }
+  
+  /**
+   * Find the vertex with the shortest combined traversed weight when visited from other vertices.
+   */
+  public void printMinWeightedVertex()
+  {
+		Pair<Vector<Integer>,Vector<Double>> tmpp;
+		Vector<Integer> paths;
+		Vector<Double> path_weights;
+		Vector<Double> mean_path_weights = new Vector<Double>();
+		Vector<Integer> domain_size = new Vector<Integer>();
+		double minw = Double.MAX_VALUE;
+		int mini = 0;
+	
+		//Initialize values
+		for(int i=0; i<vertices.size(); i++){
+			mean_path_weights.add(0.0);
+			domain_size.add(0);
+		}
+		
+		//Calculate mean path weights for each reachable vertex
+		for(int i=0; i<vertices.size(); i++){
+		  tmpp = getShortestWeightedPaths(i);
+		  paths = tmpp.first;
+		  path_weights = tmpp.second;
+		  
+		  for(int j=0; j<vertices.size(); j++){
+		  	if(i != j && path_weights.get(j) < Double.MAX_VALUE){
+		  		mean_path_weights.set(j, mean_path_weights.get(j)+path_weights.get(j));
+		  		domain_size.set(j, domain_size.get(j)+1);
+		  	}
+		  }
+		}
+		
+		for(int i=0; i<vertices.size(); i++){
+			if(domain_size.get(i) > 0){
+				mean_path_weights.set(i, mean_path_weights.get(i)/domain_size.get(i));
+			}else{
+				mean_path_weights.set(i, null);
+			}
+		}
+		
+		//Find vertex with smallest mean path weights
+		for(int i=0; i<mean_path_weights.size(); i++){
+			if(mean_path_weights.get(i) != null && mean_path_weights.get(i) < minw){
+				minw = mean_path_weights.get(i);
+				mini = i;
+			}
+		}
+		
+		System.out.println("Min weighted vertex: " + vertices.get(mini) + " (" + minw + "), n=" + domain_size.get(mini));
+  }
+	
+  /**
    * A main for debug purposes.
    * @param args command line arguments
    */
@@ -994,6 +1074,7 @@ public class IOGraph<V extends Comparable,E>
   	Iterator<String> itr;
     boolean ALL = false;
     boolean DOMAIN = false;
+    boolean OPTIMAL = false;
     int count = 0;
     
     if(true){
@@ -1009,7 +1090,8 @@ public class IOGraph<V extends Comparable,E>
     	//args = new String[]{"obj"};
     	//args = new String[]{"obj", "-domain"};
     	//args = new String[]{"obj", "x3d"};
-    	args = new String[]{"obj", "x3d", "-all"};
+    	//args = new String[]{"obj", "x3d", "-all"};
+    	args = new String[]{"-optimal"};
     }
     
     //Parse command line arguments
@@ -1019,6 +1101,8 @@ public class IOGraph<V extends Comparable,E>
           ALL = true;
         }else if(args[i].equals("-domain")){
           DOMAIN = true;
+        }else if(args[i].equals("-optimal")){
+        	OPTIMAL = true;
         }
       }else{
         count++;
@@ -1048,6 +1132,10 @@ public class IOGraph<V extends Comparable,E>
       }else{			//Shortest path
       	System.out.print(iograph.getShortestConversionPathString(args[0], args[1], false));
       }
+    }else if(OPTIMAL){
+    	iograph.loadEdgeWeights("data/IOGraph_Img20_jpg_ArrayFeatureExtractor.20100407114050.txt", null);
+    	iograph.printMinWeightedEdge();
+    	iograph.printMinWeightedVertex();
     }
   }
 }
