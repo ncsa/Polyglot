@@ -343,6 +343,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     int ascent, descent, msg_width;
     int x, y, x0, y0, x1, y1, index;
     boolean BLANK = true;
+    Double tmpd;
         
     //Update background buffer if needed
     if(offscreen == null || width != offscreen.getWidth(null) || height != offscreen.getHeight(null)){ 
@@ -468,7 +469,13 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
       y1 = vertices.get(highlighted_path.get(i+1)).y;
       
       if(VIEW_EDGE_QUALITY){
-      	drawArrow(bg, x0, y0, x1, y1, i==(highlighted_path.size()-2), Utility.round(highlighted_path_quality.get(i), 2));
+      	tmpd = highlighted_path_quality.get(i);
+      	
+      	if(tmpd != null){
+      		drawArrow(bg, x0, y0, x1, y1, i==(highlighted_path.size()-2), Utility.round(tmpd, 2));
+      	}else{
+        	drawArrow(bg, x0, y0, x1, y1, i==(highlighted_path.size()-2));
+      	}
       }else{
       	drawArrow(bg, x0, y0, x1, y1, i==(highlighted_path.size()-2));
       }
@@ -487,7 +494,13 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	    y1 = vertices.get(highlighted_edge_v1).y;
 	    
 	    if(VIEW_EDGE_QUALITY){
-	    	drawArrow(bg, x0, y0, x1, y1, true, Utility.round(iograph.getMaxEdgeWeight(highlighted_edge_v0, highlighted_edge_v1), 2));
+	    	tmpd = iograph.getMaxEdgeWeight(highlighted_edge_v0, highlighted_edge_v1);
+	    	
+	    	if(tmpd != null){
+	    		drawArrow(bg, x0, y0, x1, y1, true, Utility.round(tmpd , 2));
+	    	}else{
+		    	drawArrow(bg, x0, y0, x1, y1, true);
+	    	}
 	    }else{
 	    	drawArrow(bg, x0, y0, x1, y1, true);
 	    }
@@ -819,7 +832,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     	iograph = new IOGraph<String,String>("jdbc:mysql://isda.ncsa.uiuc.edu/csr", "demo", "demo");
     	iograph_panel = new IOGraphPanel<String,String>(iograph, 2);
   	}else{
-    	iograph = new IOGraph<String,String>("http://isda.ncsa.uiuc.edu/NARA/CSR_test/get_conversions.php");
+    	iograph = new IOGraph<String,String>("http://isda.ncsa.uiuc.edu/NARA/CSR/get_conversions.php");
     	iograph_panel = new IOGraphPanel<String,String>(iograph, 2);
   	}
  

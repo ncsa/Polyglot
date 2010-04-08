@@ -25,7 +25,29 @@ out := SubStr(arg2, index)
 
 ;Run program
 Run, mspaint "%1%"
-WinWait, %input_filename% - Paint
+
+;Make sure image is loaded before continuing
+Loop
+{
+  IfWinExist, %input_filename% - Paint
+  {
+    break
+  }
+
+  ;Click "OK" if cannot read the file and exit
+  IfWinExist, Paint
+  {
+    ControlGetText, tmp, Button1, Paint
+
+    if(tmp = "OK")
+    {
+      ControlClick, Button1, Paint
+      ExitApp
+    }
+  }
+
+  Sleep, 500
+}
 
 ;Activate the window
 WinActivate, %input_filename% - Paint

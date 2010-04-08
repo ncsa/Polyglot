@@ -1133,7 +1133,7 @@ public class IOGraph<V extends Comparable,E>
       	System.out.print(iograph.getShortestConversionPathString(args[0], args[1], false));
       }
     }else if(OPTIMAL){
-    	iograph.loadEdgeWeights("data/IOGraph_Img20_jpg_ArrayFeatureExtractor.20100407114050.txt", null);
+    	iograph.loadEdgeWeights("data/weights.txt", null);
     	iograph.printMinWeightedEdge();
     	iograph.printMinWeightedVertex();
     }
