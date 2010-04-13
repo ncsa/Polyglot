@@ -34,6 +34,13 @@
 		<signjar jar="build/IOGraphApplet.jar" signedjar="build/IOGraphApplet-signed.jar" alias="mykey" storepass="isdapass"/>
 	</target>
 	
+	<target name="installer" depends="archive" description="Build an installer for this project">
+		<exec executable="C:/Program Files/Inno Setup 5/Compil32">
+			<arg value="/cc"/>
+			<arg value="Polyglot2.iss"/>
+		</exec>
+	</target>
+	
 	<target name="javadocs" description="Make javadocs">
 		<mkdir dir="${javadocs}"/>
 		<javadoc sourcepath="src" destdir="${javadocs}" packagenames="edu.ncsa.icr.*" classpathref="classpath"/>
