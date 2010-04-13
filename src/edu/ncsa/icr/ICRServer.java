@@ -419,6 +419,16 @@ public class ICRServer implements Runnable
   }
   
   /**
+   * Wait until the servers main thread is running.
+   */
+  public void waitUntilRunning()
+  {
+  	while(!RUNNING){
+  		Utility.pause(500);
+  	}
+  }
+  
+  /**
    * Process requests from the given connection.
    * @param session the session id for this connection
    * @param client_socket the connection to serve
@@ -498,5 +508,125 @@ public class ICRServer implements Runnable
 	public static void main(String args[])
 	{
 		ICRServer server = new ICRServer("ICRServer.ini");
+
+		//Test arguments
+		//args = new String[]{"-test", "C:/Kenton/Data/Temp/PolyglotDemo"};
+
+		if(args.length > 0){
+			if(args[0].equals("-test")){
+				String test_path = args[1] + "/";
+				TreeMap<String,String> test_files = new TreeMap<String,String>();
+				File folder = new File(test_path);
+				File[] folder_files = folder.listFiles();
+				String filename, name, extension;
+				Application application;
+				Operation operation;
+				int input_operation, input_extension, output_operation, output_extension;
+				CachedFileData input_file, output_file;
+				Vector<Task> tasks = new Vector<Task>();
+				String results = "";
+				
+				server.waitUntilRunning();
+	
+				//Read in test files
+				for(int i=0; i<folder_files.length; i++){
+					filename = folder_files[i].getName();
+					
+					if(filename.charAt(0) != '.'){
+						test_files.put(Utility.getFilenameExtension(filename), filename);
+					}
+				}
+				
+				System.out.println("Test files:");
+				
+				for(Iterator<String> itr=test_files.keySet().iterator(); itr.hasNext();){
+					extension = itr.next();
+					System.out.println("  " + extension + " -> " + test_files.get(extension));
+				}
+				
+				System.out.println();
+				
+				//Perform a test for each application			
+				for(int i=0; i<server.applications.size(); i++){
+					application = server.applications.get(i);
+					
+					//Find an input and output operation
+					input_operation = -1;
+					input_extension = -1;
+					output_operation = -1;
+					output_extension = -1;
+					
+					for(int j=0; j<application.operations.size(); j++){
+						operation = application.operations.get(j);
+	
+						//Check if this operation can input one of the test files
+						if(input_operation == -1){
+							for(int k=0; k<operation.inputs.size(); k++){
+								if(test_files.keySet().contains(operation.inputs.get(k).toString())){
+									input_operation = j;
+									input_extension = k;
+									break;
+								}
+							}
+						}
+	
+						//Check if this operation can output this file into a different format
+						if(output_operation == -1){
+							for(int k=0; k<operation.outputs.size(); k++){
+								if(input_extension != k){
+									output_operation = j;
+									output_extension = k;
+									break;
+								}
+							}
+						}
+						
+						if(input_operation != -1 && output_operation != -1) break;
+					}
+					
+					//Create tasks and run test (using application index as session)
+					if(input_operation != -1 && output_operation != -1){
+						extension = application.operations.get(input_operation).inputs.get(input_extension).toString();
+						input_file = new CachedFileData(new FileData(test_path + test_files.get(extension), true), i, server.cache_path);
+											
+						filename = test_files.get(extension);
+						name = Utility.getFilenameName(filename);
+						extension = application.operations.get(output_operation).outputs.get(output_extension).toString();
+						output_file = new CachedFileData(name + "." + extension);
+						
+						tasks.clear();
+						
+						if(application.operations.get(input_operation).name.equals("convert")){
+							results += "  " + application.toString() + " (convert";
+							results += " " + application.operations.get(input_operation).inputs.get(input_extension).toString();
+							results += " " + application.operations.get(output_operation).outputs.get(output_extension).toString() + ")";
+													
+							tasks.add(new Task(i, input_operation, input_file, output_file));
+						}else{
+							results += "  " + application.toString();
+							results += " (" + application.operations.get(input_operation).name;
+							results += " " + application.operations.get(input_operation).inputs.get(input_extension).toString();
+							results += " " + application.operations.get(output_operation).name;
+							results += " " + application.operations.get(output_operation).outputs.get(output_extension).toString() + ")";
+							
+							tasks.add(new Task(i, input_operation, input_file, new Data()));
+							tasks.add(new Task(i, output_operation, new Data(), output_file));
+						}
+						
+						server.executeTasks(i, tasks);	//Use application index as the session
+						
+						if(output_file.exists(i, server.cache_path)){
+							results += " -> [OK]\n";
+						}else{
+							results += " -> [FAILED]\n";
+						}
+					}
+				}
+				
+				System.out.println("\nResults:");
+				System.out.print(results);
+				System.exit(0);
+			}
+		}
 	}
 }

@@ -69,6 +69,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private String adapter = null;
   private String extractor = null;
   private String measure = null;
+  private String weight_function = "x";
   private Double invalid_value = null;
   private String extension = "";
   private String test_path = "./";
@@ -233,6 +234,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	            extractor = value;
 	          }else if(key.equals("Measure")){
 	            measure = value;
+	          }else if(key.equals("WeightFunction")){
+	            weight_function = value;
 	          }else if(key.equals("InvalidValue")){
 	          	if(value.equals("null")){
 	          		invalid_value = null;
@@ -824,6 +827,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 
   	   	//Set and display the I/O-graph
       	iograph.loadEdgeWeights(test_path + test + "/" + output_filename, invalid_value);
+      	iograph.transformEdgeWeights(weight_function);
       	IOGraphPanel<Data,Application> iograph_panel = new IOGraphPanel<Data,Application>(iograph, 2);
       	iograph_panel.setViewEdgeQuality(true);
       	

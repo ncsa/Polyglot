@@ -466,6 +466,23 @@ public class IOGraph<V extends Comparable,E>
 	}
 	
 	/**
+	 * Transform edge weights according to the given expression.
+	 * @param expression an expression to apply to all edge weights
+	 */
+	public void transformEdgeWeights(String expression)
+	{
+		Function f = new Function(new String[]{"x"}, expression);
+		
+		for(int i=0; i<weights.size(); i++){
+			for(int j=0; j<weights.get(i).size(); j++){
+				if(weights.get(i).get(j) != null){
+					weights.get(i).set(j, f.get(new double[]{weights.get(i).get(j)}));
+				}
+			}
+		}
+	}
+	
+	/**
    * Perform a breadth first search from the vertex at the given index and store the resulting paths.
    * @param source the index of the source vertex
    * @return the paths vector indicating from which vertex we must come to get to this vertex

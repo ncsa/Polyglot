@@ -1,1 +1,1 @@
-java -cp lib/ncsa/Utilities.jar;bin -Xmx1024m edu.ncsa.icr.ICRServer
+java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0bin" -Xmx1024m edu.ncsa.icr.ICRServer %1 %2

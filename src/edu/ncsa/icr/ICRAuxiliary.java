@@ -304,6 +304,17 @@ public class ICRAuxiliary
 		}
 		
 		/**
+		 * Check if the file exists in the cache.
+		 * @param session the session id
+		 * @param cache_path the path to the cache directory
+		 * @return true if the file exists within the cache
+		 */
+		public boolean exists(int session, String cache_path)
+		{
+			return Utility.exists(cache_path + getCacheFilename(session));
+		}
+		
+		/**
 		 * Retrieve the file data from the cache.
 		 * @param session the session id
 		 * @param cache_path the path to the cache directory
