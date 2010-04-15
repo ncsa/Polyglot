@@ -14,11 +14,26 @@ OutputDir=build
 OutputBaseFilename=Polyglot2
 
 [Files]
-Source: "lib\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "scripts\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "build\Polyglot2.jar"; DestDir: "{app}"; Flags: ignoreversion
-Source: "ICRServer.ini"; DestDir: "{app}"; Flags: ignoreversion
-Source: "ICRServer_cwd.bat.txt"; DestDir: "{app}"; DestName: "PolyglotDaemon.bat"; Flags: ignoreversion
+Source: "lib\*"; DestDir: "{app}\lib"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "scripts\*"; DestDir: "{app}\scripts"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "build\Polyglot2.jar"; DestDir: "{app}"; Flags: ignoreversion; AfterInstall: BuildDefaultConfiguration
 
 [Dirs]
 Name: "{app}/tmp"
+
+[Code]
+procedure BuildDefaultConfiguration;
+var
+  output: string;
+begin
+  output := ExpandConstant('{app}') + '\ICRServer.bat'
+  SaveStringToFile(output, 'java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1024m edu.ncsa.icr.ICRServer %1 %2', false);
+
+  output := ExpandConstant('{app}') + '\ICRServer.ini'
+  SaveStringToFile(output, 'RootPath=tmp' + #10, false);
+  SaveStringToFile(output, 'Port=30' + #10, true);
+  SaveStringToFile(output, 'MaxOperationTime=30000' + #10, true);
+  SaveStringToFile(output, 'MaxOperationAttempts=2' + #10, true);
+  SaveStringToFile(output, 'EnableMonitors=true' + #10, true);
+  SaveStringToFile(output, 'AHKScripts=scripts/ahk', true);
+end;

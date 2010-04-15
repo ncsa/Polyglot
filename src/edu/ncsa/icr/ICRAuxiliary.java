@@ -14,6 +14,8 @@ public class ICRAuxiliary
 	 */
 	public static class Data implements Serializable, Comparable
 	{
+		public static final long serialVersionUID = 1L;
+
 		/**
   	 * Compare this object to another object.
   	 * @param object the object to compare to
@@ -34,6 +36,7 @@ public class ICRAuxiliary
 	 */
 	public static class FileData extends Data implements Serializable, Comparable
 	{
+		public static final long serialVersionUID = 1L;
 		private String absolute_name;
 		private String name;
 		private String format;
@@ -186,6 +189,7 @@ public class ICRAuxiliary
 	 */
 	public static class CachedFileData extends Data implements Serializable, Comparable
 	{		
+		public static final long serialVersionUID = 1L;
 		private String name;
 		private String format;
 
@@ -339,6 +343,7 @@ public class ICRAuxiliary
    */
   public static class Application implements Serializable
   {
+		public static final long serialVersionUID = 1L;
     public String name = "";
     public String alias = "";
     public Vector<Operation> operations = new Vector<Operation>();
@@ -407,6 +412,7 @@ public class ICRAuxiliary
    */
   public static class Operation implements Serializable
   {
+		public static final long serialVersionUID = 1L;
   	public Application application;		//An operation belongs to an application!
   	public String name;
   	public Vector<Data> inputs = new Vector<Data>();
@@ -507,6 +513,7 @@ public class ICRAuxiliary
    */
   public static class Task implements Serializable
   {
+		public static final long serialVersionUID = 1L;
   	public int application;		//Use indices for security purposes, we don't want arbitrary script execution!
   	public int operation;
   	public Data input_data;

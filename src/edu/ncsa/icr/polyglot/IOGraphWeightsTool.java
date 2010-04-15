@@ -401,6 +401,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	  Vector<String> paths_b2a;
 	  String output_format;
 	  
+	  jobs.clear();
+	  
 	  for(Iterator<String> itr=range.iterator(); itr.hasNext();){
 	  	output_format = itr.next();
 	    paths_a2b = iograph.getShortestConversionPathStrings(extension, output_format);
@@ -784,7 +786,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
           job_status.add(-1);  
         }
         
-        displayJobs();
+        loadJobs();
   
         output_panel.addText("<br><br><b>New test created: </b>" + test);
       }

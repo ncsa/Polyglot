@@ -7,10 +7,10 @@
 #CyW-b
 #CyW-c
 #CyW-d
-GIMP
+#GIMP
 #GSkUp
-ImgMgk
-IrfanView
+#ImgMgk
+#IrfanView
 #K3D
 #NCHSwitch
 #NCSA
