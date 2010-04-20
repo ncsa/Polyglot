@@ -10,13 +10,13 @@
 #GIMP
 #GSkUp
 #ImgMgk
-#IrfanView
+IrfanView
 #K3D
 #NCHSwitch
 #NCSA
 #NIST
 #OpenOffice
-Paint
+#Paint
 #ParaView
 #VTK
 #W3D

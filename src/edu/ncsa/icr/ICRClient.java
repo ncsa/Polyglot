@@ -51,6 +51,15 @@ public class ICRClient
 			System.out.println("Unable to connect to ICR server: " + server);
 		}
 	}
+	
+	/**
+	 * Class copy constructor.
+	 * @param icr an ICR client session to copy
+	 */
+	public ICRClient(ICRClient icr)
+	{
+		this(icr.server, icr.port);
+	}
 
 	/**
 	 * Get the list of applications available on the ICR server.

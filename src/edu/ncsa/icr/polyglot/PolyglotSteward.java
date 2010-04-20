@@ -14,6 +14,19 @@ public class PolyglotSteward extends Polyglot
 {
 	private Vector<ICRClient> icr_clients = new Vector<ICRClient>();
 	
+	public PolyglotSteward() {}
+	
+	/**
+	 * Class copy constructor.
+	 * @param polyglot the polyglot steward to copy
+	 */
+	public PolyglotSteward(PolyglotSteward polyglot)
+	{
+		for(int i=0; i<polyglot.icr_clients.size(); i++){
+			add(new ICRClient(polyglot.icr_clients.get(i)));
+		}
+	}
+	
 	/**
 	 * Add an ICR client.
 	 * @param icr an ICR client

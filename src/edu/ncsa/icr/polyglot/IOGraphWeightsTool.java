@@ -65,6 +65,10 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private boolean RUNNING_CONVERSIONS = false;
   private boolean MEASURING_QUALITY = false;
   
+  private String test_path = "./";
+  private int retry_level = 0;	//0=none, 1=all, 2=partials, 3=failures  
+  private Boolean THREADED = false;
+
   private String data_path = "./";
   private String adapter = null;
   private String extractor = null;
@@ -72,8 +76,6 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private String weight_function = "x";
   private Double invalid_value = null;
   private String extension = "";
-  private String test_path = "./";
-  private int retry_level = 0;	//0=none, 1=all, 2=partials, 3=failures
   
   /**
    * Class constructor.
@@ -111,12 +113,12 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
     new_button.setSize(component_width, component_height);
     new_button.setLocation(component_x, component_y);
     component_y += 1.1*component_height;
-    
+
     run_button = new JButton("Run Conversions");
     run_button.addActionListener(this);
     run_button.setSize(component_width, component_height);
     run_button.setLocation(component_x, component_y);
-    component_y += 1.1*component_height;
+    component_y += 1.1*component_height; 
     
     measure_button = new JButton("Measure Quality");
     measure_button.addActionListener(this);
@@ -248,6 +250,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	            test_path = Utility.unixPath(value) + "/";
 	          }else if(key.equals("RetryLevel")){
 	          	retry_level = Integer.valueOf(value);
+	          }else if(key.equals("Threaded")){
+	          	THREADED = Boolean.valueOf(value);
 	          }
 	        }
 	      }
@@ -961,53 +965,141 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	    t0 = (new Date()).getTime();
 	  
 	    //Run the test
-	    Vector<Conversion<Data,Application>> conversions;
-	    String job_path, tmp_path;
-	      
-	    for(int i=0; i<jobs.size(); i++){
-	      //-1=No status, 0=Running, 1=Complete, 2=Partially completed, 3=Failed
-	      if(job_status.get(i)==-1 || retry_level==1 || (job_status.get(i)==2 && retry_level==2) || (job_status.get(i)==3 && retry_level==3)){
-	        job_status.set(i, 0);
-	        displayJobs();
-	        
-	        //Create job folders
-	        job_path = test_path + test + "/" + (i+1) + "/";
-	        new File(job_path).mkdir();
-	        
-	        tmp_path = test_path + test + "/" + (i+1) + "/tmp/";
-	        new File(tmp_path).mkdir();
-	        	                  
-	        //Convert files to target format
-	        output_panel.addText("<br><b>Performing Job-" + (i+1) + "A </b> (" + working_set.size() + " files)");
-	        
-	        for(Iterator<FileInfo> itr=working_set.iterator(); itr.hasNext();){
-          	conversions = iograph.getConversions(jobs.get(i).first);
-          	polyglot.convert(test_path + test + "/0/" + itr.next().filename, tmp_path, conversions);
-          	output_panel.addText(".");
-	        }
-	        
-	        //Convert files back to source format
-	        folder = new File(tmp_path);
-	        folder_files = folder.listFiles(filename_filter);
-	        
-	        output_panel.addText("<br><b>Performing Job-" + (i+1) + "B </b> (" + folder_files.length + " files)");
-	        
-	        if(folder_files != null){
-	          for(int j=0; j<folder_files.length; j++){
-	          	conversions = iograph.getConversions(jobs.get(i).second);
-	          	polyglot.convert(folder_files[j].getAbsolutePath(), job_path, conversions);
+	    if(!THREADED){
+	    	Vector<Conversion<Data,Application>> conversions;
+	    	String job_path, tmp_path; 
+		  
+		    for(int i=0; i<jobs.size(); i++){
+		      //-1=No status, 0=Running, 1=Complete, 2=Partially completed, 3=Failed
+		      if(job_status.get(i)==-1 || retry_level==1 || (job_status.get(i)==2 && retry_level==2) || (job_status.get(i)==3 && retry_level==3)){
+		        job_status.set(i, 0);
+		        displayJobs();
+		        
+		        //Set job sub-folders and create if they don't exist
+		        job_path = test_path + test + "/" + (i+1) + "/";
+		        new File(job_path).mkdir();
+		        
+		        tmp_path = test_path + test + "/" + (i+1) + "/tmp/";
+		        new File(tmp_path).mkdir();
+		        	 
+		        //Convert files to target format
+		        output_panel.addText("<br><b>Performing Job-" + (i+1) + "A </b> (" + working_set.size() + " files)");
+		        
+		        for(Iterator<FileInfo> itr=working_set.iterator(); itr.hasNext();){
+	          	conversions = iograph.getConversions(jobs.get(i).first);
+	          	polyglot.convert(test_path + test + "/0/" + itr.next().filename, tmp_path, conversions);
 	          	output_panel.addText(".");
-	          }
-	        } 
-	        
-	        //Display results
-	        folder = new File(job_path);
-	        folder_files = folder.listFiles(filename_filter);
-	        
-	        output_panel.addText("<br><b>Completed Job-" + (i+1) + "</b> (" + (folder_files.length-1) + " files)<br>");
-	        job_status.set(i, jobFolderStatus(i+1));
-	      }
-	    }
+		        }
+		        
+		        //Convert files back to source format
+		        folder = new File(tmp_path);
+		        folder_files = folder.listFiles(filename_filter);
+		        
+		        output_panel.addText("<br><b>Performing Job-" + (i+1) + "B </b> (" + folder_files.length + " files)");
+		        
+		        if(folder_files != null){
+		          for(int j=0; j<folder_files.length; j++){
+		          	conversions = iograph.getConversions(jobs.get(i).second);
+		          	polyglot.convert(folder_files[j].getAbsolutePath(), job_path, conversions);
+		          	output_panel.addText(".");
+		          }
+		        } 
+		        
+		        //Display results
+		        folder = new File(job_path);
+		        folder_files = folder.listFiles(filename_filter);
+		        
+		        output_panel.addText("<br><b>Completed Job-" + (i+1) + "</b> (" + (folder_files.length-1) + " files)<br>");
+		        job_status.set(i, jobFolderStatus(i+1));
+		      }
+		    }
+			}else{
+		    Vector<Thread> threads = new Vector<Thread>();
+		    Thread thread;
+		    boolean ACTIVE_THREADS = false;
+		    boolean REFRESH;
+		    
+		    for(int i=0; i<jobs.size(); i++){
+		      //-1=No status, 0=Running, 1=Complete, 2=Partially completed, 3=Failed
+		      if(job_status.get(i)==-1 || retry_level==1 || (job_status.get(i)==2 && retry_level==2) || (job_status.get(i)==3 && retry_level==3)){
+		        job_status.set(i, 0);
+		        displayJobs();
+		        
+		        //Set job sub-folders and create if they don't exist
+		        final String job_path_final = test_path + test + "/" + (i+1) + "/";
+		        new File(job_path_final).mkdir();
+		        
+		        final String tmp_path_final = test_path + test + "/" + (i+1) + "/tmp/";
+		        new File(tmp_path_final).mkdir();
+		        	 
+		        //Start a thread to perform the conversion
+	        	final int i_final = i;
+	        	
+	        	thread = new Thread(){
+	        		public void run()
+	        		{	        	    
+	        			Polyglot thread_polyglot = null;
+	        		  IOGraph<Data,Application> thread_iograph = null;
+	        			Vector<Conversion<Data,Application>> conversions;
+	        			
+	        			//Create a new polyglot instance (one with unique ICR session id's!)
+	        			if(polyglot instanceof PolyglotSteward){
+	        				thread_polyglot = new PolyglotSteward((PolyglotSteward)polyglot);
+	        			}
+	        			
+	        	    thread_iograph = thread_polyglot.getIOGraph();
+
+	  		        //Convert files to target format
+	  		        output_panel.addText("<br><b>Performing Job-" + (i_final+1) + " </b> (" + working_set.size() + " files)");
+
+	  		        for(Iterator<FileInfo> itr=working_set.iterator(); itr.hasNext();){
+	  	          	conversions = thread_iograph.getConversions(jobs.get(i_final).first);
+	  	          	thread_polyglot.convert(test_path + test + "/0/" + itr.next().filename, tmp_path_final, conversions);
+	  		        }
+	  		        
+	  		        //Convert files back to source format
+	  		        File folder = new File(tmp_path_final);
+	  		        File[] folder_files = folder.listFiles(filename_filter);
+	  		        	  		        
+	  		        if(folder_files != null){
+	  		          for(int j=0; j<folder_files.length; j++){
+	  		          	conversions = thread_iograph.getConversions(jobs.get(i_final).second);
+	  		          	thread_polyglot.convert(folder_files[j].getAbsolutePath(), job_path_final, conversions);
+	  		          }
+	  		        } 
+	        		}
+	        	};
+	        	
+	        	thread.start();
+	        	threads.add(thread);
+	        	ACTIVE_THREADS = true;
+		      }
+		    }
+		    
+		    //Wait for threads to finish
+		    while(ACTIVE_THREADS){
+		    	ACTIVE_THREADS = false;
+		    	REFRESH = false;
+		    	
+		    	for(int i=0; i<threads.size(); i++){
+		    		if(threads.get(i) != null){	    			
+		    			if(!threads.get(i).isAlive()){
+		    				threads.set(i, null);
+				        output_panel.addText("<br><b>Completed Job-" + (i+1) + "</b>");
+				        job_status.set(i, jobFolderStatus(i+1));
+				        REFRESH = true;
+		    			}else{
+		    				ACTIVE_THREADS = true;
+		    			}
+		    		}
+		    	}
+		    	
+	        if(REFRESH) displayJobs();
+	        Utility.pause(500);
+		    }
+		    
+		    output_panel.addText("<br>");			
+			}
 	    
 	    //Set end time
 	    t1 = (new Date()).getTime();

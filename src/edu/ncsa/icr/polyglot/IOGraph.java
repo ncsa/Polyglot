@@ -195,7 +195,7 @@ public class IOGraph<V extends Comparable,E>
 	public void addGraph(IOGraph<V,E> iograph)
 	{
 		V v0, v1;
-		
+				
 		//Add unique vertices
 		for(int i=0; i<iograph.vertices.size(); i++){
 			if(vertex_map.get(iograph.vertices.get(i)) == null){
