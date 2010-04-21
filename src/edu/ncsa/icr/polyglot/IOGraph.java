@@ -870,6 +870,7 @@ public class IOGraph<V extends Comparable,E>
 		Vector<Vector<Conversion<V,E>>> conversions_buffer = new Vector<Vector<Conversion<V,E>>>();
 		Vector<Vector<Conversion<V,E>>> conversions_buffer_new;
 		Vector<Conversion<V,E>> conversions;
+		TreeSet<E> edge_set = new TreeSet<E>();
 	  Vector<Integer> edge_indices = new Vector<Integer>();
 	  Vector<Integer> paths;
 	  Vector<Integer> path = new Vector<Integer>();
@@ -888,12 +889,16 @@ public class IOGraph<V extends Comparable,E>
         for(int i=1; i<path.size(); i++){
           i0 = path.get(i-1);
           i1 = path.get(i);
+          edge_set.clear();
           edge_indices.clear();
           
           //Find all parallel edges
           for(int j=0; j<adjacency_list.get(i0).size(); j++){
             if(adjacency_list.get(i0).get(j) == i1){
-            	edge_indices.add(j);
+            	if(!edge_set.contains(edges.get(i0).get(j))){
+            		edge_set.add(edges.get(i0).get(j));
+            		edge_indices.add(j);
+            	}
             }
           }
                       

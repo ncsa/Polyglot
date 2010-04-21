@@ -22,6 +22,8 @@ public class PolyglotSteward extends Polyglot
 	 */
 	public PolyglotSteward(PolyglotSteward polyglot)
 	{
+		application_flexibility = polyglot.application_flexibility;
+		
 		for(int i=0; i<polyglot.icr_clients.size(); i++){
 			add(new ICRClient(polyglot.icr_clients.get(i)));
 		}
@@ -63,6 +65,7 @@ public class PolyglotSteward extends Polyglot
 		FileData input_file_data;
 		Data data_last, data_next;
 		ICRClient icr = null;
+		String tmps;
 		
 		input_filename = Utility.unixPath(input_filename);
 		output_path = Utility.unixPath(output_path);
@@ -79,6 +82,8 @@ public class PolyglotSteward extends Polyglot
 	
 				//Attempt to avoid busy ICR servers
 				if(application_flexibility > 0 && application.icr.isBusy()){
+					tmps = application.icr.toString();
+					
 					if(application_flexibility == 1){
 						application_options = iograph.getParallelEdges(input, output, application);
 					}else if(application_flexibility == 2){
@@ -86,8 +91,14 @@ public class PolyglotSteward extends Polyglot
 					}
 					
 					for(int j=0; j<application_options.size(); j++){
-						application = application_options.get(i);
+						application = application_options.get(j);
 						if(!application.icr.isBusy()) break;
+					}
+					
+					if(!application.icr.toString().equals(tmps)){
+						System.out.println(tmps + " is busy, switching to " + application.icr.toString());
+					}else{
+						System.out.println(tmps + " is busy, remaining with " + application.icr.toString());
 					}
 				}
 				

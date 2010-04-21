@@ -341,7 +341,7 @@ public class ICRAuxiliary
   /**
    * A structure to store information about applications.
    */
-  public static class Application implements Serializable
+  public static class Application implements Serializable, Comparable
   {
 		public static final long serialVersionUID = 1L;
     public String name = "";
@@ -370,6 +370,22 @@ public class ICRAuxiliary
 		{
 			return name;
 		}
+		
+		/**
+  	 * Compare this object to another object.
+  	 * @param object the object to compare to
+  	 * @return 0 if the same, -1 if less, and 1 if greater
+  	 */
+  	public int compareTo(Object object)
+  	{
+  		if(this == object){
+  			return 0;
+  		}else if(object instanceof Application){
+  			return ((Application)object).toString().compareTo(toString());
+  		}else{
+  			return -1;
+  		}
+  	}
 
 		/**
      * Add an operation to this application.

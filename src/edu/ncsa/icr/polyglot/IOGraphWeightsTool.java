@@ -252,6 +252,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	          	retry_level = Integer.valueOf(value);
 	          }else if(key.equals("Threaded")){
 	          	THREADED = Boolean.valueOf(value);
+	          	polyglot.setApplicationFlexibility(1);
 	          }
 	        }
 	      }
@@ -1037,7 +1038,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        	
 	        	thread = new Thread(){
 	        		public void run()
-	        		{	        	    
+	        		{
 	        			Polyglot thread_polyglot = null;
 	        		  IOGraph<Data,Application> thread_iograph = null;
 	        			Vector<Conversion<Data,Application>> conversions;
@@ -1046,7 +1047,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        			if(polyglot instanceof PolyglotSteward){
 	        				thread_polyglot = new PolyglotSteward((PolyglotSteward)polyglot);
 	        			}
-	        			
+	        				        			
 	        	    thread_iograph = thread_polyglot.getIOGraph();
 
 	  		        //Convert files to target format
@@ -1066,7 +1067,9 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	  		          	conversions = thread_iograph.getConversions(jobs.get(i_final).second);
 	  		          	thread_polyglot.convert(folder_files[j].getAbsolutePath(), job_path_final, conversions);
 	  		          }
-	  		        } 
+	  		        }
+	  		        
+	  		        thread_polyglot.close();
 	        		}
 	        	};
 	        	

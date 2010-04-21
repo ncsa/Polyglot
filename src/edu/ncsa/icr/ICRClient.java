@@ -62,6 +62,15 @@ public class ICRClient
 	}
 
 	/**
+	 * Return a string representation of this object.
+	 * @return a string representation of this object
+	 */
+	public String toString()
+	{
+		return server + ":" + port;
+	}
+
+	/**
 	 * Get the list of applications available on the ICR server.
 	 * @return the available applications/operations
 	 */
