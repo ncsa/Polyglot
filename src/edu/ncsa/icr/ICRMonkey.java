@@ -1,5 +1,6 @@
 package edu.ncsa.icr;
 import edu.ncsa.utility.*;
+import edu.ncsa.utility.FlowLayout;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.datatransfer.*;
@@ -38,12 +39,8 @@ public class ICRMonkey extends JPanel implements Runnable, DropTargetListener, M
 	 */
 	public void run()
 	{
-		//Create invisible window the size of the screen
-		
 		while(true){
 			Point point = MouseInfo.getPointerInfo().getLocation();
-			System.out.println(point.x + ", " + point.y);
-			Utility.pause(1000);
 		}
 	}
 	
