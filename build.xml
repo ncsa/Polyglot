@@ -41,11 +41,38 @@
 		</exec>
 	</target>
 	
+	<target name="zip" depends="archive,javadocs" description="Build an zip file containing the installation">
+		<mkdir dir="${tmp}"/>
+		<copy todir="${tmp}/lib">
+			<fileset dir="lib"/>
+		</copy>
+		<copy todir="${tmp}/scripts">
+			<fileset dir="scripts"/>
+		</copy>
+		<copy todir="${tmp}/javadocs">
+			<fileset dir="${javadocs}"/>
+		</copy>
+		<copy file="build/Polyglot2.jar" todir="${tmp}"/>
+		<mkdir dir="${tmp}/tmp"/>
+		<echo file="${tmp}/ICRServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1024m edu.ncsa.icr.ICRServer %1 %2</echo>
+		<echo file="${tmp}/ICRServer.ini" append="false">RootPath=tmp${line.separator}</echo>
+		<echo file="${tmp}/ICRServer.ini" append="true">Port=30${line.separator}</echo>
+		<echo file="${tmp}/ICRServer.ini" append="true">MaxOperationTime=30000${line.separator}</echo>
+		<echo file="${tmp}/ICRServer.ini" append="true">MaxOperationAttempts=2${line.separator}</echo>
+		<echo file="${tmp}/ICRServer.ini" append="true">EnableMonitors=true${line.separator}</echo>
+		<echo file="${tmp}/ICRServer.ini" append="true">AHKScripts=scripts/ahk</echo>
+		<zip basedir="${tmp}" destfile="build/Polyglot2.zip"/>
+	</target>
+	
 	<target name="javadocs" description="Make javadocs">
 		<mkdir dir="${javadocs}"/>
 		<javadoc sourcepath="src" destdir="${javadocs}" packagenames="edu.ncsa.icr.*" classpathref="classpath"/>
 	</target>
 	
+	<target name="clean_tmp" description="Deletes tmp folder">
+		<delete dir="build/tmp"/>
+	</target>
+		
 	<target name="clean" description="Deletes all generated files">
 		<delete dir="build"/>
 	</target>

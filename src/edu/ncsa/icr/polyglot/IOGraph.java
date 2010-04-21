@@ -387,7 +387,6 @@ public class IOGraph<V extends Comparable,E>
 	 * @param target the target vertex string
 	 * @param edge the edge string
 	 * @param weight the weight for this edge
-	 * @return a list of parallel edges
 	 */
 	public void setEdgeWeight(String source, String target, String edge, Double weight)
 	{
