@@ -12,6 +12,7 @@ import java.util.List;
 
 /**
  * A program for creating AHK scripts (monkey see, monkey do)
+ * TODO: This is work in progress, must make this approach workable!
  * @author Kenton McHenry
  */
 public class ICRMonkey extends JPanel implements Runnable, DropTargetListener, MouseListener
@@ -35,37 +36,6 @@ public class ICRMonkey extends JPanel implements Runnable, DropTargetListener, M
 	}
 	
 	/**
-	 * Background thread to record user interaction.
-	 */
-	public void run()
-	{
-		while(true){
-			Point point = MouseInfo.getPointerInfo().getLocation();
-		}
-	}
-	
-	/**
-   * Draw the panel to the given graphics context.
-   * @param g the graphics context to draw to
-   */
-  public void paint(Graphics g)
-  {
-    int width = getSize().width;
-    int height = getSize().height;
-        
-    //Update background buffer if needed
-    if(offscreen == null || width != offscreen.getWidth(null) || height != offscreen.getHeight(null)){ 
-      offscreen = createImage(width, height);
-      bg = offscreen.getGraphics();
-    }
-    
-    super.paint(bg);
-    
-    //Draw background  buffer
-    g.drawImage(offscreen, 0, 0, this);
-  }
-  	
-  /**
    * Handle mouse pressed events.
    * @param e the mouse event
    */
@@ -139,16 +109,26 @@ public class ICRMonkey extends JPanel implements Runnable, DropTargetListener, M
 	public void mouseReleased(MouseEvent e) {}	
 	
 	/**
+	 * Background thread to record user interaction.
+	 */
+	public void run()
+	{
+		while(true){
+			Point point = MouseInfo.getPointerInfo().getLocation();
+		}
+	}
+
+	/**
 	 * Start the ICRMonkey.
 	 * @param args command line arguments
 	 */
 	public static void main(String args[])
 	{
-		ICRMonkey polyglot_panel = new ICRMonkey();
+		ICRMonkey icr_monkey = new ICRMonkey();
 		
     JFrame frame = new JFrame("ICR Monkey Desktop");
     frame.setSize(600, 600);
-    frame.add(polyglot_panel);
+    frame.add(icr_monkey);
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
     frame.setVisible(true);
 	}
