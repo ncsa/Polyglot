@@ -28,5 +28,6 @@
 	<classpathentry kind="lib" path="lib/jama-1.0.2/Jama-1.0.2.jar"/>
 	<classpathentry kind="lib" path="lib/ncsa/versus-impl-0.5.jar"/>
 	<classpathentry kind="lib" path="lib/ncsa/versus-api-0.5.jar"/>
+	<classpathentry kind="lib" path="lib/misc/VncViewer.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
