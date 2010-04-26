@@ -1,13 +1,13 @@
 package edu.ncsa.icr;
 import com.tightvnc.vncviewer.*;
 
-public class ICRMonkeyVNC extends VncViewer
+public class ICRMonkey extends VncViewer
 {
 	public static void main(String[] args)
 	{
 		args = new String[]{"HOST", "starbuck.ncsa.uiuc.edu"};
 		
-	  ICRMonkeyVNC v = new ICRMonkeyVNC();
+	  ICRMonkey v = new ICRMonkey();
 	  v.mainArgs = args;
 	  v.inAnApplet = false;
 	  v.inSeparateFrame = true;

@@ -15,14 +15,14 @@ import java.util.List;
  * TODO: This is work in progress, must make this approach workable!
  * @author Kenton McHenry
  */
-public class ICRMonkey extends JPanel implements Runnable, DropTargetListener, MouseListener
+public class ICRMonkeyF extends JPanel implements Runnable, DropTargetListener, MouseListener
 {
 	private TreeSet<FileLabel> files = new TreeSet<FileLabel>();
 	private FileLabel selected_file;
   private Graphics bg;
   private Image offscreen;
   
-	public ICRMonkey()
+	public ICRMonkeyF()
 	{
 		FlowLayout flow_layout = new FlowLayout(FlowLayout.LEFT);
 		flow_layout.setHorizontalLayout(false);
@@ -124,7 +124,7 @@ public class ICRMonkey extends JPanel implements Runnable, DropTargetListener, M
 	 */
 	public static void main(String args[])
 	{
-		ICRMonkey icr_monkey = new ICRMonkey();
+		ICRMonkeyF icr_monkey = new ICRMonkeyF();
 		
     JFrame frame = new JFrame("ICR Monkey Desktop");
     frame.setSize(600, 600);
