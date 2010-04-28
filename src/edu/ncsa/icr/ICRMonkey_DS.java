@@ -1,4 +1,4 @@
-package edu.ncsa.icr.bak;
+package edu.ncsa.icr;
 import edu.ncsa.image.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -10,7 +10,7 @@ import javax.swing.*;
  * A program for creating AHK scripts (monkey see, monkey do)
  * @author Kenton McHenry
  */
-public class ICRMonkeyDS extends JPanel implements MouseListener, MouseMotionListener, ActionListener, Runnable
+public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionListener, ActionListener, Runnable
 {
 	private BufferedImage desktop;
 	private Robot robot;
@@ -32,7 +32,7 @@ public class ICRMonkeyDS extends JPanel implements MouseListener, MouseMotionLis
 	 * Class constructor.
 	 * @param panel_scale the scale of the virtual desktop
 	 */
-	public ICRMonkeyDS(double panel_scale)
+	public ICRMonkey_DS(double panel_scale)
 	{    
 		JMenu submenu1;    	
     JMenuItem item;
@@ -289,7 +289,7 @@ public class ICRMonkeyDS extends JPanel implements MouseListener, MouseMotionLis
 		int screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length;
 		
 		if(screens > 1){
-			ICRMonkeyDS icr_monkey = new ICRMonkeyDS(0.75);
+			ICRMonkey_DS icr_monkey = new ICRMonkey_DS(0.75);
 			Dimension screen_size = Toolkit.getDefaultToolkit().getScreenSize();
 
 	    JFrame frame = new JFrame("ICR Monkey Desktop");

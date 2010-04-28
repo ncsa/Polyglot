@@ -13,11 +13,14 @@ import com.tightvnc.vncviewer.*;
  * A program for creating AHK scripts (monkey see, monkey do)
  * @author Kenton McHenry
  */
-public class ICRMonkey extends Component implements ActionListener, MouseListener, MouseMotionListener
+public class ICRMonkey_VNC extends Component implements ActionListener, MouseListener, MouseMotionListener
 {
 	private Vector<String> servers = new Vector<String>();
+	private String data_path = "./";
+	private String output_path = "./";
+	
 	private String server;
-	private int port;
+	private int port;	
 	private VncViewer vnc;
 
 	private JPopupMenu popup_menu;
@@ -36,7 +39,7 @@ public class ICRMonkey extends Component implements ActionListener, MouseListene
 	 * Class constructor.
 	 * @param filename the name of the *.ini file to load
 	 */
-	public ICRMonkey(String filename)
+	public ICRMonkey_VNC(String filename)
 	{
 		int index = 0;
 		
@@ -69,6 +72,10 @@ public class ICRMonkey extends Component implements ActionListener, MouseListene
 	        if(key.charAt(0) != '#' && key.charAt(0) != ';'){
 	        	if(key.equals("Server")){
 	        		servers.add(value);
+	        	}else if(key.equals("DataPath")){
+	        		data_path = value + "/";
+	        	}else if(key.equals("OutputPath")){
+	        		output_path = value + "/";
 	        	}
 	        }
 	      }
@@ -403,6 +410,6 @@ public class ICRMonkey extends Component implements ActionListener, MouseListene
 	 */
 	public static void main(String[] args)
 	{
-		ICRMonkey monkey = new ICRMonkey("ICRMonkey.ini");
+		ICRMonkey_VNC monkey = new ICRMonkey_VNC("ICRMonkey_VNC.ini");
 	}
 }
