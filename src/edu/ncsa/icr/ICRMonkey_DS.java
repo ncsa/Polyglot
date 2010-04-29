@@ -58,64 +58,20 @@ public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionLi
     item = new JMenuItem("Convert"); item.addActionListener(this); submenu1.add(item); 
     item = new JMenuItem("Exit"); item.addActionListener(this); submenu1.add(item); 
     popup_menu.add(submenu1);
-
     popup_menu.addSeparator();
-    submenu1 = new JMenu("Enter");
-    item = new JMenuItem("file1.abc"); item.addActionListener(this); submenu1.add(item);
-    popup_menu.add(submenu1);
     
     submenu1 = new JMenu("Select");
     item = new JMenuItem("Positive Area"); item.addActionListener(this); submenu1.add(item);
     item = new JMenuItem("Negative Area"); item.addActionListener(this); submenu1.add(item);
     popup_menu.add(submenu1);
-    
     popup_menu.addSeparator();
+    
     item = new JMenuItem("End Script"); item.addActionListener(this); popup_menu.add(item);
     
     addMouseListener(this);
     addMouseMotionListener(this);
     
 		new Thread(this).start();
-	}
-	
-	/**
-	 * Draw a box to the given graphics context.
-	 * @param g the graphics context to draw to
-	 * @param minx the minimum x value
-	 * @param miny the minimum y value
-	 * @param maxx the maximum x value
-	 * @param maxy the maximum y value
-	 * @param color the color of the box
-	 * @param fill true if the box should be filled
-	 */
-	private void drawBox(Graphics g, int minx, int miny, int maxx, int maxy, Color color, boolean FILL)
-	{
-		Graphics2D g2 = (Graphics2D)g;
-		
-		g2.setColor(color);
-		
-	  g2.drawLine(minx, miny, maxx, miny);		//Top
-	  g2.drawLine(minx, maxy, maxx, maxy);		//Bottom
-	  g2.drawLine(minx, miny, minx, maxy);		//Left
-	  g2.drawLine(maxx, miny, maxx, maxy);		//Right
-	  	  
-	  if(FILL){
-			g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f));
-		  g2.fillRect(minx+1, miny+1, maxx-minx-1, maxy-miny-1);
-			g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-	  }
-	}
-	
-	/**
-	 * Draw a box to the given graphics context.
-	 * @param g the graphics context to draw to
-	 * @param box an array containing the box coordinates (minx, miny, maxx, maxy)
-	 * @param color the color of the box
-	 * @param fill true if the box should be filled
-	 */
-	private void drawBox(Graphics g, int[] box, Color color, boolean FILL)
-	{
-		drawBox(g, box[0], box[1], box[2], box[3], color, FILL);
 	}
 	
 	/**
@@ -131,20 +87,20 @@ public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionLi
     //Draw selection box
     if(DRAGGING_SELECTION_BOX){
     	if(GET_NEGATIVE_AREA){
-    		drawBox(g, selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy, Color.red, false);
+    		ImageUtility.drawBox(g, selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy, Color.red, 0);
     	}else{
-    		drawBox(g, selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy, Color.blue, false);
+    		ImageUtility.drawBox(g, selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy, Color.blue, 0);
     	}
     }
     
     //Draw positive areas
     for(int i=0; i<positives.size(); i++){
-    	drawBox(g, positives.get(i), Color.blue, true);
+    	ImageUtility.drawBox(g, positives.get(i), Color.blue, 0.5f);
     }
     
     //Draw negative areas
     for(int i=0; i<negatives.size(); i++){
-    	drawBox(g, negatives.get(i), Color.red, true);
+    	ImageUtility.drawBox(g, negatives.get(i), Color.red, 0.5f);
     }
 	}
 	
