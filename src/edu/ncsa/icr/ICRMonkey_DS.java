@@ -1,44 +1,56 @@
 package edu.ncsa.icr;
 import edu.ncsa.image.*;
+import edu.ncsa.utility.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
-import java.util.*;
 import javax.swing.*;
+import java.io.*;
+import java.util.*;
 
 /**
  * A program for creating AHK scripts (monkey see, monkey do)
  * @author Kenton McHenry
  */
-public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionListener, ActionListener, Runnable
+public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListener, MouseMotionListener, KeyListener, Runnable
 {
+	private String data_path = "./";
+	private String output_path = "./";
+	
 	private BufferedImage desktop;
+	private BufferedImage desktop_scaled;
 	private Robot robot;
 	private double panel_scale;
 	private int panel_width;
 	private int panel_height;
+	private ICRMonkeyScript script = null;
 	
+	private String[] operations = new String[]{"open", "save", "convert", "exit"};
+
 	private JPopupMenu popup_menu;
+	private int popup_menu_x;
+	private int popup_menu_y;
 	
-	private Vector<int[]> positives = new Vector<int[]>();
-	private Vector<int[]> negatives = new Vector<int[]>();
+	private boolean RECORDING_SCRIPT = false;
+	private int script_count = 0;
   private int selection_box_x0, selection_box_y0, selection_box_x1, selection_box_y1;
-  private int selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy;
+  private int selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy; 
   private boolean DRAGGING_SELECTION_BOX;
   private boolean GET_POSITIVE_AREA;
   private boolean GET_NEGATIVE_AREA;
+  private boolean GET_TARGET_AREA; 
+  private int[][] target = null;
   
 	/**
 	 * Class constructor.
-	 * @param panel_scale the scale of the virtual desktop
+	 * @param filename the name of the *.ini file to load
 	 */
-	public ICRMonkey_DS(double panel_scale)
-	{    
-		JMenu submenu1;    	
-    JMenuItem item;
+	public ICRMonkey_DS(String filename)
+	{
 		Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
+
+		loadINI(filename);
 		
-		this.panel_scale = panel_scale;
 		panel_width = (int)Math.round(panel_scale * dimension.getWidth());
 		panel_height = (int)Math.round(panel_scale * dimension.getHeight());
 		setPreferredSize(new Dimension(panel_width, panel_height));
@@ -47,26 +59,7 @@ public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionLi
 			robot = new Robot();
 		}catch(Exception e) {e.printStackTrace();}
     
-    //Set up popup menu
-    popup_menu = new JPopupMenu();
-    
-    submenu1 = new JMenu("New Script");
-    item = new JMenuItem("Open"); item.addActionListener(this); submenu1.add(item); 
-    item = new JMenuItem("Save"); item.addActionListener(this); submenu1.add(item); 
-    item = new JMenuItem("Import"); item.addActionListener(this); submenu1.add(item); 
-    item = new JMenuItem("Export"); item.addActionListener(this); submenu1.add(item); 
-    item = new JMenuItem("Convert"); item.addActionListener(this); submenu1.add(item); 
-    item = new JMenuItem("Exit"); item.addActionListener(this); submenu1.add(item); 
-    popup_menu.add(submenu1);
-    popup_menu.addSeparator();
-    
-    submenu1 = new JMenu("Select");
-    item = new JMenuItem("Positive Area"); item.addActionListener(this); submenu1.add(item);
-    item = new JMenuItem("Negative Area"); item.addActionListener(this); submenu1.add(item);
-    popup_menu.add(submenu1);
-    popup_menu.addSeparator();
-    
-    item = new JMenuItem("End Script"); item.addActionListener(this); popup_menu.add(item);
+		setPopupMenu();
     
     addMouseListener(this);
     addMouseMotionListener(this);
@@ -75,32 +68,207 @@ public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionLi
 	}
 	
 	/**
+	 * Load an *.ini initialization file.
+	 * @param filename the name of the *.ini file
+	 */
+	private void loadINI(String filename)
+	{
+	  try{
+	    BufferedReader ins = new BufferedReader(new FileReader(filename));
+	    String line, key, value;
+	    
+	    while((line=ins.readLine()) != null){
+	      if(line.contains("=")){
+	        key = line.substring(0, line.indexOf('='));
+	        value = line.substring(line.indexOf('=')+1);
+	        
+	        if(key.charAt(0) != '#' && key.charAt(0) != ';'){
+	        	if(key.equals("DataPath")){
+	        		data_path = value + "/";
+	        	}else if(key.equals("OutputPath")){
+	        		output_path = value + "/";
+	        	}else if(key.equals("Scale")){
+	        		panel_scale = Double.valueOf(value);
+	        	}
+	        }
+	      }
+	    }
+	    
+	    ins.close();
+	  }catch(Exception e) {e.printStackTrace();}
+	}
+	
+	/**
+	 * Build the popup menu.
+	 */
+	private void setPopupMenu()
+	{
+		JMenu submenu1;
+		JMenuItem item;
+		
+	  popup_menu = new JPopupMenu();
+	  
+	  if(!RECORDING_SCRIPT){
+		  submenu1 = new JMenu("New Script");
+		  
+		  for(int i=0; i<operations.length; i++){
+		  	item = new JMenuItem(operations[i]); item.addActionListener(this); submenu1.add(item); 
+		  }
+
+		  popup_menu.add(submenu1);
+	  }else{
+		  submenu1 = new JMenu("Send");
+		  item = new JMenuItem("Click"); item.addActionListener(this); submenu1.add(item);
+		  item = new JMenuItem("DoubleClick"); item.addActionListener(this); submenu1.add(item);
+		  item = new JMenuItem("Text"); item.addActionListener(this); submenu1.add(item);
+		  popup_menu.add(submenu1);
+		  
+		  submenu1 = new JMenu("Select");
+		  item = new JMenuItem("Positive Area"); item.addActionListener(this); submenu1.add(item);
+		  item = new JMenuItem("Negative Area"); item.addActionListener(this); submenu1.add(item);
+		  submenu1.addSeparator();
+		  item = new JMenuItem("Target Area"); item.addActionListener(this); submenu1.add(item);
+		  popup_menu.add(submenu1);
+		  popup_menu.addSeparator();
+		  
+		  item = new JMenuItem("End Script"); item.addActionListener(this); popup_menu.add(item);
+	  }
+	}
+	
+	/**
+	 * Perform the specified action.
+	 * @param action the action to perform ("Click", "DoubleClick", "Text")
+	 * @param x the x-coordinate to perform the action at
+	 * @param y the y-coordinate to perform the action at
+	 */
+	private void performAction(String action, int x, int y)
+	{
+		Point xy_last = MouseInfo.getPointerInfo().getLocation();
+		String text;
+		int key_code;
+		
+		//Scale action location appropriately
+		x /= panel_scale;
+		y /= panel_scale;
+
+		if(action.equals("Click")){
+			//Record action
+			synchronized(this){
+				script.addClick(desktop, x, y);
+			}
+	
+			//Perform action
+			robot.mouseMove(x, y);
+			robot.mousePress(InputEvent.BUTTON1_MASK);
+			robot.mouseRelease(InputEvent.BUTTON1_MASK);
+		}else if(action.equals("DoubleClick")){
+			//Record action
+			synchronized(this){
+				script.addDoubleClick(desktop, x, y);
+			}
+	
+			//Perform action
+			robot.mouseMove(x, y);
+			robot.mousePress(InputEvent.BUTTON1_MASK);
+			robot.mouseRelease(InputEvent.BUTTON1_MASK);
+			robot.mousePress(InputEvent.BUTTON1_MASK);
+			robot.mouseRelease(InputEvent.BUTTON1_MASK);
+		}else if(action.equals("Text")){
+			//Get the text
+			text = JOptionPane.showInputDialog(this, "");
+
+			if(text != null){
+				//Record action
+				script.addText(text);
+				
+				//Perform action (start by moving mouse focus back over!)
+				robot.mouseMove(x, y);
+				robot.mousePress(InputEvent.BUTTON1_MASK);
+				robot.mouseRelease(InputEvent.BUTTON1_MASK);
+				
+				for(int i=0; i<text.length(); i++){
+					key_code = KeyStroke.getKeyStroke(Character.toUpperCase(text.charAt(i)), 0).getKeyCode();
+											
+					if(Character.isUpperCase(text.charAt(i))){
+						robot.keyPress(KeyEvent.VK_SHIFT);
+						robot.keyPress(key_code);
+						robot.keyRelease(key_code);
+						robot.keyRelease(KeyEvent.VK_SHIFT);
+					}else{
+						robot.keyPress(key_code);
+						robot.keyRelease(key_code);
+					}
+				}
+			}
+		}
+		
+		//Move mouse back to virtual desktop
+		robot.mouseMove((int)xy_last.getX(), (int)xy_last.getY());
+	}
+	
+	/**
 	 * Draw this panel to the given graphic context.
 	 * @param g the graphics context to draw to
 	 */
 	public void paint(Graphics g)
 	{
+		Vector<Point> target_locations;
+		int[][] image = null;
+		int[] box;
+		int x, y, w, h;
+		int minx, miny, maxx, maxy;
+		
 		synchronized(this){
-			g.drawImage(desktop, 0, 0, null);
+			g.drawImage(desktop_scaled, 0, 0, null);
+			if(target != null) image = ImageUtility.image2argb(desktop);
 		}
 		
     //Draw selection box
     if(DRAGGING_SELECTION_BOX){
-    	if(GET_NEGATIVE_AREA){
-    		ImageUtility.drawBox(g, selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy, Color.red, 0);
+    	ImageUtility.drawBox(g, selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy, new Color(0x003399ff), 0.25f);
+    }
+    
+    if(script != null){
+    	if(target == null){
+		    //Draw positive areas
+		    for(int i=0; i<script.getPositiveAreas().size(); i++){
+		    	box = Arrays.copyOf(script.getPositiveAreas().get(i), 4);
+		    	
+		    	for(int j=0; j<4; j++){
+		    		box[j] *= panel_scale;
+		    	}
+		    	
+		    	ImageUtility.drawBox(g, box, Color.white, 0.25f);
+		    }
+		    
+		    //Draw negative areas
+		    for(int i=0; i<script.getNegativeAreas().size(); i++){
+		    	box = Arrays.copyOf(script.getNegativeAreas().get(i), 4);
+		    	
+		    	for(int j=0; j<4; j++){
+		    		box[j] *= panel_scale;
+		    	}
+		    	
+		    	ImageUtility.drawBox(g, box, Color.darkGray, 0.25f);
+		    }
     	}else{
-    		ImageUtility.drawBox(g, selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy, Color.blue, 0);
+    		//Draw target matches
+    		target_locations = ImageUtility.find(image, target, 10, false);
+    		
+    		for(int i=0; i<target_locations.size(); i++){
+    			x = target_locations.get(i).x;
+    			y = target_locations.get(i).y;
+    			h = target.length;
+    			w = target[0].length;
+    			
+    			minx = (int)Math.round(panel_scale*x);
+    			miny = (int)Math.round(panel_scale*y);
+    			maxx = (int)Math.round(panel_scale*(x+w-1));
+    			maxy = (int)Math.round(panel_scale*(y+h-1));
+    			
+        	ImageUtility.drawBox(g, minx, miny, maxx, maxy, Color.red, 0.25f);
+    		}
     	}
-    }
-    
-    //Draw positive areas
-    for(int i=0; i<positives.size(); i++){
-    	ImageUtility.drawBox(g, positives.get(i), Color.blue, 0.5f);
-    }
-    
-    //Draw negative areas
-    for(int i=0; i<negatives.size(); i++){
-    	ImageUtility.drawBox(g, negatives.get(i), Color.red, 0.5f);
     }
 	}
 	
@@ -112,14 +280,40 @@ public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionLi
 	{
 		Object object = e.getSource();
 		JMenuItem menuitem;
+		String menuitem_text;
 		
 		if(object instanceof JMenuItem){
 			menuitem = (JMenuItem)object;
+			menuitem_text = menuitem.getText();
 			
-			if(menuitem.getText().equals("Positive Area")){
+			if(Utility.contains(operations, menuitem_text)){
+				script = new ICRMonkeyScript();
+				script.setOperation(menuitem_text);
+
+				do{		//Find the next available number to assign as a script name
+					script.setAlias(Utility.toString(script_count, 3));
+					script_count++;
+				}while(Utility.exists(output_path + script.getName() + ".ms") || Utility.exists(output_path + script.getName()));
+				
+				RECORDING_SCRIPT = true;
+				setPopupMenu();
+			}else if(menuitem_text.equals("Click") || menuitem_text.equals("DoubleClick") || menuitem_text.equals("Text")){
+				performAction(menuitem_text, popup_menu_x, popup_menu_y);
+			}else if(menuitem_text.equals("Positive Area")){
+				target = null;
 				GET_POSITIVE_AREA = true;
-			}else if(menuitem.getText().equals("Negative Area")){
+			}else if(menuitem_text.equals("Negative Area")){
+				target = null;
 				GET_NEGATIVE_AREA = true;
+			}else if(menuitem_text.equals("Target Area")){
+				target = null;
+				GET_TARGET_AREA = true;
+			}else if(menuitem_text.equals("End Script")){
+				script.save(output_path);
+				script = null;
+				RECORDING_SCRIPT = false;
+				setPopupMenu();
+				repaint();
 			}
 		}
 	}
@@ -131,14 +325,20 @@ public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionLi
   public void mousePressed(MouseEvent e)
   {
   	if(e.getButton() == 1){
-  		if(GET_POSITIVE_AREA || GET_NEGATIVE_AREA){
-	    	selection_box_x0 = e.getX();
-	    	selection_box_y0 = e.getY();
-	    	DRAGGING_SELECTION_BOX = true;
-	    	repaint();
+  		if(RECORDING_SCRIPT){
+	  		if(GET_POSITIVE_AREA || GET_NEGATIVE_AREA || GET_TARGET_AREA){
+		    	selection_box_x0 = e.getX();
+		    	selection_box_y0 = e.getY();
+		    	DRAGGING_SELECTION_BOX = true;
+		    	repaint();
+	  		}else{
+	  			performAction("Click", e.getX(), e.getY());
+	  		}
   		}
   	}else if(e.getButton() == 3){		//Show popup menu with conversion options
-  		popup_menu.show(e.getComponent(), e.getX(), e.getY());
+  		popup_menu_x = e.getX();
+  		popup_menu_y = e.getY();
+  		popup_menu.show(e.getComponent(), popup_menu_x, popup_menu_y);
 		}
   }
   
@@ -179,15 +379,34 @@ public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionLi
    */
 	public void mouseReleased(MouseEvent e)
 	{
+		int[][] image;
+		
 		if(DRAGGING_SELECTION_BOX){
 			DRAGGING_SELECTION_BOX = false;
 			
-			if(GET_POSITIVE_AREA){
-				positives.add(new int[]{selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy});
-				GET_POSITIVE_AREA = false;
-			}else if(GET_NEGATIVE_AREA){
-				negatives.add(new int[]{selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy});
-				GET_NEGATIVE_AREA = false;
+			if(GET_POSITIVE_AREA || GET_NEGATIVE_AREA || GET_TARGET_AREA){
+				selection_box_minx /= panel_scale;
+				selection_box_miny /= panel_scale;
+				selection_box_maxx /= panel_scale;
+				selection_box_maxy /= panel_scale;
+
+				if(GET_POSITIVE_AREA){
+					script.addPositiveArea(new int[]{selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy});
+					target = null;
+					GET_POSITIVE_AREA = false;
+				}else if(GET_NEGATIVE_AREA){
+					script.addNegativeArea(new int[]{selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy});
+					target = null;
+					GET_NEGATIVE_AREA = false;
+				}else if(GET_TARGET_AREA){
+					synchronized(this){
+						image = ImageUtility.image2argb(desktop);
+					}
+					
+					target = ImageUtility.crop(image, selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy);
+					//ImageViewer.show(target, target[0].length, target.length);
+					GET_TARGET_AREA = false;
+				}
 			}
 			
 			repaint();
@@ -197,8 +416,11 @@ public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionLi
 	public void mouseClicked(MouseEvent e) {}	
 	public void mouseEntered(MouseEvent e) {}
 	public void mouseExited(MouseEvent e) {}
-	public void mouseMoved(MouseEvent e) {}
-
+	public void mouseMoved(MouseEvent e) {}	
+	public void keyTyped(KeyEvent e) {}
+	public void keyPressed(KeyEvent e) {}
+	public void keyReleased(KeyEvent e) {}
+	
 	/**
 	 * Background thread to capture screen shots and record interaction.
 	 */
@@ -211,12 +433,15 @@ public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionLi
 		BufferedImage image;
 		
 		while(true){
-	  	image = robot.createScreenCapture(new Rectangle(0,0,(int)screen_size.getWidth(),(int)screen_size.getHeight()));
-	  	//image = ImageUtility.resize(image, panel_scale, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-	  	image = ImageUtility.resize(image, panel_scale, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+			synchronized(this){
+				desktop = robot.createScreenCapture(new Rectangle(0,0,(int)screen_size.getWidth(),(int)screen_size.getHeight()));
+			}
+			
+	  	//image = ImageUtility.resize(desktop, panel_scale, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+	  	image = ImageUtility.resize(desktop, panel_scale, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
 
 			synchronized(this){
-				desktop = image;
+				desktop_scaled = image;
 			}
 
 	  	//Display fps
@@ -245,7 +470,7 @@ public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionLi
 		int screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length;
 		
 		if(screens > 1){
-			ICRMonkey_DS icr_monkey = new ICRMonkey_DS(0.75);
+			ICRMonkey_DS icr_monkey = new ICRMonkey_DS("ICRMonkey_DS.ini");
 			Dimension screen_size = Toolkit.getDefaultToolkit().getScreenSize();
 
 	    JFrame frame = new JFrame("ICR Monkey Desktop");
@@ -256,7 +481,7 @@ public class ICRMonkey_DS extends JPanel implements MouseListener, MouseMotionLi
 	    frame.setLocation((int)screen_size.getWidth()+5, 5);
 	    frame.setVisible(true);
 		}else{
-			System.out.println("Sorry, ICRMonkeyDS requires two screens!");
+			System.out.println("Sorry, ICRMonkey_DS requires two screens!");
 		}
 	}
 }

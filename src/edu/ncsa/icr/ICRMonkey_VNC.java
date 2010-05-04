@@ -24,7 +24,7 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	private VncViewer vnc;	
 	private ICRMonkeyScript script = null;
 
-	private String[] operations = new String[]{"open", "save", "import", "export", "convert", "exit"};
+	private String[] operations = new String[]{"open", "save", "convert", "exit"};
 	
 	private JPopupMenu popup_menu;
 	private MouseListener vc_mouse_listener;

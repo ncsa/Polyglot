@@ -1,6 +1,7 @@
 package edu.ncsa.icr;
 import edu.ncsa.image.*;
 import edu.ncsa.utility.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
@@ -16,9 +17,11 @@ public class ICRMonkeyScript
 	private String alias;
 	private String operation;
 	private Vector<String> lines = new Vector<String>();
-	private Vector<int[][]> images = new Vector<int[][]>();
+	private Vector<int[][]> desktops = new Vector<int[][]>();
+	private Vector<int[][]> targets = new Vector<int[][]>();
 	private Vector<Vector<int[]>> positives = new Vector<Vector<int[]>>();
 	private Vector<Vector<int[]>> negatives = new Vector<Vector<int[]>>();
+	private boolean VERBOSE = true;
 	
 	/**
 	 * Class constructor.
@@ -103,7 +106,7 @@ public class ICRMonkeyScript
 	 * Add a line to the script.
 	 * @param line the line to add
 	 */
-	public void add(String line)
+	public void addLine(String line)
 	{
 		lines.add(line);
 	}
@@ -126,13 +129,13 @@ public class ICRMonkeyScript
 	}
 
 	/**
-	 * Add an image to the script.
+	 * Add a desktop image to the script.
 	 * @param image the image to add
 	 */
-	public void add(BufferedImage image)
+	public void addDesktop(BufferedImage image)
 	{		
-		lines.add("Image:" + Utility.toString(images.size(), 3));
-		images.add(ImageUtility.image2argb(image));
+		lines.add("Desktop:" + Utility.toString(desktops.size(), 3));
+		desktops.add(ImageUtility.image2argb(image));
 
 		//Allocate space for the next captured image
 		positives.add(new Vector<int[]>());
@@ -158,6 +161,16 @@ public class ICRMonkeyScript
 	}
 	
 	/**
+	 * Add a target image to the script.
+	 * @param image the image to add
+	 */
+	public void addTarget(int[][] image)
+	{
+		lines.add("Target:" + Utility.toString(targets.size(), 3));
+		targets.add(image);
+	}
+
+	/**
 	 * Add a mouse click.
 	 * @param image the desktop before the click
 	 * @param x the x-coordinate
@@ -165,13 +178,25 @@ public class ICRMonkeyScript
 	 */
 	public void addClick(BufferedImage image, int x, int y)
 	{
-		add(image);
-		add("Click:" + x + "," + y);
+		addDesktop(image);
+		addLine("Click:" + x + "," + y);
 	}
 
 	/**
+	 * Add a mouse double click.
+	 * @param image the desktop before the click
+	 * @param x the x-coordinate
+	 * @param y the y-coordinate
+	 */
+	public void addDoubleClick(BufferedImage image, int x, int y)
+	{
+		addDesktop(image);
+		addLine("DoubleClick:" + x + "," + y);
+	}
+	
+	/**
 	 * Upgrade the last single click to a double click.
-	 * Note: Last action should be a "Click" if this was a true double click
+	 * Note: Last action should be a "Click" if this was a double click event in Java
 	 */
 	public void lastClickToDoubleClick()
 	{
@@ -191,8 +216,17 @@ public class ICRMonkeyScript
 		if(lastLine().startsWith("Type:")){		//Compact typed events
 			addToLastLine(c);
 		}else{
-			add("Type:" + c);
+			addLine("Type:" + c);
 		}
+	}
+	
+	/**
+	 * Add text input from the keyboard.
+	 * @param text the text to add
+	 */
+	public void addText(String text)
+	{
+		addLine("Type:" + text);
 	}
 
 	/**
@@ -242,12 +276,12 @@ public class ICRMonkeyScript
 		String buffer;
 		int[] box;
 		
-		//Save images
 		new File(path + getName()).mkdir();
-		
-		for(int i=0; i<images.size(); i++){
-			imagename = path + getName() + "/" + Utility.toString(i,3);
-			ImageUtility.save(imagename + ".jpg", images.get(i));
+				
+		//Save desktop images
+		for(int i=0; i<desktops.size(); i++){
+			imagename = path + getName() + "/desktop_" + Utility.toString(i,3);
+			ImageUtility.save(imagename + ".png", desktops.get(i));
 		
 			//Save selection areas
 			buffer = "";
@@ -263,6 +297,12 @@ public class ICRMonkeyScript
 			}
 			
 			Utility.save(imagename + ".txt", buffer);
+		}		
+		
+		//Save target images		
+		for(int i=0; i<targets.size(); i++){
+			imagename = path + getName() + "/target_" + Utility.toString(i,3);
+			ImageUtility.save(imagename + ".png", targets.get(i));
 		}		
 		
 		//Save script
@@ -291,16 +331,16 @@ public class ICRMonkeyScript
 			operation = name.substring(tmpi+1);
 		}
 		
-		//Load images (in correct order!)
-		images.clear();
+		//Load desktop images (in correct order!)
+		desktops.clear();
 		positives.clear();
 		negatives.clear();
 		
 		while(true){
-			imagename = path + name + "/" + Utility.toString(images.size(), 3);
+			imagename = path + name + "/desktop_" + Utility.toString(desktops.size(), 3);
 			
-			if(Utility.exists(imagename + ".jpg")){
-				images.add(ImageUtility.load(imagename + ".jpg"));
+			if(Utility.exists(imagename + ".png")){
+				desktops.add(ImageUtility.load(imagename + ".png"));
 				
 				//Load selection areas
 				positives.add(new Vector<int[]>());
@@ -327,6 +367,19 @@ public class ICRMonkeyScript
 			}
 		}
 		
+		//Load target images (in correct order!)
+		targets.clear();
+		
+		while(true){
+			imagename = path + name + "/target_" + Utility.toString(targets.size(), 3);
+			
+			if(Utility.exists(imagename + ".png")){
+				targets.add(ImageUtility.load(imagename + ".png"));
+			}else{
+				break;
+			}
+		}
+		
 		//Load script
 		this.lines = Utility.loadToStrings(filename);
 	}
@@ -339,8 +392,11 @@ public class ICRMonkeyScript
 		int[] box;
 		
 		//Display image information
-		for(int i=0; i<images.size(); i++){
-			System.out.println("Image:" + Utility.toString(i, 3));
+		System.out.println("******** Desktops ********");
+
+		for(int i=0; i<desktops.size(); i++){
+			if(i > 0) System.out.println();
+			System.out.println("Desktop:" + Utility.toString(i, 3));
 			
 			for(int j=0; j<positives.get(i).size(); j++){
 				box = positives.get(i).get(j);
@@ -351,14 +407,30 @@ public class ICRMonkeyScript
 				box = negatives.get(i).get(j);
 				System.out.println("Negative:" + box[0] + "," + box[1] + "," + box[2] + "," + box[3]);
 			}
-			
-			System.out.println();
 		}
 		
+		System.out.println("*************************");
+		System.out.println();
+		
+		//Display target information
+		System.out.println("******** Targets ********");
+
+		for(int i=0; i<targets.size(); i++){
+			System.out.println("Target:" + Utility.toString(i, 3));
+		}
+		
+		System.out.println("*************************");
+		System.out.println();
+		
 		//Display the script
+		System.out.println("******** Script *********");
+
 		for(int i=0; i<lines.size(); i++){
 			System.out.println(lines.get(i));
 		}
+		
+		System.out.println("*************************");
+
 	}
 	
 	/**
@@ -371,21 +443,43 @@ public class ICRMonkeyScript
 		String line, key, value;
 		Vector<String> values;
 		String text;
-		int[][] desktop;
-		double[] image_g = null;
-		double[] desktop_g;
-		double ssd;
+		int[][] current_desktop;
+		int[] required_desktop_1d;
+		int[] current_desktop_1d;
+		double[] desktop_difference = null;
+		int differences;		
 		int image_index = 0;
 		int image_width = 0;
 		int image_height = 0;
 		int desktop_width, desktop_height;
 		int x, y, tmpi;
+				
+		ImageViewer viewer1 = null;
+		ImageViewer viewer2 = null;
+		Dimension screen_size = Toolkit.getDefaultToolkit().getScreenSize();
+		int screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length;
+		
+		if(screens > 1){
+			viewer1 = new ImageViewer();
+	    viewer1.setLocation((int)screen_size.getWidth()+5, 5);
+	    
+	    viewer2 = new ImageViewer();
+	    viewer2.setLocation((int)screen_size.getWidth()+viewer1.getWidth()+5+10, 5);
+		}	
 		
 		try{
 			robot = new Robot();
 		}catch(Exception e) {e.printStackTrace();}
-
+		
+		if(VERBOSE){
+			System.out.println(); 
+			print(); 
+			System.out.println();
+		}
+		
 		//Go through each line of the script
+		if(VERBOSE) System.out.println("Script executiong started...");
+		
 		for(int i=0; i<lines.size(); i++){
 			line = lines.get(i);
 			
@@ -394,27 +488,30 @@ public class ICRMonkeyScript
 				key = line.substring(0, tmpi);
 				value = line.substring(tmpi+1);
 				
-				if(key.equals("Image")){
+				if(key.equals("Desktop")){
 					image_index = Integer.valueOf(value);
-					image_g = ImageUtility.argb2g(images.get(image_index));
-					image_height = images.get(image_index).length;
-					image_width = images.get(image_index)[0].length;
+					required_desktop_1d = ImageUtility.to1D(desktops.get(image_index));
+					image_height = desktops.get(image_index).length;
+					image_width = desktops.get(image_index)[0].length;
 					
 					//Apply masks to image
 					if(!positives.get(image_index).isEmpty()){
-						image_g = ImageUtility.applyPositiveMasks(image_g, image_width, image_height, positives.get(image_index));
-					}else if(!negatives.get(image_index).isEmpty()){
-						image_g = ImageUtility.applyNegativeMasks(image_g, image_width, image_height, negatives.get(image_index));
+						required_desktop_1d = ImageUtility.applyPositiveMasks(required_desktop_1d, image_width, image_height, positives.get(image_index));
 					}
 					
-					//ImageViewer.show(image_g, image_width, image_height);
+					if(!negatives.get(image_index).isEmpty()){
+						required_desktop_1d = ImageUtility.applyNegativeMasks(required_desktop_1d, image_width, image_height, negatives.get(image_index));
+					}
+										
+					if(viewer1 != null) viewer1.set(required_desktop_1d, image_width, image_height);
+					if(VERBOSE) System.out.println("Watching for desktop to match image: " + Utility.toString(image_index, 3) + "...");
 					
 					//Examine the desktop
 					while(true){
-						desktop = ImageUtility.getScreen();
-						desktop_g = ImageUtility.argb2g(desktop);
-						desktop_height = desktop.length;
-						desktop_width = desktop[0].length;
+						current_desktop = ImageUtility.getScreen();
+						current_desktop_1d = ImageUtility.to1D(current_desktop);
+						desktop_height = current_desktop.length;
+						desktop_width = current_desktop[0].length;
 						
 						//Check image sizes
 						if(desktop_width != image_width || desktop_height != image_height){
@@ -424,15 +521,22 @@ public class ICRMonkeyScript
 						
 						//Apply masks to desktop image
 						if(!positives.get(image_index).isEmpty()){
-							desktop_g = ImageUtility.applyPositiveMasks(desktop_g, desktop_width, desktop_height, positives.get(image_index));
-						}else if(!negatives.get(image_index).isEmpty()){
-							desktop_g = ImageUtility.applyNegativeMasks(desktop_g, desktop_width, desktop_height, negatives.get(image_index));
+							current_desktop_1d = ImageUtility.applyPositiveMasks(current_desktop_1d, desktop_width, desktop_height, positives.get(image_index));
 						}
 						
-						//Compare desktop to image
-						ssd = ImageUtility.ssd(desktop_g, image_g);
+						if(!negatives.get(image_index).isEmpty()){
+							current_desktop_1d = ImageUtility.applyNegativeMasks(current_desktop_1d, desktop_width, desktop_height, negatives.get(image_index));
+						}
 						
-						if(ssd > threshold){
+						//Check for image differences
+						if(desktop_difference == null) desktop_difference = new double[current_desktop_1d.length];
+						differences = ImageUtility.difference(desktop_difference, current_desktop_1d, required_desktop_1d, 0, false);
+						
+						if(viewer2 != null) viewer2.set(desktop_difference, desktop_width, desktop_height);
+						if(VERBOSE) System.out.println("Difference: " + differences);
+						
+						if(differences < threshold){
+							if(VERBOSE) System.out.println("Desktop matches image: " + Utility.toString(image_index, 3) + "!");
 							break;
 						}else{
 							Utility.pause(500);
@@ -442,25 +546,27 @@ public class ICRMonkeyScript
 					values = Utility.split(value, ',', false);
 					x = Integer.valueOf(values.get(0));
 					y = Integer.valueOf(values.get(1));
-					
+										
 					robot.mouseMove(x, y);
-					
-					/*
+
 					if(key.equals("Click")){
+						System.out.println("Clicking at " + x + "," + y);
 						robot.mousePress(InputEvent.BUTTON1_MASK);
 						robot.mouseRelease(InputEvent.BUTTON1_MASK);
 					}else if(key.equals("DoubleClick")){
+						System.out.println("Double clicking at " + x + "," + y);
 						robot.mousePress(InputEvent.BUTTON1_MASK);
 						robot.mouseRelease(InputEvent.BUTTON1_MASK);
 						robot.mousePress(InputEvent.BUTTON1_MASK);
 						robot.mouseRelease(InputEvent.BUTTON1_MASK);
 					}
-					*/
 				}else if(key.equals("Type")){
 					text = value;
 				}
 			}
 		}
+		
+		if(VERBOSE) System.out.println("Script execution finished.");
 	}
 	
 	/**
@@ -469,9 +575,10 @@ public class ICRMonkeyScript
 	 */
 	public static void main(String args[])
 	{
+		args = new String[]{"5", "C:/Kenton/Data/Temp/ICRMonkey/001_open.ms"};
+		
 		if(args.length > 1){
 			ICRMonkeyScript script = new ICRMonkeyScript(args[1]);
-			System.out.println(); script.print();
 			script.execute(Double.valueOf(args[0]));
 		}else{
 			System.out.println("Usage: ICRMonkeyScript threshold script.ms");
