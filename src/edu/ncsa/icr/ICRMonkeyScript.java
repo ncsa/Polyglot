@@ -1,10 +1,10 @@
 package edu.ncsa.icr;
 import edu.ncsa.image.*;
 import edu.ncsa.utility.*;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
+import javax.swing.*;
 import java.io.*;
 import java.util.*;
 
@@ -14,6 +14,7 @@ import java.util.*;
  */
 public class ICRMonkeyScript
 {	
+	private Robot robot = null;
 	private String alias;
 	private String operation;
 	private Vector<String> lines = new Vector<String>();
@@ -21,6 +22,13 @@ public class ICRMonkeyScript
 	private Vector<int[][]> targets = new Vector<int[][]>();
 	private Vector<Vector<int[]>> positives = new Vector<Vector<int[]>>();
 	private Vector<Vector<int[]>> negatives = new Vector<Vector<int[]>>();
+	
+	private int pixel_threshold = 0;
+	private int image_threshold = 0;
+	private JFrame focus_thief = null;
+	private int focus_thief_delay = 5000;
+	private int max_focus_thief_attempts = 2;
+	private int max_watch_time = 30000;
 	private boolean VERBOSE = true;
 	
 	/**
@@ -33,6 +41,10 @@ public class ICRMonkeyScript
 		//Allocate space for the next captured image
 		positives.add(new Vector<int[]>());
 		negatives.add(new Vector<int[]>());
+		
+		try{
+			robot = new Robot();
+		}catch(Exception e) {e.printStackTrace();}
 	}
 	
 	/**
@@ -46,6 +58,22 @@ public class ICRMonkeyScript
 		//Allocate space for the next captured image
 		positives.add(new Vector<int[]>());
 		negatives.add(new Vector<int[]>());
+		
+		try{
+			robot = new Robot();
+		}catch(Exception e) {e.printStackTrace();}
+	}
+	
+	/**
+	 * Start up an iconified JFrame for the sole purpose of stealing screen focus when needed.
+	 * @param focus_thief_delay the time in milliseconds to wait before trying to use the focus thief when executing a stalled script
+	 */
+	public void startFocusThief(int focus_thief_delay)
+	{
+		focus_thief = new JFrame();
+		focus_thief.setState(JFrame.ICONIFIED);
+		focus_thief.setVisible(true);
+		this.focus_thief_delay = focus_thief_delay;
 	}
 	
 	/**
@@ -181,6 +209,20 @@ public class ICRMonkeyScript
 		addDesktop(image);
 		addLine("Click:" + x + "," + y);
 	}
+	
+	/**
+	 * Add a target mouse click.
+	 * @param image the target with which the click is in reference to
+	 * @param x0 the x-coordinate of the target location
+	 * @param y0 the y-coordinate of the target locaiton
+	 * @param x the x-coordinate of the click on the desktop
+	 * @param y the y-coordinate of the click on the desktop
+	 */
+	public void addTargetClick(int[][] image, int x0, int y0, int x, int y)
+	{
+		addTarget(image);
+		addLine("Click:" + (x-x0) + "," + (y-y0));
+	}
 
 	/**
 	 * Add a mouse double click.
@@ -227,6 +269,17 @@ public class ICRMonkeyScript
 	public void addText(String text)
 	{
 		addLine("Type:" + text);
+	}
+	
+	/**
+	 * Add text input from the keyboard (note this versions enforces a required desktop!).
+	 * @param image the desktop before the click
+	 * @param text the text to add
+	 */
+	public void addText(BufferedImage image, String text)
+	{
+		addDesktop(image);
+		addText(text);
 	}
 
 	/**
@@ -409,7 +462,6 @@ public class ICRMonkeyScript
 			}
 		}
 		
-		System.out.println("*************************");
 		System.out.println();
 		
 		//Display target information
@@ -419,7 +471,6 @@ public class ICRMonkeyScript
 			System.out.println("Target:" + Utility.toString(i, 3));
 		}
 		
-		System.out.println("*************************");
 		System.out.println();
 		
 		//Display the script
@@ -429,29 +480,58 @@ public class ICRMonkeyScript
 			System.out.println(lines.get(i));
 		}
 		
-		System.out.println("*************************");
+		System.out.println();
 
 	}
 	
 	/**
-	 * Execute the script.
-	 * @param threshold the image threshold to use when comparing two images
+	 * Steal window focus as best as possible.
+	 * @param desktop_index the index of the current required desktop image
+	 * @return true if an attempt was made
 	 */
-	public void execute(double threshold)
+	public boolean stealFocus(int desktop_index)
 	{
-		Robot robot = null;
+		int[] box;
+		
+		if(focus_thief != null){
+			if(VERBOSE) System.out.println("Trying focus thief...");
+			focus_thief.toFront();
+			
+			//Try to also move mouse to the middle of a negative mask area
+			if(desktop_index >= 0 && !negatives.get(desktop_index).isEmpty()){
+				box = negatives.get(desktop_index).firstElement();
+				robot.mouseMove((box[0]+box[2])/2, (box[1]+box[3])/2);
+			}
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Execute the script.
+	 */
+	public void execute()
+	{
 		String line, key, value;
 		Vector<String> values;
 		String text;
+		int[][] required_image;
 		int[][] current_desktop;
-		int[] required_desktop_1d;
+		int[] requied_image_1d;
 		int[] current_desktop_1d;
 		double[] desktop_difference = null;
-		int differences;		
+		Vector<Point> target_locations;
+		Point target = null;
+		long t0, t1, dt;
 		int image_index = 0;
 		int image_width = 0;
 		int image_height = 0;
 		int desktop_width, desktop_height;
+		int differences;		
+		int focus_thief_attempts;
+		int key_code;
 		int x, y, tmpi;
 				
 		ImageViewer viewer1 = null;
@@ -460,25 +540,15 @@ public class ICRMonkeyScript
 		int screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length;
 		
 		if(screens > 1){
-			viewer1 = new ImageViewer();
-	    viewer1.setLocation((int)screen_size.getWidth()+5, 5);
+			viewer1 = new ImageViewer("Required Image");
+	    viewer1.setLocation((int)screen_size.getWidth(), 0);
 	    
-	    viewer2 = new ImageViewer();
-	    viewer2.setLocation((int)screen_size.getWidth()+viewer1.getWidth()+5+10, 5);
+	    viewer2 = new ImageViewer("Current Image");
+	    viewer2.setLocation((int)screen_size.getWidth()+viewer1.getWidth(), 0);
 		}	
 		
-		try{
-			robot = new Robot();
-		}catch(Exception e) {e.printStackTrace();}
-		
-		if(VERBOSE){
-			System.out.println(); 
-			print(); 
-			System.out.println();
-		}
-		
 		//Go through each line of the script
-		if(VERBOSE) System.out.println("Script executiong started...");
+		if(VERBOSE) System.out.println("Script execution started...");
 		
 		for(int i=0; i<lines.size(); i++){
 			line = lines.get(i);
@@ -490,23 +560,26 @@ public class ICRMonkeyScript
 				
 				if(key.equals("Desktop")){
 					image_index = Integer.valueOf(value);
-					required_desktop_1d = ImageUtility.to1D(desktops.get(image_index));
+					requied_image_1d = ImageUtility.to1D(desktops.get(image_index));
 					image_height = desktops.get(image_index).length;
 					image_width = desktops.get(image_index)[0].length;
 					
 					//Apply masks to image
 					if(!positives.get(image_index).isEmpty()){
-						required_desktop_1d = ImageUtility.applyPositiveMasks(required_desktop_1d, image_width, image_height, positives.get(image_index));
+						requied_image_1d = ImageUtility.applyPositiveMasks(requied_image_1d, image_width, image_height, positives.get(image_index));
 					}
 					
 					if(!negatives.get(image_index).isEmpty()){
-						required_desktop_1d = ImageUtility.applyNegativeMasks(required_desktop_1d, image_width, image_height, negatives.get(image_index));
+						requied_image_1d = ImageUtility.applyNegativeMasks(requied_image_1d, image_width, image_height, negatives.get(image_index));
 					}
 										
-					if(viewer1 != null) viewer1.set(required_desktop_1d, image_width, image_height);
+					if(viewer1 != null) viewer1.set(requied_image_1d, image_width, image_height);
 					if(VERBOSE) System.out.println("Watching for desktop to match image: " + Utility.toString(image_index, 3) + "...");
 					
 					//Examine the desktop
+					t0 = System.currentTimeMillis();
+					focus_thief_attempts = 0;
+					
 					while(true){
 						current_desktop = ImageUtility.getScreen();
 						current_desktop_1d = ImageUtility.to1D(current_desktop);
@@ -530,16 +603,70 @@ public class ICRMonkeyScript
 						
 						//Check for image differences
 						if(desktop_difference == null) desktop_difference = new double[current_desktop_1d.length];
-						differences = ImageUtility.difference(desktop_difference, current_desktop_1d, required_desktop_1d, 0, false);
+						differences = ImageUtility.difference(desktop_difference, current_desktop_1d, requied_image_1d, pixel_threshold, false);
 						
 						if(viewer2 != null) viewer2.set(desktop_difference, desktop_width, desktop_height);
 						if(VERBOSE) System.out.println("Difference: " + differences);
 						
-						if(differences < threshold){
+						if(differences <= image_threshold){
 							if(VERBOSE) System.out.println("Desktop matches image: " + Utility.toString(image_index, 3) + "!");
 							break;
 						}else{
 							Utility.pause(500);
+						}
+						
+						//Check progress
+						t1 = System.currentTimeMillis();
+						dt = t1 - t0;
+						
+						if(dt > focus_thief_delay && focus_thief != null && focus_thief_attempts < max_focus_thief_attempts){
+							stealFocus(image_index);
+							focus_thief_attempts++;
+						}else if(dt > max_watch_time){
+							System.out.println("Maximum watch time exceeded!");
+							System.exit(1);
+						}
+					}
+				}else if(key.equals("Target")){
+					image_index = Integer.valueOf(value);
+					required_image = targets.get(image_index);
+					image_height = desktops.get(image_index).length;
+					image_width = desktops.get(image_index)[0].length;
+		
+					if(viewer1 != null) viewer1.set(required_image, image_width, image_height);
+					if(VERBOSE) System.out.println("Watching for target: " + Utility.toString(image_index, 3) + "...");
+										
+					//Examine the desktop
+					t0 = System.currentTimeMillis();
+					focus_thief_attempts = 0;
+					
+					while(true){
+						current_desktop = ImageUtility.getScreen();
+						desktop_height = current_desktop.length;
+						desktop_width = current_desktop[0].length;
+						
+						if(viewer2 != null) viewer2.set(current_desktop, desktop_width, desktop_height);
+
+						target_locations = ImageUtility.find(current_desktop, required_image, pixel_threshold, true);
+
+						if(!target_locations.isEmpty()){
+							target = target_locations.get(0);
+							if(VERBOSE) System.out.println("Target found: " + Utility.toString(image_index, 3) + "!");
+							break;
+						}else{
+							Utility.pause(500);
+						}
+						
+						//Check progress
+						t1 = System.currentTimeMillis();
+						dt = t1 - t0;
+						
+						if(dt > focus_thief_delay && focus_thief != null && focus_thief_attempts < max_focus_thief_attempts){
+							stealFocus(-1);
+							focus_thief_attempts++;
+						}else if(dt > max_watch_time){
+							System.out.println("Maximum watch time exceeded!");
+							System.exit(1);
 						}
 					}
 				}else if(key.equals("Click") || key.equals("DoubleClick")){
@@ -547,14 +674,20 @@ public class ICRMonkeyScript
 					x = Integer.valueOf(values.get(0));
 					y = Integer.valueOf(values.get(1));
 										
+					if(target != null){
+						x += target.x;
+						y += target.y;
+						target = null;	//This is all we need from the target so clear it when finished!
+					}
+					
 					robot.mouseMove(x, y);
 
 					if(key.equals("Click")){
-						System.out.println("Clicking at " + x + "," + y);
+						if(VERBOSE) System.out.println("Clicking at " + x + "," + y);
 						robot.mousePress(InputEvent.BUTTON1_MASK);
 						robot.mouseRelease(InputEvent.BUTTON1_MASK);
 					}else if(key.equals("DoubleClick")){
-						System.out.println("Double clicking at " + x + "," + y);
+						if(VERBOSE) System.out.println("Double clicking at " + x + "," + y);
 						robot.mousePress(InputEvent.BUTTON1_MASK);
 						robot.mouseRelease(InputEvent.BUTTON1_MASK);
 						robot.mousePress(InputEvent.BUTTON1_MASK);
@@ -562,6 +695,24 @@ public class ICRMonkeyScript
 					}
 				}else if(key.equals("Type")){
 					text = value;
+					if(VERBOSE) System.out.println("Typing \"" + text + "\"");
+					
+					for(int j=0; j<text.length(); j++){
+						key_code = KeyStroke.getKeyStroke(Character.toUpperCase(text.charAt(j)), 0).getKeyCode();
+												
+						if(Character.isUpperCase(text.charAt(j))){
+							robot.keyPress(KeyEvent.VK_SHIFT);
+							robot.keyPress(key_code);
+							robot.keyRelease(key_code);
+							robot.keyRelease(KeyEvent.VK_SHIFT);
+						}else{
+							robot.keyPress(key_code);
+							robot.keyRelease(key_code);
+						}
+					}
+				}else{
+					System.out.println("Line " + (i+1) + ": unrecognized command!");
+					System.exit(1);
 				}
 			}
 		}
@@ -575,13 +726,59 @@ public class ICRMonkeyScript
 	 */
 	public static void main(String args[])
 	{
-		args = new String[]{"5", "C:/Kenton/Data/Temp/ICRMonkey/001_open.ms"};
+		String filename = null;
+		int pixel_threshold = 0;
+		int image_threshold = 0;
+		int focus_thief_delay = -1;
+		boolean VERBOSE = false;
+		boolean SHOW_HELP = false;
 		
-		if(args.length > 1){
-			ICRMonkeyScript script = new ICRMonkeyScript(args[1]);
-			script.execute(Double.valueOf(args[0]));
-		}else{
-			System.out.println("Usage: ICRMonkeyScript threshold script.ms");
+		if(args.length == 0){
+			args = new String[]{"-it", "15", "-ft", "2500", "-v", "C:/Kenton/Data/Temp/ICRMonkey/007_open.ms"};
+			//args = new String[]{"-it", "15", "-v", "C:/Kenton/Data/Temp/ICRMonkey/002_open.ms"};
 		}
+		
+		//Parse arguments
+		for(int i=0; i<args.length; i++){
+			if(args[i].equals("-pt")){
+				pixel_threshold = Integer.valueOf(args[++i]);
+			}else if(args[i].equals("-it")){
+				image_threshold = Integer.valueOf(args[++i]);
+			}else if(args[i].equals("-ft")){
+				focus_thief_delay = Integer.valueOf(args[++i]);
+			}else if(args[i].equals("-v")){
+				VERBOSE = true;
+			}else if(args[i].equals("-?")){
+				SHOW_HELP = true;
+			}else{
+				filename = args[i];
+			}
+		}
+		
+		//Display help
+		if(args.length == 0 || SHOW_HELP){
+			System.out.println("Usage: ICRMonkeyScript [options] file.ms\n");
+			System.out.println("  -pt x: set the threshold to use when comparing two pixels");
+			System.out.println("  -it x: set the threshold to use when comparing two images");
+			System.out.println("  -ft x: set how long to wait before activating a focus thief");
+			System.out.println("  -v: enable verbose mode");
+			System.out.println("  -?: display this help\n");
+		}
+		
+		//Run the script
+		if(filename != null){		
+			ICRMonkeyScript script = new ICRMonkeyScript(filename);
+			//script.print(); 
+			
+			script.pixel_threshold = pixel_threshold;
+			script.image_threshold = image_threshold;
+			if(focus_thief_delay >= 0) script.startFocusThief(focus_thief_delay);
+			script.VERBOSE = VERBOSE;
+			
+			script.execute();
+		}
+		
+		//Force exit (JFrames will persist otherwise!)
+		System.exit(0);		
 	}
 }

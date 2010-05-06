@@ -5,8 +5,10 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 import javax.swing.*;
+
 import java.io.*;
 import java.util.*;
+
 import com.tightvnc.vncviewer.*;
 
 /**
@@ -18,15 +20,22 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	private Vector<String> servers = new Vector<String>();
 	private String data_path = "./";
 	private String output_path = "./";
+	private int ignored_bottom = 0;
+	private int ignored_left = 0;
 	
 	private String server;
 	private int port;	
-	private VncViewer vnc;	
+	private VncViewer vnc;
+	private int screen_width;
+	private int screen_height;
 	private ICRMonkeyScript script = null;
 
 	private String[] operations = new String[]{"open", "save", "convert", "exit"};
 	
 	private JPopupMenu popup_menu;
+	private int popup_menu_x;
+	private int popup_menu_y;
+	
 	private MouseListener vc_mouse_listener;
 	private MouseMotionListener vc_mouse_motion_listener;
 	private KeyListener vc_key_listener;
@@ -38,6 +47,9 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
   private boolean DRAGGING_SELECTION_BOX;
   private boolean GET_POSITIVE_AREA;
   private boolean GET_NEGATIVE_AREA;
+  private boolean GET_TARGET_AREA; 
+  private int[][] target = null;
+	private Vector<Point> target_locations = new Vector<Point>();
 	
 	/**
 	 * Class constructor.
@@ -80,6 +92,10 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	        		data_path = value + "/";
 	        	}else if(key.equals("OutputPath")){
 	        		output_path = value + "/";
+	        	}else if(key.equals("IgnoredBottom")){
+	        		ignored_bottom = Integer.valueOf(value);
+	        	}else if(key.equals("IgnoredLeft")){
+	        		ignored_left = Integer.valueOf(value);
 	        	}
 	        }
 	      }
@@ -129,19 +145,41 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 		  for(int i=0; i<operations.length; i++){
 		  	item = new JMenuItem(operations[i]); item.addActionListener(this); submenu1.add(item); 
 		  }
-
+	
 		  popup_menu.add(submenu1);
 	  }else{
 		  submenu1 = new JMenu("Select");
 		  item = new JMenuItem("Positive Area"); item.addActionListener(this); submenu1.add(item);
 		  item = new JMenuItem("Negative Area"); item.addActionListener(this); submenu1.add(item);
+		  submenu1.addSeparator();
+		  item = new JMenuItem("Target Area"); item.addActionListener(this); submenu1.add(item);
 		  popup_menu.add(submenu1);
+		  
+		  item = new JMenuItem("Require Current"); item.addActionListener(this); popup_menu.add(item);
 		  popup_menu.addSeparator();
 		  
 		  item = new JMenuItem("End Script"); item.addActionListener(this); popup_menu.add(item);
 	  }
 	}
 
+	/**
+	 * Add ignored areas to the script.
+	 */
+	private void addIgnoredAreas()
+	{		
+		//Add bottom area
+		if(ignored_bottom > 0){
+			script.addNegativeArea(new int[]{0, screen_height-ignored_bottom, screen_width, screen_height});
+		}
+		
+		//Add left area
+		if(ignored_left > 0){
+			script.addNegativeArea(new int[]{0, 0, ignored_left, screen_height});
+		}
+		
+		repaint();
+	}
+	
 	/**
 	 * Set the VNC server to connect to.
 	 * @param server the server to connect to
@@ -166,6 +204,8 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	 */
 	public void connect()
 	{
+		BufferedImage image;
+		
     vnc = new VncViewer();
 	  vnc.mainArgs = new String[]{"HOST", server, "PORT", String.valueOf(port)};
 	  vnc.inAnApplet = false;
@@ -193,6 +233,16 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	  vc_key_listener = vnc.vc.getKeyListeners()[0];
 	  vnc.vc.removeKeyListener(vc_key_listener);
 	  vnc.vc.addKeyListener(this);
+	  
+	  //Wait for a screen capture
+	  while(vnc.vc.memImage == null){
+	  	Utility.pause(500);
+	  }
+	  
+	  //Get the screen size
+	  image = (BufferedImage)vnc.vc.memImage;
+	  screen_width = image.getWidth();
+	  screen_height = image.getHeight();
 	}
 
 	/**
@@ -201,25 +251,43 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	 */
 	public void paint(Graphics g)
 	{
+		int[][] image = null;
+		int[] box;
+		int x, y, w, h;
+		
+		synchronized(vnc.vc.memImage){
+			if(target != null) image = ImageUtility.image2argb((BufferedImage)vnc.vc.memImage);
+		}
+		
     //Draw selection box
     if(DRAGGING_SELECTION_BOX){
-    	if(GET_NEGATIVE_AREA){
-    		ImageUtility.drawBox(g, selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy, Color.red, 0);
-    	}else{
-    		ImageUtility.drawBox(g, selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy, Color.blue, 0);
-    	}
+    	ImageUtility.drawBox(g, selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy, new Color(0x003399ff), 0.25f);
     }
     
     if(script != null){
-	    //Draw positive areas
-	    for(int i=0; i<script.getPositiveAreas().size(); i++){
-	    	ImageUtility.drawBox(g, script.getPositiveAreas().get(i), Color.blue, 0.5f);
-	    }
-	    
-	    //Draw negative areas
-	    for(int i=0; i<script.getNegativeAreas().size(); i++){
-	    	ImageUtility.drawBox(g, script.getNegativeAreas().get(i), Color.red, 0.5f);
-	    }
+    	if(target == null){
+		    //Draw positive areas
+		    for(int i=0; i<script.getPositiveAreas().size(); i++){
+		    	ImageUtility.drawBox(g, script.getPositiveAreas().get(i), Color.white, 0.5f);
+		    }
+		    
+		    //Draw negative areas
+		    for(int i=0; i<script.getNegativeAreas().size(); i++){
+		    	ImageUtility.drawBox(g, script.getNegativeAreas().get(i), Color.darkGray, 0.5f);
+		    }
+    	}else{
+    		//Draw target matches
+    		target_locations = ImageUtility.find(image, target, 0, false);
+    		
+    		for(int i=0; i<target_locations.size(); i++){
+    			x = target_locations.get(i).x;
+    			y = target_locations.get(i).y;
+    			h = target.length;
+    			w = target[0].length;
+    			
+        	ImageUtility.drawBox(g, x, y, x+w-1, y+h-1, Color.red, 0.25f);
+    		}
+    	}
     }
 	}
 	
@@ -239,11 +307,13 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	{
 		Object object = e.getSource();
 		JMenuItem menuitem;
-		
+		String menuitem_text;
+
 		if(object instanceof JMenuItem){
 			menuitem = (JMenuItem)object;
-			
-			if(Utility.contains(operations, menuitem.getText())){
+			menuitem_text = menuitem.getText();
+
+			if(Utility.contains(operations, menuitem_text)){
 				script = new ICRMonkeyScript();
 				script.setOperation(menuitem.getText());
 
@@ -252,13 +322,23 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 					script_count++;
 				}while(Utility.exists(output_path + script.getName() + ".ms") || Utility.exists(output_path + script.getName()));
 				
+				addIgnoredAreas();
 				RECORDING_SCRIPT = true;
 				setPopupMenu();
-			}else if(menuitem.getText().equals("Positive Area")){
+			}else if(menuitem_text.equals("Positive Area")){
+				target = null;
 				GET_POSITIVE_AREA = true;
-			}else if(menuitem.getText().equals("Negative Area")){
+			}else if(menuitem_text.equals("Negative Area")){
+				target = null;
 				GET_NEGATIVE_AREA = true;
-			}else if(menuitem.getText().equals("End Script")){
+			}else if(menuitem_text.equals("Target Area")){
+				target = null;
+				GET_TARGET_AREA = true;
+			}else if(menuitem_text.equals("Require Current")){
+				synchronized(this){
+					script.addDesktop((BufferedImage)vnc.vc.memImage);
+				}
+			}else if(menuitem_text.equals("End Script")){
 				script.save(output_path);
 				script = null;
 				RECORDING_SCRIPT = false;
@@ -276,17 +356,22 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
   {
   	if(e.getButton() == 1){
   		if(RECORDING_SCRIPT){
-  			if(GET_POSITIVE_AREA || GET_NEGATIVE_AREA){
+  			if(GET_POSITIVE_AREA || GET_NEGATIVE_AREA || GET_TARGET_AREA){
 		    	selection_box_x0 = e.getX();
 		    	selection_box_y0 = e.getY();
 		    	DRAGGING_SELECTION_BOX = true;
   			}else{
 	  			if(e.getClickCount() == 1){			  		
 						synchronized(vnc.vc.memImage){
-			  			script.addClick((BufferedImage)vnc.vc.memImage, e.getX(), e.getY());
-			  		}			  		
+							if(target != null && !target_locations.isEmpty()){
+								script.addTargetClick(target, target_locations.get(0).x, target_locations.get(0).y, e.getX(), e.getY());
+							}else{
+								script.addClick((BufferedImage)vnc.vc.memImage, e.getX(), e.getY());
+								addIgnoredAreas();								//Add ignored sections again
+							}
+			  		}
 					}else if(e.getClickCount() == 2){
-						script.lastClickToDoubleClick();
+						script.lastClickToDoubleClick();	//We will always send a single click first (above)!
 					}
 					
 					vc_mouse_listener.mousePressed(e);	
@@ -297,7 +382,9 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
   			vc_mouse_listener.mousePressed(e);
   		}
   	}else if(e.getButton() == 3){		//Show popup menu with conversion options
-  		popup_menu.show(e.getComponent(), e.getX(), e.getY());
+  		popup_menu_x = e.getX();
+  		popup_menu_y = e.getY();
+  		popup_menu.show(e.getComponent(), popup_menu_x, popup_menu_y);
 		}
   }
   
@@ -340,6 +427,8 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
    */
 	public void mouseReleased(MouseEvent e)
 	{
+		int[][] image;
+
 		if(DRAGGING_SELECTION_BOX){
 			DRAGGING_SELECTION_BOX = false;
 			
@@ -349,6 +438,14 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 			}else if(GET_NEGATIVE_AREA){
 				script.addNegativeArea(new int[]{selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy});
 				GET_NEGATIVE_AREA = false;
+			}else if(GET_TARGET_AREA){
+				synchronized(vnc.vc.memImage){
+					image = ImageUtility.image2argb((BufferedImage)vnc.vc.memImage);
+				}
+				
+				target = ImageUtility.crop(image, selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy);
+				//ImageViewer.show(target, target[0].length, target.length);
+				GET_TARGET_AREA = false;
 			}
 			
 			repaint();

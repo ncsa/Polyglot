@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 import javax.swing.*;
+
 import java.io.*;
 import java.util.*;
 
@@ -16,11 +17,15 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 {
 	private String data_path = "./";
 	private String output_path = "./";
+	private double panel_scale;
+	private int ignored_bottom = 0;
+	private int ignored_left = 0;
 	
+	private Dimension screen_size = null;
+	private boolean CAPTURING = true;
 	private BufferedImage desktop;
 	private BufferedImage desktop_scaled;
 	private Robot robot;
-	private double panel_scale;
 	private int panel_width;
 	private int panel_height;
 	private ICRMonkeyScript script = null;
@@ -40,7 +45,8 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
   private boolean GET_NEGATIVE_AREA;
   private boolean GET_TARGET_AREA; 
   private int[][] target = null;
-  
+	private Vector<Point> target_locations = new Vector<Point>();
+
 	/**
 	 * Class constructor.
 	 * @param filename the name of the *.ini file to load
@@ -89,6 +95,10 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 	        		output_path = value + "/";
 	        	}else if(key.equals("Scale")){
 	        		panel_scale = Double.valueOf(value);
+	        	}else if(key.equals("IgnoredBottom")){
+	        		ignored_bottom = Integer.valueOf(value);
+	        	}else if(key.equals("IgnoredLeft")){
+	        		ignored_left = Integer.valueOf(value);
 	        	}
 	        }
 	      }
@@ -114,7 +124,7 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 		  for(int i=0; i<operations.length; i++){
 		  	item = new JMenuItem(operations[i]); item.addActionListener(this); submenu1.add(item); 
 		  }
-
+	
 		  popup_menu.add(submenu1);
 	  }else{
 		  submenu1 = new JMenu("Send");
@@ -129,19 +139,50 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 		  submenu1.addSeparator();
 		  item = new JMenuItem("Target Area"); item.addActionListener(this); submenu1.add(item);
 		  popup_menu.add(submenu1);
+		  
+		  item = new JMenuItem("Require Current"); item.addActionListener(this); popup_menu.add(item);
 		  popup_menu.addSeparator();
 		  
 		  item = new JMenuItem("End Script"); item.addActionListener(this); popup_menu.add(item);
 	  }
 	}
+
+	/**
+	 * Add ignored areas to the script.
+	 */
+	private void addIgnoredAreas()
+	{
+		//Add bottom area
+		if(ignored_bottom > 0){
+			script.addNegativeArea(new int[]{0, screen_size.height-ignored_bottom, screen_size.width, screen_size.height});
+		}
+		
+		//Add left area
+		if(ignored_left > 0){
+			script.addNegativeArea(new int[]{0, 0, ignored_left, screen_size.height});
+		}
+	}
 	
+	/**
+	 * Wait for the screen capture thread to capture a new image.
+	 */
+	private void waitForNewScreenShot()
+	{
+		BufferedImage current = desktop;
+		
+		while(current == desktop){
+			Utility.pause(100);
+		}
+	}
+
 	/**
 	 * Perform the specified action.
 	 * @param action the action to perform ("Click", "DoubleClick", "Text")
 	 * @param x the x-coordinate to perform the action at
 	 * @param y the y-coordinate to perform the action at
+	 * @param RESTORE_MOUSE_POSITION true if the mouse should be returned to its orignal position
 	 */
-	private void performAction(String action, int x, int y)
+	private void performAction(String action, int x, int y, boolean RESTORE_MOUSE_POSITION)
 	{
 		Point xy_last = MouseInfo.getPointerInfo().getLocation();
 		String text;
@@ -154,7 +195,11 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 		if(action.equals("Click")){
 			//Record action
 			synchronized(this){
-				script.addClick(desktop, x, y);
+				if(target != null && !target_locations.isEmpty()){
+					script.addTargetClick(target, target_locations.get(0).x, target_locations.get(0).y, x, y);
+				}else{
+					script.addClick(desktop, x, y);
+				}
 			}
 	
 			//Perform action
@@ -175,11 +220,20 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 			robot.mouseRelease(InputEvent.BUTTON1_MASK);
 		}else if(action.equals("Text")){
 			//Get the text
+			setCapturing(false);
 			text = JOptionPane.showInputDialog(this, "");
-
+			setCapturing(true);
+			
 			if(text != null){
+				//Enforce the click and wait for the next screen shot to ensure focus and correct desktop!
+				performAction("Click", x, y, false);
+				Utility.pause(1000);
+				waitForNewScreenShot();
+				
 				//Record action
-				script.addText(text);
+				synchronized(this){
+					script.addText(desktop, text);
+				}
 				
 				//Perform action (start by moving mouse focus back over!)
 				robot.mouseMove(x, y);
@@ -202,8 +256,27 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 			}
 		}
 		
-		//Move mouse back to virtual desktop
-		robot.mouseMove((int)xy_last.getX(), (int)xy_last.getY());
+		//Clear target if set
+		target = null;
+		
+		//Add ignored sections again if need be
+		if(script.getNegativeAreas().isEmpty()){
+			addIgnoredAreas();
+		}
+		
+		//Move mouse back to it's original position
+		if(RESTORE_MOUSE_POSITION){
+			robot.mouseMove((int)xy_last.getX(), (int)xy_last.getY());
+		}
+	}
+	
+	/**
+	 * Enable/disable screen shot capturing.
+	 * @param value true if screen shots should be captured
+	 */
+	public void setCapturing(boolean value)
+	{
+		CAPTURING = value;
 	}
 	
 	/**
@@ -212,7 +285,6 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 	 */
 	public void paint(Graphics g)
 	{
-		Vector<Point> target_locations;
 		int[][] image = null;
 		int[] box;
 		int x, y, w, h;
@@ -253,7 +325,7 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 		    }
     	}else{
     		//Draw target matches
-    		target_locations = ImageUtility.find(image, target, 10, false);
+    		target_locations = ImageUtility.find(image, target, 0, false);
     		
     		for(int i=0; i<target_locations.size(); i++){
     			x = target_locations.get(i).x;
@@ -286,6 +358,8 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 			menuitem = (JMenuItem)object;
 			menuitem_text = menuitem.getText();
 			
+	  	setCapturing(true);		//Undo capturing halt from popup menu
+			
 			if(Utility.contains(operations, menuitem_text)){
 				script = new ICRMonkeyScript();
 				script.setOperation(menuitem_text);
@@ -295,19 +369,24 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 					script_count++;
 				}while(Utility.exists(output_path + script.getName() + ".ms") || Utility.exists(output_path + script.getName()));
 				
+				addIgnoredAreas();
 				RECORDING_SCRIPT = true;
 				setPopupMenu();
 			}else if(menuitem_text.equals("Click") || menuitem_text.equals("DoubleClick") || menuitem_text.equals("Text")){
-				performAction(menuitem_text, popup_menu_x, popup_menu_y);
+				performAction(menuitem_text, popup_menu_x, popup_menu_y, true);
 			}else if(menuitem_text.equals("Positive Area")){
-				target = null;
+				target = null;		//Clear target if set
 				GET_POSITIVE_AREA = true;
 			}else if(menuitem_text.equals("Negative Area")){
-				target = null;
+				target = null;		//Clear target if set
 				GET_NEGATIVE_AREA = true;
 			}else if(menuitem_text.equals("Target Area")){
-				target = null;
+				target = null;		//Clear target if set
 				GET_TARGET_AREA = true;
+			}else if(menuitem_text.equals("Require Current")){
+				synchronized(this){
+					script.addDesktop(desktop);
+				}
 			}else if(menuitem_text.equals("End Script")){
 				script.save(output_path);
 				script = null;
@@ -324,6 +403,8 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
    */
   public void mousePressed(MouseEvent e)
   {
+  	setCapturing(true);		//Undo capturing halt from popup menu
+  	
   	if(e.getButton() == 1){
   		if(RECORDING_SCRIPT){
 	  		if(GET_POSITIVE_AREA || GET_NEGATIVE_AREA || GET_TARGET_AREA){
@@ -332,13 +413,14 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 		    	DRAGGING_SELECTION_BOX = true;
 		    	repaint();
 	  		}else{
-	  			performAction("Click", e.getX(), e.getY());
+	  			performAction("Click", e.getX(), e.getY(), true);
 	  		}
   		}
   	}else if(e.getButton() == 3){		//Show popup menu with conversion options
   		popup_menu_x = e.getX();
   		popup_menu_y = e.getY();
   		popup_menu.show(e.getComponent(), popup_menu_x, popup_menu_y);
+  		setCapturing(false);
 		}
   }
   
@@ -392,11 +474,9 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 
 				if(GET_POSITIVE_AREA){
 					script.addPositiveArea(new int[]{selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy});
-					target = null;
 					GET_POSITIVE_AREA = false;
 				}else if(GET_NEGATIVE_AREA){
 					script.addNegativeArea(new int[]{selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy});
-					target = null;
 					GET_NEGATIVE_AREA = false;
 				}else if(GET_TARGET_AREA){
 					synchronized(this){
@@ -429,35 +509,39 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 		double fps = 0;
 		long t0 = System.currentTimeMillis();
 		long t1;
-		Dimension screen_size = Toolkit.getDefaultToolkit().getScreenSize();
+		screen_size = Toolkit.getDefaultToolkit().getScreenSize();
 		BufferedImage image;
 		
 		while(true){
-			synchronized(this){
-				desktop = robot.createScreenCapture(new Rectangle(0,0,(int)screen_size.getWidth(),(int)screen_size.getHeight()));
+			if(CAPTURING){
+				synchronized(this){
+					desktop = robot.createScreenCapture(new Rectangle(0,0,(int)screen_size.getWidth(),(int)screen_size.getHeight()));
+				}
+				
+		  	//image = ImageUtility.resize(desktop, panel_scale, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+		  	image = ImageUtility.resize(desktop, panel_scale, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
+	
+				synchronized(this){
+					desktop_scaled = image;
+				}
+				
+		  	//Display fps
+		  	if(false){
+		  		fps++;
+		  		t1 = System.currentTimeMillis();
+		  		
+		  		if(t1-t0 > 1000){
+		  			System.out.println("FPS: " + fps);
+		  			
+		  			fps = 0;
+		  			t0 = System.currentTimeMillis();
+		  		}
+		  	}
+		  	
+		  	repaint();
+			}else{
+				Utility.pause(100);
 			}
-			
-	  	//image = ImageUtility.resize(desktop, panel_scale, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
-	  	image = ImageUtility.resize(desktop, panel_scale, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-
-			synchronized(this){
-				desktop_scaled = image;
-			}
-
-	  	//Display fps
-	  	if(false){
-	  		fps++;
-	  		t1 = System.currentTimeMillis();
-	  		
-	  		if(t1-t0 > 1000){
-	  			System.out.println("FPS: " + fps);
-	  			
-	  			fps = 0;
-	  			t0 = System.currentTimeMillis();
-	  		}
-	  	}
-	  	
-	  	repaint();
 		}
 	}
 
@@ -478,7 +562,7 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 	    frame.setResizable(false);
 	    frame.pack();
 	    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-	    frame.setLocation((int)screen_size.getWidth()+5, 5);
+	    frame.setLocation((int)screen_size.getWidth(), 0);
 	    frame.setVisible(true);
 		}else{
 			System.out.println("Sorry, ICRMonkey_DS requires two screens!");
