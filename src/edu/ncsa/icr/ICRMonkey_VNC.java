@@ -1,6 +1,7 @@
 package edu.ncsa.icr;
 import edu.ncsa.image.*;
 import edu.ncsa.utility.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
@@ -8,7 +9,6 @@ import javax.swing.*;
 
 import java.io.*;
 import java.util.*;
-
 import com.tightvnc.vncviewer.*;
 
 /**
@@ -148,6 +148,8 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	
 		  popup_menu.add(submenu1);
 	  }else{
+		  item = new JMenuItem("Run"); item.addActionListener(this); popup_menu.add(item);
+
 		  submenu1 = new JMenu("Select");
 		  item = new JMenuItem("Positive Area"); item.addActionListener(this); submenu1.add(item);
 		  item = new JMenuItem("Negative Area"); item.addActionListener(this); submenu1.add(item);
@@ -308,6 +310,7 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 		Object object = e.getSource();
 		JMenuItem menuitem;
 		String menuitem_text;
+		String command;
 
 		if(object instanceof JMenuItem){
 			menuitem = (JMenuItem)object;
@@ -325,6 +328,8 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 				addIgnoredAreas();
 				RECORDING_SCRIPT = true;
 				setPopupMenu();
+			}else if(menuitem_text.equals("Run")){
+	      System.out.println("Warning: \"Run\" functionality not yet implemented in VNC version of ICRMonkey!");
 			}else if(menuitem_text.equals("Positive Area")){
 				target = null;
 				GET_POSITIVE_AREA = true;

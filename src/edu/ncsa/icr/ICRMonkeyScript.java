@@ -199,6 +199,15 @@ public class ICRMonkeyScript
 	}
 
 	/**
+	 * Add a command to execute.
+	 * @param command the command to execute
+	 */
+	public void addCommand(String command)
+	{
+		addLine("Run:" + command);
+	}
+	
+	/**
 	 * Add a mouse click.
 	 * @param image the desktop before the click
 	 * @param x the x-coordinate
@@ -558,7 +567,11 @@ public class ICRMonkeyScript
 				key = line.substring(0, tmpi);
 				value = line.substring(tmpi+1);
 				
-				if(key.equals("Desktop")){
+				if(key.equals("Run")){
+	        try{
+	        	Runtime.getRuntime().exec(value);
+	        }catch(Exception ex) {ex.printStackTrace();}
+				}else if(key.equals("Desktop")){
 					image_index = Integer.valueOf(value);
 					requied_image_1d = ImageUtility.to1D(desktops.get(image_index));
 					image_height = desktops.get(image_index).length;
@@ -630,8 +643,8 @@ public class ICRMonkeyScript
 				}else if(key.equals("Target")){
 					image_index = Integer.valueOf(value);
 					required_image = targets.get(image_index);
-					image_height = desktops.get(image_index).length;
-					image_width = desktops.get(image_index)[0].length;
+					image_height = targets.get(image_index).length;
+					image_width = targets.get(image_index)[0].length;
 		
 					if(viewer1 != null) viewer1.set(required_image, image_width, image_height);
 					if(VERBOSE) System.out.println("Watching for target: " + Utility.toString(image_index, 3) + "...");
@@ -734,7 +747,7 @@ public class ICRMonkeyScript
 		boolean SHOW_HELP = false;
 		
 		if(args.length == 0){
-			args = new String[]{"-it", "15", "-ft", "2500", "-v", "C:/Kenton/Data/Temp/ICRMonkey/007_open.ms"};
+			args = new String[]{"-it", "15", "-ft", "2500", "-v", "C:/Kenton/Data/Temp/ICRMonkey/001_open.ms"};
 			//args = new String[]{"-it", "15", "-v", "C:/Kenton/Data/Temp/ICRMonkey/002_open.ms"};
 		}
 		

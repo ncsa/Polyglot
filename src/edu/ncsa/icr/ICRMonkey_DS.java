@@ -1,6 +1,7 @@
 package edu.ncsa.icr;
 import edu.ncsa.image.*;
 import edu.ncsa.utility.*;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
@@ -127,6 +128,8 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 	
 		  popup_menu.add(submenu1);
 	  }else{
+		  item = new JMenuItem("Run"); item.addActionListener(this); popup_menu.add(item);
+
 		  submenu1 = new JMenu("Send");
 		  item = new JMenuItem("Click"); item.addActionListener(this); submenu1.add(item);
 		  item = new JMenuItem("DoubleClick"); item.addActionListener(this); submenu1.add(item);
@@ -353,6 +356,7 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 		Object object = e.getSource();
 		JMenuItem menuitem;
 		String menuitem_text;
+		String command;
 		
 		if(object instanceof JMenuItem){
 			menuitem = (JMenuItem)object;
@@ -372,6 +376,17 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 				addIgnoredAreas();
 				RECORDING_SCRIPT = true;
 				setPopupMenu();
+			}else if(menuitem_text.equals("Run")){
+	      JFileChooser fc = new JFileChooser();
+	      
+	      if(fc.showDialog(this, "Run") == JFileChooser.APPROVE_OPTION){
+	        command = Utility.unixPath(fc.getCurrentDirectory().getAbsolutePath()) + "/" + fc.getSelectedFile().getName();
+	        script.addCommand(command);
+	        
+	        try{
+	        	Runtime.getRuntime().exec(command);
+	        }catch(Exception ex) {ex.printStackTrace();}
+	      }
 			}else if(menuitem_text.equals("Click") || menuitem_text.equals("DoubleClick") || menuitem_text.equals("Text")){
 				performAction(menuitem_text, popup_menu_x, popup_menu_y, true);
 			}else if(menuitem_text.equals("Positive Area")){
