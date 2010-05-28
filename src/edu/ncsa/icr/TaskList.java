@@ -251,22 +251,27 @@ public class TaskList
 	/**
 	 * Execute the this task list and save the result of the last task to the specified path.
 	 * @param output_path the path to save results into
+	 * @return the result of the last task
 	 */
-	public void execute(String output_path)
+	public FileData execute(String output_path)
 	{
 		Data data = execute();
-		FileData file_data;
 		CachedFileData cached_file_data;
+		FileData file_data = null;
 		
 		if(data instanceof CachedFileData){
 			cached_file_data = (CachedFileData)data;
 			file_data = icr.retrieveData(cached_file_data);
 			
-			if(file_data != null){
-				file_data.save(output_path, null);
-			}else{
-				System.out.println("Output was null!");
+			if(output_path != null){
+				if(file_data != null){
+					file_data.save(output_path, null);
+				}else{
+					System.out.println("Output was null!");
+				}
 			}
 		}
+		
+		return file_data;
 	}
 }

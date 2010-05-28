@@ -17,7 +17,7 @@ import java.util.*;
  */
 public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSelectionListener, Runnable
 { 
-	private Polyglot polyglot;
+	private PolyglotSteward polyglot = new PolyglotSteward();
   private IOGraph<Data,Application> iograph;
 
   private int window_width = 700;
@@ -214,20 +214,14 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#' && key.charAt(0) != ';'){
-	          if(key.equals("PolyglotType")){
-	          	if(value.equals("PolyglotSteward")){
-	          		polyglot = new PolyglotSteward();
-	          	}
-	          }else if(key.equals("ICRServer")){
-	          	if(polyglot instanceof PolyglotSteward){
-	          		tmpi = value.lastIndexOf(':');
-		        		
-		        		if(tmpi != -1){
-		        			server = value.substring(0, tmpi);
-		        			port = Integer.valueOf(value.substring(tmpi+1));
-		        			((PolyglotSteward)polyglot).add(server, port);
-		        		}
-	          	}
+	          if(key.equals("ICRServer")){
+          		tmpi = value.lastIndexOf(':');
+	        		
+	        		if(tmpi != -1){
+	        			server = value.substring(0, tmpi);
+	        			port = Integer.valueOf(value.substring(tmpi+1));
+	        			polyglot.add(server, port);
+	        		}
 	        	}else if(key.equals("DataPath")){
 	            data_path = Utility.unixPath(value) + "/";
 	          }else if(key.equals("Adapter")){
@@ -1039,16 +1033,9 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        	thread = new Thread(){
 	        		public void run()
 	        		{
-	        			Polyglot thread_polyglot = null;
-	        		  IOGraph<Data,Application> thread_iograph = null;
+	        			PolyglotSteward thread_polyglot = new PolyglotSteward(polyglot);	//Create a new polyglot instance (one with unique ICR session id's!)
+	        		  IOGraph<Data,Application> thread_iograph = thread_polyglot.getIOGraph();
 	        			Vector<Conversion<Data,Application>> conversions;
-	        			
-	        			//Create a new polyglot instance (one with unique ICR session id's!)
-	        			if(polyglot instanceof PolyglotSteward){
-	        				thread_polyglot = new PolyglotSteward((PolyglotSteward)polyglot);
-	        			}
-	        				        			
-	        	    thread_iograph = thread_polyglot.getIOGraph();
 
 	  		        //Convert files to target format
 	  		        output_panel.addText("<br><b>Performing Job-" + (i_final+1) + " </b> (" + working_set.size() + " files)");

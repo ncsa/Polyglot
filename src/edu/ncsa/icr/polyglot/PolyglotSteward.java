@@ -13,6 +13,8 @@ import java.util.*;
 public class PolyglotSteward extends Polyglot
 {
 	private Vector<ICRClient> icr_clients = new Vector<ICRClient>();
+	private IOGraph<Data,Application> iograph = new IOGraph<Data,Application>();
+	private int application_flexibility = 0;
 	
 	public PolyglotSteward() {}
 	
@@ -51,27 +53,61 @@ public class PolyglotSteward extends Polyglot
 	}
 	
 	/**
-	 * Convert a files format.
-	 * @param input_filename the absolute name of the input file
-	 * @param output_path the output path
-	 * @param conversions the conversions to perform
+	 * Get the I/O-graph.
+	 * @return the I/O-graph
 	 */
-	public void convert(String input_filename, String output_path, Vector<Conversion<Data,Application>> conversions)
+	public IOGraph<Data,Application> getIOGraph()
 	{
+		return iograph;
+	}
+	
+	/**
+	 * Get the outputs available for the given input type.
+	 * @param string a string representing the input type
+	 */
+	public TreeSet<String> getOutputs(String string)
+	{
+		return iograph.getRangeStrings(string);
+	}
+
+	/**
+	 * Get the common outputs available for the given input types.
+	 * @param set a set of strings representing the input types
+	 */
+	public TreeSet<String> getOutputs(TreeSet<String> set)
+	{
+		return iograph.getRangeIntersectionStrings(set);
+	}
+
+	/**
+	 * Set the flexibility when choosing an application where 0=none (default), 1=allow parallel applications with
+	 * the same name (different ICR servers), 2=allow all parallel applications.  The higher the value the more 
+	 * parallelism can be taken advantage of.
+	 * @param value the flexibility value
+	 */
+	public void setApplicationFlexibility(int value)
+	{
+		application_flexibility = value;
+	}
+
+	/**
+	 * Convert a files format.
+	 * @param input_file_data the input file data
+	 * @param conversions the conversions to perform
+	 * @return the output file data
+	 */
+	public FileData convert(FileData input_file_data, Vector<Conversion<Data,Application>> conversions)
+	{
+		FileData output_file_data = null;
 		TaskList task_list = null;
 		Application application;
 		Vector<Application> application_options = null;
 		FileData input, output;
-		FileData input_file_data;
 		Data data_last, data_next;
 		ICRClient icr = null;
 		String tmps;
-		
-		input_filename = Utility.unixPath(input_filename);
-		output_path = Utility.unixPath(output_path);
-		
+				
 		if(conversions != null){
-			input_file_data = new FileData(input_filename, true);
 			data_last = input_file_data;
 			
 			for(int i=0; i<conversions.size(); i++){
@@ -119,10 +155,67 @@ public class PolyglotSteward extends Polyglot
 			}
 			
 			//task_list.print();
-			task_list.execute(output_path);
+			output_file_data = task_list.execute(null);
 		}
+		
+		return output_file_data;
 	}
 	
+	/**
+	 * Convert a files format.
+	 * @param input_file_data the input file data
+	 * @param output_type the name of the output type
+	 * @return the output file data
+	 */
+	public FileData convert(FileData input_file_data, String output_type)
+	{
+		Vector<Conversion<Data,Application>> conversions;
+		FileData output_file_data;
+		
+		conversions = iograph.getShortestConversionPath(input_file_data.getFormat(), output_type, false);
+		output_file_data = convert(input_file_data, conversions);
+		
+		return output_file_data;
+	}
+	
+	/**
+	 * Convert a files format.
+	 * @param input_filename the absolute name of the input file
+	 * @param output_path the output path
+	 * @param conversions the conversions to perform
+	 */
+	public void convert(String input_filename, String output_path, Vector<Conversion<Data,Application>> conversions)
+	{
+		FileData input_file_data;
+		FileData output_file_data;
+		
+		input_filename = Utility.unixPath(input_filename);
+		output_path = Utility.unixPath(output_path);		
+		
+		input_file_data = new FileData(input_filename, true);
+		output_file_data = convert(input_file_data, conversions);
+		output_file_data.save(output_path, null);
+	}
+	
+	/**
+	 * Convert a files format.
+	 * @param input_filename the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_type the name of the output type
+	 */
+	public void convert(String input_filename, String output_path, String output_type)
+	{				
+		FileData input_file_data;
+		FileData output_file_data;	
+		
+		input_filename = Utility.unixPath(input_filename);
+		output_path = Utility.unixPath(output_path);		
+		
+		input_file_data = new FileData(input_filename, true);
+		output_file_data = convert(input_file_data, output_type);
+		output_file_data.save(output_path, null);
+	}
+
 	/**
 	 * Close all ICR client connections.
 	 */

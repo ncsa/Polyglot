@@ -58,6 +58,14 @@ public class PolyglotPanel extends FilePanel
 		        			((PolyglotSteward)polyglot).add(server, port);
 		        		}
 	          	}
+	          }else if(key.equals("PolyglotServer")){
+          		tmpi = value.lastIndexOf(':');
+	        		
+	        		if(tmpi != -1){
+	        			server = value.substring(0, tmpi);
+	        			port = Integer.valueOf(value.substring(tmpi+1));
+	        			polyglot = new PolyglotClient(server, port);
+	        		}
 	          }
 	        }
 	      }
