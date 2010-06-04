@@ -1,5 +1,6 @@
 package edu.ncsa.icr;
 import edu.ncsa.utility.*;
+
 import java.util.*;
 import java.io.*;
 
@@ -548,6 +549,253 @@ public class ICRAuxiliary
   		this.operation = operation;
   		this.input_data = input_data;
   		this.output_data = output_data;
+  	}
+  }
+  
+  /**
+   * A structure representing a wrapper script.
+   */
+  public static class Script
+  {
+  	public String filename;
+  	public String path;
+  	public String name;
+  	public String type;
+  	public String alias;
+  	public String operation;
+  	public String application; 
+  	public TreeSet<String> types = new TreeSet<String>();
+  	public TreeSet<String> inputs = new TreeSet<String>();
+  	public TreeSet<String> outputs = new TreeSet<String>();
+  	
+  	/**
+  	 * Class constructor.
+  	 * @param filename the script file name
+  	 */
+  	public Script(String filename)
+  	{
+  		Scanner scanner;  		
+  		String line;
+			
+  		this.filename = Utility.unixPath(filename);
+  		path = Utility.getFilenamePath(filename);
+      name = Utility.getFilenameName(filename);
+      type = Utility.getFilenameExtension(filename);
+    	
+    	//Examine script name
+      String[] tokens = name.split("_");
+      alias = tokens[0];
+      operation = tokens[1];
+    
+      if(tokens.length > 2){
+        if(operation.equals("open") || operation.equals("import")){
+          inputs.add(tokens[2]);
+        }else if(operation.equals("save") || operation.equals("export")){
+          outputs.add(tokens[2]);
+        }else if(operation.equals("convert")){
+          inputs.add(tokens[2]);
+          outputs.add(tokens[3]);
+        }
+      }
+      
+      //Examine script header
+      try{
+        BufferedReader ins = new BufferedReader(new FileReader(filename));
+        
+        //Get application pretty name
+        line = ins.readLine();
+        application = line.substring(1);  //Remove semicolon
+        
+        //Remove version if present
+        if(application.indexOf('(') != -1){
+        	application = application.substring(0, application.indexOf('(')).trim();
+        }
+ 
+        if(!operation.equals("monitor") && !operation.equals("exit") && !operation.equals("kill")){
+        	//Get content types supported by the application
+        	line = ins.readLine();
+          line = line.substring(1);       //Remove semicolon
+          scanner = new Scanner(line);
+          scanner.useDelimiter("[\\s,]+");
+          
+          while(scanner.hasNext()){
+          	types.add(scanner.next());
+          }         	
+        
+          //Extract supported file formats
+          if(inputs.isEmpty() && outputs.isEmpty()){
+            line = ins.readLine();
+            line = line.substring(1);       //Remove semicolon
+            scanner = new Scanner(line);
+            scanner.useDelimiter("[\\s,]+");
+            
+            if(operation.equals("open") || operation.equals("import")){
+              while(scanner.hasNext()){
+                inputs.add(scanner.next());
+              }
+            }else if(operation.equals("save") || operation.equals("export")){
+              while(scanner.hasNext()){
+                outputs.add(scanner.next());
+              }
+            }else if(operation.equals("convert")){
+              while(scanner.hasNext()){
+                inputs.add(scanner.next());
+              }
+              
+              //Convert is a binary operation thus we must read in outputs as well
+              line = ins.readLine();
+              line = line.substring(1);       //Remove semicolon
+              scanner = new Scanner(line);
+              scanner.useDelimiter("[\\s,]+");
+              
+              while(scanner.hasNext()){
+                outputs.add(scanner.next());
+              }
+            }
+          }
+        }
+        
+        ins.close();
+      }catch(Exception e) {e.printStackTrace();}
+  	}
+  	
+  	/**
+  	 * Return the name of an associated script for the given operation.
+  	 * @param operation the desired operation
+  	 * @return the name of the script for this operation
+  	 */
+  	public String getOperationScriptname(String operation)
+  	{
+  		return path + alias + "_" + operation + ".ahk";
+  	}
+  	
+  	/**
+  	 * Search this scripts path for input scripts associated with this application.
+  	 * @return the list of scripts found
+  	 */
+  	public Vector<Script> getAssociatedInputScripts()
+  	{
+  		Vector<Script> scripts = new Vector<Script>();
+			File folder = new File(path);
+			File[] folder_files = folder.listFiles();
+			String[] tokens;
+			String filename, name, alias, operation;
+			
+			for(int i=0; i<folder_files.length; i++){
+				if(!folder_files[i].isDirectory() && folder_files[i].getName().charAt(0) != '.' && folder_files[i].getName().endsWith(type)){
+					filename = Utility.unixPath(folder_files[i].getAbsolutePath());
+					
+					if(!filename.equals(this.filename)){
+						name = Utility.getFilenameName(filename);
+						
+			    	//Examine script name
+			      tokens = name.split("_");
+			      alias = tokens[0];
+			      operation = tokens[1];
+			      
+			      if(alias.equals(this.alias)){
+			      	if(operation.equals("open") || operation.equals("import")){
+			      		scripts.add(new Script(filename));
+			      	}
+			      }
+					}
+				}
+			}
+			
+			return scripts;
+  	}
+  	
+  	/**
+  	 * Search this scripts path for output scripts associated with this application.
+  	 * @return the list of scripts found
+  	 */
+  	public Vector<Script> getAssociatedOutputScripts()
+  	{
+  		Vector<Script> scripts = new Vector<Script>();
+			File folder = new File(path);
+			File[] folder_files = folder.listFiles();
+			String[] tokens;
+			String filename, name, alias, operation;
+			
+			for(int i=0; i<folder_files.length; i++){
+				if(!folder_files[i].isDirectory() && folder_files[i].getName().charAt(0) != '.' && folder_files[i].getName().endsWith(type)){
+					filename = Utility.unixPath(folder_files[i].getAbsolutePath());
+
+					if(!filename.equals(this.filename)){
+						name = Utility.getFilenameName(filename);
+						
+			    	//Examine script name
+			      tokens = name.split("_");
+			      alias = tokens[0];
+			      operation = tokens[1];
+			      
+			      if(alias.equals(this.alias)){
+			      	if(operation.equals("save") || operation.equals("export")){
+			      		scripts.add(new Script(filename));
+			      	}
+			      }
+					}
+				}
+			}
+			
+			return scripts;
+  	}
+  	
+  	/**
+  	 * Execute this script.
+  	 * @param source the first argument to pass to the script
+  	 * @param target the second argument to pass to the script
+  	 * @param temp_path the third argument to pass to the script
+  	 * @param max_operation_time the maximum allowed time to run (in milli-seconds)
+  	 * @return true if the operation completed within the given time frame
+  	 */
+  	public boolean execute(String source, String target, String temp_path, int max_operation_time)
+  	{
+  		Process process;
+  		TimedProcess timed_process;
+  		String command = "";
+  		boolean COMPLETE = false;
+  		
+  		//Set the command
+  		if(type.equals("ahk")){  		
+  			if(source != null) source = Utility.windowsPath(source);
+  			if(target != null) target = Utility.windowsPath(target);
+  			if(temp_path != null) temp_path = Utility.windowsPath(temp_path);
+  			
+  	  	if(operation.equals("convert")){
+		  		command = path + name + ".exe \"" + source + "\" \"" + target + "\" \"" + Utility.windowsPath(temp_path) + System.currentTimeMillis() + "_\"";
+  	  	}else if(operation.equals("open") || operation.equals("import")){
+		  		command = path + name + ".exe \"" + source + "\"";
+  	  	}else if(operation.equals("save") || operation.equals("export")){
+		  		command = path + name + ".exe \"" + target + "\"";
+  	  	}else if(operation.equals("monitor") || operation.equals("exit") || operation.equals("kill")){
+  	  		command = path + name + ".exe";
+  	  	}
+  		}
+
+  		//System.out.println("command: " + command);
+
+	  	//Execute the command
+	  	if(!command.isEmpty()){
+		  	try{
+			  	process = Runtime.getRuntime().exec(command);
+			  	
+			  	if(!operation.equals("monitor")){
+				  	timed_process = new TimedProcess(process);    
+				    COMPLETE = timed_process.waitFor(max_operation_time); System.out.println();
+			  	}
+		  	}catch(Exception e) {e.printStackTrace();}
+	  	}
+	  	
+	  	return COMPLETE;
+  	}
+  	
+  	/**
+  	 * Execute this script.
+  	 */
+  	public void execute()
+  	{
+  		execute(null, null, null, 10000);
   	}
   }
 }
