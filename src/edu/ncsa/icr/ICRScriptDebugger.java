@@ -65,7 +65,7 @@ public class ICRScriptDebugger
 			}else if(!Utility.exists(data_path)){
 				System.out.println("Data directory doesn't exist!");
 			}else{
-	  		script = new Script(script_filename);
+	  		script = new Script(script_filename, null);
 				temp_path = data_path + "debug/";
 				
 				if(!Utility.exists(temp_path)){
@@ -98,12 +98,12 @@ public class ICRScriptDebugger
 				
 				//Check for helper scripts
 				if(Utility.exists(script.getOperationScriptname("monitor"))){
-					monitor_script = new Script(script.getOperationScriptname("monitor"));
+					monitor_script = new Script(script.getOperationScriptname("monitor"), null);
 					monitor_script.execute();
 				}
 				
 				if(Utility.exists(script.getOperationScriptname("kill"))){
-					kill_script = new Script(script.getOperationScriptname("kill"));
+					kill_script = new Script(script.getOperationScriptname("kill"), null);
 				}
 				
 				//Test the script

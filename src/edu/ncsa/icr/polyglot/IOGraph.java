@@ -1,4 +1,5 @@
 package edu.ncsa.icr.polyglot;
+import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.*;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
@@ -306,6 +307,27 @@ public class IOGraph<V extends Comparable,E>
 		
 		for(int i=0; i<vertices.size(); i++){
 			strings.add(vertices.get(i).toString());
+		}
+		
+		return strings;
+	}
+	
+	/**
+	 * Get the string representations for the vertices that start with the given prefix.
+	 * @param prefix the string vertex strings should start with
+	 * @return the string representation for each of the matching vertices
+	 */
+	public Vector<String> getVertexStringsStartingWith(String prefix)
+	{
+		Vector<String> strings = new Vector<String>();
+		String string;
+		
+		for(int i=0; i<vertices.size(); i++){
+			string = vertices.get(i).toString();
+			
+			if(string.startsWith(prefix)){
+				strings.add(string);
+			}
 		}
 		
 		return strings;
@@ -803,11 +825,11 @@ public class IOGraph<V extends Comparable,E>
 	  Vector<Integer> paths;
 	  Vector<Integer> path = new Vector<Integer>();
 	  E edge;        
-	  int source = vertex_string_map.get(source_string);
-	  int target = vertex_string_map.get(target_string);
+	  Integer source = vertex_string_map.get(source_string);
+	  Integer target = vertex_string_map.get(target_string);
 	  int i0, i1;
 	  
-	  if(source >= 0 && target >= 0){
+	  if(source != null && target != null){
 	  	if(!ENABLE_WEIGHTED_PATHS){
 	  		paths = getShortestPaths(source);
 	  	}else{

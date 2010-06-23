@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 import javax.swing.*;
+
 import java.io.*;
 import java.util.*;
 import com.tightvnc.vncviewer.*;
@@ -39,6 +40,7 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	private KeyListener vc_key_listener;
 	
 	private boolean RECORDING_SCRIPT = false;
+	private boolean PAUSING_SCRIPT = false;
 	private int script_count = 0;
   private int selection_box_x0, selection_box_y0, selection_box_x1, selection_box_y1;
   private int selection_box_minx, selection_box_miny, selection_box_maxx, selection_box_maxy;
@@ -146,19 +148,24 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	
 		  popup_menu.add(submenu1);
 	  }else{
-		  item = new JMenuItem("Run"); item.addActionListener(this); popup_menu.add(item);
-
-		  submenu1 = new JMenu("Select");
-		  item = new JMenuItem("Positive Area"); item.addActionListener(this); submenu1.add(item);
-		  item = new JMenuItem("Negative Area"); item.addActionListener(this); submenu1.add(item);
-		  submenu1.addSeparator();
-		  item = new JMenuItem("Target Area"); item.addActionListener(this); submenu1.add(item);
-		  popup_menu.add(submenu1);
-		  
-		  item = new JMenuItem("Require Current"); item.addActionListener(this); popup_menu.add(item);
-		  popup_menu.addSeparator();
-		  
-		  item = new JMenuItem("End Script"); item.addActionListener(this); popup_menu.add(item);
+	  	if(PAUSING_SCRIPT){
+			  item = new JMenuItem("Resume Script"); item.addActionListener(this); popup_menu.add(item);
+	  	}else{
+			  item = new JMenuItem("Run Command"); item.addActionListener(this); popup_menu.add(item);
+	
+			  submenu1 = new JMenu("Select");
+			  item = new JMenuItem("Positive Area"); item.addActionListener(this); submenu1.add(item);
+			  item = new JMenuItem("Negative Area"); item.addActionListener(this); submenu1.add(item);
+			  submenu1.addSeparator();
+			  item = new JMenuItem("Target Area"); item.addActionListener(this); submenu1.add(item);
+			  popup_menu.add(submenu1);
+			  
+			  item = new JMenuItem("Require Current"); item.addActionListener(this); popup_menu.add(item);
+			  popup_menu.addSeparator();
+			  
+			  item = new JMenuItem("Pause Script"); item.addActionListener(this); popup_menu.add(item);
+			  item = new JMenuItem("End Script"); item.addActionListener(this); popup_menu.add(item);
+	  	}
 	  }
 	}
 
@@ -326,8 +333,11 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 				addIgnoredAreas();
 				RECORDING_SCRIPT = true;
 				setPopupMenu();
-			}else if(menuitem_text.equals("Run")){
-	      System.out.println("Warning: \"Run\" functionality not yet implemented in VNC version of ICRMonkey!");
+			}else if(menuitem_text.equals("Run Command")){
+				command = JOptionPane.showInputDialog(vnc.vc, "");
+        script.addCommand(command);
+        PAUSING_SCRIPT = true;
+        setPopupMenu();
 			}else if(menuitem_text.equals("Positive Area")){
 				target = null;
 				GET_POSITIVE_AREA = true;
@@ -341,6 +351,12 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 				synchronized(this){
 					script.addDesktop((BufferedImage)vnc.vc.memImage);
 				}
+			}else if(menuitem_text.equals("Pause Script")){
+				PAUSING_SCRIPT = true;	
+				setPopupMenu();
+			}else if(menuitem_text.equals("Resume Script")){
+				PAUSING_SCRIPT = false;
+				setPopupMenu();
 			}else if(menuitem_text.equals("End Script")){
 				script.save(output_path);
 				script = null;
@@ -358,7 +374,7 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
   public void mousePressed(MouseEvent e)
   {
   	if(e.getButton() == 1){
-  		if(RECORDING_SCRIPT){
+  		if(RECORDING_SCRIPT && !PAUSING_SCRIPT){
   			if(GET_POSITIVE_AREA || GET_NEGATIVE_AREA || GET_TARGET_AREA){
 		    	selection_box_x0 = e.getX();
 		    	selection_box_y0 = e.getY();

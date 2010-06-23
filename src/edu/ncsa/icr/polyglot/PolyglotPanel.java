@@ -11,7 +11,7 @@ import java.util.*;
  */
 public class PolyglotPanel extends FilePanel
 {
-	private Polyglot polyglot;
+	private Polyglot polyglot = null;
   
   /**
    * Class constructor.
@@ -44,20 +44,18 @@ public class PolyglotPanel extends FilePanel
 	        if(key.charAt(0) != '#'){
 	          if(key.equals("DefaultPath")){
 	          	path = value + "/";
-	          }else if(key.equals("PolyglotType")){
-	          	if(value.equals("PolyglotSteward")){
+	          }else if(key.equals("ICRServer")){
+	          	if(polyglot == null || !(polyglot instanceof PolyglotSteward)){
 	          		polyglot = new PolyglotSteward();
 	          	}
-	          }else if(key.equals("ICRServer")){
-	          	if(polyglot instanceof PolyglotSteward){
-	          		tmpi = value.lastIndexOf(':');
-		        		
-		        		if(tmpi != -1){
-		        			server = value.substring(0, tmpi);
-		        			port = Integer.valueOf(value.substring(tmpi+1));
-		        			((PolyglotSteward)polyglot).add(server, port);
-		        		}
-	          	}
+	          	
+          		tmpi = value.lastIndexOf(':');
+	        		
+	        		if(tmpi != -1){
+	        			server = value.substring(0, tmpi);
+	        			port = Integer.valueOf(value.substring(tmpi+1));
+	        			((PolyglotSteward)polyglot).add(server, port);
+	        		}
 	          }else if(key.equals("PolyglotServer")){
           		tmpi = value.lastIndexOf(':');
 	        		

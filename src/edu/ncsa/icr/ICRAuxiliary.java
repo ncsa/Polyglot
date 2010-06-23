@@ -1,6 +1,5 @@
 package edu.ncsa.icr;
 import edu.ncsa.utility.*;
-
 import java.util.*;
 import java.io.*;
 
@@ -498,7 +497,7 @@ public class ICRAuxiliary
     	
   		for(int i=0; i<operations.size(); i++){
   			operation = operations.get(i);
-  			System.out.println("Operation: " + operation.name + " (" + operation.script + ")");
+  			System.out.println("Operation: " + operation.name + " (" + Utility.getFilename(operation.script) + ")");
   			System.out.print("  inputs:");
   			
   			for(int j=0; j<operation.inputs.size(); j++){
@@ -571,8 +570,9 @@ public class ICRAuxiliary
   	/**
   	 * Class constructor.
   	 * @param filename the script file name
+  	 * @param comment_head the preceding sequence of characters indicating a commented line (can be null)
   	 */
-  	public Script(String filename)
+  	public Script(String filename, String comment_head)
   	{
   		Scanner scanner;  		
   		String line;
@@ -582,6 +582,16 @@ public class ICRAuxiliary
       name = Utility.getFilenameName(filename);
       type = Utility.getFilenameExtension(filename);
     	
+      //Set comment syntax if not set already
+      if(comment_head == null){
+      	if(type.equals("ahk")){
+      		comment_head = ";";
+      	}else{
+      		System.out.println("Warning: Unknown comment style for script of type: " + type + "!");
+      		comment_head = "#";
+      	}
+      }
+      
     	//Examine script name
       String[] tokens = name.split("_");
       alias = tokens[0];
@@ -604,7 +614,7 @@ public class ICRAuxiliary
         
         //Get application pretty name
         line = ins.readLine();
-        application = line.substring(1);  //Remove semicolon
+        application = line.substring(comment_head.length());  //Remove comment characters
         
         //Remove version if present
         if(application.indexOf('(') != -1){
@@ -614,7 +624,8 @@ public class ICRAuxiliary
         if(!operation.equals("monitor") && !operation.equals("exit") && !operation.equals("kill")){
         	//Get content types supported by the application
         	line = ins.readLine();
-          line = line.substring(1);       //Remove semicolon
+          line = line.substring(comment_head.length());				//Remove comment characters
+          
           scanner = new Scanner(line);
           scanner.useDelimiter("[\\s,]+");
           
@@ -625,32 +636,19 @@ public class ICRAuxiliary
           //Extract supported file formats
           if(inputs.isEmpty() && outputs.isEmpty()){
             line = ins.readLine();
-            line = line.substring(1);       //Remove semicolon
-            scanner = new Scanner(line);
-            scanner.useDelimiter("[\\s,]+");
+            line = line.substring(comment_head.length());     //Remove comment characters
             
             if(operation.equals("open") || operation.equals("import")){
-              while(scanner.hasNext()){
-                inputs.add(scanner.next());
-              }
+            	inputs = parseFormatList(line);
             }else if(operation.equals("save") || operation.equals("export")){
-              while(scanner.hasNext()){
-                outputs.add(scanner.next());
-              }
+            	outputs = parseFormatList(line);
             }else if(operation.equals("convert")){
-              while(scanner.hasNext()){
-                inputs.add(scanner.next());
-              }
+            	inputs = parseFormatList(line);
               
               //Convert is a binary operation thus we must read in outputs as well
               line = ins.readLine();
-              line = line.substring(1);       //Remove semicolon
-              scanner = new Scanner(line);
-              scanner.useDelimiter("[\\s,]+");
-              
-              while(scanner.hasNext()){
-                outputs.add(scanner.next());
-              }
+              line = line.substring(comment_head.length());		//Remove comment characters
+              outputs = parseFormatList(line);
             }
           }
         }
@@ -660,13 +658,63 @@ public class ICRAuxiliary
   	}
   	
   	/**
+  	 * Parse a line from a script header containing a format list
+  	 * @param line the line containing the format list
+  	 * @return the formats parsed from this list
+  	 */
+  	public TreeSet<String> parseFormatList(String line)
+  	{
+  		TreeSet<String> formats = new TreeSet<String>();
+  		TreeSet<String> options = new TreeSet<String>();
+  		String format, format_string, option_string;
+  		Scanner scanner;
+  		int tmpi = line.indexOf('(');
+      
+      if(tmpi == -1){
+      	format_string = line;
+      	option_string = null;
+      }else{
+      	format_string = line.substring(0, tmpi).trim();
+      	option_string = line.substring(tmpi+1, line.length()-1).trim();
+      }
+      
+      //Read in options
+      if(option_string != null){
+	      scanner = new Scanner(option_string);
+	      scanner.useDelimiter("[\\s,]+");
+	      
+	      while(scanner.hasNext()){
+	        options.add(scanner.next());
+	      }
+      }
+      
+      //Read in formats (applying options if present)
+      scanner = new Scanner(format_string);
+      scanner.useDelimiter("[\\s,]+");
+      
+      while(scanner.hasNext()){
+      	format = scanner.next();
+      	
+      	if(options.isEmpty()){
+      		formats.add(format);
+      	}else{
+      		for(Iterator<String> itr=options.iterator(); itr.hasNext();){
+      			formats.add(format + ";" + itr.next());
+      		}
+      	}
+      }
+    
+  		return formats;
+  	}
+  	
+  	/**
   	 * Return the name of an associated script for the given operation.
   	 * @param operation the desired operation
   	 * @return the name of the script for this operation
   	 */
   	public String getOperationScriptname(String operation)
   	{
-  		return path + alias + "_" + operation + ".ahk";
+  		return path + alias + "_" + operation + "." + type;
   	}
   	
   	/**
@@ -695,7 +743,7 @@ public class ICRAuxiliary
 			      
 			      if(alias.equals(this.alias)){
 			      	if(operation.equals("open") || operation.equals("import")){
-			      		scripts.add(new Script(filename));
+			      		scripts.add(new Script(filename, ";"));
 			      	}
 			      }
 					}
@@ -731,7 +779,7 @@ public class ICRAuxiliary
 			      
 			      if(alias.equals(this.alias)){
 			      	if(operation.equals("save") || operation.equals("export")){
-			      		scripts.add(new Script(filename));
+			      		scripts.add(new Script(filename, ";"));
 			      	}
 			      }
 					}

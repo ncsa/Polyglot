@@ -85,7 +85,7 @@ public class ICRServer implements Runnable
 	        		temp_path = root_path + "Temp" + Utility.toString(tmpi,3) + "/";
 	        		new File(temp_path).mkdir();
 	        	}else if(key.equals("AHKScripts")){
-	          	addScriptedOperations(value + "/", "ahk");
+	          	addScriptedOperations(value + "/", "ahk", ";");
 	        	}else if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("MaxOperationTime")){
@@ -110,28 +110,27 @@ public class ICRServer implements Runnable
 	 * Note: all scripts must follow the text header convention
 	 * @param path the path to the scripts
 	 * @param extension the script file extension
+	 * @param comment_head the preceding sequence of characters indicating a commented line (can be null)
 	 */
-  public void addScriptedOperations(String path, String extension)
+  public void addScriptedOperations(String path, String extension, String comment_head)
   {    
-  	TreeSet<String> alias_list = new TreeSet<String>();
+  	TreeSet<String> alias_list = null; 
+  	Script script;
     String name;
     String alias;
-    String application_name = "";
-    String operation_name;
-    Vector<String> types = new Vector<String>();
-    Vector<String> input_formats = new Vector<String>();
-    Vector<String> output_formats = new Vector<String>();
     String line;
+    String[] tokens;
     Scanner scanner;
     Application application;
     Operation operation;
     final String extension_final = extension;
     
-    //Read in aliases file if available
+    //Read in alias list file if available
     if(Utility.exists(path + ".aliases.txt")){
     	try{
     		scanner = new Scanner(new File(path + ".aliases.txt"));
-    		
+    		alias_list = new TreeSet<String>();
+
     		while(scanner.hasNextLine()){
     			line = scanner.nextLine();
     			
@@ -155,93 +154,18 @@ public class ICRServer implements Runnable
     if(scripts != null){
       for(int i=0; i<scripts.length; i++){
         name = Utility.getFilenameName(scripts[i].getName());      	
-      	
-      	//Examine script name
-        String[] tokens = name.split("_");
+        tokens = name.split("_");
         alias = tokens[0];
-        operation_name = tokens[1];
 
-        if(alias_list.isEmpty() || alias_list.contains(alias)){
-        	types.clear();
-        	input_formats.clear();
-        	output_formats.clear();  
-        
-          if(tokens.length > 2){
-            if(operation_name.equals("open") || operation_name.equals("import")){
-              input_formats.add(tokens[2]);
-            }else if(operation_name.equals("save") || operation_name.equals("export")){
-              output_formats.add(tokens[2]);
-            }else if(operation_name.equals("convert")){
-              input_formats.add(tokens[2]);
-              output_formats.add(tokens[3]);
-            }
-          }
-          
-          //Examine script header
-          try{
-            BufferedReader ins = new BufferedReader(new FileReader(path + name + "." + extension));
-            
-            //Get application pretty name
-            line = ins.readLine();
-            application_name = line.substring(1);  //Remove semicolon
-            
-            //Remove version if present
-            if(application_name.indexOf('(') != -1){
-            	application_name = application_name.substring(0, application_name.indexOf('(')).trim();
-            }
-     
-            if(!operation_name.equals("monitor") && !operation_name.equals("exit") && !operation_name.equals("kill")){
-            	//Get content types supported by the application
-            	line = ins.readLine();
-              line = line.substring(1);       //Remove semicolon
-              scanner = new Scanner(line);
-              scanner.useDelimiter("[\\s,]+");
-              
-              while(scanner.hasNext()){
-              	types.add(scanner.next());
-              }         	
-            
-              //Extract supported file formats
-              if(input_formats.isEmpty() && output_formats.isEmpty()){
-                line = ins.readLine();
-                line = line.substring(1);       //Remove semicolon
-                scanner = new Scanner(line);
-                scanner.useDelimiter("[\\s,]+");
-                
-                if(operation_name.equals("open") || operation_name.equals("import")){
-                  while(scanner.hasNext()){
-                    input_formats.add(scanner.next());
-                  }
-                }else if(operation_name.equals("save") || operation_name.equals("export")){
-                  while(scanner.hasNext()){
-                    output_formats.add(scanner.next());
-                  }
-                }else if(operation_name.equals("convert")){
-                  while(scanner.hasNext()){
-                    input_formats.add(scanner.next());
-                  }
-                  
-                  //Convert is a binary operation thus we must read in outputs as well
-                  line = ins.readLine();
-                  line = line.substring(1);       //Remove semicolon
-                  scanner = new Scanner(line);
-                  scanner.useDelimiter("[\\s,]+");
-                  
-                  while(scanner.hasNext()){
-                    output_formats.add(scanner.next());
-                  }
-                }
-              }
-            }
-            
-            ins.close();
-          }catch(Exception e) {e.printStackTrace();}
-                    
+        if(alias_list == null || alias_list.contains(alias)){
+        	//Load and parse the script's header
+        	script = new Script(scripts[i].getAbsolutePath(), comment_head);
+        	
           //Retrieve this application if it already exists
           application = null;
           
           for(int j=0; j<applications.size(); j++){
-            if(applications.get(j).name.equals(application_name)){
+            if(applications.get(j).name.equals(script.application)){
               application = applications.get(j);
               break;
             }
@@ -249,19 +173,19 @@ public class ICRServer implements Runnable
           
           //If the application doesn't exist yet, create it
           if(application == null){
-            application = new Application(application_name, alias);
+            application = new Application(script.application, alias);
             applications.add(application);
           }
           
           //Add a new operation to the application
-          operation = new Operation(operation_name);
+          operation = new Operation(script.operation);
           
-          for(int j=0; j<input_formats.size(); j++){
-          	operation.inputs.add(FileData.newFormat(input_formats.get(j)));
+          for(Iterator<String> itr=script.inputs.iterator(); itr.hasNext();){
+          	operation.inputs.add(FileData.newFormat(itr.next()));
           }
           
-          for(int j=0; j<output_formats.size(); j++){
-          	operation.outputs.add(FileData.newFormat(output_formats.get(j)));
+          for(Iterator<String> itr=script.outputs.iterator(); itr.hasNext();){
+          	operation.outputs.add(FileData.newFormat(itr.next()));
           }
           
           operation.script = path + name + "." + extension;

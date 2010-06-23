@@ -1,4 +1,5 @@
 package edu.ncsa.icr.polyglot;
+import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.*;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
@@ -63,20 +64,53 @@ public class PolyglotSteward extends Polyglot
 	
 	/**
 	 * Get the outputs available for the given input type.
-	 * @param string a string representing the input type
+	 * @param input the input type
 	 */
-	public TreeSet<String> getOutputs(String string)
+	public TreeSet<String> getOutputs(String input)
 	{
-		return iograph.getRangeStrings(string);
+		TreeSet<String> outputs = iograph.getRangeStrings(input);
+		Vector<String> strings;
+		
+		//Handle vertices that have concatenated options
+		strings = iograph.getVertexStringsStartingWith(input + ";");
+		
+		for(int i=0; i<strings.size(); i++){
+			outputs.addAll(iograph.getRangeStrings(strings.get(i)));
+		}
+		
+		return outputs;
 	}
 
 	/**
 	 * Get the common outputs available for the given input types.
-	 * @param set a set of strings representing the input types
+	 * @param inputs the input types
 	 */
-	public TreeSet<String> getOutputs(TreeSet<String> set)
+	public TreeSet<String> getOutputs(TreeSet<String> inputs)
 	{
-		return iograph.getRangeIntersectionStrings(set);
+		TreeSet<String> outputs = null;
+		TreeSet<String> tmp;
+		Vector<String> strings;
+		String string;
+				
+		//Handle vertices that have concatenated options
+		for(Iterator<String> itr=inputs.iterator(); itr.hasNext();){
+			string = itr.next();			
+			tmp = iograph.getRangeStrings(string);
+
+			strings = iograph.getVertexStringsStartingWith(string + ";");
+			
+			for(int i=0; i<strings.size(); i++){
+				tmp.addAll(iograph.getRangeStrings(strings.get(i)));
+			}
+			
+			if(outputs == null){
+				outputs = tmp;
+			}else{
+				outputs.retainAll(tmp);
+			}
+		}
+		
+		return outputs;
 	}
 
 	/**
@@ -154,7 +188,8 @@ public class PolyglotSteward extends Polyglot
 				data_last = data_next;
 			}
 			
-			//task_list.print();
+			System.out.println("ok1: " + task_list.size());
+			task_list.print();
 			output_file_data = task_list.execute(null);
 		}
 		
@@ -170,9 +205,29 @@ public class PolyglotSteward extends Polyglot
 	public FileData convert(FileData input_file_data, String output_type)
 	{
 		Vector<Conversion<Data,Application>> conversions;
+		Vector<String> strings;
 		FileData output_file_data;
 		
 		conversions = iograph.getShortestConversionPath(input_file_data.getFormat(), output_type, false);
+		
+		//Check for options if nothing was found
+		if(conversions == null){
+			strings = iograph.getVertexStringsStartingWith(input_file_data.getFormat() + ";");
+			
+			for(int i=0; i<strings.size(); i++){
+				conversions = iograph.getShortestConversionPath(strings.get(i), output_type, false);
+				if(conversions != null) break;
+			}
+		}
+		
+		if(true){
+			for(int i=0; i<conversions.size(); i++){
+				System.out.print(conversions.get(i).input + " -> ");
+				System.out.print(conversions.get(i).edge + " -> ");
+				System.out.println(conversions.get(i).output);
+			}
+		}
+		
 		output_file_data = convert(input_file_data, conversions);
 		
 		return output_file_data;
@@ -211,6 +266,7 @@ public class PolyglotSteward extends Polyglot
 		input_filename = Utility.unixPath(input_filename);
 		output_path = Utility.unixPath(output_path);		
 		
+		System.out.println("ok0: " + input_filename);
 		input_file_data = new FileData(input_filename, true);
 		output_file_data = convert(input_file_data, output_type);
 		output_file_data.save(output_path, null);

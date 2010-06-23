@@ -41,14 +41,14 @@ public class PolyglotClient extends Polyglot
 	
 	/**
 	 * Get the outputs available for the given input type.
-	 * @param string a string representing the input type
+	 * @param input the input type
 	 */
-	public TreeSet<String> getOutputs(String string)
+	public TreeSet<String> getOutputs(String input)
 	{
 		TreeSet<String> outputs = null;
 		
 		Utility.writeObject(outs, "outputs");
-		Utility.writeObject(outs, string);
+		Utility.writeObject(outs, input);
 		
 		try{
 			outputs = (TreeSet<String>)Utility.readObject(ins);
@@ -59,14 +59,14 @@ public class PolyglotClient extends Polyglot
 	
 	/**
 	 * Get the common outputs available for the given input types.
-	 * @param set a set of strings representing the input types
+	 * @param inputs the input types
 	 */
-	public TreeSet<String> getOutputs(TreeSet<String> set)
+	public TreeSet<String> getOutputs(TreeSet<String> inputs)
 	{
 		TreeSet<String> outputs = null;
 		
 		Utility.writeObject(outs, "common_outputs");
-		Utility.writeObject(outs, set);
+		Utility.writeObject(outs, inputs);
 		
 		try{
 			outputs = (TreeSet<String>)Utility.readObject(ins);
