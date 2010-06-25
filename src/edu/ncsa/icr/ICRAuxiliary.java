@@ -50,10 +50,11 @@ public class ICRAuxiliary
 		 * @param LOAD true if the data should be loaded into memory
 		 */
 		public FileData(String absolute_name, boolean LOAD)
-		{
+		{			
 			this.absolute_name = absolute_name;
 			name = Utility.getFilenameName(absolute_name);
 			format = Utility.getFilenameExtension(absolute_name);
+			
 			if(LOAD) load(null);
 		}
 		
@@ -64,8 +65,9 @@ public class ICRAuxiliary
   	public static FileData newFormat(String format)
   	{
   		FileData data = new FileData();
-  		data.format = format;
   		
+			data.format = format;
+			
   		return data;
   	}
   	
@@ -74,11 +76,12 @@ public class ICRAuxiliary
 		 */
 		public String toString()
 		{
-			if(name == null){
-				return format;
-			}else{
-				return name + "." + format;
-			}
+			String string = "";
+			
+			if(name != null) string += name + ".";
+			string += format;
+						
+			return string;
 		}
 
 		/**
@@ -91,7 +94,7 @@ public class ICRAuxiliary
   		if(this == object){
   			return 0;
   		}else if(object instanceof FileData){
-  			return format.compareTo(((FileData)object).format);
+  			return getFormat().compareTo(((FileData)object).getFormat());
   		}else{
   			return -1;
   		}

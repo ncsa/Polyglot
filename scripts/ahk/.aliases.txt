@@ -7,11 +7,11 @@
 #CyW-b
 #CyW-c
 #CyW-d
-FFMPEG
+#FFMPEG
 #GIMP
 #GSkUp
 #ImgMgk
-#IrfanView
+IrfanView
 #K3D
 #NCHSwitch
 #NCSA
