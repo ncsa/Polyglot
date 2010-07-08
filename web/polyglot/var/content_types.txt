@@ -1,0 +1,8 @@
+3d
+3ds 3dxml _pd arc asc asm bdl blend catdrawing catpart catproduct catshape cgr dae dlv dxf exp hgl hp hpgl hpl iam ifc iges igs ipt iv jt k3d kmz mf1 model neu obj par pdb pdf pkg plt ply prc prt prw psm pwd rag rib sab sat sda sdac sdp sdpc sds sdsc sdw sdwc ses session sldasm sldlfp sldprt step stl stp u3d unv vrml wrl x3d x_b x_t xas xmt xmt_txt xpr xv0 xv3 
+
+document
+doc odt pdf rtf txt 
+
+image
+bmp dib eps fig gif ico jpeg jpg pdf pgm pict pix png pnm ppm ps rgb rgba sgi sun svg tga tif tiff ttf x xbm xcf xpm xwd yuv 

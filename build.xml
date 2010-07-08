@@ -41,7 +41,7 @@
 		</exec>
 	</target>
 	
-	<target name="zip" depends="archive,javadocs" description="Build an zip file containing the installation">
+	<target name="zip" depends="archive,javadocs" description="Build a zip file containing the installation">
 		<mkdir dir="${tmp}"/>
 		<copy todir="${tmp}/lib">
 			<fileset dir="lib"/>

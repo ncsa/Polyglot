@@ -1,0 +1,33 @@
+a.tip {
+	/* border-bottom: 1px dashed; */
+	text-decoration: none;
+	color: #000000;
+}
+
+a.tip:hover {
+	position: relative;
+	/* cursor: help; */
+	cursor: default;
+}
+
+a.tip span {
+	display: none;
+}
+
+a.tip:hover span {
+	display: block;
+  position: absolute; 
+	top: 10px; 
+	left: 0;
+	
+	/* Formatting */
+  padding: 5px;
+	margin: 10px;
+	z-index: 100;
+  border: 1px solid #000000;
+  text-decoration: none;
+	padding-right: 20px;
+	background: #ffffff;
+	/* background: #f0f0f0 url(../images/status-info.png) 100% 5% no-repeat; */
+	width: 250px;
+}
