@@ -62,7 +62,7 @@
 </td><td>
 
 <!-- Upload Applet -->
-<applet name="uploadApplet" code="edu.ncsa.polyglot.applets.UploadApplet.class" archive="bin/java/PolyglotUtils-signed.jar"
+<applet name="uploadApplet" code="edu.ncsa.polyglot.applets.UploadApplet.class" archive="lib/PolyglotUtils-signed.jar"
 				mayscript="true" scriptable="true" width="325" height="200">
 <param name="upload_button_text" value="Convert">
 <param name="uploadPath" value="bin/upload.php">

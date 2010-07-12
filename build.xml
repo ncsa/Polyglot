@@ -19,21 +19,6 @@
 		<jar basedir="${classes}" destfile="build/Polyglot2.jar"/>
 	</target>	
 	
-	<target name="iograph_archive" depends="compile" description="Archive the code needed for the I/O-graph applet">
-		<mkdir dir="${tmp}"/>
-		<copy todir="${tmp}">
-			<fileset dir="${classes}">
-				<include name="**/IOGraph*.class"/>
-				<include name="**/Conversion*.class"/>
-				<include name="**/Point2D*.class"/>
-				<include name="**/FadedScrollBarUI*.class"/>
-			</fileset>
-		</copy>
-		<unjar src="lib/ncsa/Utilities.jar" dest="${tmp}"/>
-		<jar basedir="${tmp}" destfile="build/IOGraphApplet.jar"/>
-		<signjar jar="build/IOGraphApplet.jar" signedjar="build/IOGraphApplet-signed.jar" alias="mykey" storepass="isdapass"/>
-	</target>
-	
 	<target name="installer" depends="archive" description="Build an installer for this project">
 		<exec executable="C:/Program Files/Inno Setup 5/Compil32">
 			<arg value="/cc"/>
@@ -62,6 +47,21 @@
 		<echo file="${tmp}/ICRServer.ini" append="true">EnableMonitors=true${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">AHKScripts=scripts/ahk</echo>
 		<zip basedir="${tmp}" destfile="build/Polyglot2.zip"/>
+	</target>
+	
+	<target name="polyglot_utils" depends="compile" description="Archive all the code needed by the web interface">
+		<mkdir dir="${tmp}"/>
+		<copy todir="${tmp}">
+			<fileset dir="${classes}">
+				<include name="**/polyglot/IOGraph*.class"/>
+				<include name="**/polyglot/Polyglot*.class"/>
+			</fileset>
+		</copy>
+		<unjar src="lib/ncsa/Utilities.jar" dest="${tmp}"/>
+		<unjar src="web/utils/UploadApplet.jar" dest="${tmp}"/>
+		<unjar src="web/utils/ModelViewer_Lite.jar" dest="${tmp}"/>
+		<jar basedir="${tmp}" destfile="build/PolyglotUtils.jar"/>
+		<signjar jar="build/PolyglotUtils.jar" signedjar="build/PolyglotUtils-signed.jar" alias="mykey" storepass="isdapass"/>
 	</target>
 	
 	<target name="javadocs" description="Make javadocs">

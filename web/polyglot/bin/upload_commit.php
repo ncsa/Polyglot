@@ -3,18 +3,6 @@
  * Upload a file and commit it as a job to the Polyglot server.
  */
 
-function getTask_IOGraph($input_format, $output_format)
-{
-  exec("java -cp java/PolyglotUtils-signed.jar edu.ncsa.polyglot.iograph.IOGraphViewer $input_format $output_format", $tmp);
-  $task = "";
-
-  for($i=0; $i<sizeof($tmp); $i++){
-    $task = $task . $tmp[$i] . "\n";
-  }
-
-  return $task;
-}
-
 $format = $_REQUEST["format"];
 $upload_path = "../uploads";
 
@@ -76,22 +64,6 @@ if(!move_uploaded_file($tmp_name, $target_path)){
   die("Problem during upload.");
 }
 
-//Build list of formats
-$files = scandir("$upload_path");
-$formats = array();
-
-for($i=0; $i<sizeof($files); $i++){
-	if($files[$i] != "." && $files[$i] != ".."){
-		$dot = strrpos($files[$i],'.');
-
-		if($dot !== false){
-			$ext = substr($files[$i], $dot+1);
-			$formats[sizeof($formats)] = $ext;
-		}
-	}
-}
-
-$formats = array_keys(array_count_values($formats));
 $task_file = "$upload_path/tasks";
 $commit_file = "$upload_path/commit";
 
@@ -99,11 +71,7 @@ $commit_file = "$upload_path/commit";
 $fp = fopen($task_file, "w");
 
 if($fp){
-	for($i=0; $i<sizeof($formats); $i++){
-		$task = getTask_IOGraph($formats[$i], $format);
-		fwrite($fp, "$task");
-	}
-
+	fwrite($fp, "* $format");
 	fclose($fp);
 }
 

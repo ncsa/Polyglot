@@ -8,8 +8,9 @@ import java.net.*;
 import java.sql.*;
 import java.util.*;
 
-public class IOGraph<V extends Comparable,E>
+public class IOGraph<V extends Comparable,E> implements Serializable
 {
+	public static final long serialVersionUID = 1L;
 	private Vector<V> vertices = new Vector<V>();
 	private TreeMap<V,Integer> vertex_map = new TreeMap<V,Integer>();
   private TreeMap<String,Integer> vertex_string_map = new TreeMap<String,Integer>();  
@@ -659,6 +660,26 @@ public class IOGraph<V extends Comparable,E>
   }
   
   /**
+   * Returns a set of vertex strings that are reachable from other vertices.
+   * @return the set of reachable vertex strings
+   */
+  public TreeSet<String> getRangeStrings()
+  {
+    TreeSet<String> range = new TreeSet<String>();
+    Set<Integer> range_indices;
+    
+    for(int i=0; i<vertices.size(); i++){
+      range_indices = getRange(i);
+      
+      for(Iterator<Integer> itr=range_indices.iterator(); itr.hasNext();){
+        range.add(vertices.get(itr.next()).toString());
+      }
+    }
+    
+    return range;
+  }
+  
+  /**
    * Returns a set of vertex strings that are reachable from a given source vertex.
    * @param string string associated with the input vertex
    * @return the set of reachable vertex strings
@@ -1008,6 +1029,27 @@ public class IOGraph<V extends Comparable,E>
 		
 		return path;
 	}
+	
+	/**
+	 * Get a string only version of this IOGraph.
+	 * @return a string version of this IOGraph
+	 */
+  public IOGraph<String,String> getIOGraphStrings()
+  {   
+  	IOGraph<String,String> iograph_strings = new IOGraph<String,String>();
+
+  	for(int i=0; i<vertices.size(); i++){
+  		iograph_strings.addVertex(vertices.get(i).toString());
+  	}
+  	
+  	for(int i=0; i<adjacency_list.size(); i++){
+  		for(int j=0; j<adjacency_list.get(i).size(); j++){
+  			iograph_strings.addEdge(vertices.get(i).toString(), vertices.get(adjacency_list.get(i).get(j)).toString(), edges.get(i).get(j).toString());
+  		}
+  	}
+  	
+  	return iograph_strings;
+  }
 	
   /**
    * Find the edge with the smallest weight.

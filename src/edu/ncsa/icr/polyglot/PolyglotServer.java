@@ -108,6 +108,7 @@ public class PolyglotServer implements Runnable
 		String output_type;
 		TreeSet<String> input_types;
 		TreeSet<String> output_types;
+		IOGraph<String,String> iograph;
 		
 		System.out.println("Session " + session + ": connection established...");
 
@@ -122,7 +123,12 @@ public class PolyglotServer implements Runnable
 			while(client_socket.isConnected()){
 				message = (String)Utility.readObject(ins);
 				
-				if(message.equals("outputs")){
+				if(message.equals("all_outputs")){
+					output_types = polyglot.getOutputs();
+					
+					Utility.writeObject(outs, output_types);
+					System.out.println("Session " + session + ": sending all output types");
+				}else if(message.equals("outputs")){
 					input_type = (String)Utility.readObject(ins);
 					output_types = polyglot.getOutputs(input_type);
 					
@@ -134,6 +140,11 @@ public class PolyglotServer implements Runnable
 					
 					Utility.writeObject(outs, output_types);
 					System.out.println("Session " + session + ": sending common output types");
+				}else if(message.equals("input_output_graph")){
+					iograph = polyglot.getInputOutputGraph();
+					
+					Utility.writeObject(outs, iograph);
+					System.out.println("Session " + session + ": sending input/output graph");
 				}else if(message.equals("convert")){
 					input_file_data = (FileData)Utility.readObject(ins);
 					output_type = (String)Utility.readObject(ins);

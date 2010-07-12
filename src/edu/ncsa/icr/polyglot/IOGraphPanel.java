@@ -824,6 +824,10 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   	IOGraphPanel iograph_panel = null;
   	
   	if(true){
+  		PolyglotClient polyglot = new PolyglotClient("localhost", 31);
+  		iograph_panel = new IOGraphPanel<String,String>(polyglot.getInputOutputGraph(), 2);
+  		polyglot.close();
+  	}else if(false){
 	  	ICRClient icr = new ICRClient("localhost", 30);
 	  	iograph = new IOGraph<Data,Application>(icr);
 	  	icr.close();

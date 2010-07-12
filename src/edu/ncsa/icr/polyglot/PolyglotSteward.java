@@ -33,6 +33,15 @@ public class PolyglotSteward extends Polyglot
 	}
 	
 	/**
+	 * Get the I/O-graph.
+	 * @return the I/O-graph
+	 */
+	public IOGraph<Data,Application> getIOGraph()
+	{
+		return iograph;
+	}
+
+	/**
 	 * Add an ICR client.
 	 * @param icr an ICR client
 	 */
@@ -54,17 +63,18 @@ public class PolyglotSteward extends Polyglot
 	}
 	
 	/**
-	 * Get the I/O-graph.
-	 * @return the I/O-graph
+	 * Get the outputs available.
+	 * @return the list of outputs
 	 */
-	public IOGraph<Data,Application> getIOGraph()
+	public TreeSet<String> getOutputs()
 	{
-		return iograph;
+		return iograph.getRangeStrings();
 	}
 	
 	/**
 	 * Get the outputs available for the given input type.
 	 * @param input the input type
+	 * @return the list of outputs
 	 */
 	public TreeSet<String> getOutputs(String input)
 	{
@@ -74,10 +84,20 @@ public class PolyglotSteward extends Polyglot
 	/**
 	 * Get the common outputs available for the given input types.
 	 * @param inputs the input types
+	 * @return the list of outputs
 	 */
 	public TreeSet<String> getOutputs(TreeSet<String> inputs)
 	{
 		return iograph.getRangeIntersectionStrings(inputs);
+	}
+	
+	/**
+	 * Get the available inputs, outputs, and conversions.
+	 * @return an IOGraph containing the information as strings
+	 */
+	public IOGraph<String,String> getInputOutputGraph()
+	{
+		return iograph.getIOGraphStrings();
 	}
 
 	/**

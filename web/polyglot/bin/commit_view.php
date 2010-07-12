@@ -3,18 +3,6 @@
  * Commit an uploaded Polyglot view job.
  */
 
-function getTask_IOGraph($input_format, $output_format)
-{
-  exec("java -cp java/PolyglotUtils-signed.jar edu.ncsa.polyglot.iograph.IOGraphViewer $input_format $output_format", $tmp);
-  $task = "";
-
-  for($i=0; $i<sizeof($tmp); $i++){
-    $task = $task . $tmp[$i] . "\n";
-  }
-
-  return $task;
-}
-
 $ip = $_SERVER['REMOTE_ADDR'];
 
 $upload_path = "../uploads";
@@ -85,16 +73,14 @@ if(!file_exists("$upload_path/$ip")){ //A previous commit timed out just as the 
 		if($fp){
 			for($i=0; $i<sizeof($formats); $i++){
 				if($map[$formats[$i]] == '3d'){
-    		  $task = getTask_IOGraph($formats[$i], "obj");
+					fwrite($fp, $formats[$i] . " obj\n");
 				}else if($map[$formats[$i]] == 'image'){
-    		  $task = getTask_IOGraph($formats[$i], "jpg");
+					fwrite($fp, $formats[$i] . " jpg\n");
 				}else if($map[$formats[$i]] == 'document'){
-		      $task = getTask_IOGraph($formats[$i], "txt");
+					fwrite($fp, $formats[$i] . " txt\n");
 				}else if($map[$formats[$i]] == 'audio'){
-		      $task = getTask_IOGraph($formats[$i], "wav");
+					fwrite($fp, $formats[$i] . " wav\n");
 				}
-
-				fwrite($fp, "$task");
 			}
 
 		  fclose($fp);

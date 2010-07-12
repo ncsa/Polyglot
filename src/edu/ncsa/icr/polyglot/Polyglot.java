@@ -1,4 +1,5 @@
 package edu.ncsa.icr.polyglot;
+import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
@@ -12,8 +13,10 @@ public abstract class Polyglot
 {
 	private AtomicInteger pending_asynchronous_calls = new AtomicInteger();
 	
+	public abstract TreeSet<String> getOutputs();
 	public abstract TreeSet<String> getOutputs(String string);
 	public abstract TreeSet<String> getOutputs(TreeSet<String> set);
+	public abstract IOGraph<String,String> getInputOutputGraph();
 	public abstract void convert(String input_filename, String output_path, String output_type);
 	
 	/**

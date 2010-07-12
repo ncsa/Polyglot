@@ -1,7 +1,6 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
-
 import java.io.*;
 import java.net.*;
 import java.util.TreeSet;
@@ -40,8 +39,26 @@ public class PolyglotClient extends Polyglot
 	}
 	
 	/**
+	 * Get the outputs available.
+	 * @return the list of outputs
+	 */
+	public TreeSet<String> getOutputs()
+	{
+		TreeSet<String> outputs = null;
+		
+		Utility.writeObject(outs, "all_outputs");
+		
+		try{
+			outputs = (TreeSet<String>)Utility.readObject(ins);
+		}catch(Exception e) {e.printStackTrace();}
+		
+		return outputs;
+	}
+	
+	/**
 	 * Get the outputs available for the given input type.
 	 * @param input the input type
+	 * @return the list of outputs
 	 */
 	public TreeSet<String> getOutputs(String input)
 	{
@@ -60,6 +77,7 @@ public class PolyglotClient extends Polyglot
 	/**
 	 * Get the common outputs available for the given input types.
 	 * @param inputs the input types
+	 * @return the list of outputs
 	 */
 	public TreeSet<String> getOutputs(TreeSet<String> inputs)
 	{
@@ -73,6 +91,23 @@ public class PolyglotClient extends Polyglot
 		}catch(Exception e) {e.printStackTrace();}
 		
 		return outputs;
+	}
+	
+	/**
+	 * Get the available inputs, outputs, and conversions.
+	 * @return an IOGraph containing the information as strings
+	 */
+	public IOGraph<String,String> getInputOutputGraph()
+	{
+		IOGraph<String,String> iograph = null;
+		
+		Utility.writeObject(outs, "input_output_graph");
+		
+		try{
+			iograph = (IOGraph<String,String>)Utility.readObject(ins);
+		}catch(Exception e) {e.printStackTrace();}
+		
+		return iograph;
 	}
 	
 	/**
