@@ -11,6 +11,7 @@ public class PolyglotServer implements Runnable
 	private ServerSocket server_socket;
 	private int port;
 	private PolyglotSteward polyglot = new PolyglotSteward();
+	private int steward_port = -1;
 	private AtomicInteger session_counter = new AtomicInteger();
 	private boolean RUNNING;
 
@@ -21,6 +22,7 @@ public class PolyglotServer implements Runnable
 	public PolyglotServer(String filename)
 	{		
 		if(filename != null) loadINI(filename);
+		if(steward_port >= 0) polyglot.listen(steward_port);
 		
 		try{
 			server_socket = new ServerSocket(port);
@@ -57,6 +59,8 @@ public class PolyglotServer implements Runnable
 	        			port = Integer.valueOf(value.substring(tmpi+1));
 	        			polyglot.add(server, port);
 	        		}
+	          }else if(key.equals("StewardPort")){
+	          	steward_port = Integer.valueOf(value);
 	          }
 	        }
 	      }

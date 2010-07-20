@@ -1,6 +1,7 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -21,6 +22,9 @@ public class ICRServer implements Runnable
 	private String temp_path = root_path + "Temp";
 	private int max_operation_time = 10000; 	//In milliseconds
 	private int max_operation_attempts = 1;
+	private String steward_server = null;
+	private int steward_port;
+	
 	private boolean ENABLE_MONITORS = false;
 	private boolean STARTED_MONITORS = false;
 	private boolean RUNNING;
@@ -94,6 +98,13 @@ public class ICRServer implements Runnable
 	            max_operation_attempts = Integer.valueOf(value);
 	          }else if(key.equals("EnableMonitors")){
 	          	ENABLE_MONITORS = Boolean.valueOf(value);
+	          }else if(key.equals("PolyglotSteward")){
+	        		tmpi = value.lastIndexOf(':');
+	        		
+	        		if(tmpi != -1){
+	        			steward_server = value.substring(0, tmpi);
+	        			steward_port = Integer.valueOf(value.substring(tmpi+1));
+	        		}
 	          }
 	        }
 	      }
@@ -319,6 +330,27 @@ public class ICRServer implements Runnable
   	
   	for(int i=0; i<applications.size(); i++){
   		System.out.println("  " + applications.get(i).name + " (" + applications.get(i).alias + ")");
+  	}
+  	
+  	//Notify a Polyglot steward
+  	if(steward_server != null){
+  		System.out.println("\nStarting steward notification thread...\n");
+  		
+	  	new Thread(){
+	  		public void run(){
+	  			Socket socket;
+	  			
+	  			while(true){
+		  			try{
+		  				socket = new Socket(steward_server, steward_port);
+		  				Utility.writeObject(socket.getOutputStream(), port);
+		  				Utility.readObject(socket.getInputStream());		//Wait for any response before moving on to prevent re-sending
+		  			}catch(Exception e) {}
+		  			
+		  			Utility.pause(500);
+	  			}
+	  		}
+	  	}.start();
   	}
   	
   	//Begin accepting connections

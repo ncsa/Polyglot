@@ -4,6 +4,8 @@ import edu.ncsa.icr.*;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.*;
 
 /**
@@ -11,11 +13,12 @@ import java.util.*;
  * format conversions.
  * @author Kenton McHenry
  */
-public class PolyglotSteward extends Polyglot
+public class PolyglotSteward extends Polyglot implements Runnable
 {
 	private Vector<ICRClient> icr_clients = new Vector<ICRClient>();
 	private IOGraph<Data,Application> iograph = new IOGraph<Data,Application>();
 	private int application_flexibility = 0;
+	private int port = -1;
 	
 	public PolyglotSteward() {}
 	
@@ -257,7 +260,48 @@ public class PolyglotSteward extends Polyglot
 			icr_clients.get(i).close();
 		}
 	}
-  
+
+	/**
+	 * Start listening for ICRServers.
+	 * @param port the port to listen to
+	 */
+	public void listen(int port)
+	{
+		this.port = port;
+		new Thread(this).start();
+	}
+	
+	/**
+	 * Listen for ICRServers.
+	 */
+	public void run()
+	{
+		ServerSocket server_socket = null;
+		Socket client_socket = null;
+		String icr_server;
+		int icr_port;
+		
+		try{
+			server_socket = new ServerSocket(port);
+		}catch(Exception e) {e.printStackTrace();}
+		
+  	//Begin accepting connections
+  	System.out.println("Listening for ICR Servers...");
+		
+		while(true){
+			try{
+				//Wait for a connection
+				client_socket = server_socket.accept();
+				
+				//Handle this connection
+				icr_server = client_socket.getInetAddress().getHostName();
+				icr_port = (Integer)Utility.readObject(client_socket.getInputStream());
+				add(icr_server, icr_port);
+				System.out.println("Found ICR Server: " + icr_server + ":" + icr_port);
+			}catch(Exception e) {e.printStackTrace();}
+		}  
+	}
+	
 	/**
 	 * Command line polyglot interface.
 	 * @param args command line arguments
