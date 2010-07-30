@@ -19,6 +19,19 @@
 		<jar basedir="${classes}" destfile="build/Polyglot2.jar"/>
 	</target>	
 	
+	<target name="iograph_archive" depends="compile" description="Archive the code needed for the I/O-graph applet">
+		<mkdir dir="${tmp}"/>
+		<copy todir="${tmp}">
+			<fileset dir="${classes}">
+				<include name="**/IOGraph*.class"/>
+				<include name="**/Polyglot*.class"/>
+			</fileset>
+		</copy>
+		<unjar src="lib/ncsa/Utilities.jar" dest="${tmp}"/>
+		<jar basedir="${tmp}" destfile="build/IOGraphApplet.jar"/>
+		<signjar jar="build/IOGraphApplet.jar" signedjar="build/IOGraphApplet-signed.jar" alias="mykey" storepass="isdapass"/>
+	</target>
+	
 	<target name="installer" depends="archive" description="Build an installer for this project">
 		<exec executable="C:/Program Files/Inno Setup 5/Compil32">
 			<arg value="/cc"/>
@@ -28,6 +41,7 @@
 	
 	<target name="zip" depends="archive,javadocs" description="Build a zip file containing the installation">
 		<mkdir dir="${tmp}"/>
+		<mkdir dir="${tmp}/data"/>
 		<copy todir="${tmp}/lib">
 			<fileset dir="lib"/>
 		</copy>
@@ -39,13 +53,14 @@
 		</copy>
 		<copy file="build/Polyglot2.jar" todir="${tmp}"/>
 		<mkdir dir="${tmp}/tmp"/>
-		<echo file="${tmp}/ICRServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1024m edu.ncsa.icr.ICRServer %1 %2</echo>
+		<echo file="${tmp}/ICRServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.ICRServer %1 %2</echo>
 		<echo file="${tmp}/ICRServer.ini" append="false">RootPath=tmp${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">Port=30${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">MaxOperationTime=30000${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">MaxOperationAttempts=2${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">EnableMonitors=true${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">AHKScripts=scripts/ahk</echo>
+		<echo file="${tmp}/ICRScriptDebugger.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.ICRScriptDebugger %1 %2</echo>
 		<zip basedir="${tmp}" destfile="build/Polyglot2.zip"/>
 	</target>
 	
