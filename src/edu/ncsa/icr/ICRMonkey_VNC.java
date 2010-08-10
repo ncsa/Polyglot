@@ -206,8 +206,6 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	
 	/**
 	 * Connect to the VNC server.
-	 * @param server the server to connect to
-	 * @param port the port to connect to
 	 */
 	public void connect()
 	{

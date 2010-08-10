@@ -61,6 +61,9 @@
 		<echo file="${tmp}/ICRServer.ini" append="true">EnableMonitors=true${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">AHKScripts=scripts/ahk</echo>
 		<echo file="${tmp}/ICRScriptDebugger.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.ICRScriptDebugger %1 %2</echo>
+		<echo file="${tmp}/AutoUpdate.bat">java -cp "%~dp0lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
+		<echo file="${tmp}/AutoUpdate.ini" append="false">!ini${line.separator}</echo>
+		<echo file="${tmp}/AutoUpdate.ini" append="true">http://isda.ncsa.uiuc.edu/NARA/tmp/Polyglot2.zip</echo>
 		<zip basedir="${tmp}" destfile="build/Polyglot2.zip"/>
 	</target>
 	
