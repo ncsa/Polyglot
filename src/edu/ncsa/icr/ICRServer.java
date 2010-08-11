@@ -71,6 +71,12 @@ public class ICRServer implements Runnable
 	        if(key.charAt(0) != '#'){
 	        	if(key.equals("RootPath")){
 	        		root_path = value + "/";
+	        		
+	        		if(!Utility.exists(root_path)){
+	        			System.out.println("Root path doesn't exist!");
+	        			System.exit(1);
+	        		}
+	        		
 	        		tmpi = 0;
 	        		
 	        		while(Utility.exists(root_path + "Cache" + Utility.toString(tmpi,3))){

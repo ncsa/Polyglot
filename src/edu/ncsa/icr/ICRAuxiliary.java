@@ -802,14 +802,18 @@ public class ICRAuxiliary
   		String operation = getOperation(script);
   		String type = Utility.getFilenameExtension(script);
   		
-  		if(type.equals("ahk")){		//Should be Unix path style by default!
+  		if(type.equals("ahk")){
 	  		if(source != null) source = Utility.windowsPath(source);
 				if(target != null) target = Utility.windowsPath(target);
 				if(temp_path != null) temp_path = Utility.windowsPath(temp_path);
+  		}else{
+	  		if(source != null) source = Utility.unixPath(source);
+				if(target != null) target = Utility.unixPath(target);
+				if(temp_path != null) temp_path = Utility.unixPath(temp_path);
   		}
   		
 	  	if(operation.equals("convert")){
-	  		command += " \"" + source + "\" \"" + target + "\" \"" + Utility.windowsPath(temp_path) + System.currentTimeMillis() + "_\"";
+	  		command += " \"" + source + "\" \"" + target + "\" \"" + temp_path + System.currentTimeMillis() + "_\"";
 	  	}else if(operation.equals("open") || operation.equals("import")){
 	  		command += " \"" + source + "\"";
 	  	}else if(operation.equals("save") || operation.equals("export")){
