@@ -91,6 +91,8 @@ public class ICRServer implements Runnable
 	          	addScriptedOperations(value + "/", "ahk", ";");
 	        	}else if(key.equals("AppleScripts")){
 	          	addScriptedOperations(value + "/", "scpt", "--");
+	        	}else if(key.equals("ShellScripts")){
+	          	addScriptedOperations(value + "/", "sh", "#");
 	        	}else if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("MaxOperationTime")){

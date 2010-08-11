@@ -66,6 +66,8 @@
 		<echo file="${tmp}/ICRServer.ini" append="true">MaxOperationAttempts=2${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">EnableMonitors=true${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">AHKScripts=scripts/ahk${line.separator}</echo>
+		<echo file="${tmp}/ICRServer.ini" append="true">#AppleScripts=scripts/scpt${line.separator}</echo>
+		<echo file="${tmp}/ICRServer.ini" append="true">#ShellScripts=scripts/sh${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">#PolyglotSteward=localhost:${steward_port}</echo>
 		
 		<echo file="${tmp}/ICRClient.bat">cmd /c java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.ICRClient %1</echo>
