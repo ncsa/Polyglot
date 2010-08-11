@@ -1,5 +1,6 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.icr.polyglot.PolyglotClient;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
@@ -423,6 +424,7 @@ public class ICRClient
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader("ICRClient.ini"));
 	    String key, value;
+	    int tmpi;
 	    
 	    while((line=ins.readLine()) != null){
 	      if(line.contains("=")){
@@ -430,10 +432,13 @@ public class ICRClient
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#'){
-	        	if(key.equals("Server")){
-	          	server = InetAddress.getByName(value).getHostAddress();
-	        	}else if(key.equals("Port")){
-	        		port = Integer.valueOf(value);
+	        	if(key.equals("ICRServer")){
+	          	tmpi = value.lastIndexOf(':');
+	        		
+	        		if(tmpi != -1){
+	        			server = InetAddress.getByName(value.substring(0, tmpi)).getHostAddress();
+	        			port = Integer.valueOf(value.substring(tmpi+1));
+	        		}
 	          }else if(key.equals("DefaultPath")){
 	          	cwd = value + "/";
 	          }
