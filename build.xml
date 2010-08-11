@@ -53,17 +53,53 @@
 		</copy>
 		<copy file="build/Polyglot2.jar" todir="${tmp}"/>
 		<mkdir dir="${tmp}/tmp"/>
+		
 		<echo file="${tmp}/ICRServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.ICRServer %1 %2</echo>
+		<echo file="${tmp}/ICRServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.ICRServer $1 $2</echo>
 		<echo file="${tmp}/ICRServer.ini" append="false">RootPath=tmp${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">Port=30${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">MaxOperationTime=30000${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">MaxOperationAttempts=2${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">EnableMonitors=true${line.separator}</echo>
 		<echo file="${tmp}/ICRServer.ini" append="true">AHKScripts=scripts/ahk</echo>
+		
+		<echo file="${tmp}/ICRClient.bat">cmd /c java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.ICRClient %1</echo>
+		<echo file="${tmp}/ICRClient.sh">cmd /c java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.ICRClient $1</echo>
+		<echo file="${tmp}/ICRClient.ini" append="false">Server=localhost${line.separator}</echo>
+		<echo file="${tmp}/ICRClient.ini" append="true">Port=30${line.separator}</echo>
+		<echo file="${tmp}/ICRClient.ini" append="true">#DefaultPath=.</echo>
+
 		<echo file="${tmp}/ICRScriptDebugger.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.ICRScriptDebugger %1 %2</echo>
+		<echo file="${tmp}/ICRScriptDebugger.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.ICRScriptDebugger $1 $2</echo>
+		
+		<echo file="${tmp}/PolyglotServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
+		<echo file="${tmp}/PolyglotServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
+		<echo file="${tmp}/PolyglotServer.ini" append="false">Port=32${line.separator}</echo>
+		<echo file="${tmp}/PolyglotServer.ini" append="true">StewardPort=31${line.separator}</echo>
+		<echo file="${tmp}/PolyglotServer.ini" append="true">#ICRServer=localhost:30</echo>
+		
+		<echo file="${tmp}/PolyglotClient.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotClient %1 %2</echo>
+		<echo file="${tmp}/PolyglotClient.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotClient $1 $2</echo>
+		<echo file="${tmp}/PolyglotClient.ini">PolyglotServer=localhost:31</echo>
+	
+		<echo file="${tmp}/PolyglotPanel.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotPanel</echo>
+		<echo file="${tmp}/PolyglotPanel.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotPanel</echo>
+		<echo file="${tmp}/PolyglotPanel.ini" append="false">DefaultPath=.${line.separator}</echo>
+		<echo file="${tmp}/PolyglotPanel.ini" append="true">#ICRServer=localhost:30${line.separator}</echo>
+		<echo file="${tmp}/PolyglotPanel.ini" append="true">PolyglotServer=localhost:32</echo>
+	
+		<echo file="${tmp}/PolyglotWebServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.PolyglotWebServer</echo>
+		<echo file="${tmp}/PolyglotWebServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebServer</echo>
+		<echo file="${tmp}/PolyglotWebServer.ini" append="false">PolyglotPath=//isda/www/NARA/Polyglot2${line.separator}</echo>
+		<echo file="${tmp}/PolyglotWebServer.ini" append="true">ICRServer=localhost:30${line.separator}</echo>
+		<echo file="${tmp}/PolyglotWebServer.ini" append="true">#PolyglotServer=localhost:32${line.separator}</echo>
+		<echo file="${tmp}/PolyglotWebServer.ini" append="true">SleepLength=1000</echo>
+
 		<echo file="${tmp}/AutoUpdate.bat">java -cp "%~dp0lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
+		<echo file="${tmp}/AutoUpdate.sh">java -cp lib/ncsa/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp}/AutoUpdate.ini" append="false">!ini${line.separator}</echo>
 		<echo file="${tmp}/AutoUpdate.ini" append="true">http://isda.ncsa.uiuc.edu/NARA/tmp/Polyglot2.zip</echo>
+		
 		<zip basedir="${tmp}" destfile="build/Polyglot2.zip"/>
 	</target>
 	
