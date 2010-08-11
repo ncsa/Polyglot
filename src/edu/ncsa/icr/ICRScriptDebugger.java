@@ -99,7 +99,7 @@ public class ICRScriptDebugger
 				//Check for helper scripts
 				if(Utility.exists(script.getOperationScriptname("monitor"))){
 					monitor_script = new Script(script.getOperationScriptname("monitor"), null);
-					monitor_script.execute();
+					monitor_script.executeAndWait();
 				}
 				
 				if(Utility.exists(script.getOperationScriptname("kill"))){
@@ -124,7 +124,7 @@ public class ICRScriptDebugger
 								System.out.print("  " + input_type + "->" + output_type + ": \n");
 
 								System.out.print("    converting file");
-								script.execute(input_file, output_file, temp_path, max_operation_time);
+								script.executeAndWait(input_file, output_file, temp_path, max_operation_time);
 								
 								if(exists(output_file)){
 									System.out.println("    [success]");
@@ -155,10 +155,10 @@ public class ICRScriptDebugger
 								output_file = temp_path + Utility.getFilenameName(input_file) + "." + output_type;
 														
 								System.out.print("    loading file");
-								script.execute(input_file, null, temp_path, max_operation_time);
+								script.executeAndWait(input_file, null, temp_path, max_operation_time);
 								
 								System.out.print("    generating output");
-								output_scripts.firstElement().execute(null, output_file, temp_path, max_operation_time);
+								output_scripts.firstElement().executeAndWait(null, output_file, temp_path, max_operation_time);
 								
 								if(exists(output_file)){
 									System.out.println("    [success]");
@@ -205,10 +205,10 @@ public class ICRScriptDebugger
 								System.out.print("  " + output_type + ": \n");
 														
 								System.out.print("    loading file");
-								input_scripts.get(input_script_index).execute(input_file, null, temp_path, max_operation_time);
+								input_scripts.get(input_script_index).executeAndWait(input_file, null, temp_path, max_operation_time);
 								
 								System.out.print("    generating output");
-								script.execute(null, output_file, temp_path, max_operation_time);
+								script.executeAndWait(null, output_file, temp_path, max_operation_time);
 	
 								if(exists(output_file)){
 									System.out.println("    [success]");

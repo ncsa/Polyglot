@@ -455,40 +455,6 @@ public class ICRAuxiliary
 			return application.toString();
 		}
   	
-  	/**
-  	 * Get the executable for the operation.
-  	 * @return the name of the executable
-  	 */
-  	public String getScript()
-  	{
-			if(script.endsWith(".ahk")){
-				return script.substring(0, script.lastIndexOf('.')) + ".exe";
-			}
-			
-			return script;
-  	}
-  	
-  	/**
-  	 * Run the operation script with no arguments and wait until it completes.
-  	 */
-  	public void runScriptAndWait()
-  	{
-      try{
-        Process process = Runtime.getRuntime().exec(getScript());
-        process.waitFor();
-      }catch(Exception e) {}
-  	}
-  	
-  	/**
-  	 * Run the operation script with no arguments.
-  	 */
-  	public void runScript()
-  	{
-      try{
-        Runtime.getRuntime().exec(getScript());
-      }catch(Exception e) {}
-  	}
-  	
     /**
      * Display operation information.
      * @param operations a list of operations
@@ -793,47 +759,99 @@ public class ICRAuxiliary
   	}
   	
   	/**
-  	 * Execute this script.
+  	 * Get the operation performed by the given script.
+  	 * @param script the script filename
+  	 * @return the operation performed by the script
+  	 */
+  	public static String getOperation(String script)
+  	{
+      String name = Utility.getFilenameName(script);
+      String[] tokens = name.split("_");
+      String operation = tokens[1];
+      
+  		return operation;
+  	}
+  	
+  	/**
+  	 * Get the execution command for the given script.
+  	 * @param script the absolute filename of the script
+  	 * @return the execution command
+  	 */
+  	public static String getCommand(String script)
+  	{
+			if(script.endsWith(".ahk")){
+				return script.substring(0, script.lastIndexOf('.')) + ".exe";
+			}else if(script.endsWith(".scpt")){
+				return "osascript " + script;
+			}
+			
+			return script;
+  	}
+  	
+  	/**
+  	 * Get the execution command for the given script.
+  	 * @param script the absolute filename of the script
   	 * @param source the first argument to pass to the script
   	 * @param target the second argument to pass to the script
   	 * @param temp_path the third argument to pass to the script
-  	 * @param max_operation_time the maximum allowed time to run (in milli-seconds)
+  	 * @return the execution command
+  	 */
+  	public static String getCommand(String script, String source, String target, String temp_path)
+  	{
+  		String command = getCommand(script);
+  		String operation = getOperation(script);
+  		String type = Utility.getFilenameExtension(script);
+  		
+  		if(type.equals("ahk")){		//Should be Unix path style by default!
+	  		if(source != null) source = Utility.windowsPath(source);
+				if(target != null) target = Utility.windowsPath(target);
+				if(temp_path != null) temp_path = Utility.windowsPath(temp_path);
+  		}
+  		
+	  	if(operation.equals("convert")){
+	  		command += " \"" + source + "\" \"" + target + "\" \"" + Utility.windowsPath(temp_path) + System.currentTimeMillis() + "_\"";
+	  	}else if(operation.equals("open") || operation.equals("import")){
+	  		command += " \"" + source + "\"";
+	  	}else if(operation.equals("save") || operation.equals("export")){
+	  		command += " \"" + target + "\"";
+	  	}
+	  	
+	  	return command;
+  	}
+  	
+  	/**
+  	 * Execute a script.
+  	 * @param script the absolute filename of the script
+  	 */
+  	public static void execute(String script)
+		{
+		  try{
+		    Runtime.getRuntime().exec(Script.getCommand(script));
+		  }catch(Exception e) {}
+		}
+  	
+  	/**
+  	 * Execute this script.
+  	 * @param command the command executing the script
+  	 * @param max_operation_time the maximum allowed time to run (in milli-seconds, -1 indicates forever)
   	 * @return true if the operation completed within the given time frame
   	 */
-  	public boolean execute(String source, String target, String temp_path, int max_operation_time)
+  	public static boolean executeAndWait(String command, int max_operation_time)
   	{
   		Process process;
   		TimedProcess timed_process;
-  		String command = "";
   		boolean COMPLETE = false;
-  		
-  		//Set the command
-  		if(type.equals("ahk")){  		
-  			if(source != null) source = Utility.windowsPath(source);
-  			if(target != null) target = Utility.windowsPath(target);
-  			if(temp_path != null) temp_path = Utility.windowsPath(temp_path);
-  			
-  	  	if(operation.equals("convert")){
-		  		command = path + name + ".exe \"" + source + "\" \"" + target + "\" \"" + Utility.windowsPath(temp_path) + System.currentTimeMillis() + "_\"";
-  	  	}else if(operation.equals("open") || operation.equals("import")){
-		  		command = path + name + ".exe \"" + source + "\"";
-  	  	}else if(operation.equals("save") || operation.equals("export")){
-		  		command = path + name + ".exe \"" + target + "\"";
-  	  	}else if(operation.equals("monitor") || operation.equals("exit") || operation.equals("kill")){
-  	  		command = path + name + ".exe";
-  	  	}
-  		}
 
-  		//System.out.println("command: " + command);
-
-	  	//Execute the command
 	  	if(!command.isEmpty()){
 		  	try{
 			  	process = Runtime.getRuntime().exec(command);
 			  	
-			  	if(!operation.equals("monitor")){
-				  	timed_process = new TimedProcess(process);    
-				    COMPLETE = timed_process.waitFor(max_operation_time); System.out.println();
+			  	if(max_operation_time >= 0){
+					  timed_process = new TimedProcess(process);    
+					  COMPLETE = timed_process.waitFor(max_operation_time); System.out.println();
+			  	}else{
+		        process.waitFor();
+		        COMPLETE = true;
 			  	}
 		  	}catch(Exception e) {e.printStackTrace();}
 	  	}
@@ -842,11 +860,35 @@ public class ICRAuxiliary
   	}
   	
   	/**
+		 * Execute a script.
+		 * @param script the absolute filename of the script
+		 */
+		public static void executeAndWait(String script)
+		{
+		  executeAndWait(Script.getCommand(script), -1);
+		}
+
+		/**
+  	 * Execute this script.
+  	 * @param source the first argument to pass to the script
+  	 * @param target the second argument to pass to the script
+  	 * @param temp_path the third argument to pass to the script
+  	 * @param max_operation_time the maximum allowed time to run (in milli-seconds)
+  	 * @return true if the operation completed within the given time frame
+  	 */
+  	public boolean executeAndWait(String source, String target, String temp_path, int max_operation_time)
+  	{
+  		String command = getCommand(filename, source, target, temp_path);
+  		
+  		return executeAndWait(command, max_operation_time);
+  	}
+  	
+  	/**
   	 * Execute this script.
   	 */
-  	public void execute()
+  	public void executeAndWait()
   	{
-  		execute(null, null, null, 10000);
+  		executeAndWait(null, null, null, 10000);
   	}
   }
 }

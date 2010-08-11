@@ -1,7 +1,6 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -90,6 +89,8 @@ public class ICRServer implements Runnable
 	        		new File(temp_path).mkdir();
 	        	}else if(key.equals("AHKScripts")){
 	          	addScriptedOperations(value + "/", "ahk", ";");
+	        	}else if(key.equals("AppleScripts")){
+	          	addScriptedOperations(value + "/", "scpt", "--");
 	        	}else if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("MaxOperationTime")){
@@ -213,7 +214,7 @@ public class ICRServer implements Runnable
 	    	if(application.monitor_operation != null){
 	    		if(!STARTED_MONITORS) System.out.println();
 	    		System.out.println("Starting monitor for " + application.alias + "...");
-	    		application.monitor_operation.runScript();
+	    		Script.execute(application.monitor_operation.script);
 	    		STARTED_MONITORS = true;
 	    	}
 	    }
@@ -234,9 +235,7 @@ public class ICRServer implements Runnable
   	Data input_data, output_data;
   	
   	CachedFileData input_file_data, output_file_data;
-  	Process process;
-  	TimedProcess timed_process;
-  	String script, source, target;
+  	String source, target;
   	String command = "";
   	boolean COMPLETE;
   	
@@ -248,59 +247,43 @@ public class ICRServer implements Runnable
   		application = applications.get(task.application); application_set.add(task.application);
   		operation = application.operations.get(task.operation);
   		input_data = task.input_data;
-  		output_data = task.output_data;
-			script = operation.getScript();		
+  		output_data = task.output_data;	
+			source = null;
+			target = null;
 			
-			//Set the command and result
-	  	if(operation.name.equals("convert")){
-	  		if(input_data instanceof CachedFileData ){
-	  			input_file_data = (CachedFileData)input_data;
-	  			output_file_data = (CachedFileData)output_data;
-	  			
-	  			source = Utility.windowsPath(cache_path) + input_file_data.getCacheFilename(session);
-	  			target = Utility.windowsPath(cache_path) + output_file_data.getCacheFilename(session);
-		  		command = script + " \"" + source + "\" \"" + target + "\" \"" + Utility.windowsPath(temp_path) + session + "\"";
-		  	}
-	  	}else if(operation.name.equals("open") || operation.name.equals("import")){
-	  		if(input_data instanceof CachedFileData ){
-	  			input_file_data = (CachedFileData)input_data;
-	  			
-	  			source = Utility.windowsPath(cache_path) + input_file_data.getCacheFilename(session);
-		  		command = script + " \"" + source + "\"";
-		  	}
-	  	}else if(operation.name.equals("save") || operation.name.equals("export")){
-	  		if(output_data instanceof CachedFileData ){
-	  			output_file_data = (CachedFileData)output_data;
-	
-	  			target = Utility.windowsPath(cache_path) + output_file_data.getCacheFilename(session);
-		  		command = script + " \"" + target + "\"";
-		  	}
-	  	}
+			//Set the source, target, and command to execute
+			if(input_data != null && input_data instanceof CachedFileData){
+  			input_file_data = (CachedFileData)input_data;
+  			source = Utility.windowsPath(cache_path) + input_file_data.getCacheFilename(session);
+			}
+			
+			if(output_data != null && output_data instanceof CachedFileData){
+  			output_file_data = (CachedFileData)output_data;
+  			target = Utility.windowsPath(cache_path) + output_file_data.getCacheFilename(session);
+			}
+	  	
+	  	command = Script.getCommand(operation.script, source, target, Utility.windowsPath(temp_path) + session);
 	  	
 	  	System.out.println("Session " + session);
 	  	System.out.println("command: " + command);
 	  	
-	  	//Execute the command
+	  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
 	  	if(!command.isEmpty()){
 	  		for(int j=0; j<max_operation_attempts; j++){
-			  	try{
-				  	process = Runtime.getRuntime().exec(command);
-				  	timed_process = new TimedProcess(process);    
-				    COMPLETE = timed_process.waitFor(max_operation_time); System.out.println();
-				  	
-				    //Try again if command failed
-	          if(!COMPLETE && application.kill_operation != null){
-	            if(j < (max_operation_attempts-1)){
-	              System.out.println("retrying...");
-	            }else{
-	              System.out.println("killing...");
-	            }
-	            
-	            application.kill_operation.runScriptAndWait();
-	          }else{
-	            break;
-	          }
-			  	}catch(Exception e) {e.printStackTrace();}
+		  		COMPLETE = Script.executeAndWait(command, max_operation_time);
+			  	
+			    //Try again if command failed
+          if(!COMPLETE && application.kill_operation != null){
+            if(j < (max_operation_attempts-1)){
+              System.out.println("retrying...");
+            }else{
+              System.out.println("killing...");
+            }
+            
+            Script.executeAndWait(application.kill_operation.script);
+          }else{
+            break;
+          }
 	  		}
 	  	}
   	}
@@ -311,7 +294,7 @@ public class ICRServer implements Runnable
   		
 	    if(application.exit_operation != null){
 				System.out.println("exiting " + application.alias + "...");
-	      application.exit_operation.runScriptAndWait();
+	      Script.executeAndWait(application.exit_operation.script);
 	    }
   	}
   	
