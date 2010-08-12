@@ -96,7 +96,7 @@ public class ICRServer implements Runnable
 	        	}else if(key.equals("AHKScripts")){
 	          	addScriptedOperations(value + "/", "ahk", ";");
 	        	}else if(key.equals("AppleScripts")){
-	          	addScriptedOperations(value + "/", "scpt", "--");
+	          	addScriptedOperations(value + "/", "applescript", "--");
 	        	}else if(key.equals("ShellScripts")){
 	          	addScriptedOperations(value + "/", "sh", "#");
 	        	}else if(key.equals("Port")){
