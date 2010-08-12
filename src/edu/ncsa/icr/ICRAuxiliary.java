@@ -781,7 +781,7 @@ public class ICRAuxiliary
   	{
 			if(script.endsWith(".ahk")){
 				return script.substring(0, script.lastIndexOf('.')) + ".exe";
-			}else if(script.endsWith(".scpt")){
+			}else if(script.endsWith(".applescript")){
 				return "osascript " + script;
 			}
 			
