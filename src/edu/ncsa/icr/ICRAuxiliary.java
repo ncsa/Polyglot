@@ -801,8 +801,19 @@ public class ICRAuxiliary
   		String command = getCommand(script);
   		String operation = getOperation(script);
   		String type = Utility.getFilenameExtension(script);
+  		boolean WINDOWS_PATHS = false;
+  		boolean QUOTED_PATHS = false;
+  		
+  		if(temp_path != null){		//Ensure this path produces uniquely named files!
+  			temp_path += System.currentTimeMillis() + "_";	
+  		}
   		
   		if(type.equals("ahk")){		//*.ahk scripts are likely running on Windows
+  			WINDOWS_PATHS = true;
+  			QUOTED_PATHS = true;
+  		}
+  		
+  		if(WINDOWS_PATHS){
   			if(source != null) source = Utility.windowsPath(source);
 				if(target != null) target = Utility.windowsPath(target);
 				if(temp_path != null) temp_path = Utility.windowsPath(temp_path);
@@ -812,12 +823,18 @@ public class ICRAuxiliary
 				if(temp_path != null) temp_path = Utility.unixPath(temp_path);    			
   		}
   		
+  		if(QUOTED_PATHS){
+  			if(source != null) source = "\"" + source + "\"";
+  			if(target != null) target = "\"" + target + "\"";
+  			if(temp_path != null) temp_path = "\"" + temp_path + "\"";
+  		}
+  		
 	  	if(operation.equals("convert")){
-	  		command += " \"" + source + "\" \"" + target + "\" \"" + temp_path + System.currentTimeMillis() + "_\"";
+	  		command += " " + source + " " + target + " " + temp_path;
 	  	}else if(operation.equals("open") || operation.equals("import")){
-	  		command += " \"" + source + "\"";
+	  		command += " " + source;
 	  	}else if(operation.equals("save") || operation.equals("export")){
-	  		command += " \"" + target + "\"";
+	  		command += " " + target;
 	  	}
 	  	
 	  	return command;
