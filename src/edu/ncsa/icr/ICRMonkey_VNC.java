@@ -5,7 +5,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 import javax.swing.*;
-
 import java.io.*;
 import java.util.*;
 import com.tightvnc.vncviewer.*;
@@ -152,12 +151,18 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 			  item = new JMenuItem("Resume Script"); item.addActionListener(this); popup_menu.add(item);
 	  	}else{
 			  item = new JMenuItem("Run Command"); item.addActionListener(this); popup_menu.add(item);
-	
+			  
 			  submenu1 = new JMenu("Select");
 			  item = new JMenuItem("Positive Area"); item.addActionListener(this); submenu1.add(item);
 			  item = new JMenuItem("Negative Area"); item.addActionListener(this); submenu1.add(item);
 			  submenu1.addSeparator();
 			  item = new JMenuItem("Target Area"); item.addActionListener(this); submenu1.add(item);
+			  popup_menu.add(submenu1);
+			   
+			  submenu1 = new JMenu("Insert Argument");
+			  item = new JMenuItem("Argument 1"); item.addActionListener(this); submenu1.add(item);
+			  item = new JMenuItem("Argument 2"); item.addActionListener(this); submenu1.add(item);
+			  item = new JMenuItem("Argument 3"); item.addActionListener(this); submenu1.add(item);
 			  popup_menu.add(submenu1);
 			  
 			  item = new JMenuItem("Require Current"); item.addActionListener(this); popup_menu.add(item);
@@ -345,6 +350,10 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 			}else if(menuitem_text.equals("Target Area")){
 				target = null;
 				GET_TARGET_AREA = true;
+			}else if(menuitem_text.startsWith("Argument")){
+				script.addArgument(Integer.valueOf(menuitem_text.substring(menuitem_text.length()-1))-1);
+				PAUSING_SCRIPT = true;
+				setPopupMenu();
 			}else if(menuitem_text.equals("Require Current")){
 				synchronized(this){
 					script.addDesktop((BufferedImage)vnc.vc.memImage);
@@ -477,7 +486,10 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	 */
 	public void keyTyped(KeyEvent e)
 	{		
-		script.addKey(e.getKeyChar());
+		if(!PAUSING_SCRIPT){
+			script.addKey(e.getKeyChar());
+		}
+		
 		vc_key_listener.keyTyped(e);
 	}
 

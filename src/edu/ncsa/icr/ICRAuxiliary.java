@@ -447,6 +447,25 @@ public class ICRAuxiliary
   		this.name = name;
   	}
   	
+  	/**
+  	 * Class constructor.
+  	 * @param script the script to use for this operation
+  	 */
+  	public Operation(Script script)
+  	{
+      name = script.operation;
+      
+      for(Iterator<String> itr=script.inputs.iterator(); itr.hasNext();){
+      	inputs.add(FileData.newFormat(itr.next()));
+      }
+      
+      for(Iterator<String> itr=script.outputs.iterator(); itr.hasNext();){
+      	outputs.add(FileData.newFormat(itr.next()));
+      }
+      
+      this.script = script.filename;
+  	}
+  	
     /**
 		 * Get a string representation of this instance.
 		 */

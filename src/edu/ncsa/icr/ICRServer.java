@@ -142,7 +142,6 @@ public class ICRServer implements Runnable
     String[] tokens;
     Scanner scanner;
     Application application;
-    Operation operation;
     final String extension_final = extension;
     
     //Read in alias list file if available
@@ -197,20 +196,8 @@ public class ICRServer implements Runnable
             applications.add(application);
           }
           
-          //Add a new operation to the application
-          operation = new Operation(script.operation);
-          
-          for(Iterator<String> itr=script.inputs.iterator(); itr.hasNext();){
-          	operation.inputs.add(FileData.newFormat(itr.next()));
-          }
-          
-          for(Iterator<String> itr=script.outputs.iterator(); itr.hasNext();){
-          	operation.outputs.add(FileData.newFormat(itr.next()));
-          }
-          
-          operation.script = path + name + "." + extension;
-          
-          application.add(operation);
+          //Add a new operation to the application      
+          application.add(new Operation(script));
       	}
       }
     }

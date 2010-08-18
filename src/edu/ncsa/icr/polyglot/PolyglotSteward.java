@@ -168,6 +168,11 @@ public class PolyglotSteward extends Polyglot implements Runnable
 					if(task_list != null){		//Execute task list and retrieve result before proceeding
 						//task_list.print();
 						data_last = task_list.execute();
+						
+						if(data_last instanceof CachedFileData){
+							System.out.println("Retrieving intermediary result from " + icr.toString() + ": " + data_last.toString());
+							data_last = icr.retrieveData((CachedFileData)data_last);
+						}
 					}
 					
 					icr = application.icr;

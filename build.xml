@@ -53,12 +53,14 @@
 		</copy>
 		<copy file="build/Polyglot2.jar" todir="${tmp}"/>
 		
-		<property name="icr_port" value="50000"/>
-		<property name="steward_port" value="50001"/>
-		<property name="polyglot_port" value="50002"/>
 		<mkdir dir="${tmp}/tmp"/>
 		<mkdir dir="${tmp}/tmp/ICRServer"/>
 		<mkdir dir="${tmp}/tmp/PolyglotWebServer"/>
+		<mkdir dir="${tmp}/scripts/monkey"/>	
+		
+		<property name="icr_port" value="50000"/>
+		<property name="steward_port" value="50001"/>
+		<property name="polyglot_port" value="50002"/>
 
 		<echo file="${tmp}/ICRServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.ICRServer %1 %2</echo>
 		<echo file="${tmp}/ICRServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.ICRServer $1 $2</echo>
@@ -103,11 +105,17 @@
 		<echo file="${tmp}/PolyglotWebServer.ini" append="true">#PolyglotServer=localhost:${polyglot_port}${line.separator}</echo>
 		<echo file="${tmp}/PolyglotWebServer.ini" append="true">SleepLength=1000</echo>
 
+		<echo file="${tmp}/ICRMonkeyScript.bat">cmd /c java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.ICRMonkeyScript %1 %2 %3 %4 %5 %6 %7 %8</echo>
+
 		<echo file="${tmp}/AutoUpdate.bat">java -cp "%~dp0lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp}/AutoUpdate.sh">java -cp lib/ncsa/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp}/AutoUpdate.ini" append="false">!ini, txt${line.separator}</echo>
-		<echo file="${tmp}/AutoUpdate.ini" append="true">http://isda.ncsa.uiuc.edu/NARA/tmp/Polyglot2.zip</echo>
+		<echo file="${tmp}/AutoUpdate.ini" append="true">http://isda.ncsa.uiuc.edu/~kmchenry/tmp/Polyglot2/Polyglot2.zip</echo>
 		
+		<echo file="${tmp}/scripts/monkey/AutoUpdate.bat">java -cp "%~dp0../../lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
+		<echo file="${tmp}/scripts/monkey/AutoUpdate.ini" append="false">http://isda.ncsa.uiuc.edu/~kmchenry/tmp/Polyglot2/ICRMonkey/${line.separator}</echo>
+		<echo file="${tmp}/scripts/monkey/AutoUpdate.ini" append="true">000_open.zip</echo>
+
 		<zip basedir="${tmp}" destfile="build/Polyglot2.zip"/>
 	</target>
 	

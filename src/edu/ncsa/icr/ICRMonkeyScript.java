@@ -22,6 +22,7 @@ public class ICRMonkeyScript
 	private Vector<int[][]> targets = new Vector<int[][]>();
 	private Vector<Vector<int[]>> positives = new Vector<Vector<int[]>>();
 	private Vector<Vector<int[]>> negatives = new Vector<Vector<int[]>>();
+	private Vector<String> arguments;
 	
 	private int pixel_threshold = 0;
 	private int image_threshold = 0;
@@ -62,6 +63,17 @@ public class ICRMonkeyScript
 		try{
 			robot = new Robot();
 		}catch(Exception e) {e.printStackTrace();}
+	}
+	
+	/**
+	 * Class constructor.
+	 * @param filename the filename of the script to load
+	 * @param arguments the arguments to use when executing the script
+	 */
+	public ICRMonkeyScript(String filename, Vector<String> arguments)
+	{
+		this(filename);
+		this.arguments = arguments;
 	}
 	
 	/**
@@ -290,6 +302,26 @@ public class ICRMonkeyScript
 		addDesktop(image);
 		addText(text);
 	}
+	
+	/**
+	 * Add an argument to be typed in when executed.
+	 * @param index the argument index
+	 */
+	public void addArgument(int index)
+	{
+		addLine("Arg:" + index);
+	}
+	
+	/**
+	 * Add an argument to be typed in when executed (note this versions enforces a required desktop!).
+	 * @param image the desktop before the click
+	 * @param index the argument index
+	 */
+	public void addArgument(BufferedImage image, int index)
+	{
+		addDesktop(image);
+		addArgument(index);
+	}
 
 	/**
 	 * Set a line of the script.
@@ -369,6 +401,14 @@ public class ICRMonkeyScript
 		
 		//Save script
 		Utility.save(path + getName() + ".ms", Utility.collapse(lines));
+		
+		//Create a zip archive of the entire script
+		Vector<String> files = new Vector<String>();
+		
+		files.add(path + getName() + ".ms");
+		files.add(path + getName());
+		
+		Utility.zip(path + getName() + ".zip", files);
 	}
 	
 	/**
@@ -706,8 +746,13 @@ public class ICRMonkeyScript
 						robot.mousePress(InputEvent.BUTTON1_MASK);
 						robot.mouseRelease(InputEvent.BUTTON1_MASK);
 					}
-				}else if(key.equals("Type")){
+				}else if(key.equals("Type") || key.equals("Arg")){
 					text = value;
+					
+					if(key.equals("Arg")){
+						text = arguments.get(Integer.valueOf(text));
+					}
+					
 					if(VERBOSE) System.out.println("Typing \"" + text + "\"");
 					
 					for(int j=0; j<text.length(); j++){
@@ -740,14 +785,16 @@ public class ICRMonkeyScript
 	public static void main(String args[])
 	{
 		String filename = null;
+		Vector<String> script_args = new Vector<String>();
 		int pixel_threshold = 0;
 		int image_threshold = 0;
 		int focus_thief_delay = -1;
 		boolean VERBOSE = false;
 		boolean SHOW_HELP = false;
 		
+		//Debug
 		if(args.length == 0){
-			args = new String[]{"-it", "15", "-ft", "2500", "-v", "C:/Kenton/Data/Temp/ICRMonkey/001_open.ms"};
+			args = new String[]{"-it", "15", "-ft", "2500", "-v", "//isda/kmchenry/public_html/tmp/Polyglot2/ICRMonkey/000_open.zip"};
 			//args = new String[]{"-it", "15", "-v", "C:/Kenton/Data/Temp/ICRMonkey/002_open.ms"};
 		}
 		
@@ -764,7 +811,11 @@ public class ICRMonkeyScript
 			}else if(args[i].equals("-?")){
 				SHOW_HELP = true;
 			}else{
-				filename = args[i];
+				if(filename == null){
+					filename = args[i];
+				}else{
+					script_args.add(args[i]);
+				}
 			}
 		}
 		
@@ -780,7 +831,12 @@ public class ICRMonkeyScript
 		
 		//Run the script
 		if(filename != null){		
-			ICRMonkeyScript script = new ICRMonkeyScript(filename);
+			if(filename.endsWith(".zip")){	//Uncompress before continuing
+				Utility.unzip(Utility.getFilenamePath(filename), filename);
+				filename = filename.substring(0, filename.length() - 4) + ".ms";
+			}
+			
+			ICRMonkeyScript script = new ICRMonkeyScript(filename, script_args);
 			//script.print(); 
 			
 			script.pixel_threshold = pixel_threshold;
