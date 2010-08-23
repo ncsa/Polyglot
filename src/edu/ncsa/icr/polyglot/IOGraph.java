@@ -151,6 +151,20 @@ public class IOGraph<V extends Comparable,E> implements Serializable
   }
 	
 	/**
+	 * Clear the graph.
+	 */
+	public void clear()
+	{
+		vertices.clear();
+		vertex_map.clear();
+	  vertex_string_map.clear();  
+		edges.clear();
+		adjacency_list.clear();
+		weights.clear();
+		active.clear();
+	}
+
+	/**
 	 * Add a vertex to the graph if not already present.
 	 * @param vertex a vertex to add
 	 * @return the index of the vertex

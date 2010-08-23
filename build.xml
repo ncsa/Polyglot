@@ -98,6 +98,9 @@
 		<echo file="${tmp}/PolyglotPanel.ini" append="true">#ICRServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp}/PolyglotPanel.ini" append="true">PolyglotServer=localhost:${polyglot_port}</echo>
 	
+		<echo file="${tmp}/IOGraphPanel.bat">java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel %1</echo>
+		<echo file="${tmp}/IOGraphPanel.sh">java -cp lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel $1</echo>
+
 		<echo file="${tmp}/PolyglotWebServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.PolyglotWebServer</echo>
 		<echo file="${tmp}/PolyglotWebServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebServer</echo>
 		<echo file="${tmp}/PolyglotWebServer.ini" append="false">PolyglotPath=tmp/PolyglotWebServer${line.separator}</echo>

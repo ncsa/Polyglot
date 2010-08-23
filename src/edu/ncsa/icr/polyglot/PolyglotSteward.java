@@ -18,9 +18,14 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	private Vector<ICRClient> icr_clients = new Vector<ICRClient>();
 	private IOGraph<Data,Application> iograph = new IOGraph<Data,Application>();
 	private int application_flexibility = 0;
-	private int port = -1;
 	
-	public PolyglotSteward() {}
+	/**
+	 * Class constructor.
+	 */
+	public PolyglotSteward()
+	{
+		new Thread(this).start();
+	}
 	
 	/**
 	 * Class copy constructor.
@@ -28,6 +33,8 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	 */
 	public PolyglotSteward(PolyglotSteward polyglot)
 	{
+		this();
+		
 		application_flexibility = polyglot.application_flexibility;
 		
 		for(int i=0; i<polyglot.icr_clients.size(); i++){
@@ -170,7 +177,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 						data_last = task_list.execute();
 						
 						if(data_last instanceof CachedFileData){
-							System.out.println("Retrieving intermediary result from " + icr.toString() + ": " + data_last.toString());
+							System.out.println("[Steward]: Retrieving intermediary result " + data_last.toString() + " from " + icr.toString());
 							data_last = icr.retrieveData((CachedFileData)data_last);
 						}
 					}
@@ -272,39 +279,70 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	 */
 	public void listen(int port)
 	{
-		this.port = port;
-		new Thread(this).start();
+		final int port_final = port;
+		
+		new Thread(){
+			public void run(){
+				ServerSocket server_socket = null;
+				Socket client_socket = null;
+				String icr_server;
+				int icr_port;
+				
+				try{
+					server_socket = new ServerSocket(port_final);
+				}catch(Exception e) {e.printStackTrace();}
+				
+		  	//Begin accepting connections
+		  	System.out.println("Listening for ICR Servers...");
+				
+				while(true){
+					try{
+						//Wait for a connection
+						client_socket = server_socket.accept();
+						
+						//Handle this connection
+						icr_server = client_socket.getInetAddress().getHostName();
+						icr_port = (Integer)Utility.readObject(client_socket.getInputStream());
+						add(icr_server, icr_port);
+						System.out.println("[Steward]: Found ICR Server - " + icr_server + ":" + icr_port);
+					}catch(Exception e) {e.printStackTrace();}
+				}
+			}
+		}.start();
 	}
 	
 	/**
-	 * Listen for ICRServers.
+	 * Clean up lost connections.
 	 */
 	public void run()
 	{
-		ServerSocket server_socket = null;
-		Socket client_socket = null;
-		String icr_server;
-		int icr_port;
-		
-		try{
-			server_socket = new ServerSocket(port);
-		}catch(Exception e) {e.printStackTrace();}
-		
-  	//Begin accepting connections
-  	System.out.println("Listening for ICR Servers...");
+		boolean DROPPED_CONNECTION;
 		
 		while(true){
-			try{
-				//Wait for a connection
-				client_socket = server_socket.accept();
-				
-				//Handle this connection
-				icr_server = client_socket.getInetAddress().getHostName();
-				icr_port = (Integer)Utility.readObject(client_socket.getInputStream());
-				add(icr_server, icr_port);
-				System.out.println("Found ICR Server: " + icr_server + ":" + icr_port);
-			}catch(Exception e) {e.printStackTrace();}
-		}  
+			DROPPED_CONNECTION = false;
+			int i = 0;
+			
+			while(i < icr_clients.size()){
+				if(!icr_clients.get(i).isAlive()){
+					System.out.println("[Steward: Lost ICR Server - " + icr_clients.toString());
+					icr_clients.remove(i);
+					DROPPED_CONNECTION = true;
+				}else{
+					i++;
+				}
+			}
+			
+			//Rebuild I/O-graph
+			if(DROPPED_CONNECTION){
+				iograph.clear();
+
+				for(i=0; i<icr_clients.size(); i++){
+					iograph.addGraph(new IOGraph<Data,Application>(icr_clients.get(i)));
+				}
+			}
+			
+			Utility.pause(1000);
+		}
 	}
 	
 	/**

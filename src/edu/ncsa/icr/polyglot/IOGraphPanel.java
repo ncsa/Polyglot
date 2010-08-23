@@ -822,23 +822,38 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   {
   	IOGraph iograph = null;
   	IOGraphPanel iograph_panel = null;
-  	
-  	if(true){
-  		PolyglotClient polyglot = new PolyglotClient("localhost", 31);
-  		iograph_panel = new IOGraphPanel<String,String>(polyglot.getInputOutputGraph(), 2);
-  		polyglot.close();
-  	}else if(false){
-	  	ICRClient icr = new ICRClient("localhost", 30);
-	  	iograph = new IOGraph<Data,Application>(icr);
-	  	icr.close();
-	  	
-    	iograph_panel = new IOGraphPanel<Data,Application>(iograph, 2);
-  	}else if(false){
-    	iograph = new IOGraph<String,String>("jdbc:mysql://isda.ncsa.uiuc.edu/csr", "demo", "demo");
-    	iograph_panel = new IOGraphPanel<String,String>(iograph, 2);
-  	}else{
-    	iograph = new IOGraph<String,String>("http://isda.ncsa.uiuc.edu/NARA/CSR/get_conversions.php");
-    	iograph_panel = new IOGraphPanel<String,String>(iograph, 2);
+		String server;
+		int port, tmpi;  
+		
+  	if(args.length > 0){
+  		tmpi = args[0].lastIndexOf(':');
+  		
+  		if(tmpi != -1){
+  			server = args[0].substring(0, tmpi);
+  			port = Integer.valueOf(args[0].substring(tmpi+1));
+  			
+	  		PolyglotClient polyglot = new PolyglotClient(server, port);
+	  		iograph_panel = new IOGraphPanel<String,String>(polyglot.getInputOutputGraph(), 2);
+	  		polyglot.close();
+  		}
+  	}else{		//Debugging
+	  	if(true){
+	  		PolyglotClient polyglot = new PolyglotClient("localhost", 32);
+	  		iograph_panel = new IOGraphPanel<String,String>(polyglot.getInputOutputGraph(), 2);
+	  		polyglot.close();
+	  	}else if(false){
+		  	ICRClient icr = new ICRClient("localhost", 30);
+		  	iograph = new IOGraph<Data,Application>(icr);
+		  	icr.close();
+		  	
+	    	iograph_panel = new IOGraphPanel<Data,Application>(iograph, 2);
+	  	}else if(false){
+	    	iograph = new IOGraph<String,String>("jdbc:mysql://isda.ncsa.uiuc.edu/csr", "demo", "demo");
+	    	iograph_panel = new IOGraphPanel<String,String>(iograph, 2);
+	  	}else{
+	    	iograph = new IOGraph<String,String>("http://isda.ncsa.uiuc.edu/NARA/CSR/get_conversions.php");
+	    	iograph_panel = new IOGraphPanel<String,String>(iograph, 2);
+	  	}
   	}
  
     JFrame frame = new JFrame("IOGraph Viewer");

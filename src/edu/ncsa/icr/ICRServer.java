@@ -218,10 +218,11 @@ public class ICRServer implements Runnable
   
   /**
    * Execute the given list of tasks.
+   * @param host the host requesting this task execution
    * @param session the session id
    * @param tasks a list of tasks to execute
    */
-  public synchronized void executeTasks(int session, Vector<Task> tasks)
+  public synchronized void executeTasks(String host, int session, Vector<Task> tasks)
   {
   	Task task;
   	Application application;
@@ -258,9 +259,7 @@ public class ICRServer implements Runnable
 			}
 	  	
 	  	command = Script.getCommand(operation.script, source, target, Utility.windowsPath(temp_path) + session);
-	  	
-	  	System.out.println("Session " + session);
-	  	System.out.println("command: " + command);
+	  	System.out.print("[" + host + "](" + session + "): " + command + " ");
 	  	
 	  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
 	  	if(!command.isEmpty()){
@@ -312,7 +311,7 @@ public class ICRServer implements Runnable
   	
   	//Notify a Polyglot steward
   	if(steward_server != null){
-  		System.out.println("\nStarting steward notification thread...\n");
+  		System.out.println("\nStarting steward notification thread...");
   		
 	  	new Thread(){
 	  		public void run(){
@@ -374,8 +373,9 @@ public class ICRServer implements Runnable
 		FileData file_data;
 		CachedFileData cached_file_data;
 		Vector<Task> tasks;
+		String host = client_socket.getInetAddress().getHostName();
 		
-		System.out.println("Session " + session + ": connection established...");
+		System.out.println("[" + host + "](" + session + "): connection established");
 
 		try{
 			InputStream ins = client_socket.getInputStream();
@@ -384,6 +384,7 @@ public class ICRServer implements Runnable
 			//Send applications
 			Utility.writeObject(outs, session);
 			Utility.writeObject(outs, applications);
+			//System.out.println("[" + host + "](" + session + "): applications registry transfered");
 	  	
 			//Process requests
 			while(client_socket.isConnected()){
@@ -396,7 +397,7 @@ public class ICRServer implements Runnable
 						file_data = (FileData)data;
 						cached_file_data = file_data.cache(session, cache_path);
 						Utility.writeObject(outs, cached_file_data);
-						System.out.println("Session " + session + ": received file " + file_data.getName() + "." + file_data.getFormat());
+						System.out.println("[" + host + "](" + session + "): received file " + file_data.getName() + "." + file_data.getFormat());
 					}
 				}else if(message.equals("retrieve")){
 					data = (Data)Utility.readObject(ins);
@@ -407,31 +408,35 @@ public class ICRServer implements Runnable
 						Utility.writeObject(outs, file_data);
 						
 						if(file_data != null){
-							System.out.println("Session " + session + ": sent file " + file_data.getName() + "." + file_data.getFormat());
+							System.out.println("[" + host + "](" + session + "): sent file " + file_data.getName() + "." + file_data.getFormat());
 						}else{
-							System.out.println("Session " + session + ": requested file doesn't exist!");
+							System.out.println("[" + host + "](" + session + "): requested file doesn't exist!");
 						}
 					}
 				}else if(message.equals("execute")){
 					tasks = (Vector<Task>)Utility.readObject(ins);
-					executeTasks(session, tasks);
+					System.out.println("[" + host + "](" + session + "): requested task execution ...");
+					executeTasks(host, session, tasks);
 					Utility.writeObject(outs, new Integer(0));
-					System.out.println("Session " + session + ": executed " + tasks.size() + " tasks");
+					System.out.println("[" + host + "](" + session + "): executed " + tasks.size() + " task(s)");
 				}else if(message.equals("new_session")){
+					System.out.print("[" + host + "](" + session + "): requesting new session");
 					session = session_counter.incrementAndGet();
+					System.out.println(" (" + session + ")");
 					Utility.writeObject(outs, session);
 				}else if(message.equals("is_busy")){
 					Utility.writeObject(outs, BUSY);
+				}else if(message.equals("ping")){
 				}else if(message.equals("close")){
 					Utility.writeObject(outs, "bye");
-					System.out.println("Session " + session + ": closing connection!\n");
+					System.out.println("[" + host + "](" + session + "): closing connection");
 					break;
 				}
 				
 				Utility.pause(500);
 			}
 		}catch(Exception e){
-			System.out.println("Session " + session + ": connection lost!\n");
+			System.out.println("[" + host + "](" + session + "): connection lost!");
 		}
 	}
 
@@ -547,7 +552,7 @@ public class ICRServer implements Runnable
 							tasks.add(new Task(i, output_operation, new Data(), output_file));
 						}
 						
-						server.executeTasks(i, tasks);	//Use application index as the session
+						server.executeTasks("localhost", i, tasks);	//Use application index as the session
 						
 						if(output_file.exists(i, server.cache_path)){
 							results += " -> [OK]\n";

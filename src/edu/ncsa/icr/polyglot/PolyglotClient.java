@@ -46,9 +46,8 @@ public class PolyglotClient extends Polyglot
 	{
 		TreeSet<String> outputs = null;
 		
-		Utility.writeObject(outs, "all_outputs");
-		
-		try{
+		try{		
+			Utility.writeObject(outs, "all_outputs");
 			outputs = (TreeSet<String>)Utility.readObject(ins);
 		}catch(Exception e) {e.printStackTrace();}
 		
@@ -64,10 +63,9 @@ public class PolyglotClient extends Polyglot
 	{
 		TreeSet<String> outputs = null;
 		
-		Utility.writeObject(outs, "outputs");
-		Utility.writeObject(outs, input);
-		
 		try{
+			Utility.writeObject(outs, "outputs");
+			Utility.writeObject(outs, input);
 			outputs = (TreeSet<String>)Utility.readObject(ins);
 		}catch(Exception e) {e.printStackTrace();}
 		
@@ -83,10 +81,9 @@ public class PolyglotClient extends Polyglot
 	{
 		TreeSet<String> outputs = null;
 		
-		Utility.writeObject(outs, "common_outputs");
-		Utility.writeObject(outs, inputs);
-		
 		try{
+			Utility.writeObject(outs, "common_outputs");
+			Utility.writeObject(outs, inputs);
 			outputs = (TreeSet<String>)Utility.readObject(ins);
 		}catch(Exception e) {e.printStackTrace();}
 		
@@ -101,9 +98,8 @@ public class PolyglotClient extends Polyglot
 	{
 		IOGraph<String,String> iograph = null;
 		
-		Utility.writeObject(outs, "input_output_graph");
-		
-		try{
+		try{		
+			Utility.writeObject(outs, "input_output_graph");
 			iograph = (IOGraph<String,String>)Utility.readObject(ins);
 		}catch(Exception e) {e.printStackTrace();}
 		
@@ -121,11 +117,10 @@ public class PolyglotClient extends Polyglot
 		FileData input_file_data = new FileData(input_filename, true);
 		FileData output_file_data;
 		
-		Utility.writeObject(outs, "convert");
-		Utility.writeObject(outs, input_file_data);
-		Utility.writeObject(outs, output_type);
-		
-		try{
+		try{		
+			Utility.writeObject(outs, "convert");
+			Utility.writeObject(outs, input_file_data);
+			Utility.writeObject(outs, output_type);
 			output_file_data = (FileData)Utility.readObject(ins);
 			output_file_data.save(output_path, null);
 		}catch(Exception e) {e.printStackTrace();}

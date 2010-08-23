@@ -113,8 +113,9 @@ public class PolyglotServer implements Runnable
 		TreeSet<String> input_types;
 		TreeSet<String> output_types;
 		IOGraph<String,String> iograph;
-		
-		System.out.println("Session " + session + ": connection established...");
+		String host = client_socket.getInetAddress().getHostName();
+
+		System.out.println("[" + host + "](" + session + "): connection established");
 
 		try{
 			InputStream ins = client_socket.getInputStream();
@@ -131,44 +132,53 @@ public class PolyglotServer implements Runnable
 					output_types = polyglot.getOutputs();
 					
 					Utility.writeObject(outs, output_types);
-					System.out.println("Session " + session + ": sending all output types");
+					System.out.println("[" + host + "](" + session + "): sending all output types");
 				}else if(message.equals("outputs")){
 					input_type = (String)Utility.readObject(ins);
 					output_types = polyglot.getOutputs(input_type);
 					
 					Utility.writeObject(outs, output_types);
-					System.out.println("Session " + session + ": sending output types");
+					System.out.println("[" + host + "](" + session + "): sending output types");
 				}else if(message.equals("common_outputs")){
 					input_types = (TreeSet<String>)Utility.readObject(ins);
 					output_types = polyglot.getOutputs(input_types);
 					
 					Utility.writeObject(outs, output_types);
-					System.out.println("Session " + session + ": sending common output types");
+					System.out.println("[" + host + "](" + session + "): sending common output types");
 				}else if(message.equals("input_output_graph")){
 					iograph = polyglot.getInputOutputGraph();
 					
 					Utility.writeObject(outs, iograph);
-					System.out.println("Session " + session + ": sending input/output graph");
+					System.out.println("[" + host + "](" + session + "): sending input/output graph");
 				}else if(message.equals("convert")){
 					input_file_data = (FileData)Utility.readObject(ins);
+					System.out.println("[" + host + "](" + session + "): received file " + input_file_data.getName() + "." + input_file_data.getFormat());
+					
 					output_type = (String)Utility.readObject(ins);
+					System.out.print("[" + host + "](" + session + "): converting " + input_file_data.getName() + "." + input_file_data.getFormat() + " to " + input_file_data.getName() + "." + output_type + "...");
 					output_file_data = polyglot.convert(input_file_data, output_type);
 					
+					if(output_file_data != null){
+						System.out.println("\t[succeeded]");
+					}else{
+						System.out.println("\t[failed]");
+					}
+					
 					Utility.writeObject(outs, output_file_data);
-					System.out.println("Session " + session + ": converted " + input_file_data.getName() + "." + input_file_data.getFormat() + " to " + output_file_data.getName() + "." + output_file_data.getFormat());
+					System.out.println("[" + host + "](" + session + "): sent file " + output_file_data.getName() + "." + output_file_data.getFormat());
 				}else if(message.equals("close")){
 					Utility.writeObject(outs, "bye");
-					System.out.println("Session " + session + ": closing connection!\n");
+					System.out.println("[" + host + "](" + session + "): closing connection");
 					break;
 				}else{
-					System.out.println("Session " + session + ": unrecognized request, terminating connection!\n");
+					System.out.println("[" + host + "](" + session + "): unrecognized request, terminating connection!");
 					break;
 				}
 				
 				Utility.pause(500);
 			}
 		}catch(Exception e){
-			System.out.println("Session " + session + ": connection lost!\n");
+			System.out.println("[" + host + "](" + session + "): connection lost!");
 		}
 	}
   

@@ -2,6 +2,7 @@ package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.icr.polyglot.PolyglotClient;
 import edu.ncsa.utility.*;
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -308,6 +309,21 @@ public class ICRClient
 		}catch(Exception e) {e.printStackTrace();}
 		
 		return BUSY;
+	}
+	
+	/**
+	 * Check if connection is alive.
+	 * @return true if currently connected
+	 */
+	public synchronized boolean isAlive()
+	{
+		try{
+			Utility.writeObject(outs, "ping");
+		}catch(Exception e){
+			return false;
+		}
+		
+		return true;
 	}
 
 	/**
