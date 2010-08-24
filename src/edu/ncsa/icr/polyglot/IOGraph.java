@@ -231,6 +231,33 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	}
 	
 	/**
+	 * Get the graph vertices.
+	 * @return the vertices
+	 */
+	public Vector<V> getVertices()
+	{
+		return vertices;
+	}
+	
+	/**
+	 * Get the graph edges.
+	 * @return the edges
+	 */
+	public Vector<Vector<E>> getEdges()
+	{
+		return edges;
+	}
+	
+	/**
+	 * Get the adjacency list representing graph edges.
+	 * @return the edge adjacency list
+	 */
+	public Vector<Vector<Integer>> getAdjacencyList()
+	{
+		return adjacency_list;
+	}
+
+	/**
 	 * Set all edges to the given value.
 	 * @return the active edge list
 	 */
@@ -292,15 +319,6 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 		}
 		
 		return active_vertices;
-	}
-
-	/**
-	 * Get the adjacency list representing graph edges.
-	 * @return the edge adjacency list
-	 */
-	public Vector<Vector<Integer>> getAdjacencyList()
-	{
-		return adjacency_list;
 	}
 
 	/**

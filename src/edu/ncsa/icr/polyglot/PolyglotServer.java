@@ -150,6 +150,11 @@ public class PolyglotServer implements Runnable
 					
 					Utility.writeObject(outs, iograph);
 					System.out.println("[" + host + "](" + session + "): sending input/output graph");
+				}else if(message.equals("distributed_input_output_graph")){
+					iograph = polyglot.getDistributedInputOutputGraph();
+					
+					Utility.writeObject(outs, iograph);
+					System.out.println("[" + host + "](" + session + "): sending distributed input/output graph");
 				}else if(message.equals("convert")){
 					input_file_data = (FileData)Utility.readObject(ins);
 					System.out.println("[" + host + "](" + session + "): received file " + input_file_data.getName() + "." + input_file_data.getFormat());

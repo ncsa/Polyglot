@@ -73,6 +73,15 @@ public class ICRClient
 	}
 
 	/**
+	 * Get the server this client is connected to.
+	 * @return the ICR server
+	 */
+	public String getServer()
+	{
+		return server;
+	}
+	
+	/**
 	 * Get the list of applications available on the ICR server.
 	 * @return the available applications/operations
 	 */

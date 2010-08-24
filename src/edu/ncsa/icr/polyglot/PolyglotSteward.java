@@ -109,6 +109,33 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	{
 		return iograph.getIOGraphStrings();
 	}
+	
+	/**
+	 * Get a string only version of this IOGraph encoded with host machines.
+	 * @return a string version of this IOGraph
+	 */
+  public IOGraph<String,String> getDistributedInputOutputGraph()
+  {   
+  	IOGraph<String,String> iograph_strings = new IOGraph<String,String>();
+  	Vector<Data> vertices = iograph.getVertices();
+  	Vector<Vector<Application>> edges = iograph.getEdges();
+  	Vector<Vector<Integer>> adjacency_list = iograph.getAdjacencyList();
+  	String string;
+  	
+  	for(int i=0; i<vertices.size(); i++){
+  		iograph_strings.addVertex(vertices.get(i).toString());
+  	}
+  	
+  	for(int i=0; i<adjacency_list.size(); i++){
+  		for(int j=0; j<adjacency_list.get(i).size(); j++){
+  			string = edges.get(i).get(j).toString();
+  			string += " [" + edges.get(i).get(j).icr.getServer() + "]";
+  			iograph_strings.addEdge(vertices.get(i).toString(), vertices.get(adjacency_list.get(i).get(j)).toString(), string);
+  		}
+  	}
+  	
+  	return iograph_strings;
+  }
 
 	/**
 	 * Set the flexibility when choosing an application where 0=none (default), 1=allow parallel applications with

@@ -107,6 +107,22 @@ public class PolyglotClient extends Polyglot
 	}
 	
 	/**
+	 * Get a string only version of this IOGraph encoded with host machines.
+	 * @return an IOGraph containing the information as strings
+	 */
+	public IOGraph<String,String> getDistributedInputOutputGraph()
+	{
+		IOGraph<String,String> iograph = null;
+		
+		try{		
+			Utility.writeObject(outs, "distributed_input_output_graph");
+			iograph = (IOGraph<String,String>)Utility.readObject(ins);
+		}catch(Exception e) {e.printStackTrace();}
+		
+		return iograph;
+	}
+	
+	/**
 	 * Convert a files format.
 	 * @param input_filename the absolute name of the input file
 	 * @param output_path the output path

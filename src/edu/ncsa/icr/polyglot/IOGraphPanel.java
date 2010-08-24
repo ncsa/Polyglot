@@ -28,11 +28,13 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   private int rings = 1;
   private double theta = 0;
   private double theta_offset = 0;
-  private String edges_alias = "software"; //"edges";
+  private String edges_alias = "edges";
   
 	private IOGraph<V,E> iograph;  
   private Vector<Point2D> vertices = new Vector<Point2D>();
   private Vector<Vector<Integer>> edges = new Vector<Vector<Integer>>();
+  protected Vector<Vector<String>> edge_strings = null;
+  protected Vector<Vector<Color>> edge_colors = null;
   private Vector<Boolean> active_vertices = new Vector<Boolean>();
   private Vector<Vector<Boolean>> active_edges = new Vector<Vector<Boolean>>();
   private TreeSet<String> selected_edges = new TreeSet<String>();
@@ -71,12 +73,31 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   
   /**
    * Class constructor.
+   */
+  public IOGraphPanel()
+  {
+  	this(new IOGraph<V,E>(), 600, 600, 2, null);
+  }
+  
+  /**
+   * Class constructor.
    * @param iograph the I/O-Graph
    * @param rings the number of rings used when displaying the graph
    */
   public IOGraphPanel(IOGraph<V,E> iograph, int rings)
   {
-  	this(iograph, 600, 600, rings);
+  	this(iograph, 600, 600, rings, null);
+  }
+  
+  /**
+   * Class constructor.
+   * @param iograph the I/O-Graph
+   * @param rings the number of rings used when displaying the graph
+   * @param edges_alias the alias to use for edges
+   */
+  public IOGraphPanel(IOGraph<V,E> iograph, int rings, String edges_alias)
+  {
+  	this(iograph, 600, 600, rings, edges_alias);
   }
   
   /**
@@ -88,6 +109,23 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
    */
   public IOGraphPanel(IOGraph<V,E> iograph, int width, int height, int rings)
   {
+  	this(iograph, width, height, rings, null);
+  }
+  
+  /**
+   * Class constructor.
+   * @param iograph the I/O-Graph
+   * @param width the width of the panel
+   * @param height the height of the panel
+   * @param rings the number of rings used when displaying the graph
+   * @param edges_alias the alias to use for edges
+   */
+  public IOGraphPanel(IOGraph<V,E> iograph, int width, int height, int rings, String edges_alias)
+  {  
+  	if(edges_alias != null){
+  		this.edges_alias = edges_alias;
+  	}
+  	
     setGraph(iograph, false);
   	this.rings = rings;
     
@@ -142,7 +180,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   	this.iograph = iograph;
 
     //Build converter JTree    
-    Vector<Vector<String>> edge_strings = iograph.getEdgeStrings();
+    edge_strings = iograph.getEdgeStrings();
     TreeSet<String> set = new TreeSet<String>();
     DefaultMutableTreeNode root = new DefaultMutableTreeNode(Utility.capitalize(edges_alias));
     DefaultMutableTreeNode child;
@@ -370,6 +408,10 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     
     for(int i=0; i<edges.size(); i++){
       for(int j=0; j<edges.get(i).size(); j++){
+      	if(edge_colors != null){
+      		bg.setColor(edge_colors.get(i).get(j));
+      	}
+      	
       	if(active_edges.get(i).get(j)){
 	        x0 = vertices.get(i).x;
 	        y0 = vertices.get(i).y;
@@ -552,7 +594,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     if(BLANK){
     	x = width/2;
     	y = height/2;
-    	msg = "Select from the left pane the " + edges_alias + " to consider.";
+    	msg = "Select " + edges_alias + " to consider in the list to the left.";
       msg_width = fm.stringWidth(msg);
     	bg.setColor(Color.black);
       bg.drawString(msg, x-msg_width/2, y-descent/2+ascent/2);

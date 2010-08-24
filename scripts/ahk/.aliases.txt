@@ -10,9 +10,9 @@
 #FFMPEG
 #GIMP
 #GSkUp
-ImgMgk
+#ImgMgk
 #IrfanView
-#IrfanView-simpletest
+IrfanView-simpletest
 #K3D
 #NCHSwitch
 #NCSA
