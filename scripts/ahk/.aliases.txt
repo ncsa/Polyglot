@@ -11,8 +11,8 @@
 #GIMP
 #GSkUp
 #ImgMgk
-#IrfanView
-IrfanView-simpletest
+IrfanView
+#IrfanView-simpletest
 #K3D
 #NCHSwitch
 #NCSA

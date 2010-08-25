@@ -24,7 +24,7 @@ public class DistributedSoftwareIOGraphPanel extends IOGraphPanel<String,String>
   	TreeSet<String> servers = new TreeSet<String>();
   	Random random = new Random();
   	String server;
-  	int tmpi;
+  	int rgb, r, g, b, tmpi;
   	
   	for(int i=0; i<edge_strings.size(); i++){
   		for(int j=0; j<edge_strings.get(i).size(); j++){
@@ -36,7 +36,12 @@ public class DistributedSoftwareIOGraphPanel extends IOGraphPanel<String,String>
   	}
   	
   	for(Iterator<String> itr = servers.iterator(); itr.hasNext();){
-  		color_map.put(itr.next(), new Color(random.nextInt()));
+      r = random.nextInt() % 55 + 200;
+      g = random.nextInt() % 55 + 200;
+      b = random.nextInt() % 55 + 200;
+      rgb = (r<<16) | (g<<8) | b;
+      
+  		color_map.put(itr.next(), new Color(rgb));
   	}
   	
   	//Assign colors

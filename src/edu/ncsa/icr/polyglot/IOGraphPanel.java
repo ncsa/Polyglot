@@ -62,8 +62,9 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   private JCheckBoxMenuItem menuitem_VIEW_DOMAIN;
   private JMenuItem menuitem_WORKINGSET_ADD;
   private JMenuItem menuitem_WORKINGSET_REMOVE;
-  private Stroke thin_stroke = new BasicStroke(1);
-  private Stroke wide_stroke = new BasicStroke(4);
+  private Stroke thickness1_stroke = new BasicStroke(1);
+  private Stroke thickness2_stroke = new BasicStroke(2);
+  private Stroke thickness4_stroke = new BasicStroke(4);
   
   private boolean SET_VERTEX_POSITIONS = false;
   private boolean VIEW_RANGE = false;
@@ -405,7 +406,8 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     
     //Draw edges
     bg.setColor(new Color(0x00cccccc));
-    
+    ((Graphics2D)bg).setStroke(thickness2_stroke);
+
     for(int i=0; i<edges.size(); i++){
       for(int j=0; j<edges.get(i).size(); j++){
       	if(edge_colors != null){
@@ -425,7 +427,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     
     //Draw range spanning tree
     if(VIEW_RANGE && (source >= 0)){
-    	((Graphics2D)bg).setStroke(wide_stroke);
+    	((Graphics2D)bg).setStroke(thickness4_stroke);
       bg.setColor(new Color(0x00c0c0c0));
       
       for(int i=0; i<paths.size(); i++){
@@ -452,8 +454,6 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
           drawArrow(bg, x0, y0, x1, y1, true);
         }
       }
-      
-	    ((Graphics2D)bg).setStroke(thin_stroke);
     }
     
     //Draw vertices
@@ -502,7 +502,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     }
     
     //Draw path
-    ((Graphics2D)bg).setStroke(wide_stroke);
+    ((Graphics2D)bg).setStroke(thickness4_stroke);
     bg.setColor(new Color(0x00c3a3bd));
     
     for(int i=0; i<highlighted_path.size()-1; i++){
@@ -524,11 +524,11 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
       }
     }
     
-    ((Graphics2D)bg).setStroke(thin_stroke);
+    ((Graphics2D)bg).setStroke(thickness1_stroke);
     
     //Draw selected edges
     if(highlighted_edge_v0 >= 0 && highlighted_edge_v1 >= 0){
-	    ((Graphics2D)bg).setStroke(wide_stroke);
+	    ((Graphics2D)bg).setStroke(thickness4_stroke);
 	    bg.setColor(new Color(0x00fff38f));
 	    
 	    x0 = vertices.get(highlighted_edge_v0).x;
@@ -548,7 +548,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	    	drawArrow(bg, x0, y0, x1, y1, true);
 	    }
 	
-	    ((Graphics2D)bg).setStroke(thin_stroke);
+	    ((Graphics2D)bg).setStroke(thickness1_stroke);
     }
     
     //Redraw converted path points
