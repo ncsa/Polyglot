@@ -100,6 +100,8 @@
 	
 		<echo file="${tmp}/IOGraphPanel.bat">java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel %1</echo>
 		<echo file="${tmp}/IOGraphPanel.sh">java -cp lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel $1</echo>
+		<echo file="${tmp}/DistributedSoftwareIOGraphPanel.bat">java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel %1</echo>
+		<echo file="${tmp}/DistributedSoftwareIOGraphPanel.sh">java -cp lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel $1</echo>
 
 		<echo file="${tmp}/PolyglotWebServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.PolyglotWebServer</echo>
 		<echo file="${tmp}/PolyglotWebServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebServer</echo>
