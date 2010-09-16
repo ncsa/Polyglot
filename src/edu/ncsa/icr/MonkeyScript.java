@@ -12,7 +12,7 @@ import java.util.*;
  * A class representing an ICR monkey script.
  * @author Kenton McHenry
  */
-public class ICRMonkeyScript
+public class MonkeyScript
 {	
 	private Robot robot = null;
 	private String alias;
@@ -35,7 +35,7 @@ public class ICRMonkeyScript
 	/**
 	 * Class constructor.
 	 */
-	public ICRMonkeyScript()
+	public MonkeyScript()
 	{
 		lines.add("#MonkeyScript");
 		
@@ -52,7 +52,7 @@ public class ICRMonkeyScript
 	 * Class constructor.
 	 * @param filename the filename of the script to load
 	 */
-	public ICRMonkeyScript(String filename)
+	public MonkeyScript(String filename)
 	{
 		load(filename);
 		
@@ -70,7 +70,7 @@ public class ICRMonkeyScript
 	 * @param filename the filename of the script to load
 	 * @param arguments the arguments to use when executing the script
 	 */
-	public ICRMonkeyScript(String filename, Vector<String> arguments)
+	public MonkeyScript(String filename, Vector<String> arguments)
 	{
 		this(filename);
 		this.arguments = arguments;
@@ -836,7 +836,7 @@ public class ICRMonkeyScript
 				filename = filename.substring(0, filename.length() - 4) + ".ms";
 			}
 			
-			ICRMonkeyScript script = new ICRMonkeyScript(filename, script_args);
+			MonkeyScript script = new MonkeyScript(filename, script_args);
 			//script.print(); 
 			
 			script.pixel_threshold = pixel_threshold;

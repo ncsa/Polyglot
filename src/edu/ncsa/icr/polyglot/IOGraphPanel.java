@@ -1,7 +1,7 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.*;
-import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.image.*;
 import edu.ncsa.utility.*;
 import javax.swing.*;
@@ -884,7 +884,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	  		iograph_panel = new IOGraphPanel<String,String>(polyglot.getInputOutputGraph(), 2);
 	  		polyglot.close();
 	  	}else if(false){
-		  	ICRClient icr = new ICRClient("localhost", 30);
+		  	SoftwareReuseClient icr = new SoftwareReuseClient("localhost", 30);
 		  	iograph = new IOGraph<Data,Application>(icr);
 		  	icr.close();
 		  	

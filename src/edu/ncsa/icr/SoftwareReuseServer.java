@@ -1,5 +1,5 @@
 package edu.ncsa.icr;
-import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * An Imposed Code Reuse server application.
  * @author Kenton McHenry
  */
-public class ICRServer implements Runnable
+public class SoftwareReuseServer implements Runnable
 {
 	private ServerSocket server_socket;
 	private Vector<Application> applications = new Vector<Application>();
@@ -32,7 +32,7 @@ public class ICRServer implements Runnable
 	/**
 	 * Class constructor.
 	 */
-	public ICRServer()
+	public SoftwareReuseServer()
 	{
 		this(null);
 	}
@@ -41,7 +41,7 @@ public class ICRServer implements Runnable
 	 * Class constructor.
 	 * @param filename the file name of an initialization file
 	 */
-	public ICRServer(String filename)
+	public SoftwareReuseServer(String filename)
 	{		
 		if(filename != null) loadINI(filename);
 		
@@ -178,7 +178,8 @@ public class ICRServer implements Runnable
 
         if(alias_list == null || alias_list.contains(alias)){
         	//Load and parse the script's header
-        	script = new Script(scripts[i].getAbsolutePath(), comment_head);
+        	//script = new Script(scripts[i].getAbsolutePath(), comment_head);
+        	script = new Script(path + scripts[i].getName(), comment_head);
         	
           //Retrieve this application if it already exists
           application = null;
@@ -446,7 +447,7 @@ public class ICRServer implements Runnable
 	 */
 	public static void main(String args[])
 	{
-		ICRServer server = new ICRServer("ICRServer.ini");
+		SoftwareReuseServer server = new SoftwareReuseServer("ICRServer.ini");
 
 		//Test arguments
 		//args = new String[]{"-test", "C:/Kenton/Data/Temp/PolyglotDemo"};

@@ -7,7 +7,7 @@ import java.io.*;
  * Helper classes for the ICR package.
  * @author Kenton McHenry
  */
-public class ICRAuxiliary
+public class SoftwareReuseAuxiliary
 {
 	/**
 	 * An container for some kind of data.
@@ -353,7 +353,7 @@ public class ICRAuxiliary
     public Operation monitor_operation = null;
     public Operation exit_operation = null;
     public Operation kill_operation = null;
-  	public ICRClient icr = null;		//An application belongs to an ICR server (set by the client)!
+  	public SoftwareReuseClient icr = null;		//An application belongs to an ICR server (set by the client)!
 
     /**
      * Class constructor.

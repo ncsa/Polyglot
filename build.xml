@@ -55,6 +55,7 @@
 		
 		<mkdir dir="${tmp}/tmp"/>
 		<mkdir dir="${tmp}/tmp/ICRServer"/>
+		<mkdir dir="${tmp}/tmp/IOGraphWeightsTool"/>
 		<mkdir dir="${tmp}/tmp/PolyglotWebServer"/>
 		<mkdir dir="${tmp}/scripts/monkey"/>	
 		
@@ -103,6 +104,20 @@
 		<echo file="${tmp}/DistributedSoftwareIOGraphPanel.bat">java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel %1</echo>
 		<echo file="${tmp}/DistributedSoftwareIOGraphPanel.sh">java -cp lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel $1</echo>
 
+		<echo file="${tmp}/IOGraphWeightsTool.bat">java -cp "%~dp0lib/ncsa/3DUtilities.jar;%~dp0lib/ncsa/versus.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/MatrixUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphWeightsTool</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="false">ICRServer=localhost:${icr_port}${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">TestPath=tmp/IOGraphWeightsTool${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">RetryLevel=3${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">Threaded=true${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">DataPath=data${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">Adapter=BufferedImageAdapter${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">Extractor=ArrayFeatureExtractor${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">Measure=NormalizedCrossCorrelationMeasure${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">WeightFunction=x${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">InvalidValue=0${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">Extension=jpg</echo>
+		
 		<echo file="${tmp}/PolyglotWebServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.PolyglotWebServer</echo>
 		<echo file="${tmp}/PolyglotWebServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebServer</echo>
 		<echo file="${tmp}/PolyglotWebServer.ini" append="false">PolyglotPath=tmp/PolyglotWebServer${line.separator}</echo>

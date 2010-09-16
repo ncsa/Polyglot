@@ -1,5 +1,5 @@
 package edu.ncsa.icr.polyglot;
-import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;

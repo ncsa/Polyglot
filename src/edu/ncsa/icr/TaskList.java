@@ -1,5 +1,5 @@
 package edu.ncsa.icr;
-import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.utility.*;
 
 import java.util.*;
@@ -10,7 +10,7 @@ import java.util.*;
  */
 public class TaskList
 {
-	private ICRClient icr = null;
+	private SoftwareReuseClient icr = null;
 	private Vector<Application> applications = null;
 	private Vector<Task> tasks = new Vector<Task>();
 	private TreeMap<String,FileData> files = new TreeMap<String,FileData>();
@@ -20,7 +20,7 @@ public class TaskList
 	 * Class constructor.
 	 * @param icr the ICR client we will create tasks for
 	 */
-	public TaskList(ICRClient icr)
+	public TaskList(SoftwareReuseClient icr)
 	{
 		this.icr = icr;
 		applications = icr.getApplications();
@@ -32,7 +32,7 @@ public class TaskList
 	 * @param input_data the input file
 	 * @param output_data the output file
 	 */
-	public TaskList(ICRClient icr, String application_string, Data input_data, Data output_data)
+	public TaskList(SoftwareReuseClient icr, String application_string, Data input_data, Data output_data)
 	{
 		this(icr);
 		add(application_string, input_data, output_data);
@@ -67,7 +67,7 @@ public class TaskList
 	 * Get the associated ICR client.
 	 * @return the associated ICR client
 	 */
-	public ICRClient getICRClient()
+	public SoftwareReuseClient getICRClient()
 	{
 		return icr;
 	}

@@ -1,6 +1,6 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.*;
-import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import java.awt.*;
 import java.awt.geom.*;
 import javax.swing.*;
@@ -237,7 +237,7 @@ public class IOGraphPanel_JUNG<V extends Comparable,E> extends JPanel
   	IOGraphPanel_JUNG iograph_panel = null;
   	
   	if(true){
-	  	ICRClient icr = new ICRClient("localhost", 30);
+	  	SoftwareReuseClient icr = new SoftwareReuseClient("localhost", 30);
 	  	iograph = new IOGraph<Data,Application>(icr);
 	  	icr.close();
 	  	

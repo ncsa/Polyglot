@@ -9,10 +9,10 @@ import java.io.*;
 import java.util.*;
 
 /**
- * A program for creating AHK scripts (monkey see, monkey do)
+ * A program for creating monkey scripts (monkey see, monkey do)
  * @author Kenton McHenry
  */
-public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListener, MouseMotionListener, KeyListener, Runnable
+public class MonkeyScriptSession_DS extends JPanel implements ActionListener, MouseListener, MouseMotionListener, KeyListener, Runnable
 {
 	private String data_path = "./";
 	private String output_path = "./";
@@ -27,7 +27,7 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 	private Robot robot;
 	private int panel_width;
 	private int panel_height;
-	private ICRMonkeyScript script = null;
+	private MonkeyScript script = null;
 	
 	private String[] operations = new String[]{"open", "save", "convert", "exit"};
 
@@ -50,7 +50,7 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 	 * Class constructor.
 	 * @param filename the name of the *.ini file to load
 	 */
-	public ICRMonkey_DS(String filename)
+	public MonkeyScriptSession_DS(String filename)
 	{
 		Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
 
@@ -363,7 +363,7 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 	  	setCapturing(true);		//Undo capturing halt from popup menu
 			
 			if(Utility.contains(operations, menuitem_text)){
-				script = new ICRMonkeyScript();
+				script = new MonkeyScript();
 				script.setOperation(menuitem_text);
 
 				do{		//Find the next available number to assign as a script name
@@ -567,7 +567,7 @@ public class ICRMonkey_DS extends JPanel implements ActionListener, MouseListene
 		int screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length;
 		
 		if(screens > 1){
-			ICRMonkey_DS icr_monkey = new ICRMonkey_DS("ICRMonkey_DS.ini");
+			MonkeyScriptSession_DS icr_monkey = new MonkeyScriptSession_DS("ICRMonkey_DS.ini");
 			Dimension screen_size = Toolkit.getDefaultToolkit().getScreenSize();
 
 	    JFrame frame = new JFrame("ICR Monkey Desktop");

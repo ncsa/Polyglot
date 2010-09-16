@@ -1,8 +1,7 @@
 package edu.ncsa.icr;
-import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.icr.polyglot.PolyglotClient;
 import edu.ncsa.utility.*;
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -12,7 +11,7 @@ import java.util.concurrent.atomic.*;
  * An Imposed Code Reuse client interface.
  * @author Kenton McHenry
  */
-public class ICRClient
+public class SoftwareReuseClient
 {
 	private String server;
 	private int port;
@@ -28,7 +27,7 @@ public class ICRClient
 	 * @param server the name of the ICR server
 	 * @param port the port used for the connection
 	 */
-	public ICRClient(String server, int port)
+	public SoftwareReuseClient(String server, int port)
 	{				
 		this.server = server;
 		this.port = port;
@@ -58,7 +57,7 @@ public class ICRClient
 	 * Class copy constructor.
 	 * @param icr an ICR client session to copy
 	 */
-	public ICRClient(ICRClient icr)
+	public SoftwareReuseClient(SoftwareReuseClient icr)
 	{
 		this(icr.server, icr.port);
 	}
@@ -364,7 +363,7 @@ public class ICRClient
 	 * Debug tests for an ICRClient.
 	 * @param icr an ICR client
 	 */
-	public static void debug(ICRClient icr)
+	public static void debug(SoftwareReuseClient icr)
 	{
 		String debug_input_path = "C:/Kenton/Data/NARA/DataSets/PolyglotDemo/";
 		String debug_output_path = "C:/Kenton/Data/Temp/";
@@ -484,7 +483,7 @@ public class ICRClient
     }
     
 	  //Establish connection
-		ICRClient icr = new ICRClient(server, port);
+		SoftwareReuseClient icr = new SoftwareReuseClient(server, port);
 		
 		//Process ICR requests
 		if(DEBUG){

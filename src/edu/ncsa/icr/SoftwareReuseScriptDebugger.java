@@ -1,5 +1,5 @@
 package edu.ncsa.icr;
-import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.util.*;
@@ -8,7 +8,7 @@ import java.util.*;
  * A tool for debugging ICR scripts.
  * @author Kenton McHenry
  */
-public class ICRScriptDebugger
+public class SoftwareReuseScriptDebugger
 {
 	/**
 	 * Check if the specified file exists.

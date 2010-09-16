@@ -1,7 +1,7 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.*;
-import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.ServerSocket;
@@ -15,7 +15,7 @@ import java.util.*;
  */
 public class PolyglotSteward extends Polyglot implements Runnable
 {
-	private Vector<ICRClient> icr_clients = new Vector<ICRClient>();
+	private Vector<SoftwareReuseClient> icr_clients = new Vector<SoftwareReuseClient>();
 	private IOGraph<Data,Application> iograph = new IOGraph<Data,Application>();
 	private int application_flexibility = 0;
 	
@@ -38,7 +38,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		application_flexibility = polyglot.application_flexibility;
 		
 		for(int i=0; i<polyglot.icr_clients.size(); i++){
-			add(new ICRClient(polyglot.icr_clients.get(i)));
+			add(new SoftwareReuseClient(polyglot.icr_clients.get(i)));
 		}
 	}
 	
@@ -55,7 +55,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	 * Add an ICR client.
 	 * @param icr an ICR client
 	 */
-	public void add(ICRClient icr)
+	public void add(SoftwareReuseClient icr)
 	{
 		icr_clients.add(icr);
 		iograph.addGraph(new IOGraph<Data,Application>(icr));
@@ -68,7 +68,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	 */
 	public void add(String server, int port)
 	{
-		ICRClient icr = new ICRClient(server, port);
+		SoftwareReuseClient icr = new SoftwareReuseClient(server, port);
 		add(icr);
 	}
 	
@@ -162,7 +162,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		Vector<Application> application_options = null;
 		FileData input, output;
 		Data data_last, data_next;
-		ICRClient icr = null;
+		SoftwareReuseClient icr = null;
 		String tmps;
 				
 		if(conversions != null){

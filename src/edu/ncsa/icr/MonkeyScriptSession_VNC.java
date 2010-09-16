@@ -10,10 +10,10 @@ import java.util.*;
 import com.tightvnc.vncviewer.*;
 
 /**
- * A program for creating AHK scripts (monkey see, monkey do)
+ * A program for creating monkey scripts (monkey see, monkey do)
  * @author Kenton McHenry
  */
-public class ICRMonkey_VNC extends Component implements ActionListener, MouseListener, MouseMotionListener, KeyListener
+public class MonkeyScriptSession_VNC extends Component implements ActionListener, MouseListener, MouseMotionListener, KeyListener
 {
 	private Vector<String> servers = new Vector<String>();
 	private String data_path = "./";
@@ -26,7 +26,7 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	private VncViewer vnc;
 	private int screen_width;
 	private int screen_height;
-	private ICRMonkeyScript script = null;
+	private MonkeyScript script = null;
 
 	private String[] operations = new String[]{"open", "save", "convert", "exit"};
 	
@@ -54,7 +54,7 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	 * Class constructor.
 	 * @param filename the name of the *.ini file to load
 	 */
-	public ICRMonkey_VNC(String filename)
+	public MonkeyScriptSession_VNC(String filename)
 	{
 		int index = 0;
 		
@@ -325,7 +325,7 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 			menuitem_text = menuitem.getText();
 
 			if(Utility.contains(operations, menuitem_text)){
-				script = new ICRMonkeyScript();
+				script = new MonkeyScript();
 				script.setOperation(menuitem.getText());
 
 				do{		//Find the next available number to assign as a script name
@@ -506,6 +506,6 @@ public class ICRMonkey_VNC extends Component implements ActionListener, MouseLis
 	 */
 	public static void main(String[] args)
 	{
-		ICRMonkey_VNC monkey = new ICRMonkey_VNC("ICRMonkey_VNC.ini");
+		MonkeyScriptSession_VNC monkey = new MonkeyScriptSession_VNC("ICRMonkey_VNC.ini");
 	}
 }

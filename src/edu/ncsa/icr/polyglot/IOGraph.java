@@ -1,12 +1,13 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.*;
-import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
 import java.sql.*;
 import java.util.*;
+import java.util.zip.*;
 
 public class IOGraph<V extends Comparable,E> implements Serializable
 {
@@ -25,7 +26,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	 * Class constructor.
 	 * @param icr an ICR client
 	 */
-	public IOGraph(ICRClient icr)
+	public IOGraph(SoftwareReuseClient icr)
 	{
 		Vector<Application> applications = icr.getApplications();
 		Application application;
@@ -115,7 +116,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
   public IOGraph(String url)
   {   
   	HttpURLConnection conn = null;
-    BufferedReader ins;
+    BufferedReader ins = null;
   	String application, input_format, output_format;
   	String line;
   	int tmpi;
@@ -125,7 +126,12 @@ public class IOGraph<V extends Comparable,E> implements Serializable
     try{
       conn = (HttpURLConnection)new URL(url).openConnection();
       conn.connect();
-      ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+      
+      if(url.endsWith(".gz")){
+      	ins = new BufferedReader(new InputStreamReader(new GZIPInputStream(conn.getInputStream())));
+      }else{
+      	ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+      }
      
       while((line = ins.readLine()) != null){
 				tmpi = line.lastIndexOf(" ");
@@ -1195,7 +1201,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
     int count = 0;
     
     if(true){
-    	ICRClient icr = new ICRClient("localhost", 30);
+    	SoftwareReuseClient icr = new SoftwareReuseClient("localhost", 30);
     	iograph = new IOGraph<Data,Application>(icr);
     	icr.close();
     }else{
