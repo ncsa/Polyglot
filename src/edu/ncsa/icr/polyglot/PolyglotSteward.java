@@ -413,7 +413,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#'){
-	        	if(key.equals("ICRServer")){
+	        	if(key.equals("SoftwareReuseServer")){
 	        		tmpi = value.lastIndexOf(':');
 	        		
 	        		if(tmpi != -1){

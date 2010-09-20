@@ -190,7 +190,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
     };
     
     //Load data
-    loadIni(filename);
+    loadINI(filename);
     iograph = polyglot.getIOGraph();
     loadFolder(data_path, extension);
   }
@@ -199,7 +199,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	 * Load an initialization file.
 	 * @param filename the name of the *.ini file
 	 */
-	public void loadIni(String filename)
+	public void loadINI(String filename)
 	{
 	  try{
 	    BufferedReader ins = new BufferedReader(new InputStreamReader(new FileInputStream(filename)));
@@ -215,7 +215,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#' && key.charAt(0) != ';'){
-	          if(key.equals("ICRServer")){
+	          if(key.equals("SoftwareReuseServer")){
           		tmpi = value.lastIndexOf(':');
 	        		
 	        		if(tmpi != -1){

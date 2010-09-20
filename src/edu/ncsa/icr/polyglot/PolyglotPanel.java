@@ -44,7 +44,7 @@ public class PolyglotPanel extends FilePanel
 	        if(key.charAt(0) != '#'){
 	          if(key.equals("DefaultPath")){
 	          	path = value + "/";
-	          }else if(key.equals("ICRServer")){
+	          }else if(key.equals("SoftwareReuseServer")){
 	          	if(polyglot == null || !(polyglot instanceof PolyglotSteward)){
 	          		polyglot = new PolyglotSteward();
 	          	}

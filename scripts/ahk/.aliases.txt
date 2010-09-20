@@ -10,7 +10,7 @@
 #FFMPEG
 #GIMP
 #GSkUp
-#ImgMgk
+ImgMgk
 IrfanView
 #IrfanView-simpletest
 #K3D

@@ -26,10 +26,10 @@ procedure BuildDefaultConfiguration;
 var
   output: string;
 begin
-  output := ExpandConstant('{app}') + '\ICRServer.bat'
-  SaveStringToFile(output, 'java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1024m edu.ncsa.icr.ICRServer %1 %2', false);
+  output := ExpandConstant('{app}') + '\SoftwareReuseServer.bat'
+  SaveStringToFile(output, 'java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1024m edu.ncsa.icr.SoftwareReuseServer %1 %2', false);
 
-  output := ExpandConstant('{app}') + '\ICRServer.ini'
+  output := ExpandConstant('{app}') + '\SoftwareReuseServer.ini'
   SaveStringToFile(output, 'RootPath=tmp' + #10, false);
   SaveStringToFile(output, 'Port=30' + #10, true);
   SaveStringToFile(output, 'MaxOperationTime=30000' + #10, true);

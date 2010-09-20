@@ -506,6 +506,6 @@ public class MonkeyScriptSession_VNC extends Component implements ActionListener
 	 */
 	public static void main(String[] args)
 	{
-		MonkeyScriptSession_VNC monkey = new MonkeyScriptSession_VNC("ICRMonkey_VNC.ini");
+		MonkeyScriptSession_VNC monkey = new MonkeyScriptSession_VNC("MonkeyScriptSession_VNC.ini");
 	}
 }

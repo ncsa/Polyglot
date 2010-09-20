@@ -9,7 +9,7 @@ import java.io.*;
 import java.util.*;
 
 /**
- * A class representing an ICR monkey script.
+ * A class representing an monkey script.
  * @author Kenton McHenry
  */
 public class MonkeyScript
@@ -779,7 +779,7 @@ public class MonkeyScript
 	}
 	
 	/**
-	 * A main to execute an ICR monkey script from the command line.
+	 * A main to execute a monkey script from the command line.
 	 * @param args command line arguments
 	 */
 	public static void main(String args[])
@@ -794,8 +794,8 @@ public class MonkeyScript
 		
 		//Debug
 		if(args.length == 0){
-			args = new String[]{"-it", "15", "-ft", "2500", "-v", "//isda/kmchenry/public_html/tmp/Polyglot2/ICRMonkey/000_open.zip"};
-			//args = new String[]{"-it", "15", "-v", "C:/Kenton/Data/Temp/ICRMonkey/002_open.ms"};
+			args = new String[]{"-it", "15", "-ft", "2500", "-v", "//isda/kmchenry/public_html/tmp/Polyglot2/MonkeyScript/000_open.zip"};
+			//args = new String[]{"-it", "15", "-v", "C:/Kenton/Data/Temp/MonkeyScript/002_open.ms"};
 		}
 		
 		//Parse arguments
@@ -821,7 +821,7 @@ public class MonkeyScript
 		
 		//Display help
 		if(args.length == 0 || SHOW_HELP){
-			System.out.println("Usage: ICRMonkeyScript [options] file.ms\n");
+			System.out.println("Usage: MonkeyScript [options] file.ms\n");
 			System.out.println("  -pt x: set the threshold to use when comparing two pixels");
 			System.out.println("  -it x: set the threshold to use when comparing two images");
 			System.out.println("  -ft x: set how long to wait before activating a focus thief");

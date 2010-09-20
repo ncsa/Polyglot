@@ -332,7 +332,7 @@ public class SoftwareReuseServer implements Runnable
   	}
   	
   	//Begin accepting connections
-  	System.out.println("\nICR Server is running...\n");
+  	System.out.println("\nSoftware reuse server is running...\n");
 		RUNNING = true;
 		
 		while(RUNNING){
@@ -447,10 +447,10 @@ public class SoftwareReuseServer implements Runnable
 	 */
 	public static void main(String args[])
 	{
-		SoftwareReuseServer server = new SoftwareReuseServer("ICRServer.ini");
+		SoftwareReuseServer server = new SoftwareReuseServer("SoftwareReuseServer.ini");
 
 		//Test arguments
-		//args = new String[]{"-test", "C:/Kenton/Data/Temp/PolyglotDemo"};
+		//args = new String[]{"-test", "../../Data/Temp/PolyglotDemo"};
 
 		if(args.length > 0){
 			if(args[0].equals("-test")){

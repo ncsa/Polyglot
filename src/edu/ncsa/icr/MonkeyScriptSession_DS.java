@@ -559,7 +559,7 @@ public class MonkeyScriptSession_DS extends JPanel implements ActionListener, Mo
 	}
 
 	/**
-	 * Start the ICRMonkey.
+	 * Start the monkey script session.
 	 * @param args command line arguments
 	 */
 	public static void main(String args[])
@@ -567,10 +567,10 @@ public class MonkeyScriptSession_DS extends JPanel implements ActionListener, Mo
 		int screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length;
 		
 		if(screens > 1){
-			MonkeyScriptSession_DS icr_monkey = new MonkeyScriptSession_DS("ICRMonkey_DS.ini");
+			MonkeyScriptSession_DS icr_monkey = new MonkeyScriptSession_DS("MonkeyScriptSession_DS.ini");
 			Dimension screen_size = Toolkit.getDefaultToolkit().getScreenSize();
 
-	    JFrame frame = new JFrame("ICR Monkey Desktop");
+	    JFrame frame = new JFrame("Monkey Script Session");
 	    frame.add(icr_monkey);
 	    frame.setResizable(false);
 	    frame.pack();
@@ -578,7 +578,7 @@ public class MonkeyScriptSession_DS extends JPanel implements ActionListener, Mo
 	    frame.setLocation((int)screen_size.getWidth(), 0);
 	    frame.setVisible(true);
 		}else{
-			System.out.println("Sorry, ICRMonkey_DS requires two screens!");
+			System.out.println("Sorry, MonkeyScriptSession_DS requires two screens!");
 		}
 	}
 }

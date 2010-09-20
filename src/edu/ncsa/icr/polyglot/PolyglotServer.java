@@ -51,7 +51,7 @@ public class PolyglotServer implements Runnable
 	        if(key.charAt(0) != '#'){
 	        	if(key.equals("Port")){
 	        		this.port = Integer.valueOf(value);
-	          }else if(key.equals("ICRServer")){
+	          }else if(key.equals("SoftwareReuseServer")){
           		tmpi = value.lastIndexOf(':');
 	        		
 	        		if(tmpi != -1){

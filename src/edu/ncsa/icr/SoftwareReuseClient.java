@@ -49,7 +49,7 @@ public class SoftwareReuseClient
 			//System.out.println("Connected (session=" + session + ")...\n");
 			//Application.print(applications);	
 		}catch(Exception e){
-			System.out.println("Unable to connect to ICR server: " + server);
+			System.out.println("Unable to connect to software reuse server: " + server);
 		}
 	}
 	
@@ -446,7 +446,7 @@ public class SoftwareReuseClient
 				
 		//Read in *.ini file
 	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader("ICRClient.ini"));
+	    BufferedReader ins = new BufferedReader(new FileReader("SoftwareReuseClient.ini"));
 	    String key, value;
 	    int tmpi;
 	    
@@ -456,7 +456,7 @@ public class SoftwareReuseClient
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#'){
-	        	if(key.equals("ICRServer")){
+	        	if(key.equals("SoftwareReuseServer")){
 	          	tmpi = value.lastIndexOf(':');
 	        		
 	        		if(tmpi != -1){

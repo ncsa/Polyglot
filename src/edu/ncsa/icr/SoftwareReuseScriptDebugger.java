@@ -55,7 +55,7 @@ public class SoftwareReuseScriptDebugger
 		}
 
 		if(args.length < 2){
-			System.out.println("Usage: ICRScriptDebugger script_name data_path");
+			System.out.println("Usage: SoftwareReuseScriptDebugger script_name data_path");
 		}else{
 			script_filename = args[0];
 			data_path = args[1] + "/";
