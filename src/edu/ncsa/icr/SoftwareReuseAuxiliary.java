@@ -799,7 +799,8 @@ public class SoftwareReuseAuxiliary
   	public static String getCommand(String script)
   	{
 			if(script.endsWith(".ahk")){
-				return script.substring(0, script.lastIndexOf('.')) + ".exe";
+				//return script.substring(0, script.lastIndexOf('.')) + ".exe";
+				return "AutoHotKey " + script;
 			}else if(script.endsWith(".applescript")){
 				return "osascript " + script;
 			}
