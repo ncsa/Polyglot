@@ -861,17 +861,6 @@ public class SoftwareReuseAuxiliary
   	}
   	
   	/**
-  	 * Execute a script.
-  	 * @param script the absolute filename of the script
-  	 */
-  	public static void execute(String script)
-		{
-		  try{
-		    Runtime.getRuntime().exec(Script.getCommand(script));
-		  }catch(Exception e) {}
-		}
-  	
-  	/**
   	 * Execute this script.
   	 * @param command the command executing the script
   	 * @param max_operation_time the maximum allowed time to run (in milli-seconds, -1 indicates forever)
@@ -910,26 +899,45 @@ public class SoftwareReuseAuxiliary
 		}
 
 		/**
-  	 * Execute this script.
-  	 * @param source the first argument to pass to the script
-  	 * @param target the second argument to pass to the script
-  	 * @param temp_path the third argument to pass to the script
-  	 * @param max_operation_time the maximum allowed time to run (in milli-seconds)
-  	 * @return true if the operation completed within the given time frame
-  	 */
-  	public boolean executeAndWait(String source, String target, String temp_path, int max_operation_time)
-  	{
-  		String command = getCommand(filename, source, target, temp_path);
-  		
-  		return executeAndWait(command, max_operation_time);
-  	}
-  	
-  	/**
-  	 * Execute this script.
-  	 */
-  	public void executeAndWait()
-  	{
-  		executeAndWait(null, null, null, 10000);
-  	}
+		 * Execute this script.
+		 * @param source the first argument to pass to the script
+		 * @param target the second argument to pass to the script
+		 * @param temp_path the third argument to pass to the script
+		 * @param max_operation_time the maximum allowed time to run (in milli-seconds)
+		 * @return true if the operation completed within the given time frame
+		 */
+		public boolean executeAndWait(String source, String target, String temp_path, int max_operation_time)
+		{
+			String command = getCommand(filename, source, target, temp_path);
+			
+			return executeAndWait(command, max_operation_time);
+		}
+
+		/**
+		 * Execute this script.
+		 */
+		public void executeAndWait()
+		{
+			executeAndWait(null, null, null, 10000);
+		}
+
+		/**
+		 * Execute a script.
+		 * @param script the absolute filename of the script
+		 */
+		public static void execute(String script)
+		{
+		  try{
+		    Runtime.getRuntime().exec(Script.getCommand(script));
+		  }catch(Exception e) {}
+		}
+
+		/**
+		 * Execute this script.
+		 */
+		public void execute()
+		{
+		  execute(filename);
+		}
   }
 }

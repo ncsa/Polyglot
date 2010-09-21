@@ -80,8 +80,10 @@
 		<echo file="${tmp}/SoftwareReuseClient.ini" append="false">SoftwareReuseServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp}/SoftwareReuseClient.ini" append="true">#DefaultPath=data</echo>
 
-		<echo file="${tmp}/SoftwareReuseScriptDebugger.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseScriptDebugger %1 %2</echo>
+		<echo file="${tmp}/SoftwareReuseScriptDebugger.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseScriptDebugger %*</echo>
 		<echo file="${tmp}/SoftwareReuseScriptDebugger.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.SoftwareReuseScriptDebugger $1 $2</echo>
+		<echo file="${tmp}/SoftwareReuseScriptDebugger.ini" append="false">DataPath=data${line.separator}</echo>
+		<echo file="${tmp}/SoftwareReuseScriptDebugger.ini" append="true">SearchPath=C:/Program Files;C:/Program Files (x86)</echo>
 		
 		<echo file="${tmp}/PolyglotServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
 		<echo file="${tmp}/PolyglotServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>

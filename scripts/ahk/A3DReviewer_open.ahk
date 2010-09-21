@@ -5,7 +5,7 @@
 ;Run program if not already running
 IfWinNotExist, Adobe 3D Reviewer
 {
-  Run, C:\Program Files\Adobe\Acrobat 9.0\Acrobat\plug_ins3d\prc\A3DReviewer.exe
+  Run, C:\Program Files (x86)\Adobe\Acrobat 9.0\Acrobat\plug_ins3d\prc\A3DReviewer.exe
   WinWait, Adobe 3D Reviewer
 }
 
