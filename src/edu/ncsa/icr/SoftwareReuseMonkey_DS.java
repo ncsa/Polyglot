@@ -12,7 +12,7 @@ import java.util.*;
  * A program for creating monkey scripts (monkey see, monkey do)
  * @author Kenton McHenry
  */
-public class MonkeyScriptSession_DS extends JPanel implements ActionListener, MouseListener, MouseMotionListener, KeyListener, Runnable
+public class SoftwareReuseMonkey_DS extends JPanel implements ActionListener, MouseListener, MouseMotionListener, KeyListener, Runnable
 {
 	private String data_path = "./";
 	private String output_path = "./";
@@ -50,7 +50,7 @@ public class MonkeyScriptSession_DS extends JPanel implements ActionListener, Mo
 	 * Class constructor.
 	 * @param filename the name of the *.ini file to load
 	 */
-	public MonkeyScriptSession_DS(String filename)
+	public SoftwareReuseMonkey_DS(String filename)
 	{
 		Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
 
@@ -567,7 +567,7 @@ public class MonkeyScriptSession_DS extends JPanel implements ActionListener, Mo
 		int screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length;
 		
 		if(screens > 1){
-			MonkeyScriptSession_DS icr_monkey = new MonkeyScriptSession_DS("MonkeyScriptSession_DS.ini");
+			SoftwareReuseMonkey_DS icr_monkey = new SoftwareReuseMonkey_DS("MonkeyScriptSession_DS.ini");
 			Dimension screen_size = Toolkit.getDefaultToolkit().getScreenSize();
 
 	    JFrame frame = new JFrame("Monkey Script Session");

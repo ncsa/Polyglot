@@ -2,7 +2,7 @@
 ;model
 ;skp
 
-;Parse input format
+;Parse output format
 arg1 = %1%
 StringGetPos, index, arg1, ., R
 ifLess, index, 0, ExitApp
