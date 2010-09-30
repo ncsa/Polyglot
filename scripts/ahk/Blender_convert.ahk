@@ -24,4 +24,4 @@ Blender.Quit();
 ), %tmp_path%_Blender_convert.py
 
 ;Run program
-RunWait, "C:\Program Files\Blender Foundation\Blender\blender.exe" -P "%tmp_path%_Blender_convert.py"
+RunWait, "C:\Program Files (x86)\Blender Foundation\Blender\blender.exe" -P "%tmp_path%_Blender_convert.py"

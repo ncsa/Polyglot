@@ -506,6 +506,6 @@ public class SoftwareReuseMonkey_VNC extends Component implements ActionListener
 	 */
 	public static void main(String[] args)
 	{
-		SoftwareReuseMonkey_VNC monkey = new SoftwareReuseMonkey_VNC("MonkeyScriptSession_VNC.ini");
+		SoftwareReuseMonkey_VNC monkey = new SoftwareReuseMonkey_VNC("SoftwareReuseMonkey_VNC.ini");
 	}
 }

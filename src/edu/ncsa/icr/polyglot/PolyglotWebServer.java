@@ -36,8 +36,8 @@ public class PolyglotWebServer
           
           if(key.charAt(0) != '#'){
             if(key.equals("PolyglotPath")){
-              path = value + "\\";
-	          }else if(key.equals("ICRServer")){
+              path = Utility.unixPath(value) + "/";
+	          }else if(key.equals("SoftwareReuseServer")){
 	          	if(polyglot == null || !(polyglot instanceof PolyglotSteward)){
 	          		polyglot = new PolyglotSteward();
 	          	}
@@ -142,7 +142,7 @@ public class PolyglotWebServer
               	tasks = new Vector<String>();
               	
                 try{
-                  BufferedReader ins = new BufferedReader(new FileReader(path + "uploads\\" + folder + "\\tasks"));
+                  BufferedReader ins = new BufferedReader(new FileReader(path + "uploads/" + folder + "/tasks"));
                   
                   while((line=ins.readLine()) != null){
                     tasks.add(line);
@@ -171,7 +171,7 @@ public class PolyglotWebServer
                 timestamp = (new Long((new Date()).getTime())).toString();
               }
               
-              MOVED_FOLDER = sub1_uploads[i].renameTo(new File(path + "downloads\\" + folder + "_" + timestamp));
+              MOVED_FOLDER = sub1_uploads[i].renameTo(new File(path + "downloads/" + folder + "_" + timestamp));
               
               //Update jobs log (must be done after folder has been moved for web page to use it!)
               try{
@@ -203,7 +203,7 @@ public class PolyglotWebServer
           				String filename_target;
           				
 		              if(MOVED_FOLDER_final){
-		                String job_log = path + "downloads\\" + folder_final + "_" + timestamp_final + "\\" + "log";
+		                String job_log = path + "downloads/" + folder_final + "_" + timestamp_final + "/" + "log";
 		                Utility.println(job_log, "Job started on " + date_final.toString() + ":\n");
 		
 		                for(int j=0; j<tasks_final.size(); j++){  
@@ -213,13 +213,13 @@ public class PolyglotWebServer
 		                	output_format = scanner.next();
 		                	
 		                  //Apply task to each valid input file
-		                  File dir_downloads = new File(path + "downloads\\" + folder_final + "_" + timestamp_final);
+		                  File dir_downloads = new File(path + "downloads/" + folder_final + "_" + timestamp_final);
 		                  File[] sub1_downloads = dir_downloads.listFiles(filename_filter_final);
 		                  
 		                  if(sub1_downloads != null){
 		                    for(int k=0; k<sub1_downloads.length; k++){
 		                      filename = sub1_downloads[k].getName();
-		                      filename_path = path + "downloads\\" + folder_final + "_" + timestamp_final + "\\";
+		                      filename_path = path + "downloads/" + folder_final + "_" + timestamp_final + "/";
 		                      filename_root = Utility.getFilenameName(filename);
 		                      filename_ext = Utility.getFilenameExtension(filename);
 		                                            
@@ -251,7 +251,7 @@ public class PolyglotWebServer
 		                
 		                //Create file "complete", indicating the job is finished
 		                try{
-		                  BufferedWriter outs = new BufferedWriter(new FileWriter(path + "downloads\\" + folder_final + "_" + timestamp_final + "\\" + "complete"));
+		                  BufferedWriter outs = new BufferedWriter(new FileWriter(path + "downloads/" + folder_final + "_" + timestamp_final + "/" + "complete"));
 		                  outs.close();
 		                }catch(Exception e) {e.printStackTrace();}
 		              }

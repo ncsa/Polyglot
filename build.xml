@@ -48,6 +48,9 @@
 		<copy todir="${tmp}/scripts">
 			<fileset dir="scripts"/>
 		</copy>
+		<copy todir="${tmp}/web/polyglot">
+			<fileset dir="web/polyglot"/>
+		</copy>
 		<copy todir="${tmp}/javadocs">
 			<fileset dir="${javadocs}"/>
 		</copy>
@@ -57,12 +60,18 @@
 		<mkdir dir="${tmp}/tmp/SoftwareReuseServer"/>
 		<mkdir dir="${tmp}/tmp/IOGraphWeightsTool"/>
 		<mkdir dir="${tmp}/tmp/PolyglotWebServer"/>
+		<mkdir dir="${tmp}/tmp/MonkeyScript"/>
 		<mkdir dir="${tmp}/scripts/monkey"/>	
 		
 		<property name="icr_port" value="50000"/>
 		<property name="steward_port" value="50001"/>
 		<property name="polyglot_port" value="50002"/>
-
+		
+		<echo file="${tmp}/SoftwareReuseScriptDebugger.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseScriptDebugger %*</echo>
+		<echo file="${tmp}/SoftwareReuseScriptDebugger.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.SoftwareReuseScriptDebugger $1 $2</echo>
+		<echo file="${tmp}/SoftwareReuseScriptDebugger.ini" append="false">DataPath=data${line.separator}</echo>
+		<echo file="${tmp}/SoftwareReuseScriptDebugger.ini" append="true">SearchPath=C:/Program Files;C:/Program Files (x86)</echo>
+		
 		<echo file="${tmp}/SoftwareReuseServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseServer %1 %2</echo>
 		<echo file="${tmp}/SoftwareReuseServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.SoftwareReuseServer $1 $2</echo>
 		<echo file="${tmp}/SoftwareReuseServer.ini" append="false">RootPath=tmp/SoftwareReuseServer${line.separator}</echo>
@@ -80,11 +89,6 @@
 		<echo file="${tmp}/SoftwareReuseClient.ini" append="false">SoftwareReuseServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp}/SoftwareReuseClient.ini" append="true">#DefaultPath=data</echo>
 
-		<echo file="${tmp}/SoftwareReuseScriptDebugger.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseScriptDebugger %*</echo>
-		<echo file="${tmp}/SoftwareReuseScriptDebugger.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.SoftwareReuseScriptDebugger $1 $2</echo>
-		<echo file="${tmp}/SoftwareReuseScriptDebugger.ini" append="false">DataPath=data${line.separator}</echo>
-		<echo file="${tmp}/SoftwareReuseScriptDebugger.ini" append="true">SearchPath=C:/Program Files;C:/Program Files (x86)</echo>
-		
 		<echo file="${tmp}/PolyglotServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
 		<echo file="${tmp}/PolyglotServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
 		<echo file="${tmp}/PolyglotServer.ini" append="false">Port=${polyglot_port}${line.separator}</echo>
@@ -101,16 +105,23 @@
 		<echo file="${tmp}/PolyglotPanel.ini" append="true">#SoftwareReuseServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp}/PolyglotPanel.ini" append="true">PolyglotServer=localhost:${polyglot_port}</echo>
 	
+		<echo file="${tmp}/PolyglotWebServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebServer</echo>
+		<echo file="${tmp}/PolyglotWebServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebServer</echo>
+		<echo file="${tmp}/PolyglotWebServer.ini" append="false">PolyglotPath=tmp/PolyglotWebServer${line.separator}</echo>
+		<echo file="${tmp}/PolyglotWebServer.ini" append="true">#SoftwareReuseServer=localhost:${icr_port}${line.separator}</echo>
+		<echo file="${tmp}/PolyglotWebServer.ini" append="true">PolyglotServer=localhost:${polyglot_port}${line.separator}</echo>
+		<echo file="${tmp}/PolyglotWebServer.ini" append="true">SleepLength=1000</echo>
+
 		<echo file="${tmp}/IOGraphPanel.bat">java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel %1</echo>
 		<echo file="${tmp}/IOGraphPanel.sh">java -cp lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel $1</echo>
 		<echo file="${tmp}/DistributedSoftwareIOGraphPanel.bat">java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel %1</echo>
 		<echo file="${tmp}/DistributedSoftwareIOGraphPanel.sh">java -cp lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel $1</echo>
 
-		<echo file="${tmp}/IOGraphWeightsTool.bat">java -cp "%~dp0lib/ncsa/3DUtilities.jar;%~dp0lib/ncsa/versus.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/MatrixUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphWeightsTool</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.bat">java -cp "%~dp0lib/ncsa/3DUtilities.jar;%~dp0lib/ncsa/versus-api-0.5.jar;%~dp0lib/ncsa/versus-impl-0.5.jar;%~dp0lib/misc/commons-logging-1.1.1.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/MatrixUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphWeightsTool</echo>
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="false">SoftwareReuseServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">TestPath=tmp/IOGraphWeightsTool${line.separator}</echo>
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">RetryLevel=3${line.separator}</echo>
-		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">Threaded=true${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">Threaded=false${line.separator}</echo>
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">${line.separator}</echo>
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">DataPath=data${line.separator}</echo>
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">Adapter=BufferedImageAdapter${line.separator}</echo>
@@ -120,12 +131,11 @@
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">InvalidValue=0${line.separator}</echo>
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">Extension=jpg</echo>
 		
-		<echo file="${tmp}/PolyglotWebServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.PolyglotWebServer</echo>
-		<echo file="${tmp}/PolyglotWebServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebServer</echo>
-		<echo file="${tmp}/PolyglotWebServer.ini" append="false">PolyglotPath=tmp/PolyglotWebServer${line.separator}</echo>
-		<echo file="${tmp}/PolyglotWebServer.ini" append="true">SoftwareReuseServer=localhost:${icr_port}${line.separator}</echo>
-		<echo file="${tmp}/PolyglotWebServer.ini" append="true">#PolyglotServer=localhost:${polyglot_port}${line.separator}</echo>
-		<echo file="${tmp}/PolyglotWebServer.ini" append="true">SleepLength=1000</echo>
+		<echo file="${tmp}/SoftwareReuseMonekey_VNC.bat">cmd /c java -cp "%~dp0lib/misc/VncViewer.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseMonkey_VNC</echo>
+		<echo file="${tmp}/SoftwareReuseMonekey_VNC.sh">java -cp lib/misc/VncViewer.jar:lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.SoftwareReuseMonkey_VNC</echo>
+		<echo file="${tmp}/SoftwareReuseMonekey_VNC.ini" append="false">Server=localhost:5900${line.separator}</echo>
+		<echo file="${tmp}/SoftwareReuseMonekey_VNC.ini" append="true">OutputPath=tmp/MonkeyScript${line.separator}</echo>
+		<echo file="${tmp}/SoftwareReuseMonekey_VNC.ini" append="true">IgnoredBottom=32</echo>
 
 		<echo file="${tmp}/MonkeyScript.bat">cmd /c java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.MonkeyScript %1 %2 %3 %4 %5 %6 %7 %8</echo>
 
@@ -145,6 +155,8 @@
 		<mkdir dir="${tmp}"/>
 		<copy todir="${tmp}">
 			<fileset dir="${classes}">
+				<include name="**/SoftwareReuseAuxiliary*.class"/>
+				<include name="**/SoftwareReuseClient*.class"/>
 				<include name="**/polyglot/IOGraph*.class"/>
 				<include name="**/polyglot/Polyglot*.class"/>
 			</fileset>

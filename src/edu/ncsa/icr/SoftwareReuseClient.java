@@ -1,6 +1,5 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
-import edu.ncsa.icr.polyglot.PolyglotClient;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
@@ -443,44 +442,58 @@ public class SoftwareReuseClient
 		String line, alias, operation, input, output;
 		String server = "localhost";
 		int port = 30;
-				
-		//Read in *.ini file
-	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader("SoftwareReuseClient.ini"));
-	    String key, value;
-	    int tmpi;
-	    
-	    while((line=ins.readLine()) != null){
-	      if(line.contains("=")){
-	        key = line.substring(0, line.indexOf('='));
-	        value = line.substring(line.indexOf('=')+1);
-	        
-	        if(key.charAt(0) != '#'){
-	        	if(key.equals("SoftwareReuseServer")){
-	          	tmpi = value.lastIndexOf(':');
-	        		
-	        		if(tmpi != -1){
-	        			server = InetAddress.getByName(value.substring(0, tmpi)).getHostAddress();
-	        			port = Integer.valueOf(value.substring(tmpi+1));
-	        		}
-	          }else if(key.equals("DefaultPath")){
-	          	cwd = value + "/";
-	          }
-	        }
-	      }
-	    }
-	    
-	    ins.close();
-	  }catch(Exception e) {e.printStackTrace();}
-	  
+		int tmpi;
+		
 	  //Parse command line arguments
     for(int i=0; i<args.length; i++){
       if(args[i].charAt(0) == '-'){
       	if(args[i].equals("-dbg")){
       		DEBUG = true;
+      	}else if(args[i].equals("-cwd")){
+      		cwd = args[++i] + "/";
       	}
+      }else{
+       	tmpi = args[i].lastIndexOf(':');
+    		
+    		if(tmpi != -1){
+    			try{
+    				server = InetAddress.getByName(args[i].substring(0, tmpi)).getHostAddress();
+    			}catch(Exception e) {e.printStackTrace();}
+    			
+    			port = Integer.valueOf(args[i].substring(tmpi+1));
+    		}
       }
     }
+    
+    //Read in *.ini file
+		if(Utility.exists("SoftwareReuseClient.ini")){	
+		  try{
+		    BufferedReader ins = new BufferedReader(new FileReader("SoftwareReuseClient.ini"));
+		    String key, value;
+		    
+		    while((line=ins.readLine()) != null){
+		      if(line.contains("=")){
+		        key = line.substring(0, line.indexOf('='));
+		        value = line.substring(line.indexOf('=')+1);
+		        
+		        if(key.charAt(0) != '#'){
+		        	if(key.equals("SoftwareReuseServer")){
+		          	tmpi = value.lastIndexOf(':');
+		        		
+		        		if(tmpi != -1){
+		        			server = InetAddress.getByName(value.substring(0, tmpi)).getHostAddress();
+		        			port = Integer.valueOf(value.substring(tmpi+1));
+		        		}
+		          }else if(key.equals("DefaultPath")){
+		          	cwd = value + "/";
+		          }
+		        }
+		      }
+		    }
+		    
+		    ins.close();
+		  }catch(Exception e) {e.printStackTrace();}
+		}
     
 	  //Establish connection
 		SoftwareReuseClient icr = new SoftwareReuseClient(server, port);

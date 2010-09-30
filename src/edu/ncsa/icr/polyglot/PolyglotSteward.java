@@ -266,7 +266,10 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		
 		input_file_data = new FileData(input_filename, true);
 		output_file_data = convert(input_file_data, conversions);
-		output_file_data.save(output_path, null);
+		
+		if(output_file_data != null){
+			output_file_data.save(output_path, null);
+		}
 	}
 	
 	/**
