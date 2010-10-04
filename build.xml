@@ -112,8 +112,8 @@
 		<echo file="${tmp}/PolyglotWebServer.ini" append="true">PolyglotServer=localhost:${polyglot_port}${line.separator}</echo>
 		<echo file="${tmp}/PolyglotWebServer.ini" append="true">SleepLength=1000</echo>
 
-		<echo file="${tmp}/IOGraphPanel.bat">java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel %1</echo>
-		<echo file="${tmp}/IOGraphPanel.sh">java -cp lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel $1</echo>
+		<echo file="${tmp}/IOGraphPanel.bat">java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel %*</echo>
+		<echo file="${tmp}/IOGraphPanel.sh">java -cp lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel $1 $2</echo>
 		<echo file="${tmp}/DistributedSoftwareIOGraphPanel.bat">java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel %1</echo>
 		<echo file="${tmp}/DistributedSoftwareIOGraphPanel.sh">java -cp lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel $1</echo>
 
@@ -137,7 +137,7 @@
 		<echo file="${tmp}/SoftwareReuseMonekey_VNC.ini" append="true">OutputPath=tmp/MonkeyScript${line.separator}</echo>
 		<echo file="${tmp}/SoftwareReuseMonekey_VNC.ini" append="true">IgnoredBottom=32</echo>
 
-		<echo file="${tmp}/MonkeyScript.bat">cmd /c java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.MonkeyScript %1 %2 %3 %4 %5 %6 %7 %8</echo>
+		<echo file="${tmp}/MonkeyScript.bat">cmd /c java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.MonkeyScript %*</echo>
 
 		<echo file="${tmp}/AutoUpdate.bat">java -cp "%~dp0lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp}/AutoUpdate.sh">java -cp lib/ncsa/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>

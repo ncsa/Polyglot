@@ -10,6 +10,7 @@ import javax.swing.event.*;
 import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
 import java.util.*;
 
 /**
@@ -867,16 +868,28 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 		String server;
 		int port, tmpi;  
 		
+		//args = new String[]{"-file", "data/weights.txt"};
+		
   	if(args.length > 0){
-  		tmpi = args[0].lastIndexOf(':');
-  		
-  		if(tmpi != -1){
-  			server = args[0].substring(0, tmpi);
-  			port = Integer.valueOf(args[0].substring(tmpi+1));
+  		if(args[0].equals("-file")){
+  			iograph = new IOGraph<String,String>();
+  			iograph.load(args[1]);
+  			iograph.loadEdgeWeights(args[1], 0.0);
+  			iograph.printEdgeInformation();
   			
-	  		PolyglotClient polyglot = new PolyglotClient(server, port);
-	  		iograph_panel = new IOGraphPanel<String,String>(polyglot.getInputOutputGraph(), 2);
-	  		polyglot.close();
+  			iograph_panel = new IOGraphPanel<String,String>(iograph, 2);
+      	iograph_panel.setViewEdgeQuality(true);
+  		}else{
+	  		tmpi = args[0].lastIndexOf(':');
+	  		
+	  		if(tmpi != -1){
+	  			server = args[0].substring(0, tmpi);
+	  			port = Integer.valueOf(args[0].substring(tmpi+1));
+	  			
+		  		PolyglotClient polyglot = new PolyglotClient(server, port);
+		  		iograph_panel = new IOGraphPanel<String,String>(polyglot.getInputOutputGraph(), 2);
+		  		polyglot.close();
+	  		}
   		}
   	}else{		//Debugging
 	  	if(true){

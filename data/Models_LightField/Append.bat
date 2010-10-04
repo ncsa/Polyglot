@@ -1,0 +1,1 @@
+type *.txt > ../weights.txt

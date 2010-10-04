@@ -211,6 +211,35 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	}
 	
 	/**
+	 * Add an edge to the graph only if it doesn't exist.
+	 * @param source the source vertex
+	 * @param target the target vertex
+	 * @param edge the edge
+	 */
+	public void addEdgeOnce(V source, V target, E edge)
+	{
+		int source_index = addVertex(source);
+		int target_index = addVertex(target);
+		boolean FOUND = false;
+		
+		//Check if this edge already exists
+		for(int i=0; i<adjacency_list.get(source_index).size(); i++){
+			if(adjacency_list.get(source_index).get(i) == target_index){
+				if(edges.get(source_index).get(i).toString().equals(edge)){
+					FOUND = true;
+				}
+			}
+		}
+		
+		if(!FOUND){
+			edges.get(source_index).add(edge);
+			adjacency_list.get(source_index).add(target_index);
+			weights.get(source_index).add(null);
+			active.get(source_index).add(true);			
+		}
+	}
+	
+	/**
 	 * Merge another I/O-graph into this one.
 	 * @param iograph another I/O-graph
 	 */
@@ -392,7 +421,50 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 		
 		return strings;
 	}
-	  
+	
+	/**
+	 * Get a set of the unique edges in the graph.
+	 * @return a set of unique edges
+	 */
+	public TreeSet<E> getUniqueEdges()
+	{
+		TreeSet<E> set = new TreeSet<E>();
+		
+		for(int i=0; i<edges.size(); i++){			
+			for(int j=0; j<edges.get(i).size(); j++){
+				if(active.get(i).get(j)){
+					set.add(edges.get(i).get(j));
+				}
+			}
+		}
+		
+		return set;
+	}
+		  
+	/**
+	 * Get a list of edges parallel to the given edge.
+	 * @param source the source vertex
+	 * @param target the target vertex
+	 * @param edge the actual edge (can be null)
+	 * @return a list of parallel edges
+	 */
+	public Vector<E> getParallelEdges(V source, V target, E edge)
+	{
+		Vector<E> parallel_edges = new Vector<E>();
+		int v0 = vertex_map.get(source);
+		int v1 = vertex_map.get(target);
+		
+		for(int i=0; i<adjacency_list.get(v0).size(); i++){
+			if(adjacency_list.get(v0).get(i) == v1){
+				if(edge==null || edges.get(v0).get(i).toString().equals(edge.toString())){
+					parallel_edges.add(edges.get(v0).get(i));
+				}
+			}
+		}
+		
+		return parallel_edges;
+	}
+
 	/**
 	 * Get the maximum weight among parallel edges between the vertices specified.
 	 * @param v0 the index of the starting vertex
@@ -419,30 +491,6 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	}
 	
 	/**
-	 * Get a list of edges parallel to the given edge.
-	 * @param source the source vertex
-	 * @param target the target vertex
-	 * @param edge the actual edge (can be null)
-	 * @return a list of parallel edges
-	 */
-	public Vector<E> getParallelEdges(V source, V target, E edge)
-	{
-		Vector<E> parallel_edges = new Vector<E>();
-		int v0 = vertex_map.get(source);
-		int v1 = vertex_map.get(target);
-		
-		for(int i=0; i<adjacency_list.get(v0).size(); i++){
-			if(adjacency_list.get(v0).get(i) == v1){
-				if(edge==null || edges.get(v0).get(i).toString().equals(edge.toString())){
-					parallel_edges.add(edges.get(v0).get(i));
-				}
-			}
-		}
-		
-		return parallel_edges;
-	}
-	
-	/**
 	 * Set the weight of the given edge.
 	 * @param source the source vertex string
 	 * @param target the target vertex string
@@ -464,6 +512,44 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	}
 	
 	/**
+	 * Load graph from the given file.
+	 * @param filename a file containing the graph as lines of: edge source target weight
+	 */
+	public void load(String filename)
+	{
+		IOGraph<String,String> iograph = new IOGraph<String,String>();
+		
+	  try{
+	    BufferedReader ins = new BufferedReader(new FileReader(filename));
+	    String line;
+	    String edge, input, output, weight;
+	    int tmpi;
+	    
+	    while((line = ins.readLine()) != null){
+				tmpi = line.lastIndexOf(" ");
+				weight = line.substring(tmpi+1, line.length());
+				line = line.substring(0, tmpi);
+				tmpi = line.lastIndexOf(" ");
+				output = line.substring(tmpi+1, line.length());
+				line = line.substring(0, tmpi);
+				tmpi = line.lastIndexOf(" ");
+				input = line.substring(tmpi+1, line.length());
+				edge = line.substring(0, tmpi);
+				
+				//System.out.println(edge +", " + input + ", " + output + ", " + weight);
+				
+				addVertex((V)input);
+				addVertex((V)output);
+				addEdgeOnce((V)input, (V)output, (E)edge);       
+	    }
+	
+	    ins.close();
+	  }catch(Exception e){
+	    e.printStackTrace();
+	  }
+	}
+
+	/**
 	 * Load edge weights from the given file.
 	 * @param filename a file containing lines with: edge source target weight
 	 * @param invalid_value the value to use for null weights (can be null indicating they should be ignored)
@@ -474,7 +560,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 		Vector<String> lines = Utility.split(buffer, '\n', false);
 		TreeMap<String,Vector<Double>> edge_weights = new TreeMap<String,Vector<Double>>();
 		Vector<Double> vector;
-		String string, weight_string, edge_string, application, input, output;
+		String string, weight_string, edge_string, edge, input, output;
 		Double weight;
 		int tmpi;
 		
@@ -485,7 +571,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	  	weight_string = string.substring(tmpi+1);
 	  	edge_string = string.substring(0, tmpi);
 	  	
-	  	if(weight_string.equals("null")){		//A measurement failed!
+	  	if(weight_string.equals("null") || weight_string.equals("NaN")){		//A measurement failed!
 	  		weight = invalid_value;
 		  }else{
 		  	weight = Double.valueOf(weight_string);
@@ -511,7 +597,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	  	string = edge_string.substring(0, tmpi);
 	  	tmpi = string.lastIndexOf(' ');
 	  	input = string.substring(tmpi+1);
-	  	application = string.substring(0, tmpi);
+	  	edge = string.substring(0, tmpi);
 	  	
 	  	vector = edge_weights.get(edge_string);
 	  	weight = 0.0;
@@ -521,7 +607,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	  	}
 	  	
 	  	weight /= vector.size();
-	  	setEdgeWeight(input, output, application, weight);
+	  	setEdgeWeight(input, output, edge, weight);
 		}
 	}
 	
@@ -1185,6 +1271,50 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 		System.out.println("Min weighted vertex: " + vertices.get(mini) + " (" + minw + "), n=" + domain_size.get(mini));
   }
 	
+  /**
+   * Display information about each unique edge.
+   */
+  public void printEdgeInformation()
+  {
+  	TreeSet<E> unique_edges = getUniqueEdges();
+  	
+  	for(Iterator<E> itr=unique_edges.iterator(); itr.hasNext();){
+  		E edge = itr.next();
+  		System.out.println("\n" + edge);
+  		printEdgeInformation(edge);
+  	}
+  }
+  
+  /**
+   * Display information about an edge.
+   * @param edge the edge to display information about
+   */
+  public void printEdgeInformation(E edge)
+  {
+  	Vector<Triple<Double,String,String>> triples = new Vector<Triple<Double,String,String>>();
+  	Triple<Double,String,String> triple;
+  	
+  	//Accumulate edges as triples
+  	for(int i=0; i<edges.size(); i++){
+  		for(int j=0; j<edges.get(i).size(); j++){
+  			if(edges.get(i).get(j).toString().equals(edge)){
+  				triple = new Triple<Double,String,String>(weights.get(i).get(j), vertices.get(i).toString(), vertices.get(adjacency_list.get(i).get(j)).toString());
+  				triples.add(triple);
+  			}
+  		}
+  	}
+  	
+  	//Sort triples
+  	Collections.sort(triples);
+  	
+  	//Display triples
+  	for(int i=triples.size()-1; i>=0; i--){
+  		triple = triples.get(i);
+  		//System.out.println(triple.first + ": " + triple.second + " -> " + triple.third);
+  		System.out.println(triple.first + ", " + triple.second + ", " + triple.third);
+  	}
+  }
+  
   /**
    * A main for debug purposes.
    * @param args command line arguments
