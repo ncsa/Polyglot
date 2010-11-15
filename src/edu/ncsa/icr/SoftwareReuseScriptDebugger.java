@@ -222,34 +222,75 @@ public class SoftwareReuseScriptDebugger
 	 */
 	public static void configureScript(String script_filename, Vector<String> search_path)
 	{
-		String script_path, script_extension;
-		String script_output_path;
+		String script_path, script_output_path, script_extension;
+		String aliases_filename;
+		TreeSet<String> aliases = new TreeSet<String>();
 		Vector<String> script_filenames = new Vector<String>();
 		Vector<String> matches;
 		Scanner scanner;
-		String line, executable, buffer;
+		String line, name, alias, executable, buffer;
 		boolean SAVE;
 		int tmpi;
 		
 		script_path = Utility.getFilenamePath(script_filename);
-		script_extension = Utility.getFilenameExtension(script_filename);
-		
-		//Expand wildcard if present
-		if(script_filename.contains("*")){
-			File[] files = new File(script_path).listFiles();
-			
-			for(int i=0; i<files.length; i++){
-				if(files[i].getName().endsWith("." + script_extension)){
-					script_filenames.add(files[i].getName());
+		script_output_path = script_path.substring(0, script_path.length()-1) + "-configured/";
+
+		if(script_filename.contains("*")){							//Expand alias/operation wildcard if present
+			if(script_filename.contains("*.")){
+				File[] files = new File(script_path).listFiles();
+				script_extension = Utility.getFilenameExtension(script_filename);
+				
+				for(int i=0; i<files.length; i++){
+					if(files[i].getName().endsWith("." + script_extension)){
+						script_filenames.add(files[i].getName());
+					}
 				}
+			}else{
+				System.out.println("\nPlease specify extension as \"*.foo\".");
+			}
+		}else if(Utility.isDirectory(script_filename)){	//Use ".aliases.txt"
+			script_path = script_filename + "/";
+			script_output_path = script_filename + "-configured/";
+			aliases_filename = script_filename + "/.aliases.txt";
+			
+			if(Utility.exists(aliases_filename)){
+				//Copy over ".aliases.txt" file
+				Utility.copyFile(aliases_filename, script_output_path + "/.aliases.txt");	
+				
+				try{
+					scanner = new Scanner(new File(aliases_filename));
+					
+					while(scanner.hasNextLine()){
+						line = scanner.nextLine();
+						if(line.charAt(0) != '#')	aliases.add(line);
+					}
+					
+					File[] files = new File(script_filename).listFiles();
+					
+					for(int i=0; i<files.length; i++){
+						if(!files[i].isDirectory()){
+							name = files[i].getName();
+							tmpi = name.indexOf("_");
+							
+							if(tmpi >= 0){
+								alias = name.substring(0, tmpi);
+								
+								if(aliases.contains(alias)){
+									//System.out.println(name);
+									script_filenames.add(name);
+								}
+							}
+						}
+					}
+				}catch(Exception e) {e.printStackTrace();}
+			}else{
+				System.out.println("\nMissing \".aliases.txt\" file!");
 			}
 		}else{
 			script_filenames.add(Utility.getFilename(script_filename));
 		}
 		
-		//Create an output directory
-		script_output_path = script_path.substring(0, script_path.length()-1) + "-configured/";
-		
+		//Create an output directory		
 		if(!Utility.exists(script_output_path)){
 			new File(script_output_path).mkdir();
 		}
@@ -259,6 +300,7 @@ public class SoftwareReuseScriptDebugger
 		
 		for(int i=0; i<script_filenames.size(); i++){
 			script_filename = script_filenames.get(i);
+			script_extension = Utility.getFilenameExtension(script_filename);
 			System.out.println("Configuring script \"" + script_path + script_filename + "\":");
 			
 			try{
@@ -287,44 +329,48 @@ public class SoftwareReuseScriptDebugger
 								executable = line.substring(0, tmpi);
 								line = line.substring(tmpi+1).trim();
 							}
-							
-							System.out.print("  checking for " + executable + "...");
-							
-							if(Utility.exists(executable)){
-								System.out.println(" yes");
+														
+							if(Utility.getFilenamePath(Utility.unixPath(executable)).isEmpty()){	//Ignore executables using system path variable
 								buffer += "\"" + executable + "\" " + line;
 							}else{
-								System.out.println(" no");
-								
-								//Find options
-								matches = new Vector<String>();
-								
-								for(int j=0; j<search_path.size(); j++){
-									System.out.println("  searching: " + search_path.get(j));
-									matches.addAll(Utility.search(search_path.get(j), Utility.getFilename(Utility.unixPath(executable))));
-								}
-								
-								//Display matches to user for selection
-								if(!matches.isEmpty()){
-									System.out.println("  found " + matches.size() + " matches:");
+								System.out.print("  checking for " + executable + "...");
 
-									for(int j=0; j<matches.size(); j++){
-										System.out.println("    [" + (j+1) + "] " + matches.get(j));
+								if(Utility.exists(executable)){
+									System.out.println(" yes");
+									buffer += "\"" + executable + "\" " + line;
+								}else{
+									System.out.println(" no");
+									
+									//Find options
+									matches = new Vector<String>();
+									
+									for(int j=0; j<search_path.size(); j++){
+										System.out.println("  searching: " + search_path.get(j));
+										matches.addAll(Utility.search(search_path.get(j), Utility.getFilename(Utility.unixPath(executable))));
 									}
 									
-									tmpi = Integer.valueOf(System.console().readLine("  enter choice: "))-1;
-									
-									if(tmpi < 0){
+									//Display matches to user for selection
+									if(!matches.isEmpty()){
+										System.out.println("  found " + matches.size() + " matches:");
+	
+										for(int j=0; j<matches.size(); j++){
+											System.out.println("    [" + (j+1) + "] " + matches.get(j));
+										}
+										
+										tmpi = Integer.valueOf(System.console().readLine("  enter choice: "))-1;
+										
+										if(tmpi < 0){
+											System.out.println("  no matches found!");
+											SAVE = false;
+											break;
+										}else{
+											buffer += "\"" + matches.get(tmpi) + "\" " + line;
+										}
+									}else{
 										System.out.println("  no matches found!");
 										SAVE = false;
 										break;
-									}else{
-										buffer += "\"" + matches.get(tmpi) + "\" " + line;
 									}
-								}else{
-									System.out.println("  no matches found!");
-									SAVE = false;
-									break;
 								}
 							}
 						}else{
