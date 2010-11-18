@@ -141,7 +141,7 @@
 
 		<echo file="${tmp}/AutoUpdate.bat">java -cp "%~dp0lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp}/AutoUpdate.sh">java -cp lib/ncsa/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>
-		<echo file="${tmp}/AutoUpdate.ini" append="false">!ini, txt${line.separator}</echo>
+		<echo file="${tmp}/AutoUpdate.ini" append="false">!ini, scripts/${line.separator}</echo>
 		<echo file="${tmp}/AutoUpdate.ini" append="true">http://isda.ncsa.uiuc.edu/~kmchenry/tmp/Polyglot2/Polyglot2.zip</echo>
 		
 		<echo file="${tmp}/scripts/monkey/AutoUpdate.bat">java -cp "%~dp0../../lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>

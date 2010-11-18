@@ -30,6 +30,8 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   private double theta = 0;
   private double theta_offset = 0;
   private String edges_alias = "edges";
+  private int vertex_color = 0x000000;
+  private int edge_color = 0xcccccc;
   
 	private IOGraph<V,E> iograph;  
   private Vector<Point2D> vertices = new Vector<Point2D>();
@@ -237,6 +239,24 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   }
   
   /**
+	 * Set the vertex color.
+	 * @param color the color to use for vertices
+	 */
+	public void setVertexColor(int color)
+	{
+	  vertex_color = color;
+	}
+
+	/**
+	 * Set the edge color.
+	 * @param color the color to use for edges
+	 */
+	public void setEdgeColor(int color)
+	{
+	  edge_color = color;
+	}
+
+	/**
    * Enable/disable the display of edge quality information in the graph.
    * @param b enable/disable edge quality values
    */
@@ -406,7 +426,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     }
     
     //Draw edges
-    bg.setColor(new Color(0x00cccccc));
+    bg.setColor(new Color(edge_color));
     ((Graphics2D)bg).setStroke(thickness2_stroke);
 
     for(int i=0; i<edges.size(); i++){
@@ -469,7 +489,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	      }else if(working_set.contains(i)){
 	        bg.setColor(new Color(0xa000a0));
 	      }else{
-	        bg.setColor(Color.black);
+	        bg.setColor(new Color(vertex_color));
 	      }
 	      
 	      x = vertices.get(i).x;

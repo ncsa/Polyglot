@@ -19,6 +19,8 @@ public class IOGraphApplet extends JApplet
   	String url = getParameter("url");
   	String side_pane_width = getParameter("side_pane_width");
   	String ouput_panel_height = getParameter("output_panel_height");
+  	String vertex_color = getParameter("vertex_color");
+  	String edge_color = getParameter("edge_color");
   	String server;
   	int port;
   	int tmpi;
@@ -39,7 +41,7 @@ public class IOGraphApplet extends JApplet
   			}
   		}
   	}else{
-  		polyglot = new PolyglotClient("localhost", 31);
+  		polyglot = new PolyglotClient("localhost", 50002);
 			iograph = polyglot.getInputOutputGraph();
 			polyglot.close();
   	}
@@ -48,6 +50,8 @@ public class IOGraphApplet extends JApplet
 	  	iograph_panel = new IOGraphPanel<String,String>(iograph, getWidth(), getHeight(), 2);
 	  	if(side_pane_width != null) iograph_panel.setSidePaneWidth(Integer.valueOf(side_pane_width));
 		  if(ouput_panel_height != null) iograph_panel.setOutputPanelHeight(Integer.valueOf(ouput_panel_height));
+		  if(vertex_color != null) iograph_panel.setVertexColor(Integer.valueOf(vertex_color, 16).intValue());
+		  if(edge_color != null) iograph_panel.setEdgeColor(Integer.valueOf(edge_color, 16).intValue());
 		  add(iograph_panel.getAuxiliaryInterfacePane());
   	}
   }
