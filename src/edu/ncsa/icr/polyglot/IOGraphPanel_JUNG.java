@@ -237,7 +237,7 @@ public class IOGraphPanel_JUNG<V extends Comparable,E> extends JPanel
   	IOGraphPanel_JUNG iograph_panel = null;
   	
   	if(true){
-	  	SoftwareReuseClient icr = new SoftwareReuseClient("localhost", 30);
+	  	SoftwareReuseClient icr = new SoftwareReuseClient("localhost", 50000);
 	  	iograph = new IOGraph<Data,Application>(icr);
 	  	icr.close();
 	  	
