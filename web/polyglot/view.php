@@ -59,7 +59,7 @@ Preview anything that can be converted to a viewable format.
 </td><td>
 
 <!-- Upload Applet -->
-<applet name="uploadApplet" code="edu.ncsa.polyglot.applets.UploadApplet.class" archive="lib/PolyglotUtils-signed.jar"
+<applet name="uploadApplet" code="dndapplet.applet.DNDApplet.class" archive="lib/PolyglotUtils-signed.jar"
 				mayscript="true" scriptable="true" width="400" height="200">
 <param name="upload_button_text" value="View">
 <param name="uploadPath" value="bin/upload.php">
