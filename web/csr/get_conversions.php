@@ -3,7 +3,7 @@ $username = "demo";
 $password = "demo";
 $database = "csr";
 
-mysql_connect("isda.ncsa.uiuc.edu", $username, $password);
+mysql_connect("localhost", $username, $password);
 @mysql_select_db($database) or die("Unable to select database!");
 
 $query = "SELECT software.name, inputs.default_extension, outputs.default_extension FROM conversions, software, formats AS inputs, formats AS outputs WHERE conversions.software=software.software_id AND conversions.input_format=inputs.format_id AND conversions.output_format=outputs.format_id";
