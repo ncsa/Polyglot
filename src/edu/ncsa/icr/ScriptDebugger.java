@@ -10,28 +10,72 @@ import java.util.*;
  */
 public class ScriptDebugger
 {
+	private String data_path = "./";
+	private Vector<String> search_path = new Vector<String>();
+	
 	/**
-	 * Check if the specified file exists.
-	 * @param filename the name of the file to check
-	 * @return true file exists
+	 * Class constructor.
+	 * @param filename the *.ini file to load
 	 */
-	public static boolean exists(String filename)
+	public ScriptDebugger(String filename)
 	{
-		File file = new File(filename);
-		
-		if(file.exists() && file.length() > 0){
-			return true;
-		}
-		
-		return false;
+		loadINI(filename);
 	}
 	
 	/**
+	 * Load values from a *.ini file.
+	 * @param filename the *.ini file to load
+	 */
+	public void loadINI(String filename)
+	{
+	  try{
+	    BufferedReader ins = new BufferedReader(new FileReader("ScriptDebugger.ini"));
+	    Scanner scanner;
+	    String line, key, value;
+	    
+	    while((line=ins.readLine()) != null){
+	      if(line.contains("=")){
+	        key = line.substring(0, line.indexOf('='));
+	        value = line.substring(line.indexOf('=')+1);
+	        
+	        if(key.charAt(0) != '#'){
+	        	if(key.equals("DataPath")){
+	      			data_path = value + "/";
+	          }else if(key.equals("SearchPath")){
+	          	scanner = new Scanner(value);
+	          	scanner.useDelimiter(";");
+	          	
+	          	while(scanner.hasNext()){
+	          		search_path.add(scanner.next().trim());
+	          	}
+	          }
+	        }
+	      }
+	    }
+	    
+	    ins.close();
+	  }catch(Exception e) {e.printStackTrace();}
+	  
+	  //Display configuration
+	  if(false){
+		  System.out.println();
+		  System.out.println("Data path: " + data_path);
+		  System.out.print("Search path: ");
+		  
+		  for(int i=0; i<search_path.size(); i++){
+		  	if(i > 0) System.out.print(";");
+		  	System.out.print(search_path.get(i));
+		  }
+		  
+		  System.out.println();
+	  }
+	}
+
+	/**
 	 * Configure the given ICR script(s) to run on the current machine.
 	 * @param script_filename the script filename
-	 * @param search_path the search path to use when searching for executables
 	 */
-	public static void configureScript(String script_filename, Vector<String> search_path)
+	public void configureScript(String script_filename)
 	{
 		String script_path, script_output_path, script_extension;
 		String aliases_filename;
@@ -201,9 +245,8 @@ public class ScriptDebugger
 	/**
 	 * Check the conversions claimed by the given script.
 	 * @param script_filename the script filename
-	 * @param data_path a path to test data
 	 */
-	public static void checkConversions(String script_filename, String data_path)
+	public void checkConversions(String script_filename)
 	{
 		Script script;
 		Script monitor_script = null;
@@ -391,9 +434,8 @@ public class ScriptDebugger
 	 * Check the robustness of the script by running it over and over again.
 	 * @param script_filename the script filename
 	 * @param n the number of times to run the script
-	 * @param data_path a path to test data
 	 */
-	public static void grindScript(String script_filename, int n, String data_path)
+	public void grindScript(String script_filename, int n)
 	{
 		Script script;
 		Script monitor_script = null;
@@ -616,66 +658,38 @@ public class ScriptDebugger
 	}
 	
 	/**
+	 * Check if the specified file exists.
+	 * @param filename the name of the file to check
+	 * @return true file exists
+	 */
+	public static boolean exists(String filename)
+	{
+		File file = new File(filename);
+		
+		if(file.exists() && file.length() > 0){
+			return true;
+		}
+		
+		return false;
+	}
+	
+	/**
 	 * Debug an ICR script.
 	 * @param args the input arguments
 	 */
 	public static void main(String args[])
 	{
-		String data_path = "./";
-		Vector<String> search_path = new Vector<String>();
+		ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.ini");
 		
 		//Test arguments
 		if(true && args.length == 0){
 			//args = new String[]{"scripts/ahk/A3DReviewer_open.ahk"};
 			//args = new String[]{"scripts/ahk/A3DReviewer_export.ahk"};
 			//args = new String[]{"scripts/ahk/Blender_convert.ahk"};
-			//args = new String[]{"-grind", "5", "scripts/ahk/ImgMgk_convert.ahk"};
+			args = new String[]{"-grind", "5", "scripts/ahk-configured/ImgMgk_convert.ahk"};
 			//args = new String[]{"-grind", "5", "scripts/ahk/A3DReviewer_open.ahk"};
-			args = new String[]{"-grind", "5", "scripts/ahk/A3DReviewer_export.ahk"};
+			//args = new String[]{"-grind", "5", "scripts/ahk/A3DReviewer_export.ahk"};
 		}
-		
-		//Read in *.ini file
-	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader("ScriptDebugger.ini"));
-	    Scanner scanner;
-	    String line, key, value;
-	    
-	    while((line=ins.readLine()) != null){
-	      if(line.contains("=")){
-	        key = line.substring(0, line.indexOf('='));
-	        value = line.substring(line.indexOf('=')+1);
-	        
-	        if(key.charAt(0) != '#'){
-	        	if(key.equals("DataPath")){
-	      			data_path = value + "/";
-	          }else if(key.equals("SearchPath")){
-	          	scanner = new Scanner(value);
-	          	scanner.useDelimiter(";");
-	          	
-	          	while(scanner.hasNext()){
-	          		search_path.add(scanner.next().trim());
-	          	}
-	          }
-	        }
-	      }
-	    }
-	    
-	    ins.close();
-	  }catch(Exception e) {e.printStackTrace();}
-
-	  //Display configuration
-	  if(false){
-		  System.out.println();
-		  System.out.println("Data path: " + data_path);
-		  System.out.print("Search path: ");
-		  
-		  for(int i=0; i<search_path.size(); i++){
-		  	if(i > 0) System.out.print(";");
-		  	System.out.print(search_path.get(i));
-		  }
-		  
-		  System.out.println();
-	  }
 	  
 		//Check arguments
 		if(args.length > 0){
@@ -689,11 +703,11 @@ public class ScriptDebugger
 				System.out.println();
 				System.exit(0);
 			}else if(args[0].equals("-config")){
-				configureScript(args[1], search_path);
+				debugger.configureScript(args[1]);
 			}else if(args[0].equals("-grind")){
-				grindScript(args[2], Integer.valueOf(args[1]), data_path);
+				debugger.grindScript(args[2], Integer.valueOf(args[1]));
 			}else{
-				checkConversions(args[0], data_path);
+				debugger.checkConversions(args[0]);
 			}
 		}
 	}

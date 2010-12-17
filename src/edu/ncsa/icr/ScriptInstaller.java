@@ -292,7 +292,9 @@ public class ScriptInstaller
 		String download_path = "scripts/csr/";
 		TreeSet<String> methods = new TreeSet<String>();
 		Vector<String> scripts;
-
+		String script;
+		boolean NO_CONFIG = false;
+		
 		//Debug arguments
 		if(true && args.length == 0){
 			args = new String[]{"-method", "reg"};
@@ -306,10 +308,13 @@ public class ScriptInstaller
 				System.out.println("Options: ");
 				System.out.println("  -?: display this help");
 				System.out.println("  -method x: set the method to use to determine what software is installed (wmic, reg)");
+				System.out.println("  -noconfig: just download scripts and do not configure them");
 				System.out.println();
 				System.exit(0);
 			}else if(args[i].equals("-method")){
 				methods.add(args[++i]);
+			}else if(args[i].equals("-noconfig")){
+				NO_CONFIG = true;
 			}
 		}
 		
@@ -320,9 +325,23 @@ public class ScriptInstaller
 			new File(download_path).mkdir();
 		}	
 			
+		System.out.println("\nDownloading scripts:\n");
+		
 		for(int i=0; i<scripts.size(); i++){
-			System.out.println(scripts.get(i));
-			Utility.downloadFile(download_path, Utility.getFilenameName(getScriptFileName(scripts.get(i))), csr_url + scripts.get(i));
+			script = Utility.getFilename(getScriptFileName(scripts.get(i)));
+			System.out.println("  " + script);
+			
+			Utility.downloadFile(download_path, Utility.getFilenameName(script), csr_url + scripts.get(i));
+			scripts.set(i, download_path + script);
+		}
+		
+		//Configure downloaded scripts
+		if(!NO_CONFIG){
+			ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.ini");
+			
+			for(int i=0; i<scripts.size(); i++){
+				debugger.configureScript(scripts.get(i));
+			}
 		}
 	}
 }
