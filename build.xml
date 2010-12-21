@@ -10,6 +10,11 @@
 		</fileset>
 	</path>
 	
+	<target name="javadocs" description="Make javadocs">
+		<mkdir dir="${javadocs}"/>
+		<javadoc sourcepath="src" destdir="${javadocs}" packagenames="edu.ncsa.icr.*" classpathref="classpath"/>
+	</target>
+	
 	<target name="compile" description="Compiles the Java source code">
 		<mkdir dir="${classes}"/>
 		<javac srcdir="src" destdir="${classes}" classpathref="classpath"/>
@@ -18,26 +23,6 @@
 	<target name="archive" depends="compile" description="Creates the JAR file">
 		<jar basedir="${classes}" destfile="build/Polyglot2.jar"/>
 	</target>	
-	
-	<target name="iograph_archive" depends="compile" description="Archive the code needed for the I/O-graph applet">
-		<mkdir dir="${tmp}"/>
-		<copy todir="${tmp}">
-			<fileset dir="${classes}">
-				<include name="**/IOGraph*.class"/>
-				<include name="**/Polyglot*.class"/>
-			</fileset>
-		</copy>
-		<unjar src="lib/ncsa/Utilities.jar" dest="${tmp}"/>
-		<jar basedir="${tmp}" destfile="build/IOGraphApplet.jar"/>
-		<signjar jar="build/IOGraphApplet.jar" signedjar="build/IOGraphApplet-signed.jar" alias="mykey" storepass="isdapass"/>
-	</target>
-	
-	<target name="installer" depends="archive" description="Build an installer for this project">
-		<exec executable="C:/Program Files/Inno Setup 5/Compil32">
-			<arg value="/cc"/>
-			<arg value="Polyglot2.iss"/>
-		</exec>
-	</target>
 	
 	<target name="zip" depends="archive,javadocs" description="Build a zip file containing the installation">
 		<mkdir dir="${tmp}"/>
@@ -151,7 +136,21 @@
 		<echo file="${tmp}/scripts/monkey/AutoUpdate.ini" append="false">http://isda.ncsa.uiuc.edu/~kmchenry/tmp/Polyglot2/MonkeyScript/${line.separator}</echo>
 		<echo file="${tmp}/scripts/monkey/AutoUpdate.ini" append="true">000_open.zip</echo>
 
+		<echo file="${tmp}/InstallWeb.bat">xcopy web\polyglot "C:\Program Files\Apache Software Foundation\Apache2.2\htdocs\polyglot" /e /i /y</echo>
+		<echo file="${tmp}/AUTOEXEC.BAT">start cmd /c "cd C:\Docume~1\polyglot\Desktop\Polyglot2 &amp;&amp; SoftwareReuseServer.bat"</echo>
+
 		<zip basedir="${tmp}" destfile="build/Polyglot2.zip"/>
+	</target>
+	
+	<target name="publish" depends="zip" description="Publish zip archive">
+		<copy file="build/Polyglot2.zip" todir="\\isda.ncsa.uiuc.edu\kmchenry\public_html\tmp\Polyglot2"/>
+	</target>
+	
+	<target name="installer" depends="archive" description="Build an installer for this project">
+		<exec executable="C:/Program Files/Inno Setup 5/Compil32">
+			<arg value="/cc"/>
+			<arg value="Polyglot2.iss"/>
+		</exec>
 	</target>
 	
 	<target name="polyglot_utils" depends="compile" description="Archive all the code needed by the web interface">
@@ -171,9 +170,17 @@
 		<signjar jar="build/PolyglotUtils.jar" signedjar="build/PolyglotUtils-signed.jar" alias="mykey" storepass="isdapass"/>
 	</target>
 	
-	<target name="javadocs" description="Make javadocs">
-		<mkdir dir="${javadocs}"/>
-		<javadoc sourcepath="src" destdir="${javadocs}" packagenames="edu.ncsa.icr.*" classpathref="classpath"/>
+	<target name="iograph_archive" depends="compile" description="Archive the code needed for the I/O-graph applet">
+		<mkdir dir="${tmp}"/>
+		<copy todir="${tmp}">
+			<fileset dir="${classes}">
+				<include name="**/IOGraph*.class"/>
+				<include name="**/Polyglot*.class"/>
+			</fileset>
+		</copy>
+		<unjar src="lib/ncsa/Utilities.jar" dest="${tmp}"/>
+		<jar basedir="${tmp}" destfile="build/IOGraphApplet.jar"/>
+		<signjar jar="build/IOGraphApplet.jar" signedjar="build/IOGraphApplet-signed.jar" alias="mykey" storepass="isdapass"/>
 	</target>
 	
 	<target name="clean_tmp" description="Deletes tmp folder">

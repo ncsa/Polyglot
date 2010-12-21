@@ -40,7 +40,7 @@ public class ScriptDebugger
 	        
 	        if(key.charAt(0) != '#'){
 	        	if(key.equals("DataPath")){
-	      			data_path = value + "/";
+	        		setDataPath(value);
 	          }else if(key.equals("SearchPath")){
 	          	scanner = new Scanner(value);
 	          	scanner.useDelimiter(";");
@@ -69,6 +69,15 @@ public class ScriptDebugger
 		  
 		  System.out.println();
 	  }
+	}
+	
+	/**
+	 * Set the data path.
+	 * @param data_path the data path
+	 */
+	public void setDataPath(String data_path)
+	{
+		this.data_path = Utility.unixPath(Utility.absolutePath(data_path)) + "/";
 	}
 
 	/**
@@ -254,7 +263,7 @@ public class ScriptDebugger
 		Vector<Script> input_scripts, output_scripts;
 		TreeMap<String,String> test_files = new TreeMap<String,String>();
 		Iterator<String> input_itr, output_itr;
-		String temp_path = data_path + "debug/";
+		String temp_path = data_path + "tmp/";
 		String input_type, output_type;
 		String input_file, output_file;
 		String filename, extension;
@@ -267,7 +276,6 @@ public class ScriptDebugger
 			System.out.println("Data directory doesn't exist!");
 		}else{
   		script = new Script(script_filename, null);
-			temp_path = data_path + "debug/";
 			
 			if(!Utility.exists(temp_path)){
 				new File(temp_path).mkdir();
@@ -434,8 +442,10 @@ public class ScriptDebugger
 	 * Check the robustness of the script by running it over and over again.
 	 * @param script_filename the script filename
 	 * @param n the number of times to run the script
+	 * @param VERBOSE true if verbosity should be turned on
+	 * @return the percentage of successful runs
 	 */
-	public void grindScript(String script_filename, int n)
+	public double grindScript(String script_filename, int n, boolean VERBOSE)
 	{
 		Script script;
 		Script monitor_script = null;
@@ -443,7 +453,7 @@ public class ScriptDebugger
 		Vector<Script> input_scripts, output_scripts;
 		TreeMap<String,Vector<String>> test_files = new TreeMap<String,Vector<String>>();
 		Vector<String> files;
-		String temp_path = data_path + "debug/";
+		String temp_path = data_path + "tmp/";
 		Vector<String> inputs = new Vector<String>();
 		Vector<String> outputs = new Vector<String>();
 		String input_type, output_type;
@@ -460,8 +470,7 @@ public class ScriptDebugger
 			System.out.println("Data directory doesn't exist!");
 		}else{
   		script = new Script(script_filename, null);
-			temp_path = data_path + "debug/";
-			
+  		
 			if(!Utility.exists(temp_path)){
 				new File(temp_path).mkdir();
 			}
@@ -487,21 +496,21 @@ public class ScriptDebugger
 			}
 			
 			//Display test file map
-			System.out.println("\nTest files:");
-			
-			for(Iterator<String> itr=test_files.keySet().iterator(); itr.hasNext();){
-				extension = itr.next();
-				files = test_files.get(extension);
+			if(VERBOSE){
+				System.out.println("\nTest files:");
 				
-				System.out.print("  " + extension);
-
-				for(int i=0; i<files.size(); i++){			
-					if(i > 0) System.out.print("  " + Utility.spaces(extension.length()));
-					System.out.println(" -> " + files.get(i));
+				for(Iterator<String> itr=test_files.keySet().iterator(); itr.hasNext();){
+					extension = itr.next();
+					files = test_files.get(extension);
+					
+					System.out.print("  " + extension);
+	
+					for(int i=0; i<files.size(); i++){			
+						if(i > 0) System.out.print("  " + Utility.spaces(extension.length()));
+						System.out.println(" -> " + files.get(i));
+					}
 				}
 			}
-			
-			System.out.println();
 			
 			//Check for helper scripts
 			if(Utility.exists(script.getOperationScriptname("monitor"))){
@@ -515,7 +524,7 @@ public class ScriptDebugger
 			
 			//Test the script
 			if(script.operation.equals("convert")){
-				System.out.println("[Testing convert script \"" + script.filename + "\"]");
+				System.out.println("\n[Testing convert script \"" + script.filename + "\"]");
 				
 				//Find inputs that have test files
 				for(Iterator<String> itr=script.inputs.iterator(); itr.hasNext();){
@@ -526,30 +535,32 @@ public class ScriptDebugger
 					}
 				}
 				
-				outputs.addAll(script.outputs);
-
-				for(int i=0; i<n; i++){
-					input_type = inputs.get(Math.abs(random.nextInt())%inputs.size());
-					input_file = data_path + test_files.get(input_type).get(Math.abs(random.nextInt()%test_files.get(input_type).size()));		
-					output_type = outputs.get(Math.abs(random.nextInt())%outputs.size());
-					output_file = temp_path + Utility.getFilenameName(input_file) + "." + output_type;
-
-					System.out.println("\n" + Utility.toString(i+1, 4) + ": " + input_type + "->" + output_type);
-					System.out.print("  converting file");
-					script.executeAndWait(input_file, output_file, temp_path, max_operation_time);
-					
-					if(exists(output_file)){
-						successes++;
-						System.out.println("  [success]");
+				if(!inputs.isEmpty()){
+					outputs.addAll(script.outputs);
+	
+					for(int i=0; i<n; i++){
+						input_type = inputs.get(Math.abs(random.nextInt())%inputs.size());
+						input_file = data_path + test_files.get(input_type).get(Math.abs(random.nextInt()%test_files.get(input_type).size()));		
+						output_type = outputs.get(Math.abs(random.nextInt())%outputs.size());
+						output_file = temp_path + Utility.getFilenameName(input_file) + "." + output_type;
+	
+						System.out.println("\n" + Utility.toString(i+1, 4) + ": " + input_type + "->" + output_type);
+						System.out.print("  converting file");
+						script.executeAndWait(input_file, output_file, temp_path, max_operation_time);
 						
-						//Hide the output file to avoid errors with future tests
-						new File(output_file).renameTo(new File(temp_path + "." + Utility.getFilenameName(output_file) + "." + System.currentTimeMillis() + "." + output_type));		
-					}else{
-						System.out.println("  [failure]");
+						if(exists(output_file)){
+							successes++;
+							System.out.println("  [success]");
+							
+							//Hide the output file to avoid errors with future tests
+							new File(output_file).renameTo(new File(temp_path + "." + Utility.getFilenameName(output_file) + "." + System.currentTimeMillis() + "." + output_type));		
+						}else{
+							System.out.println("  [failure]");
+						}
 					}
 				}
 			}else if(script.operation.equals("open") || script.operation.equals("import")){
-				System.out.println("[Testing input script \"" + script.filename + "]");
+				System.out.println("\n[Testing input script \"" + script.filename + "]");
 				output_scripts = script.getAssociatedOutputScripts();
 
 				if(!output_scripts.isEmpty()){
@@ -562,36 +573,38 @@ public class ScriptDebugger
 						}
 					}
 					
-					outputs.addAll(output_scripts.firstElement().outputs);
-
-					for(int i=0; i<n; i++){
-						input_type = inputs.get(Math.abs(random.nextInt())%inputs.size());
-						input_file = data_path + test_files.get(input_type).get(Math.abs(random.nextInt()%test_files.get(input_type).size()));		
-						output_type = outputs.get(Math.abs(random.nextInt())%outputs.size());
-						output_file = temp_path + Utility.getFilenameName(input_file) + "." + output_type;
-
-						System.out.println("\n" + Utility.toString(i+1, 4) + ": " + input_type + "->" + output_type);												
-						System.out.print("    loading file");
-						script.executeAndWait(input_file, null, temp_path, max_operation_time);
-						
-						System.out.print("    saving output");
-						output_scripts.firstElement().executeAndWait(null, output_file, temp_path, max_operation_time);
-						
-						if(exists(output_file)){
-							successes++;
-							System.out.println("    [success]");
+					if(!inputs.isEmpty()){
+						outputs.addAll(output_scripts.firstElement().outputs);
+	
+						for(int i=0; i<n; i++){
+							input_type = inputs.get(Math.abs(random.nextInt())%inputs.size());
+							input_file = data_path + test_files.get(input_type).get(Math.abs(random.nextInt()%test_files.get(input_type).size()));		
+							output_type = outputs.get(Math.abs(random.nextInt())%outputs.size());
+							output_file = temp_path + Utility.getFilenameName(input_file) + "." + output_type;
+	
+							System.out.println("\n" + Utility.toString(i+1, 4) + ": " + input_type + "->" + output_type);												
+							System.out.print("    loading file");
+							script.executeAndWait(input_file, null, temp_path, max_operation_time);
 							
-							//Hide the output file to avoid errors with future tests
-							new File(output_file).renameTo(new File(temp_path + "." + Utility.getFilenameName(output_file) + "." + System.currentTimeMillis() + "." + output_type));		
-						}else{
-							System.out.println("    [failure]");
+							System.out.print("    saving output");
+							output_scripts.firstElement().executeAndWait(null, output_file, temp_path, max_operation_time);
+							
+							if(exists(output_file)){
+								successes++;
+								System.out.println("    [success]");
+								
+								//Hide the output file to avoid errors with future tests
+								new File(output_file).renameTo(new File(temp_path + "." + Utility.getFilenameName(output_file) + "." + System.currentTimeMillis() + "." + output_type));		
+							}else{
+								System.out.println("    [failure]");
+							}
 						}
 					}
 				}else{
 					System.out.println("  No associated output scripts found!");
 				}
 			}else if(script.operation.equals("save") || script.operation.equals("export")){
-				System.out.println("[Testing output script \"" + script.filename + "]");
+				System.out.println("\n[Testing output script \"" + script.filename + "]");
 				input_scripts = script.getAssociatedInputScripts();
 				input_script_index = -1;
 				
@@ -620,29 +633,31 @@ public class ScriptDebugger
 							}
 						}
 						
-						outputs.addAll(script.outputs);
-
-						for(int i=0; i<n; i++){
-							input_type = inputs.get(Math.abs(random.nextInt())%inputs.size());
-							input_file = data_path + test_files.get(input_type).get(Math.abs(random.nextInt()%test_files.get(input_type).size()));		
-							output_type = outputs.get(Math.abs(random.nextInt())%outputs.size());
-							output_file = temp_path + Utility.getFilenameName(input_file) + "." + output_type;
-						
-							System.out.println("\n" + Utility.toString(i+1, 4) + ": " + input_type + "->" + output_type);
-							System.out.print("    loading file");
-							input_scripts.get(input_script_index).executeAndWait(input_file, null, temp_path, max_operation_time);
+						if(!inputs.isEmpty()){
+							outputs.addAll(script.outputs);
+	
+							for(int i=0; i<n; i++){
+								input_type = inputs.get(Math.abs(random.nextInt())%inputs.size());
+								input_file = data_path + test_files.get(input_type).get(Math.abs(random.nextInt()%test_files.get(input_type).size()));		
+								output_type = outputs.get(Math.abs(random.nextInt())%outputs.size());
+								output_file = temp_path + Utility.getFilenameName(input_file) + "." + output_type;
 							
-							System.out.print("    saving output");
-							script.executeAndWait(null, output_file, temp_path, max_operation_time);
-
-							if(exists(output_file)){
-								successes++;
-								System.out.println("    [success]");
+								System.out.println("\n" + Utility.toString(i+1, 4) + ": " + input_type + "->" + output_type);
+								System.out.print("    loading file");
+								input_scripts.get(input_script_index).executeAndWait(input_file, null, temp_path, max_operation_time);
 								
-								//Hide the output file to avoid errors with future tests
-								new File(output_file).renameTo(new File(temp_path + "." + Utility.getFilenameName(output_file) + "." + System.currentTimeMillis() + "." + output_type));		
-							}else{
-								System.out.println("    [failure]");
+								System.out.print("    saving output");
+								script.executeAndWait(null, output_file, temp_path, max_operation_time);
+	
+								if(exists(output_file)){
+									successes++;
+									System.out.println("    [success]");
+									
+									//Hide the output file to avoid errors with future tests
+									new File(output_file).renameTo(new File(temp_path + "." + Utility.getFilenameName(output_file) + "." + System.currentTimeMillis() + "." + output_type));		
+								}else{
+									System.out.println("    [failure]");
+								}
 							}
 						}
 					}else{
@@ -655,6 +670,19 @@ public class ScriptDebugger
 			
 			System.out.println("\nSuccesses: " + successes + " of " + n);
 		}
+		
+		return successes / (double)n;
+	}
+	
+	/**
+	 * Check the robustness of the script by running it over and over again.
+	 * @param script_filename the script filename
+	 * @param n the number of times to run the script
+	 * @return the percentage of successful runs
+	 */
+	public double grindScript(String script_filename, int n)
+	{
+		return grindScript(script_filename, n, false);
 	}
 	
 	/**
@@ -705,7 +733,7 @@ public class ScriptDebugger
 			}else if(args[0].equals("-config")){
 				debugger.configureScript(args[1]);
 			}else if(args[0].equals("-grind")){
-				debugger.grindScript(args[2], Integer.valueOf(args[1]));
+				debugger.grindScript(args[2], Integer.valueOf(args[1]), true);
 			}else{
 				debugger.checkConversions(args[0]);
 			}

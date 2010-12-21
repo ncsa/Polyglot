@@ -719,7 +719,7 @@ public class SoftwareReuseAuxiliary
 			
 			for(int i=0; i<folder_files.length; i++){
 				if(!folder_files[i].isDirectory() && folder_files[i].getName().charAt(0) != '.' && folder_files[i].getName().endsWith(type)){
-					filename = Utility.unixPath(folder_files[i].getAbsolutePath());
+					filename = path + folder_files[i].getName();
 					
 					if(!filename.equals(this.filename)){
 						name = Utility.getFilenameName(filename);
@@ -755,7 +755,7 @@ public class SoftwareReuseAuxiliary
 			
 			for(int i=0; i<folder_files.length; i++){
 				if(!folder_files[i].isDirectory() && folder_files[i].getName().charAt(0) != '.' && folder_files[i].getName().endsWith(type)){
-					filename = Utility.unixPath(folder_files[i].getAbsolutePath());
+					filename = path + folder_files[i].getName();
 
 					if(!filename.equals(this.filename)){
 						name = Utility.getFilenameName(filename);

@@ -9,7 +9,7 @@ mysql_connect("localhost", $username, $password);
 
 for($i=0; $i<sizeof($formats); $i++){
 	$format = trim($formats[$i]);
-	$query = "SELECT files.file FROM files,formats WHERE files.format=formats.format_id AND formats.default_extension='$format'";
+	$query = "SELECT files.file FROM files,formats WHERE files.valid=1 AND files.format=formats.format_id AND formats.default_extension='$format'";
 	$result = mysql_query($query);
 
 	while($row = mysql_fetch_row($result)){

@@ -380,15 +380,22 @@ public class ScriptInstaller
 		String csr_url = "http://isda.ncsa.uiuc.edu/NARA/CSR/";
 		String csr_script_url = "http://isda.ncsa.uiuc.edu/~kmchenry/tmp/CSRDebug/";
 		String script_download_path = "scripts/csr/";
+		String configured_script_path = script_download_path.substring(0, script_download_path.length()-1) + "-configured/";
 		String data_download_path = "data/csr/";
 		TreeSet<String> methods = new TreeSet<String>();
 		TreeSet<String> local_software = new TreeSet<String>();
 		Vector<String> scripts;
 		Vector<String> test_files;
 		String software, filename;
+		String buffer;
+		ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.ini"); debugger.setDataPath(data_download_path);
+		Script script;
+		int tests = 5;
+		double success_rate;
+		boolean downloaded;
 		boolean NO_CONFIG = false;
 		boolean TEST_SCRIPTS = false;
-		
+
 		//Debug arguments
 		if(true && args.length == 0){
 			args = new String[]{"-method", "reg"};
@@ -403,7 +410,7 @@ public class ScriptInstaller
 				System.out.println("  -?: display this help");
 				System.out.println("  -method x: set the method to use to determine what software is installed (wmic, reg)");
 				System.out.println("  -noconfig: just download scripts and do not configure them");
-				System.out.println("  -test: download relevant test data and test the obtained scripts with the local software");
+				System.out.println("  -test n: download relevant test data and grind the obtained scripts n times");
 				System.out.println();
 				System.exit(0);
 			}else if(args[i].equals("-method")){
@@ -412,6 +419,7 @@ public class ScriptInstaller
 				NO_CONFIG = true;
 			}else if(args[i].equals("-test")){
 				TEST_SCRIPTS = true;
+				tests = Integer.valueOf(args[++i]);
 			}else{
 				software = args[i];
 				
@@ -441,11 +449,10 @@ public class ScriptInstaller
 		}
 		
 		//Configure downloaded scripts
-		if(!NO_CONFIG){
-			ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.ini");
-			
+		if(!NO_CONFIG){			
 			for(int i=0; i<scripts.size(); i++){
 				debugger.configureScript(scripts.get(i));
+				scripts.set(i, configured_script_path + Utility.getFilename(scripts.get(i)));
 			}
 		}
 		
@@ -462,11 +469,38 @@ public class ScriptInstaller
 			
 			for(int i=0; i<test_files.size(); i++){
 				filename = Utility.getFilename(test_files.get(i));
-				System.out.println("  " + filename);
+				System.out.print("  " + filename);
 				
-				//Utility.downloadFile(data_download_path, Utility.getFilenameName(filename), csr_url + test_files.get(i));
-				test_files.set(i, data_download_path + filename);
+				downloaded = Utility.downloadFile(data_download_path, Utility.getFilenameName(filename), csr_url + test_files.get(i));
+				
+				if(downloaded){
+					System.out.println();
+					test_files.set(i, data_download_path + filename);
+				}else{
+					System.out.println("  ..failed!");
+				}
 			}
+			
+			//Test downloaded and configured scripts
+			buffer = "";
+			
+			for(int i=0; i<scripts.size(); i++){
+				script = new Script(scripts.get(i), null);
+				
+				if(script.operation.equals("convert") || script.operation.equals("open") || script.operation.equals("import")){
+					success_rate = debugger.grindScript(scripts.get(i), tests);
+					
+					if(success_rate > 0.5){
+						System.out.println("[Using \"" + script.alias + "\"]");
+						buffer += script.alias + "\n";
+					}else{
+						System.out.println("[Dropping \"" + script.alias + "\"]");
+						buffer += "#" + script.alias + "\n";
+					}
+				}
+			}
+			
+			Utility.save(configured_script_path + ".aliases.txt", buffer);
 		}
 	}
 }
