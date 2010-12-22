@@ -23,6 +23,7 @@ public class SoftwareReuseServer implements Runnable
 	private int max_operation_attempts = 1;
 	private String steward_server = null;
 	private int steward_port;
+	private String status = "idle";
 	
 	private boolean ENABLE_MONITORS = false;
 	private boolean STARTED_MONITORS = false;
@@ -70,7 +71,8 @@ public class SoftwareReuseServer implements Runnable
 	        
 	        if(key.charAt(0) != '#'){
 	        	if(key.equals("RootPath")){
-	        		root_path = value + "/";
+	        		//root_path = value + "/";
+	        		root_path = Utility.unixPath(Utility.absolutePath(value)) + "/";
 	        		
 	        		if(!Utility.exists(root_path)){
 	        			System.out.println("Root path doesn't exist!");
@@ -248,6 +250,8 @@ public class SoftwareReuseServer implements Runnable
 			source = null;
 			target = null;
 			
+			status = "executing, " + application.name + ", " + operation.name + ", " + input_data.toString();
+			
 			//Set the source, target, and command to execute
 			if(input_data != null && input_data instanceof CachedFileData){
   			input_file_data = (CachedFileData)input_data;
@@ -293,6 +297,7 @@ public class SoftwareReuseServer implements Runnable
 	    }
   	}
   	
+  	status = "idle";
   	BUSY = false;
   }
   
@@ -425,6 +430,8 @@ public class SoftwareReuseServer implements Runnable
 					session = session_counter.incrementAndGet();
 					System.out.println(" (" + session + ")");
 					Utility.writeObject(outs, session);
+				}else if(message.equals("status")){
+					Utility.writeObject(outs, status);
 				}else if(message.equals("is_busy")){
 					Utility.writeObject(outs, BUSY);
 				}else if(message.equals("ping")){

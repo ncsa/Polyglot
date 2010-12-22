@@ -3,7 +3,7 @@ import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
-import java.util.TreeSet;
+import java.util.*;
 
 public class PolyglotClient extends Polyglot
 {
@@ -36,6 +36,22 @@ public class PolyglotClient extends Polyglot
 		}catch(Exception e){
 			System.out.println("Unable to connect to Polyglot server: " + server);
 		}
+	}
+	
+	/**
+	 * Get a list of connected software reuse servers.
+	 * @return a list of connected software reuse servers
+	 */
+	public Vector<String> getConnections()
+	{
+		Vector<String> connections = null;
+		
+		try{		
+			Utility.writeObject(outs, "connections");
+			connections = (Vector<String>)Utility.readObject(ins);
+		}catch(Exception e) {e.printStackTrace();}
+		
+		return connections;
 	}
 	
 	/**

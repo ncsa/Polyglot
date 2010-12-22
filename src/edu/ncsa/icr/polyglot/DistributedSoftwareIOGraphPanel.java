@@ -67,7 +67,7 @@ public class DistributedSoftwareIOGraphPanel extends IOGraphPanel<String,String>
   {
   	IOGraphPanel iograph_panel = null;
 		String server = "localhost";
-		int port = 32;
+		int port = 50002;
 		int tmpi;  
 		
   	if(args.length > 0){

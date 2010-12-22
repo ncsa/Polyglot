@@ -1,6 +1,8 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.*;
+import edu.ncsa.icr.SoftwareReuseAuxiliary.Application;
+import edu.ncsa.icr.SoftwareReuseAuxiliary.Data;
 import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
@@ -43,12 +45,12 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	}
 	
 	/**
-	 * Get the I/O-graph.
-	 * @return the I/O-graph
+	 * Get the number of software reuse clients being used.
+	 * @return the number of software reuse clients
 	 */
-	public IOGraph<Data,Application> getIOGraph()
+	public int size()
 	{
-		return iograph;
+		return icr_clients.size();
 	}
 
 	/**
@@ -72,6 +74,40 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		add(icr);
 	}
 	
+	/**
+	 * Retrieve the specified software reuse client.
+	 * @param index the index of the desired client
+	 * @return the software reuse client
+	 */
+	public SoftwareReuseClient get(int index)
+	{
+		return icr_clients.get(index);
+	}
+	
+	/**
+	 * Get a list of connected software reuse servers.
+	 * @return a list of connected software reuse servers
+	 */
+	public Vector<String> getConnections()
+	{
+		Vector<String> connections = new Vector<String>();
+		
+		for(int i=0; i<icr_clients.size(); i++){
+			connections.add(icr_clients.get(i).toString());
+		}
+		
+		return connections;
+	}
+	
+	/**
+	 * Get the I/O-graph.
+	 * @return the I/O-graph
+	 */
+	public IOGraph<Data,Application> getIOGraph()
+	{
+		return iograph;
+	}
+
 	/**
 	 * Get the outputs available.
 	 * @return the list of outputs

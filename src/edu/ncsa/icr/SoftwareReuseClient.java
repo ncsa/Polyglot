@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.*;
  * An Imposed Code Reuse client interface.
  * @author Kenton McHenry
  */
-public class SoftwareReuseClient
+public class SoftwareReuseClient implements Comparable
 {
 	private String server;
 	private int port;
@@ -77,6 +77,31 @@ public class SoftwareReuseClient
 	public String getServer()
 	{
 		return server;
+	}
+	
+	/**
+	 * Get the port this client is connect to.
+	 * @return the ICR server port number
+	 */
+	public int getPort()
+	{
+		return port;
+	}
+	
+	/**
+	 * Get the status of the software reuse server.
+	 * @return the status of the software reuse server
+	 */
+	public synchronized String getStatus()
+	{
+		String status = "";
+		
+		try{
+			Utility.writeObject(outs, "status");
+			status = (String)Utility.readObject(ins);
+		}catch(Exception e) {e.printStackTrace();}
+		
+		return status;
 	}
 	
 	/**
@@ -358,6 +383,20 @@ public class SoftwareReuseClient
 		}
 	}
 	
+	/**
+	 * Compare to another object.
+	 * @param object the object to compare to
+	 * @return 0 if equal, -1 otherwise
+	 */
+	public int compareTo(Object object)
+	{
+		if(this == object){
+			return 0;
+		}else{
+			return -1;
+		}
+	}
+
 	/**
 	 * Debug tests for an ICRClient.
 	 * @param icr an ICR client

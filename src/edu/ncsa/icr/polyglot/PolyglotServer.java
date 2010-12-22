@@ -114,7 +114,7 @@ public class PolyglotServer implements Runnable
 		TreeSet<String> output_types;
 		IOGraph<String,String> iograph;
 		String host = client_socket.getInetAddress().getHostName();
-
+		
 		System.out.println("[" + host + "](" + session + "): connection established");
 
 		try{
@@ -155,6 +155,8 @@ public class PolyglotServer implements Runnable
 					
 					Utility.writeObject(outs, iograph);
 					System.out.println("[" + host + "](" + session + "): sending distributed input/output graph");
+				}else if(message.equals("connections")){
+					Utility.writeObject(outs, polyglot.getConnections());
 				}else if(message.equals("convert")){
 					input_file_data = (FileData)Utility.readObject(ins);
 					System.out.println("[" + host + "](" + session + "): received file " + input_file_data.getName() + "." + input_file_data.getFormat());
