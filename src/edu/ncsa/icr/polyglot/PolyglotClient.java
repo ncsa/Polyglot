@@ -42,16 +42,32 @@ public class PolyglotClient extends Polyglot
 	 * Get a list of connected software reuse servers.
 	 * @return a list of connected software reuse servers
 	 */
-	public Vector<String> getConnections()
+	public Vector<String> getServers()
 	{
-		Vector<String> connections = null;
+		Vector<String> servers = null;
 		
 		try{		
-			Utility.writeObject(outs, "connections");
-			connections = (Vector<String>)Utility.readObject(ins);
+			Utility.writeObject(outs, "servers");
+			servers = (Vector<String>)Utility.readObject(ins);
 		}catch(Exception e) {e.printStackTrace();}
 		
-		return connections;
+		return servers;
+	}
+	
+	/**
+	 * Get a list of connected client machines.
+	 * @return a list of connected client machines
+	 */
+	public Vector<String> getClients()
+	{
+		Vector<String> clients = null;
+		
+		try{		
+			Utility.writeObject(outs, "clients");
+			clients = (Vector<String>)Utility.readObject(ins);
+		}catch(Exception e) {e.printStackTrace();}
+		
+		return clients;
 	}
 	
 	/**

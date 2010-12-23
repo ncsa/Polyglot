@@ -88,15 +88,15 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	 * Get a list of connected software reuse servers.
 	 * @return a list of connected software reuse servers
 	 */
-	public Vector<String> getConnections()
+	public Vector<String> getServers()
 	{
-		Vector<String> connections = new Vector<String>();
+		Vector<String> servers = new Vector<String>();
 		
 		for(int i=0; i<icr_clients.size(); i++){
-			connections.add(icr_clients.get(i).toString());
+			servers.add(icr_clients.get(i).toString());
 		}
 		
-		return connections;
+		return servers;
 	}
 	
 	/**

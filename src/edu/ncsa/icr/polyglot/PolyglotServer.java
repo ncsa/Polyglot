@@ -12,6 +12,7 @@ public class PolyglotServer implements Runnable
 	private int port;
 	private PolyglotSteward polyglot = new PolyglotSteward();
 	private int steward_port = -1;
+	private LinkedList<String> clients = new LinkedList<String>();
 	private AtomicInteger session_counter = new AtomicInteger();
 	private boolean RUNNING;
 
@@ -114,8 +115,12 @@ public class PolyglotServer implements Runnable
 		TreeSet<String> output_types;
 		IOGraph<String,String> iograph;
 		String host = client_socket.getInetAddress().getHostName();
-		
+				
 		System.out.println("[" + host + "](" + session + "): connection established");
+
+		synchronized(clients){
+			clients.add(host);
+		}
 
 		try{
 			InputStream ins = client_socket.getInputStream();
@@ -155,8 +160,10 @@ public class PolyglotServer implements Runnable
 					
 					Utility.writeObject(outs, iograph);
 					System.out.println("[" + host + "](" + session + "): sending distributed input/output graph");
-				}else if(message.equals("connections")){
-					Utility.writeObject(outs, polyglot.getConnections());
+				}else if(message.equals("servers")){
+					Utility.writeObject(outs, polyglot.getServers());
+				}else if(message.equals("clients")){
+					Utility.writeObject(outs, new Vector<String>(clients));
 				}else if(message.equals("convert")){
 					input_file_data = (FileData)Utility.readObject(ins);
 					System.out.println("[" + host + "](" + session + "): received file " + input_file_data.getName() + "." + input_file_data.getFormat());
@@ -186,6 +193,10 @@ public class PolyglotServer implements Runnable
 			}
 		}catch(Exception e){
 			System.out.println("[" + host + "](" + session + "): connection lost!");
+		}
+		
+		synchronized(clients){
+			clients.remove(host);
 		}
 	}
   
