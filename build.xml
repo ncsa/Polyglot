@@ -81,8 +81,9 @@
 		<echo file="${tmp}/PolyglotServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
 		<echo file="${tmp}/PolyglotServer.ini" append="false">Port=${polyglot_port}${line.separator}</echo>
 		<echo file="${tmp}/PolyglotServer.ini" append="true">StewardPort=${steward_port}${line.separator}</echo>
-		<echo file="${tmp}/PolyglotServer.ini" append="true">#SoftwareReuseServer=localhost:${icr_port}</echo>
-		
+		<echo file="${tmp}/PolyglotServer.ini" append="true">#SoftwareReuseServer=localhost:${icr_port}${line.separator}</echo>
+		<echo file="${tmp}/PolyglotServer.ini" append="true">PolyglotMonitor=true</echo>
+
 		<echo file="${tmp}/PolyglotMonitor.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotMonitor %1</echo>
 		<echo file="${tmp}/PolyglotMonitor.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotMonitor $1</echo>
 		

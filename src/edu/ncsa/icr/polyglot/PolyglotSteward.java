@@ -359,7 +359,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 				}catch(Exception e) {e.printStackTrace();}
 				
 		  	//Begin accepting connections
-		  	System.out.println("Listening for ICR Servers...");
+		  	System.out.println("Listening for Software Servers...");
 				
 				while(true){
 					try{
@@ -370,7 +370,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 						icr_server = client_socket.getInetAddress().getHostName();
 						icr_port = (Integer)Utility.readObject(client_socket.getInputStream());
 						add(icr_server, icr_port);
-						System.out.println("[Steward]: Found ICR Server - " + icr_server + ":" + icr_port);
+						System.out.println("[Steward]: Found Software Server - " + icr_server + ":" + icr_port);
 					}catch(Exception e) {e.printStackTrace();}
 				}
 			}
@@ -390,7 +390,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 			
 			while(i < icr_clients.size()){
 				if(!icr_clients.get(i).isAlive()){
-					System.out.println("[Steward: Lost ICR Server - " + icr_clients.toString());
+					System.out.println("[Steward: Lost Software Server - " + icr_clients.toString());
 					icr_clients.remove(i);
 					DROPPED_CONNECTION = true;
 				}else{

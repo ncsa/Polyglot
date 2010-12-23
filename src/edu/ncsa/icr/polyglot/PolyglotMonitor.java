@@ -126,12 +126,29 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable
 	}
 	
 	/**
+	 * Add this panel to a frame.
+	 * @return the created frame
+	 */
+	public JFrame createFrame()
+	{
+		JFrame frame = new JFrame("Polyglot Server Status");
+		
+  	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+  	frame.add(this);
+  	frame.setPreferredSize(new Dimension(1100, 400));
+  	frame.pack();
+    frame.setVisible(true);
+    
+    return frame;
+	}
+	
+	/**
 	 * Monitor a Polyglot server.
 	 * @param args the command line arguments
 	 */
 	public static void main(String args[])
 	{
-		JFrame frame = new JFrame("Polyglot Server Status");
+		PolyglotMonitor pm;
 		String server = "localhost";
 		int port = 50002;
 		int tmpi;  
@@ -144,11 +161,8 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable
   			port = Integer.valueOf(args[0].substring(tmpi+1));
   		}
   	}
-  	  	        
-  	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-  	frame.add(new PolyglotMonitor(server, port));
-  	frame.setPreferredSize(new Dimension(1100, 400));
-  	frame.pack();
-    frame.setVisible(true);
+  	
+  	pm = new PolyglotMonitor(server, port);
+  	pm.createFrame();
 	}
 }

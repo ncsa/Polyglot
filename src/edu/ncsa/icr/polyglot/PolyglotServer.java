@@ -14,6 +14,7 @@ public class PolyglotServer implements Runnable
 	private int steward_port = -1;
 	private LinkedList<String> clients = new LinkedList<String>();
 	private AtomicInteger session_counter = new AtomicInteger();
+	private boolean POLYGLOT_MONITOR = false;
 	private boolean RUNNING;
 
 	/**
@@ -30,6 +31,10 @@ public class PolyglotServer implements Runnable
 		}catch(Exception e) {e.printStackTrace();}
 		
 		new Thread(this).start();
+		
+		if(POLYGLOT_MONITOR){
+			new PolyglotMonitor("localhost", port).createFrame();
+		}
 	}
 	
 	/**
@@ -62,6 +67,8 @@ public class PolyglotServer implements Runnable
 	        		}
 	          }else if(key.equals("StewardPort")){
 	          	steward_port = Integer.valueOf(value);
+	          }else if(key.equals("PolyglotMonitor")){
+	          	POLYGLOT_MONITOR = Boolean.valueOf(value);
 	          }
 	        }
 	      }
