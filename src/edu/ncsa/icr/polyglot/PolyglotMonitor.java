@@ -9,7 +9,7 @@ import java.util.*;
  * A tool to monitor the status of a Polyglot server.
  * @author Kenton McHenry
  */
-public class PolyglotMonitorPanel extends HTMLPanel implements Runnable
+public class PolyglotMonitor extends HTMLPanel implements Runnable
 {
 	private PolyglotClient polyglot;
 	
@@ -18,7 +18,7 @@ public class PolyglotMonitorPanel extends HTMLPanel implements Runnable
 	 * @param server the Polyglot server
 	 * @param port the port of the Polyglot server
 	 */
-	public PolyglotMonitorPanel(String server, int port)
+	public PolyglotMonitor(String server, int port)
 	{
 		polyglot = new PolyglotClient(server, port);
 		new Thread(this).start();
@@ -146,7 +146,7 @@ public class PolyglotMonitorPanel extends HTMLPanel implements Runnable
   	}
   	  	        
   	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-  	frame.add(new PolyglotMonitorPanel(server, port));
+  	frame.add(new PolyglotMonitor(server, port));
   	frame.setPreferredSize(new Dimension(1100, 400));
   	frame.pack();
     frame.setVisible(true);
