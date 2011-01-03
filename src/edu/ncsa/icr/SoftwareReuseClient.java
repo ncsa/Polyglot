@@ -99,7 +99,9 @@ public class SoftwareReuseClient implements Comparable
 		try{
 			Utility.writeObject(outs, "status");
 			status = (String)Utility.readObject(ins);
-		}catch(Exception e) {e.printStackTrace();}
+		}catch(Exception e){
+			//e.printStackTrace();
+		}
 		
 		return status;
 	}
@@ -379,7 +381,9 @@ public class SoftwareReuseClient implements Comparable
 			try{
 				Utility.writeObject(outs, "close");
 				Utility.readObject(ins);	//Wait for response
-			}catch(Exception e) {e.printStackTrace();}
+			}catch(Exception e){
+				//e.printStackTrace();
+			}
 		}
 	}
 	

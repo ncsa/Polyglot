@@ -5,6 +5,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import javax.swing.JFrame;
 
 public class PolyglotServer implements Runnable
 {
@@ -14,6 +15,7 @@ public class PolyglotServer implements Runnable
 	private int steward_port = -1;
 	private LinkedList<String> clients = new LinkedList<String>();
 	private AtomicInteger session_counter = new AtomicInteger();
+	private boolean POLYGLOT_WEB_INTERFACE = false;	
 	private boolean POLYGLOT_MONITOR = false;
 	private boolean RUNNING;
 
@@ -31,9 +33,14 @@ public class PolyglotServer implements Runnable
 		}catch(Exception e) {e.printStackTrace();}
 		
 		new Thread(this).start();
+							
+		Utility.pause(5000);		//Wait a bit for software server connections
+		
+		if(POLYGLOT_WEB_INTERFACE) new PolyglotWebInterface("PolyglotWebInterface.ini", false);
 		
 		if(POLYGLOT_MONITOR){
-			new PolyglotMonitor("localhost", port).createFrame();
+			JFrame frame = new PolyglotMonitor("localhost", port).createFrame();
+	  	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		}
 	}
 	
@@ -67,6 +74,8 @@ public class PolyglotServer implements Runnable
 	        		}
 	          }else if(key.equals("StewardPort")){
 	          	steward_port = Integer.valueOf(value);
+	          }else if(key.equals("PolyglotWebInterface")){
+	          	POLYGLOT_WEB_INTERFACE = Boolean.valueOf(value);
 	          }else if(key.equals("PolyglotMonitor")){
 	          	POLYGLOT_MONITOR = Boolean.valueOf(value);
 	          }

@@ -390,7 +390,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 			
 			while(i < icr_clients.size()){
 				if(!icr_clients.get(i).isAlive()){
-					System.out.println("[Steward: Lost Software Server - " + icr_clients.toString());
+					System.out.println("[Steward]: Lost Software Server - " + icr_clients.get(i).toString());
 					icr_clients.remove(i);
 					DROPPED_CONNECTION = true;
 				}else{

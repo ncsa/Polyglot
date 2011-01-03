@@ -42,7 +42,7 @@ public class PolyglotClient extends Polyglot
 	 * Get a list of connected software reuse servers.
 	 * @return a list of connected software reuse servers
 	 */
-	public Vector<String> getServers()
+	public synchronized Vector<String> getServers()
 	{
 		Vector<String> servers = null;
 		
@@ -58,7 +58,7 @@ public class PolyglotClient extends Polyglot
 	 * Get a list of connected client machines.
 	 * @return a list of connected client machines
 	 */
-	public Vector<String> getClients()
+	public synchronized Vector<String> getClients()
 	{
 		Vector<String> clients = null;
 		
@@ -74,7 +74,7 @@ public class PolyglotClient extends Polyglot
 	 * Get the outputs available.
 	 * @return the list of outputs
 	 */
-	public TreeSet<String> getOutputs()
+	public synchronized TreeSet<String> getOutputs()
 	{
 		TreeSet<String> outputs = null;
 		
@@ -91,7 +91,7 @@ public class PolyglotClient extends Polyglot
 	 * @param input the input type
 	 * @return the list of outputs
 	 */
-	public TreeSet<String> getOutputs(String input)
+	public synchronized TreeSet<String> getOutputs(String input)
 	{
 		TreeSet<String> outputs = null;
 		
@@ -109,7 +109,7 @@ public class PolyglotClient extends Polyglot
 	 * @param inputs the input types
 	 * @return the list of outputs
 	 */
-	public TreeSet<String> getOutputs(TreeSet<String> inputs)
+	public synchronized TreeSet<String> getOutputs(TreeSet<String> inputs)
 	{
 		TreeSet<String> outputs = null;
 		
@@ -126,7 +126,7 @@ public class PolyglotClient extends Polyglot
 	 * Get the available inputs, outputs, and conversions.
 	 * @return an IOGraph containing the information as strings
 	 */
-	public IOGraph<String,String> getInputOutputGraph()
+	public synchronized IOGraph<String,String> getInputOutputGraph()
 	{
 		IOGraph<String,String> iograph = null;
 		
@@ -142,7 +142,7 @@ public class PolyglotClient extends Polyglot
 	 * Get a string only version of this IOGraph encoded with host machines.
 	 * @return an IOGraph containing the information as strings
 	 */
-	public IOGraph<String,String> getDistributedInputOutputGraph()
+	public synchronized IOGraph<String,String> getDistributedInputOutputGraph()
 	{
 		IOGraph<String,String> iograph = null;
 		
@@ -160,7 +160,7 @@ public class PolyglotClient extends Polyglot
 	 * @param output_path the output path
 	 * @param output_type the name of the output type
 	 */
-	public void convert(String input_filename, String output_path, String output_type)
+	public synchronized void convert(String input_filename, String output_path, String output_type)
 	{
 		FileData input_file_data = new FileData(input_filename, true);
 		FileData output_file_data;
@@ -177,7 +177,7 @@ public class PolyglotClient extends Polyglot
 	/**
 	 * Close the connection to the Polyglot server.
 	 */
-	public void close()
+	public synchronized void close()
 	{
 		if(outs != null && ins != null){
 			waitOnPending();

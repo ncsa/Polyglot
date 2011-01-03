@@ -10,11 +10,25 @@ import java.util.*;
  * file.  When completed the daemon will create a file "complete" within the folder.
  * @author Kenton McHenry
  */
-public class PolyglotWebServer
+public class PolyglotWebInterface implements Runnable
 {
 	private Polyglot polyglot = null;
   private String path = ".";  
   private int sleep_length = 1000;  				 //How long to sleep before checking for more jobs (in milliseconds)
+  private boolean VERBOSE = false;
+  
+  /**
+   * Class constructor.
+   * @param filename the INI file to load
+   */
+  public PolyglotWebInterface(String filename, boolean VERBOSE)
+  {
+  	loadINI(filename);
+  	this.VERBOSE = VERBOSE;
+  	
+    writeOutputFormats();
+    new Thread(this).start();
+  }
   
   /**
    * Load an initialization file.
@@ -113,7 +127,7 @@ public class PolyglotWebServer
       }
     };
     
-    System.out.println("\nPolyglot Web Server is running ...\n");
+    if(VERBOSE) System.out.println("\nPolyglot Web Server is running ...\n");
 
     while(true){
     	//Read in the uploads directory
@@ -158,8 +172,8 @@ public class PolyglotWebServer
             
             if(PROCESS_FOLDER){            	
               Date date = new Date();
-              System.out.println("[" + date.toString() + "]");
-              System.out.println("Starting job from: " + folder);
+              if(VERBOSE) System.out.println("[" + date.toString() + "]");
+              if(VERBOSE) System.out.println("Starting job from: " + folder);
               
               //Move folder from uploads to downloads
               int tmpi = folder.indexOf('_');
@@ -229,16 +243,16 @@ public class PolyglotWebServer
 		                        
 		                        //Only convert if output doesn't already exist
 		                        if(!Utility.exists(filename_target)){
-		                        	System.out.println("Converting: " + filename + " to " + output_format + "...");
+		                        	if(VERBOSE) System.out.println("Converting: " + filename + " to " + output_format + "...");
 				                      Utility.println(job_log, "Converting: " + filename + " to " + output_format + "...");
 
 		                        	polyglot.convert(filename_source, filename_path, output_format);
 		                        
 		                        	if(Utility.exists(filename_target)){
-		                        		System.out.println("Conversion: " + filename + " to " + output_format + " [Success]");
+		                        		if(VERBOSE) System.out.println("Conversion: " + filename + " to " + output_format + " [Success]");
 		                        		Utility.println(job_log, "Conversion: " + filename + " to " + output_format + " [Success]");
 		                        	}else{
-		                        		System.out.println("Conversion: " + filename + " to " + output_format + " [Failed]");
+		                        		if(VERBOSE) System.out.println("Conversion: " + filename + " to " + output_format + " [Failed]");
 		                        		Utility.println(job_log, "Conversion: " + filename + " to " + output_format + " [Failed]");
 		                        	}
 		                        }
@@ -256,7 +270,7 @@ public class PolyglotWebServer
 		                }catch(Exception e) {e.printStackTrace();}
 		              }
 		              
-		              System.out.println("Ending job from: " + folder_final + "\n");
+		              if(VERBOSE) System.out.println("Ending job from: " + folder_final + "\n");
             		}
             	}.start();
             
@@ -276,9 +290,6 @@ public class PolyglotWebServer
    */
   public static void main(String[] args)
   {
-    PolyglotWebServer pws = new PolyglotWebServer();
-    pws.loadINI("PolyglotWebServer.ini");
-    pws.writeOutputFormats();
-    pws.run();
+    new PolyglotWebInterface("PolyglotWebInterface.ini", true);
   }
 }

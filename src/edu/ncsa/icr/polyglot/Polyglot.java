@@ -19,6 +19,9 @@ public abstract class Polyglot
 	public abstract IOGraph<String,String> getInputOutputGraph();
 	public abstract void convert(String input_filename, String output_path, String output_type);
 	
+	public abstract Vector<String> getServers();
+	public abstract IOGraph<String,String> getDistributedInputOutputGraph();
+
 	/**
 	 * Convert a files format(asynchronously).
 	 * @param input_filename the absolute name of the input file

@@ -2,6 +2,7 @@ package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.*;
 import edu.ncsa.utility.*;
 import java.awt.*;
+import java.awt.event.*;
 import javax.swing.*;
 import java.util.*;
 
@@ -9,10 +10,10 @@ import java.util.*;
  * A tool to monitor the status of a Polyglot server.
  * @author Kenton McHenry
  */
-public class PolyglotMonitor extends HTMLPanel implements Runnable
+public class PolyglotMonitor extends HTMLPanel implements Runnable, ActionListener
 {
-	private PolyglotClient polyglot;
-	
+	private Polyglot polyglot;
+
 	/**
 	 * Class constructor.
 	 * @param server the Polyglot server
@@ -25,14 +26,26 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable
 	}
 	
 	/**
+	 * Class constructor.
+	 * @param polyglot the Polyglot steward to use
+	 */
+	public PolyglotMonitor(PolyglotSteward polyglot)
+	{
+		this.polyglot = polyglot;		
+		new Thread(this).start();
+	}
+	
+	/**
 	 * Continuously check the status of the Polyglot server and display the results.
 	 */
 	public void run()
 	{
 		TreeSet<String> servers = new TreeSet<String>();
-		Vector<String> clients;
+		Vector<String> clients = new Vector<String>();
 		TreeSet<SoftwareReuseClient> server_clients = new TreeSet<SoftwareReuseClient>();
 		TreeSet<String> server_client_strings = new TreeSet<String>();
+		Vector<SoftwareReuseClient> lost_server_clients = new Vector<SoftwareReuseClient>();
+		Vector<String> lost_server_client_strings = new Vector<String>();
 		SoftwareReuseClient server_client;
 		Vector<String> tokens;
 		String server;
@@ -42,24 +55,39 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable
 		while(true){
 			servers.clear();
 			servers.addAll(polyglot.getServers());
-			clients = polyglot.getClients();
+
+			if(polyglot instanceof PolyglotClient){
+				clients = ((PolyglotClient)polyglot).getClients();
+			}
+						
+			//Remove lost connections
+			lost_server_clients.clear();
 			
-			//Remove old connections
 			for(Iterator<SoftwareReuseClient> itr=server_clients.iterator(); itr.hasNext();){
 				server_client = itr.next();
 				
 				if(!servers.contains(server_client.toString())){
 					server_client.close();
-					server_clients.remove(server_client);
+					lost_server_clients.add(server_client);
 				}
 			}
+			
+			for(int i=0; i<lost_server_clients.size(); i++){
+				server_clients.remove(lost_server_clients.get(i));
+			}
+			
+			lost_server_client_strings.clear();
 			
 			for(Iterator<String> itr=server_client_strings.iterator(); itr.hasNext();){
 				server = itr.next();
 				
 				if(!servers.contains(server)){
-					server_client_strings.remove(server);
+					lost_server_client_strings.add(server);
 				}
+			}
+			
+			for(int i=0; i<lost_server_client_strings.size(); i++){
+				server_client_strings.remove(lost_server_client_strings.get(i));
 			}
 			
 			//Add new connections
@@ -92,25 +120,27 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable
 				line = server_client.getStatus();
 				tokens = Utility.split(line, ',', false, true);
 				
-				if(tokens.get(0).equals("idle")){
-					color = "ffffff";
-				}else{
-					color = "b7cee4";
-				}		
-				
-				buffer += "<tr bgcolor=\"#" + color + "\">";
-				buffer += "<td align=\"center\"><b>" + count + "</b></td>";
-				buffer += "<td align=\"center\"><i>" + server_client + "</i></td>";
-
-				for(int i=0; i<4; i++){
-					if(i < tokens.size()){
-						buffer += "<td align=\"center\">" + tokens.get(i) + "</td>";
+				if(!tokens.isEmpty()){
+					if(tokens.get(0).equals("idle")){
+						color = "ffffff";
 					}else{
-						buffer += "<td></td>";
+						color = "b7cee4";
+					}		
+					
+					buffer += "<tr bgcolor=\"#" + color + "\">";
+					buffer += "<td align=\"center\"><b>" + count + "</b></td>";
+					buffer += "<td align=\"center\"><i>" + server_client + "</i></td>";
+	
+					for(int i=0; i<4; i++){
+						if(i < tokens.size()){
+							buffer += "<td align=\"center\">" + tokens.get(i) + "</td>";
+						}else{
+							buffer += "<td></td>";
+						}
 					}
+					
+					buffer += "</tr>";
 				}
-				
-				buffer += "</tr>";
 			}
 			
 			buffer += "</table></center><br>";
@@ -131,17 +161,36 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable
 	 */
 	public JFrame createFrame()
 	{
-		JFrame frame = new JFrame("Polyglot Server Status");
+		JFrame frame;
+		JMenuBar menubar = new JMenuBar();
+		JMenu menu;
+		JMenuItem item;
 		
-  	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-  	frame.add(this);
-  	frame.setPreferredSize(new Dimension(1100, 400));
+		menu = new JMenu("View");
+		item = new JMenuItem("I/O-Graph"); item.addActionListener(this); menu.add(item);
+		menubar.add(menu);
+		
+		frame = new JFrame("Polyglot Server Status");
+		frame.add(this);
+		frame.setJMenuBar(menubar);
+    frame.setPreferredSize(new Dimension(1100, 400));
   	frame.pack();
     frame.setVisible(true);
     
     return frame;
 	}
 	
+	/**
+	 * Action event listener.
+	 * @param e an action event
+	 */
+	public void actionPerformed(ActionEvent e)
+	{
+		if(((JMenuItem)e.getSource()).getText().equals("I/O-Graph")){
+			new DistributedSoftwareIOGraphPanel(polyglot.getDistributedInputOutputGraph(), 2).createFrame();
+		}
+	}
+
 	/**
 	 * Monitor a Polyglot server.
 	 * @param args the command line arguments
@@ -151,18 +200,33 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable
 		PolyglotMonitor pm;
 		String server = "localhost";
 		int port = 50002;
-		int tmpi;  
+		int tmpi;
 		
-  	if(args.length > 0){
-  		tmpi = args[0].lastIndexOf(':');
-  		
-  		if(tmpi != -1){
-  			server = args[0].substring(0, tmpi);
-  			port = Integer.valueOf(args[0].substring(tmpi+1));
-  		}
-  	}
-  	
-  	pm = new PolyglotMonitor(server, port);
-  	pm.createFrame();
+		//Debug arguments
+		if(false && args.length == 0){
+			args = new String[]{"polyglot1.ncsa.illinois.edu:50002"};
+		}
+		
+		//Process command line arguments
+		for(int i=0; i<args.length; i++){			
+			if(args[i].equals("-?")){
+				System.out.println("Usage: ScriptInstaller [options] [host:port]");
+				System.out.println();
+				System.out.println("Options: ");
+				System.out.println("  -?: display this help");
+				System.out.println();
+				System.exit(0);
+			}else{
+	  		tmpi = args[i].lastIndexOf(':');
+	  		
+	  		if(tmpi != -1){
+	  			server = args[i].substring(0, tmpi);
+	  			port = Integer.valueOf(args[i].substring(tmpi+1));
+	  		}				
+			}
+		}
+  	  	
+  	JFrame frame = new PolyglotMonitor(server, port).createFrame();
+  	frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	}
 }

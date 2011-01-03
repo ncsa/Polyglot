@@ -44,7 +44,7 @@
 		<mkdir dir="${tmp}/tmp"/>
 		<mkdir dir="${tmp}/tmp/SoftwareReuseServer"/>
 		<mkdir dir="${tmp}/tmp/IOGraphWeightsTool"/>
-		<mkdir dir="${tmp}/tmp/PolyglotWebServer"/>
+		<mkdir dir="${tmp}/tmp/PolyglotWebInterface"/>
 		<mkdir dir="${tmp}/tmp/MonkeyScript"/>
 		<mkdir dir="${tmp}/scripts/monkey"/>	
 		
@@ -82,6 +82,7 @@
 		<echo file="${tmp}/PolyglotServer.ini" append="false">Port=${polyglot_port}${line.separator}</echo>
 		<echo file="${tmp}/PolyglotServer.ini" append="true">StewardPort=${steward_port}${line.separator}</echo>
 		<echo file="${tmp}/PolyglotServer.ini" append="true">#SoftwareReuseServer=localhost:${icr_port}${line.separator}</echo>
+		<echo file="${tmp}/PolyglotServer.ini" append="true">PolyglotWebInterface=true${line.separator}</echo>
 		<echo file="${tmp}/PolyglotServer.ini" append="true">PolyglotMonitor=true</echo>
 
 		<echo file="${tmp}/PolyglotMonitor.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotMonitor %1</echo>
@@ -97,12 +98,12 @@
 		<echo file="${tmp}/PolyglotPanel.ini" append="true">#SoftwareReuseServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp}/PolyglotPanel.ini" append="true">PolyglotServer=localhost:${polyglot_port}</echo>
 	
-		<echo file="${tmp}/PolyglotWebServer.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebServer</echo>
-		<echo file="${tmp}/PolyglotWebServer.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebServer</echo>
-		<echo file="${tmp}/PolyglotWebServer.ini" append="false">PolyglotPath=tmp/PolyglotWebServer${line.separator}</echo>
-		<echo file="${tmp}/PolyglotWebServer.ini" append="true">#SoftwareReuseServer=localhost:${icr_port}${line.separator}</echo>
-		<echo file="${tmp}/PolyglotWebServer.ini" append="true">PolyglotServer=localhost:${polyglot_port}${line.separator}</echo>
-		<echo file="${tmp}/PolyglotWebServer.ini" append="true">SleepLength=1000</echo>
+		<echo file="${tmp}/PolyglotWebInterface.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebInterface</echo>
+		<echo file="${tmp}/PolyglotWebInterface.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebInterface</echo>
+		<echo file="${tmp}/PolyglotWebInterface.ini" append="false">PolyglotPath=tmp/PolyglotWebInterface${line.separator}</echo>
+		<echo file="${tmp}/PolyglotWebInterface.ini" append="true">#SoftwareReuseServer=localhost:${icr_port}${line.separator}</echo>
+		<echo file="${tmp}/PolyglotWebInterface.ini" append="true">PolyglotServer=localhost:${polyglot_port}${line.separator}</echo>
+		<echo file="${tmp}/PolyglotWebInterface.ini" append="true">SleepLength=1000</echo>
 
 		<echo file="${tmp}/IOGraphPanel.bat">java -cp "%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel %*</echo>
 		<echo file="${tmp}/IOGraphPanel.sh">java -cp lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel $1 $2</echo>

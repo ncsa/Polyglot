@@ -15,10 +15,17 @@ public class DistributedSoftwareIOGraphPanel extends IOGraphPanel<String,String>
    * @param iograph the I/O-Graph
    * @param rings the number of rings used when displaying the graph
    */
-  public DistributedSoftwareIOGraphPanel(IOGraph iograph, int rings)
+  public DistributedSoftwareIOGraphPanel(IOGraph<String,String> iograph, int rings)
   {  	
   	super(iograph, rings, "software");
-  	
+  	colorGraph();
+  }
+  
+  /**
+   * Color the graph according to software servers.
+   */
+  public void colorGraph()
+  {  	
   	//Build color map
   	TreeMap<String,Color> color_map = new TreeMap<String,Color>();
   	TreeSet<String> servers = new TreeSet<String>();
@@ -60,12 +67,26 @@ public class DistributedSoftwareIOGraphPanel extends IOGraphPanel<String,String>
   }
   
 	/**
+	 * Add this panel to a frame.
+	 * @return the created frame
+	 */
+	public JFrame createFrame()
+	{
+    JFrame frame = new JFrame("IOGraph Viewer");
+    frame.add(getAuxiliaryInterfacePane());
+    frame.pack();
+    frame.setVisible(true);
+    
+    return frame;
+	}
+	
+	/**
    * The main starting point for this program.
    * @param args command line arguments
    */
   public static void main(String args[])
   {
-  	IOGraphPanel iograph_panel = null;
+  	DistributedSoftwareIOGraphPanel iograph_panel = null;
 		String server = "localhost";
 		int port = 50002;
 		int tmpi;  
@@ -82,11 +103,8 @@ public class DistributedSoftwareIOGraphPanel extends IOGraphPanel<String,String>
 		PolyglotClient polyglot = new PolyglotClient(server, port);
 		iograph_panel = new DistributedSoftwareIOGraphPanel(polyglot.getDistributedInputOutputGraph(), 2);
 		polyglot.close();
- 
-    JFrame frame = new JFrame("IOGraph Viewer");
-    frame.add(iograph_panel.getAuxiliaryInterfacePane());
-    frame.pack();
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
-    frame.setVisible(true);
+		
+		JFrame frame = iograph_panel.createFrame();
+    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
   }
 }
