@@ -166,7 +166,10 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable, ActionListen
 		JMenu menu;
 		JMenuItem item;
 		
-		menu = new JMenu("View");
+		menu = new JMenu("File");
+		item = new JMenuItem("Exit"); item.addActionListener(this); menu.add(item);
+		menubar.add(menu);
+		menu = new JMenu("Window");
 		item = new JMenuItem("I/O-Graph"); item.addActionListener(this); menu.add(item);
 		menubar.add(menu);
 		
@@ -186,7 +189,9 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable, ActionListen
 	 */
 	public void actionPerformed(ActionEvent e)
 	{
-		if(((JMenuItem)e.getSource()).getText().equals("I/O-Graph")){
+		if(((JMenuItem)e.getSource()).getText().equals("Exit")){
+			System.exit(0);
+		}else	if(((JMenuItem)e.getSource()).getText().equals("I/O-Graph")){
 			new DistributedSoftwareIOGraphPanel(polyglot.getDistributedInputOutputGraph(), 2).createFrame();
 		}
 	}
@@ -203,7 +208,7 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable, ActionListen
 		int tmpi;
 		
 		//Debug arguments
-		if(false && args.length == 0){
+		if(true && args.length == 0){
 			args = new String[]{"polyglot1.ncsa.illinois.edu:50002"};
 		}
 		

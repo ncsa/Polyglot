@@ -20,6 +20,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 { 
 	private PolyglotSteward polyglot = new PolyglotSteward();
   private IOGraph<Data,Application> iograph;
+  private int steward_port = -1;
 
   private int window_width = 700;
   private int window_height = 800;
@@ -191,6 +192,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
     
     //Load data
     loadINI(filename);
+    if(steward_port >= 0) Utility.pause(5000);	//Wait a bit for software server connections
     iograph = polyglot.getIOGraph();
     loadFolder(data_path, extension);
   }
@@ -215,7 +217,13 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#' && key.charAt(0) != ';'){
-	          if(key.equals("SoftwareReuseServer")){
+          	if(key.equals("StewardPort")){
+	          	steward_port = Integer.valueOf(value);
+	          	
+	        		if(steward_port >= 0){
+	        			polyglot.listen(steward_port);
+	        		}
+          	}else if(key.equals("SoftwareReuseServer")){
           		tmpi = value.lastIndexOf(':');
 	        		
 	        		if(tmpi != -1){

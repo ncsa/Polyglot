@@ -18,6 +18,7 @@ import java.util.*;
 public class PolyglotSteward extends Polyglot implements Runnable
 {
 	private Vector<SoftwareReuseClient> icr_clients = new Vector<SoftwareReuseClient>();
+	private TreeSet<String> icr_client_strings = new TreeSet<String>();
 	private IOGraph<Data,Application> iograph = new IOGraph<Data,Application>();
 	private int application_flexibility = 0;
 	
@@ -56,22 +57,30 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	/**
 	 * Add an ICR client.
 	 * @param icr an ICR client
+	 * @return true if successfully added
 	 */
-	public void add(SoftwareReuseClient icr)
+	public synchronized boolean add(SoftwareReuseClient icr)
 	{
-		icr_clients.add(icr);
-		iograph.addGraph(new IOGraph<Data,Application>(icr));
+		if(!icr_client_strings.contains(icr.toString())){
+			icr_client_strings.add(icr.toString());
+			icr_clients.add(icr);
+			iograph.addGraph(new IOGraph<Data,Application>(icr));
+			
+			return true;
+		}else{
+			return false;
+		}
 	}
 	
 	/**
 	 * Add an ICR client.
 	 * @param server the server name
 	 * @param port the port number
+	 * @return true if succesfully added
 	 */
-	public void add(String server, int port)
+	public boolean add(String server, int port)
 	{
-		SoftwareReuseClient icr = new SoftwareReuseClient(server, port);
-		add(icr);
+		return add(new SoftwareReuseClient(server, port));
 	}
 	
 	/**
@@ -369,8 +378,10 @@ public class PolyglotSteward extends Polyglot implements Runnable
 						//Handle this connection
 						icr_server = client_socket.getInetAddress().getHostName();
 						icr_port = (Integer)Utility.readObject(client_socket.getInputStream());
-						add(icr_server, icr_port);
-						System.out.println("[Steward]: Found Software Server - " + icr_server + ":" + icr_port);
+						
+						if(add(icr_server, icr_port)){
+							System.out.println("[Steward]: Found Software Server - " + icr_server + ":" + icr_port);
+						}
 					}catch(Exception e) {e.printStackTrace();}
 				}
 			}
@@ -388,22 +399,25 @@ public class PolyglotSteward extends Polyglot implements Runnable
 			DROPPED_CONNECTION = false;
 			int i = 0;
 			
-			while(i < icr_clients.size()){
-				if(!icr_clients.get(i).isAlive()){
-					System.out.println("[Steward]: Lost Software Server - " + icr_clients.get(i).toString());
-					icr_clients.remove(i);
-					DROPPED_CONNECTION = true;
-				}else{
-					i++;
+			synchronized(this){
+				while(i < icr_clients.size()){
+					if(!icr_clients.get(i).isAlive()){
+						System.out.println("[Steward]: Lost Software Server - " + icr_clients.get(i).toString());
+						icr_client_strings.remove(icr_clients.get(i).toString());
+						icr_clients.remove(i);
+						DROPPED_CONNECTION = true;
+					}else{
+						i++;
+					}
 				}
-			}
-			
-			//Rebuild I/O-graph
-			if(DROPPED_CONNECTION){
-				iograph.clear();
-
-				for(i=0; i<icr_clients.size(); i++){
-					iograph.addGraph(new IOGraph<Data,Application>(icr_clients.get(i)));
+				
+				//Rebuild I/O-graph
+				if(DROPPED_CONNECTION){
+					iograph.clear();
+	
+					for(i=0; i<icr_clients.size(); i++){
+						iograph.addGraph(new IOGraph<Data,Application>(icr_clients.get(i)));
+					}
 				}
 			}
 			

@@ -64,6 +64,8 @@ public class PolyglotServer implements Runnable
 	        if(key.charAt(0) != '#'){
 	        	if(key.equals("Port")){
 	        		this.port = Integer.valueOf(value);
+	        	}else if(key.equals("StewardPort")){
+	          	steward_port = Integer.valueOf(value);
 	          }else if(key.equals("SoftwareReuseServer")){
           		tmpi = value.lastIndexOf(':');
 	        		
@@ -72,8 +74,6 @@ public class PolyglotServer implements Runnable
 	        			port = Integer.valueOf(value.substring(tmpi+1));
 	        			polyglot.add(server, port);
 	        		}
-	          }else if(key.equals("StewardPort")){
-	          	steward_port = Integer.valueOf(value);
 	          }else if(key.equals("PolyglotWebInterface")){
 	          	POLYGLOT_WEB_INTERFACE = Boolean.valueOf(value);
 	          }else if(key.equals("PolyglotMonitor")){
