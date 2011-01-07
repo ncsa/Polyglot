@@ -90,12 +90,17 @@ public class ScriptDebugger
 		String aliases_filename;
 		TreeSet<String> aliases = new TreeSet<String>();
 		Vector<String> script_filenames = new Vector<String>();
+		Vector<String> ignored_executables = new Vector<String>();
 		Vector<String> matches;
 		Scanner scanner;
 		String line, name, alias, executable, buffer;
-		boolean SAVE;
+		boolean IGNORED, SAVE;
 		int tmpi;
 		
+		//Create list of executables to ignore
+		ignored_executables.add("taskkill");
+		
+		//Get script names
 		script_path = Utility.getFilenamePath(script_filename);
 		script_output_path = script_path.substring(0, script_path.length()-1) + "-configured/";
 	
@@ -176,7 +181,7 @@ public class ScriptDebugger
 					line = scanner.nextLine();
 					
 					if(script_extension.equals("ahk")){
-						if(line.startsWith("Run") || line.startsWith("RunWait")){
+						if(line.trim().startsWith("Run") || line.trim().startsWith("RunWait")){
 							//Remove command
 							tmpi = line.indexOf(',');
 							buffer += line.substring(0,tmpi) + ", ";
@@ -189,19 +194,28 @@ public class ScriptDebugger
 								executable = line.substring(0, tmpi);
 								line = line.substring(tmpi+1).trim();
 							}else{
-								tmpi = line.indexOf(' ');
-								executable = line.substring(0, tmpi);
-								line = line.substring(tmpi+1).trim();
+								executable = line;
+								line = "";
 							}
-														
-							if(Utility.getFilenamePath(Utility.unixPath(executable)).isEmpty()){	//Ignore executables using system path variable
-								buffer += "\"" + executable + "\" " + line;
+									
+							//Check if ignored executable
+							IGNORED = false;
+							
+							for(int j=0; j<ignored_executables.size(); j++){
+								if(executable.startsWith(ignored_executables.get(i))){
+									IGNORED = true;
+									break;
+								}
+							}
+							
+							if(IGNORED || Utility.getFilenamePath(Utility.unixPath(executable)).isEmpty()){	//Ignore specified executables or those using system path variable
+								buffer += "\"" + executable + "\" " + line + "\n";
 							}else{
 								System.out.print("  checking for " + executable + "...");
 	
 								if(Utility.exists(executable)){
 									System.out.println(" yes");
-									buffer += "\"" + executable + "\" " + line;
+									buffer += "\"" + executable + "\" " + line + "\n";
 								}else{
 									System.out.println(" no");
 									
@@ -216,7 +230,8 @@ public class ScriptDebugger
 									//Display matches to user for selection
 									if(!matches.isEmpty()){
 										System.out.println("  found " + matches.size() + " matches:");
-	
+										System.out.println("    [0] None");
+										
 										for(int j=0; j<matches.size(); j++){
 											System.out.println("    [" + (j+1) + "] " + matches.get(j));
 										}
@@ -228,7 +243,7 @@ public class ScriptDebugger
 											SAVE = false;
 											break;
 										}else{
-											buffer += "\"" + matches.get(tmpi) + "\" " + line;
+											buffer += "\"" + matches.get(tmpi) + "\" " + line + "\n";
 										}
 									}else{
 										System.out.println("  no matches found!");
