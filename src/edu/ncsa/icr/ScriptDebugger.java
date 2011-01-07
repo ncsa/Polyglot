@@ -202,7 +202,7 @@ public class ScriptDebugger
 							IGNORED = false;
 							
 							for(int j=0; j<ignored_executables.size(); j++){
-								if(executable.startsWith(ignored_executables.get(i))){
+								if(executable.startsWith(ignored_executables.get(j))){
 									IGNORED = true;
 									break;
 								}
