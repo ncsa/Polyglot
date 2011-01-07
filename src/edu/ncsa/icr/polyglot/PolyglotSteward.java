@@ -234,10 +234,12 @@ public class PolyglotSteward extends Polyglot implements Runnable
 						if(!application.icr.isBusy()) break;
 					}
 					
-					if(!application.icr.toString().equals(tmps)){
-						System.out.println(tmps + " is busy, switching to " + application.icr.toString());
-					}else{
-						System.out.println(tmps + " is busy, remaining with " + application.icr.toString());
+					if(false){
+						if(!application.icr.toString().equals(tmps)){
+							System.out.println("[Steward]: " + tmps + " is busy, switching to " + application.icr.toString());
+						}else{
+							System.out.println("[Steward]: " + tmps + " is busy, remaining with " + application.icr.toString());
+						}
 					}
 				}
 				
@@ -368,7 +370,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 				}catch(Exception e) {e.printStackTrace();}
 				
 		  	//Begin accepting connections
-		  	System.out.println("Listening for Software Servers...");
+		  	System.out.println("[Steward]: Listening for Software Servers...");
 				
 				while(true){
 					try{

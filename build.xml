@@ -115,6 +115,7 @@
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">TestPath=tmp/IOGraphWeightsTool${line.separator}</echo>
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">RetryLevel=3${line.separator}</echo>
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">Threaded=false${line.separator}</echo>
+		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">PolyglotMonitor=true${line.separator}</echo>
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">${line.separator}</echo>
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">DataPath=data${line.separator}</echo>
 		<echo file="${tmp}/IOGraphWeightsTool.ini" append="true">Adapter=BufferedImageAdapter${line.separator}</echo>

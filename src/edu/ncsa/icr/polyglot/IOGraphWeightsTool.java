@@ -70,6 +70,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private String test_path = "./";
   private int retry_level = 0;	//0=none, 1=all, 2=partials, 3=failures  
   private Boolean THREADED = false;
+	private boolean POLYGLOT_MONITOR = false;
 
   private String data_path = "./";
   private String adapter = null;
@@ -195,6 +196,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
     if(steward_port >= 0) Utility.pause(5000);	//Wait a bit for software server connections
     iograph = polyglot.getIOGraph();
     loadFolder(data_path, extension);
+    
+		if(POLYGLOT_MONITOR) new PolyglotMonitor(polyglot).createFrame();
   }
   
   /**
@@ -256,6 +259,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	          }else if(key.equals("Threaded")){
 	          	THREADED = Boolean.valueOf(value);
 	          	polyglot.setApplicationFlexibility(1);
+	          }else if(key.equals("PolyglotMonitor")){
+	          	POLYGLOT_MONITOR = Boolean.valueOf(value);
 	          }
 	        }
 	      }
@@ -987,7 +992,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 		        new File(tmp_path).mkdir();
 		        	 
 		        //Convert files to target format
-		        output_panel.addText("<br><b>Performing Job-" + (i+1) + "A </b> (" + working_set.size() + " files)");
+		        output_panel.addText("<br><b>Performing Job-" + (i+1) + "A </b> (" + working_set.size() + " files) ");
 		        
 		        for(Iterator<FileInfo> itr=working_set.iterator(); itr.hasNext();){
 	          	conversions = iograph.getConversions(jobs.get(i).first);
@@ -999,7 +1004,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 		        folder = new File(tmp_path);
 		        folder_files = folder.listFiles(filename_filter);
 		        
-		        output_panel.addText("<br><b>Performing Job-" + (i+1) + "B </b> (" + folder_files.length + " files)");
+		        output_panel.addText("<br><b>Performing Job-" + (i+1) + "B </b> (" + folder_files.length + " files) ");
 		        
 		        if(folder_files != null){
 		          for(int j=0; j<folder_files.length; j++){

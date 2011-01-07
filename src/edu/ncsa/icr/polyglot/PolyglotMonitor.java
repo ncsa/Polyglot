@@ -102,14 +102,14 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable, ActionListen
 			}
 			
 			//Display the status table
-			buffer = "<b><font size=\"+1\">Software Servers</font></b><br><br>";
-			buffer += "<center><table border=\"1\" style=\"border-style: outset;\"><tr>";
-			buffer += "<td width=\"30\" align=\"center\"><b>#</b></td>";
-			buffer += "<td width=\"300\" align=\"center\"><b>server</b></td>";
-			buffer += "<td width=\"100\" align=\"center\"><b>status</b></td>";
-			buffer += "<td width=\"200\" align=\"center\"><b>software</b></td>";
-			buffer += "<td width=\"100\" align=\"center\"><b>operation</b></td>";
-			buffer += "<td width=\"300\" align=\"center\"><b>file</b></td></tr>";
+			buffer = "<b><font size=\"+1\">Software Servers</font></b><br><br>\n";
+			buffer += "<center><table border=\"1\" style=\"border-style: outset;\"><tr>\n";
+			buffer += "<td width=\"30\" align=\"center\"><b>#</b></td>\n";
+			buffer += "<td width=\"300\" align=\"center\"><b>server</b></td>\n";
+			buffer += "<td width=\"100\" align=\"center\"><b>status</b></td>\n";
+			buffer += "<td width=\"200\" align=\"center\"><b>software</b></td>\n";
+			buffer += "<td width=\"100\" align=\"center\"><b>operation</b></td>\n";
+			buffer += "<td width=\"300\" align=\"center\"><b>file</b></td></tr>\n";
 			
 			count = 0;
 			
@@ -127,27 +127,31 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable, ActionListen
 						color = "b7cee4";
 					}		
 					
-					buffer += "<tr bgcolor=\"#" + color + "\">";
-					buffer += "<td align=\"center\"><b>" + count + "</b></td>";
-					buffer += "<td align=\"center\"><i>" + server_client + "</i></td>";
+					buffer += "<tr bgcolor=\"#" + color + "\">\n";
+					buffer += "<td align=\"center\"><b>" + count + "</b></td>\n";
+					buffer += "<td align=\"center\"><i>" + server_client + "</i></td>\n";
 	
 					for(int i=0; i<4; i++){
 						if(i < tokens.size()){
-							buffer += "<td align=\"center\">" + tokens.get(i) + "</td>";
+							buffer += "<td align=\"center\">" + tokens.get(i) + "</td>\n";
 						}else{
-							buffer += "<td></td>";
+							buffer += "<td></td>\n";
 						}
 					}
 					
-					buffer += "</tr>";
+					buffer += "</tr>\n";
 				}
 			}
 			
-			buffer += "</table></center><br>";
-			buffer += "<b><font size=\"+1\">Clients</font></b><br><br>";
+			buffer += "</table></center><br>\n";
+			buffer += "<b><font size=\"+1\">Clients</font></b><br><br>\n";
 			
-			for(int i=0; i<clients.size(); i++){
-				buffer += "&nbsp;&nbsp;" + (i+1) + ". " + clients.get(i) + "<br>";
+			if(clients.isEmpty()){
+				buffer += "&nbsp;&nbsp;None<br>\n";
+			}else{
+				for(int i=0; i<clients.size(); i++){
+					buffer += "&nbsp;&nbsp;" + (i+1) + ". " + clients.get(i) + "<br>\n";
+				}
 			}
 			
 			setText(buffer);
