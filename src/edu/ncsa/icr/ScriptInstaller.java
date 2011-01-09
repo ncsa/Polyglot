@@ -384,7 +384,7 @@ public class ScriptInstaller
 		String data_download_path = "data/csr/";
 		TreeSet<String> methods = new TreeSet<String>();
 		TreeSet<String> local_software = new TreeSet<String>();
-		Vector<String> scripts;
+		Vector<String> scripts = new Vector<String>();
 		Vector<String> test_files;
 		String software, filename;
 		String buffer;
@@ -432,28 +432,42 @@ public class ScriptInstaller
 		}
 		
 		//Download scripts for this system
-		scripts = getSystemScripts(methods, csr_script_url, local_software);
-		
-		if(!Utility.exists(script_download_path)){
-			new File(script_download_path).mkdir();
-		}	
+		if(!methods.isEmpty() || !local_software.isEmpty()){
+			scripts = getSystemScripts(methods, csr_script_url, local_software);
 			
-		System.out.println("\nDownloading scripts:\n");
-		
-		for(int i=0; i<scripts.size(); i++){
-			filename = Utility.getFilename(getScriptFileName(scripts.get(i)));
-			System.out.println("  " + filename);
+			if(!Utility.exists(script_download_path)){
+				new File(script_download_path).mkdir();
+			}	
+				
+			System.out.println("\nDownloading scripts:\n");
 			
-			Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_url + scripts.get(i));
-			scripts.set(i, script_download_path + filename);
+			for(int i=0; i<scripts.size(); i++){
+				filename = Utility.getFilename(getScriptFileName(scripts.get(i)));
+				System.out.println("  " + filename);
+				
+				Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_url + scripts.get(i));
+				scripts.set(i, script_download_path + filename);
+			}
+		}else{
+			File[] files = new File(script_download_path).listFiles();
+			
+			for(int i=0; i<files.length; i++){
+				if(!files[i].getName().startsWith(".")){
+					scripts.add(script_download_path + files[i].getName());
+				}
+			}
 		}
 		
 		//Configure downloaded scripts
 		if(!NO_CONFIG){			
 			for(int i=0; i<scripts.size(); i++){
 				debugger.configureScript(scripts.get(i));
-				scripts.set(i, configured_script_path + Utility.getFilename(scripts.get(i)));
 			}
+		}
+		
+		//Set scripts to configured names (assume configured previously if not configured now)
+		for(int i=0; i<scripts.size(); i++){
+			scripts.set(i, configured_script_path + Utility.getFilename(scripts.get(i)));
 		}
 		
 		//Test downloaded scripts on this system
