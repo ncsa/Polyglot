@@ -583,7 +583,13 @@ public class SoftwareReuseAuxiliary
     	//Examine script name
       String[] tokens = name.split("_");
       alias = tokens[0];
-      operation = tokens[1];
+      
+      if(tokens.length > 1){
+      	operation = tokens[1].toLowerCase();
+      }else{
+      	operation = "";
+      	System.out.println("Warning: script \"" + filename + "\" violates naming convention (unknown operation)!");
+      }
     
       if(tokens.length > 2){
         if(operation.equals("open") || operation.equals("import")){
@@ -609,7 +615,7 @@ public class SoftwareReuseAuxiliary
         	application = application.substring(0, application.indexOf('(')).trim();
         }
  
-        if(!operation.equals("monitor") && !operation.equals("exit") && !operation.equals("kill")){
+        if(operation.equals("open") || operation.equals("import") || operation.equals("save") || operation.equals("export") || operation.equals("convert")){
         	//Get content types supported by the application
         	line = ins.readLine();
           line = line.substring(comment_head.length());				//Remove comment characters

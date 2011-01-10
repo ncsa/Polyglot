@@ -330,7 +330,7 @@ public class ScriptInstaller
 				formats_string += ", " + itr.next();
 			}
 		}
-				
+		
 		//Get files from CSR
 		result = Utility.readURL(csr_script_url + "get_files.php?formats=" + Utility.urlEncode(formats_string));
 		scanner = new Scanner(result);
@@ -386,6 +386,7 @@ public class ScriptInstaller
 		TreeSet<String> local_software = new TreeSet<String>();
 		Vector<String> scripts = new Vector<String>();
 		Vector<String> test_files;
+		File[] files;
 		String software, filename;
 		String buffer;
 		ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.ini"); debugger.setDataPath(data_download_path);
@@ -448,8 +449,8 @@ public class ScriptInstaller
 				Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_url + scripts.get(i));
 				scripts.set(i, script_download_path + filename);
 			}
-		}else{
-			File[] files = new File(script_download_path).listFiles();
+		}else{	//Use previously downloaded scripts
+			files = new File(script_download_path).listFiles();
 			
 			for(int i=0; i<files.length; i++){
 				if(!files[i].getName().startsWith(".")){
@@ -466,8 +467,19 @@ public class ScriptInstaller
 		}
 		
 		//Set scripts to configured names (assume configured previously if not configured now)
-		for(int i=0; i<scripts.size(); i++){
-			scripts.set(i, configured_script_path + Utility.getFilename(scripts.get(i)));
+		if(false){
+			for(int i=0; i<scripts.size(); i++){
+				scripts.set(i, configured_script_path + Utility.getFilename(scripts.get(i)));
+			}
+		}else{
+			files = new File(configured_script_path).listFiles();
+			scripts.clear();
+			
+			for(int i=0; i<files.length; i++){
+				if(!files[i].getName().startsWith(".")){
+					scripts.add(configured_script_path + files[i].getName());
+				}
+			}
 		}
 		
 		//Test downloaded scripts on this system
