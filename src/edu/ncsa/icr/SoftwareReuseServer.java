@@ -220,6 +220,33 @@ public class SoftwareReuseServer implements Runnable
   }
   
   /**
+	 * Get the port the server is listening to.
+	 * @return the port used
+	 */
+	public int getPort()
+	{
+		return port;
+	}
+	
+	/**
+	 * Get the servers cache path.
+	 * @return the servers cache path
+	 */
+	public String getCachePath()
+	{
+		return cache_path;
+	}
+
+	/**
+   * Get the utilized applications.
+   * @return a list of applications being used
+   */
+  public Vector<Application> getApplications()
+  {
+  	return applications;
+  }
+  
+  /**
    * Execute the given list of tasks.
    * @param host the host requesting this task execution
    * @param session the session id

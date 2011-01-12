@@ -200,12 +200,23 @@ public class SoftwareReuseAuxiliary
 		
 		/**
 		 * Class constructor.
-		 * @param absolute_name the absolute name of the file
+		 * @param filename the name of the file
 		 */
-		public CachedFileData(String absolute_name)
+		public CachedFileData(String filename)
 		{
-			name = Utility.getFilenameName(absolute_name);
-			format = Utility.getFilenameExtension(absolute_name);
+			name = Utility.getFilenameName(filename);
+			format = Utility.getFilenameExtension(filename);
+		}
+		
+		/**
+		 * Class constructor.
+		 * @param filename the name of the file
+		 * @param format the new format of this data
+		 */
+		public CachedFileData(String filename, String format)
+		{
+			name = Utility.getFilenameName(filename);
+			this.format = format;
 		}
 		
 		/**
