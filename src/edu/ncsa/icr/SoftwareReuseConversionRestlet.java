@@ -10,12 +10,43 @@ import org.restlet.representation.*;
 
 /**
  * A restful conversion interface for a software reuse server.
+ * Think of this as an extended software reuse server.
  * @author Kenton McHenry
  */
 public class SoftwareReuseConversionRestlet extends ServerResource
 {
 	private static SoftwareReuseServer server;
 	private static Vector<Application> applications;
+	private static Vector<TreeSet<String>> inputs = new Vector<TreeSet<String>>();
+	private static Vector<TreeSet<String>> outputs = new Vector<TreeSet<String>>();
+	
+	/**
+	 * Initialize.
+	 */
+	public static void initialize()
+	{
+		Operation operation;
+		
+		server = new SoftwareReuseServer("SoftwareReuseServer.ini");
+		applications = server.getApplications();
+				
+		for(int i=0; i<applications.size(); i++){
+			inputs.add(new TreeSet<String>());
+			outputs.add(new TreeSet<String>());
+			
+			for(int j=0; j<applications.get(i).operations.size(); j++){
+				operation = applications.get(i).operations.get(j);
+				
+				for(int k=0; k<operation.inputs.size(); k++){
+					inputs.get(i).add(operation.inputs.get(k).toString());
+				}
+				
+				for(int k=0; k<operation.outputs.size(); k++){
+					outputs.get(i).add(operation.outputs.get(k).toString());
+				}
+			}
+		}
+	}
 	
 	/**
 	 * Get the applications along with their available inputs/outputs.
@@ -24,34 +55,17 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 	public String getApplications()
 	{
 		String buffer = "";
-		TreeSet<String> application_inputs = new TreeSet<String>();
-		TreeSet<String> application_outputs = new TreeSet<String>();
-		Operation operation;			
 
 		for(int i=0; i<applications.size(); i++){
-			application_inputs.clear();
-			application_outputs.clear();
 			buffer += applications.get(i).alias + "\n";
 			
-			for(int j=0; j<applications.get(i).operations.size(); j++){
-				operation = applications.get(i).operations.get(j);
-				
-				for(int k=0; k<operation.inputs.size(); k++){
-					application_inputs.add(operation.inputs.get(k).toString());
-				}
-				
-				for(int k=0; k<operation.outputs.size(); k++){
-					application_outputs.add(operation.outputs.get(k).toString());
-				}
-			}
-			
-			for(Iterator<String> itr=application_inputs.iterator(); itr.hasNext();){
+			for(Iterator<String> itr=inputs.get(i).iterator(); itr.hasNext();){
 				buffer += itr.next() + " ";
 			}
 			
 			buffer += "\n";
 			
-			for(Iterator<String> itr=application_outputs.iterator(); itr.hasNext();){
+			for(Iterator<String> itr=outputs.get(i).iterator(); itr.hasNext();){
 				buffer += itr.next() + " ";
 			}
 			
@@ -68,12 +82,79 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 	public String getForm()
 	{
 		String buffer = "";
+		String format;
+		int count;
 		
-		buffer += "<form name=\"converson\", action=\"\" method=\"get\">\n";
-		buffer += "Application: <input type=\"text\" name=\"application\"><br>\n";
-		buffer += "File: <input type=\"text\" name=\"file\"><br>\n";
-		buffer += "Format: <input type=\"text\" name=\"format\"><br>\n";
-		buffer += "<input type=\"submit\" value=\"Submit\">";
+		buffer += "<script type=\"text/javascript\">\n";
+		buffer += "function setFormats(){\n";
+		buffer += "  var select = document.getElementById('application');\n";
+		buffer += "  var application = select.options[select.selectedIndex].value;\n";
+		buffer += "  var inputs = document.getElementById('inputs');\n";
+		buffer += "  var outputs = document.getElementById('format');\n";
+		buffer += "  \n";
+		buffer += "  outputs.options.length = 0;\n";
+		buffer += "  \n";
+		
+		for(int i=0; i<applications.size(); i++){
+			if(i > 0) buffer += "\n";
+			buffer += "  if(application == \"" + applications.get(i) + "\"){\n";
+			count = 0;
+
+			buffer += "    inputs.innerHTML = \"";
+			
+			for(Iterator<String> itr=inputs.get(i).iterator(); itr.hasNext();){
+				if(count > 0) buffer += ", ";
+				buffer += itr.next();
+				count++;
+			}
+			
+			buffer += "\";\n";
+			count = 0;
+			
+			for(Iterator<String> itr=outputs.get(i).iterator(); itr.hasNext();){
+				format = itr.next();
+				buffer += "    outputs.options[" + count + "] = new Option(\"" + format + "\", \"" + format + "\", false, false);\n";
+				count++;
+			}
+			
+			buffer += "  }\n";
+		}
+		
+		buffer += "}\n";
+		buffer += "</script>\n\n";
+		
+		buffer += "<form name=\"converson\" action=\"\" method=\"get\">\n";
+		buffer += "<table>\n";
+		buffer += "<tr><td><b>Application:</b></td>\n";
+		buffer += "<td><select name=\"application\" id=\"application\" onchange=\"setFormats();\">\n";
+		
+		for(int i=0; i<applications.size(); i++){
+			buffer += "<option value=\"" + applications.get(i) + "\">" + applications.get(i) + "</option>\n";
+		}
+		
+		buffer += "</select></td></tr>\n";
+		buffer += "<tr><td><td width=\"100\"><i><font size=\"-1\"><div id=\"inputs\">";
+		count = 0;
+		
+		for(Iterator<String> itr=inputs.get(0).iterator(); itr.hasNext();){
+			if(count > 0) buffer += ", ";
+			buffer += itr.next();
+			count++;
+		}
+		
+		buffer += "</div></font></i></td></tr>\n";
+		buffer += "<tr><td><b>File:</b></td><td><input type=\"text\" name=\"file\" size=\"100\"></td></tr>\n";
+		buffer += "<tr><td><b>Format:</b></td>\n";
+		buffer += "<td><select name=\"format\" id=\"format\">\n";
+		
+		for(Iterator<String> itr=outputs.get(0).iterator(); itr.hasNext();){
+			format = itr.next();
+			buffer += "<option value=\"" + format + "\">" + format + "</option>\n";
+		}
+		
+		buffer += "</select></td></tr>\n";		
+		buffer += "<tr><td></td><td><input type=\"submit\" value=\"Convert\"></td></tr>\n";
+		buffer += "</table>\n";
 		buffer += "</form>";
 		
 		return buffer;
@@ -82,7 +163,7 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 	/**
 	 * Get the tasks involved in using the given applications to convert the given file to the specified output format.
 	 * @param application_name the name of the application to use.
-	 * @param filename the file name of the file to convert
+	 * @param filename the file name of the cached file to convert
 	 * @param output_format the output format
 	 * @return the tasks to perform the conversion
 	 */
@@ -92,6 +173,7 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 		Application application;
 		Operation operation;
 		String input_format = Utility.getFilenameExtension(filename);
+		String format;
 		int application_index = -1;
 		int input_operation_index = -1;
 		int output_operation_index = -1;
@@ -113,7 +195,9 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 				
 				if(input_operation_index == -1){
 					for(int j=0; j<operation.inputs.size(); j++){
-						if(operation.inputs.get(j).equals(input_format)){
+						format = ((FileData)operation.inputs.get(j)).getFormat();
+						
+						if(format.equals(input_format)){
 							input_operation_index = i;
 							break;
 						}
@@ -122,7 +206,9 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 				
 				if(output_operation_index == -1){
 					for(int j=0; j<operation.outputs.size(); j++){
-						if(operation.outputs.get(j).equals(output_format)){
+						format = ((FileData)operation.outputs.get(j)).getFormat();
+						
+						if(format.equals(output_format)){
 							output_operation_index = i;
 							break;
 						}
@@ -146,8 +232,8 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 				if(input_operation_index == output_operation_index){	//Binary operation (e.g. "convert")
 					tasks.add(new Task(application_index, input_operation_index, new CachedFileData(filename), new CachedFileData(filename, output_format)));
 				}else{
-					tasks.add(new Task(application_index, input_operation_index, new CachedFileData(filename), null));
-					tasks.add(new Task(application_index, output_operation_index, null, new CachedFileData(filename, output_format)));
+					tasks.add(new Task(application_index, input_operation_index, new CachedFileData(filename), new Data()));
+					tasks.add(new Task(application_index, output_operation_index, new Data(), new CachedFileData(filename, output_format)));
 				}
 			}
 		}
@@ -160,13 +246,20 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 	 * @param application the application to use
 	 * @param file the URL of the file to convert
 	 * @param format the output format
+	 * @return the results of the conversion
 	 */
-	public synchronized void convert(String application, String file, String format)
+	public synchronized String convert(String application, String file, String format)
 	{
-		String filename = server.getCachePath() + "0_" + Utility.getFilename(file);
-		
+		String buffer = "";
+		Vector<Task> tasks = getTasks(application, Utility.getFilename(file), format);
+				
 		Utility.downloadFile(server.getCachePath(), "0_" + Utility.getFilenameName(file), file);
-		server.executeTasks("localhost", 0, getTasks(application, filename, format));
+		Task.print(applications, tasks);
+		server.executeTasks("localhost", 0, tasks);
+		
+		buffer = "ok1";
+		
+		return buffer;
 	}
 	
 	@Get
@@ -187,7 +280,7 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 		p = form.getFirst("form"); if(p != null) SHOW_FORM = Boolean.valueOf(p.getValue());
 
 		if(application != null && file != null && format != null){
-			convert(application, file, format);
+			representation = new StringRepresentation(convert(application, file, format), MediaType.TEXT_HTML);
 		}else{
 			if(SHOW_FORM){
 				representation = new StringRepresentation(getForm(), MediaType.TEXT_HTML);
@@ -205,8 +298,7 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 	 */
 	public static void main(String[] args)
 	{		
-		server = new SoftwareReuseServer("SoftwareReuseServer.ini");
-		applications = server.getApplications();
+		initialize();
 
 		try{
 			new Server(Protocol.HTTP, 8182, SoftwareReuseConversionRestlet.class).start();

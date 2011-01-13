@@ -548,6 +548,40 @@ public class SoftwareReuseAuxiliary
   		this.input_data = input_data;
   		this.output_data = output_data;
   	}
+  	
+  	/**
+  	 * Print the given tasks.
+  	 * @param tasks the tasks to print
+  	 */
+  	public static void print(Vector<Task> tasks)
+  	{
+  		for(int i=0; i<tasks.size(); i++){
+  			System.out.print(tasks.get(i).application + " ");
+  			System.out.print(tasks.get(i).operation + " ");
+  			System.out.print(tasks.get(i).input_data + " ");
+  			System.out.print(tasks.get(i).output_data + "\n");
+  		}
+  	}
+  	
+  	/**
+  	 * Print the given tasks.
+  	 * @param applications the application data referenced
+  	 * @param tasks the tasks to print
+  	 */
+  	public static void print(Vector<Application> applications, Vector<Task> tasks)
+  	{
+  		Application application;
+  		Operation operation;
+  		
+  		for(int i=0; i<tasks.size(); i++){
+  			application = applications.get(tasks.get(i).application);
+  			operation = application.operations.get(tasks.get(i).operation);
+  			
+  			System.out.print("\"" + application + "\" ");
+  			System.out.print(operation.name + " ");
+  			System.out.print(tasks.get(i).input_data + " ");
+  			System.out.print(tasks.get(i).output_data + "\n");  		}
+  	}
   }
   
   /**
