@@ -170,7 +170,7 @@ public class PolyglotClient extends Polyglot
 			Utility.writeObject(outs, input_file_data);
 			Utility.writeObject(outs, output_type);
 			output_file_data = (FileData)Utility.readObject(ins);
-			output_file_data.save(output_path, null);
+			if(output_file_data != null) output_file_data.save(output_path, null);
 		}catch(Exception e) {e.printStackTrace();}
 	}
 	

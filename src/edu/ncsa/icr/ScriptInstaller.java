@@ -376,9 +376,9 @@ public class ScriptInstaller
 	 * @param args the command line arguments
 	 */
 	public static void main(String args[])
-	{		
-		String csr_url = "http://isda.ncsa.uiuc.edu/NARA/CSR/";
+	{				
 		String csr_script_url = "http://isda.ncsa.uiuc.edu/~kmchenry/tmp/CSRDebug/";
+		String csr_download_url = "http://isda.ncsa.uiuc.edu/NARA/CSR/php/search/download.php?file=";
 		String script_download_path = "scripts/csr/";
 		String configured_script_path = script_download_path.substring(0, script_download_path.length()-1) + "-configured/";
 		String data_download_path = "data/csr/";
@@ -444,10 +444,16 @@ public class ScriptInstaller
 			
 			for(int i=0; i<scripts.size(); i++){
 				filename = Utility.getFilename(getScriptFileName(scripts.get(i)));
-				System.out.println("  " + filename);
+				System.out.print("  " + filename);
 				
-				Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_url + scripts.get(i));
-				scripts.set(i, script_download_path + filename);
+				downloaded = Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_download_url + scripts.get(i));
+				
+				if(downloaded){
+					System.out.println();
+					scripts.set(i, script_download_path + filename);
+				}else{
+					System.out.println("  ..failed!");
+				}
 			}
 		}else{	//Use previously downloaded scripts
 			files = new File(script_download_path).listFiles();
@@ -497,7 +503,7 @@ public class ScriptInstaller
 				filename = Utility.getFilename(test_files.get(i));
 				System.out.print("  " + filename);
 				
-				downloaded = Utility.downloadFile(data_download_path, Utility.getFilenameName(filename), csr_url + test_files.get(i));
+				downloaded = Utility.downloadFile(data_download_path, Utility.getFilenameName(filename), csr_download_url + test_files.get(i));
 				
 				if(downloaded){
 					System.out.println();

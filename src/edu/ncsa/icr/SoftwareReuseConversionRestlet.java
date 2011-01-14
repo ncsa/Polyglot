@@ -2,7 +2,9 @@ package edu.ncsa.icr;
 import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.icr.SoftwareReuseAuxiliary.Application;
 import edu.ncsa.utility.*;
+import java.io.*;
 import java.util.*;
+import java.net.*;
 import org.restlet.*;
 import org.restlet.resource.*;
 import org.restlet.data.*;
@@ -50,27 +52,41 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 	}
 	
 	/**
-	 * Get the applications along with their available inputs/outputs.
-	 * @return the applications and their inputs/outputs
+	 * Get the applications available.
+	 * @return the applications
 	 */
 	public String getApplications()
 	{
 		String buffer = "";
 
 		for(int i=0; i<applications.size(); i++){
-			buffer += applications.get(i).alias + "\n";
-			
-			for(Iterator<String> itr=inputs.get(i).iterator(); itr.hasNext();){
-				buffer += itr.next() + " ";
+			buffer += applications.get(i).alias + " (" + applications.get(i).name + ")\n";
+		}
+		
+		return buffer;
+	}
+	
+	/**
+	 * Get the formats supported by the given application.
+	 * @param alias the alias of the desired application
+	 * @return the formats supported
+	 */
+	public String getApplicationFormats(String alias)
+	{
+		String buffer = "";
+		
+		for(int i=0; i<applications.size(); i++){
+			if(applications.get(i).alias.equals(alias)){
+				for(Iterator<String> itr=inputs.get(i).iterator(); itr.hasNext();){
+					buffer += itr.next() + " ";
+				}
+				
+				buffer += "\n";
+				
+				for(Iterator<String> itr=outputs.get(i).iterator(); itr.hasNext();){
+					buffer += itr.next() + " ";
+				}
 			}
-			
-			buffer += "\n";
-			
-			for(Iterator<String> itr=outputs.get(i).iterator(); itr.hasNext();){
-				buffer += itr.next() + " ";
-			}
-			
-			buffer += "\n\n";
 		}
 		
 		return buffer;
@@ -98,7 +114,7 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 		
 		for(int i=0; i<applications.size(); i++){
 			if(i > 0) buffer += "\n";
-			buffer += "  if(application == \"" + applications.get(i) + "\"){\n";
+			buffer += "  if(application == \"" + applications.get(i).alias + "\"){\n";
 			count = 0;
 
 			buffer += "    inputs.innerHTML = \"";
@@ -124,13 +140,13 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 		buffer += "}\n";
 		buffer += "</script>\n\n";
 		
-		buffer += "<form name=\"converson\" action=\".\" method=\"get\">\n";
+		buffer += "<form name=\"converson\" action=\"form/\" method=\"get\">\n";
 		buffer += "<table>\n";
 		buffer += "<tr><td><b>Application:</b></td>\n";
 		buffer += "<td><select name=\"application\" id=\"application\" onchange=\"setFormats();\">\n";
 		
 		for(int i=0; i<applications.size(); i++){
-			buffer += "<option value=\"" + applications.get(i) + "\">" + applications.get(i) + "</option>\n";
+			buffer += "<option value=\"" + applications.get(i).alias + "\">" + applications.get(i) + "</option>\n";
 		}
 		
 		buffer += "</select></td></tr>\n";
@@ -163,12 +179,12 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 	
 	/**
 	 * Get the tasks involved in using the given applications to convert the given file to the specified output format.
-	 * @param application_name the name of the application to use.
+	 * @param application_alias the alias of the application to use.
 	 * @param filename the file name of the cached file to convert
 	 * @param output_format the output format
 	 * @return the tasks to perform the conversion
 	 */
-	public Vector<Task> getTasks(String application_name, String filename, String output_format)
+	public Vector<Task> getTasks(String application_alias, String filename, String output_format)
 	{
 		Vector<Task> tasks = new Vector<Task>();
 		Application application;
@@ -181,7 +197,7 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 		
 		//Find the application
 		for(int i=0; i<applications.size(); i++){
-			if(applications.get(i).name.equals(application_name)){
+			if(applications.get(i).alias.equals(application_alias)){
 				application_index = i;
 				break;
 			}
@@ -283,45 +299,57 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 	@Get
 	public Representation httpGetHandler()
 	{
-		String application = null;
-		String file = null;
-		String format = null;
-		Form form;
-		Parameter p;
-		
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
-				
-		if(part0.equals("software")){
+		String part2 = (parts.size() > 2) ? parts.get(2) : "";
+		String application = null, file = null, format = null, url;
+		Form form;
+		Parameter p;
+		
+		if(part0.isEmpty()){
 			return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
-		}else if(part0.equals("new")){
-			return new StringRepresentation(getForm(), MediaType.TEXT_HTML);
-		}else if(part0.equals("download")){
-			form = getRequest().getResourceRef().getQueryAsForm();
-			p = form.getFirst("file"); if(p != null) file = p.getValue();
-	
-			if(file != null){
-				return new StringRepresentation("ok1", MediaType.TEXT_PLAIN);
-			}else{
-				return new StringRepresentation("missing arguments", MediaType.TEXT_PLAIN);
-			}
-		}else if(part0.startsWith("?")){
-			form = getRequest().getResourceRef().getQueryAsForm();
-			p = form.getFirst("application"); if(p != null) application = p.getValue();
-			p = form.getFirst("file"); if(p != null) file = p.getValue();
-			p = form.getFirst("format"); if(p != null) format = p.getValue();
-	
-			if(application != null && file != null && format != null){
-				file = getReference().getBaseRef() + "/download/?file=" + convertLater(application, file, format);
-				return new StringRepresentation("<a href=" + file + ">" + file + "</a>", MediaType.TEXT_HTML);
-			}else{
-				return new StringRepresentation("missing arguments", MediaType.TEXT_PLAIN);
-			}
-		}else if(part0.isEmpty()){
-			return new StringRepresentation("missing arguments", MediaType.TEXT_PLAIN);
 		}else{
-			return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
+			if(part0.equals("form")){
+				form = getRequest().getResourceRef().getQueryAsForm();
+				p = form.getFirst("application"); if(p != null) application = p.getValue();
+				p = form.getFirst("file"); if(p != null) file = p.getValue();
+				p = form.getFirst("format"); if(p != null) format = p.getValue();
+				
+				if(application != null && file != null && format != null){
+					url = getRootRef() + application + "/" + format + "/" + URLEncoder.encode(file);
+
+					return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
+				}else{
+					return new StringRepresentation(getForm(), MediaType.TEXT_HTML);
+				}
+			}else if(part0.equals("result")){
+				if(!part1.isEmpty()){	
+					file = server.getCachePath() + "0_" + part1;
+					
+					if(Utility.exists(file)){
+						return new FileRepresentation(file, MediaType.MULTIPART_ALL);
+					}else{
+						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
+					}
+				}else{
+					return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
+				}
+			}else if(part1.isEmpty()){
+				return new StringRepresentation(getApplicationFormats(part0), MediaType.TEXT_PLAIN);
+			}else{
+				if(part2.isEmpty()){
+					return new StringRepresentation("no file specified", MediaType.TEXT_PLAIN);
+				}else{
+					application = part0;
+					file = URLDecoder.decode(part2);
+					format = part1;
+					
+					file = getReference().getBaseRef() + "/result/" + convertLater(application, file, format);
+					
+					return new StringRepresentation("<a href=" + file + ">" + file + "</a>", MediaType.TEXT_HTML);
+				}
+			}
 		}
 	}
 	

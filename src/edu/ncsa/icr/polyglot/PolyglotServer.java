@@ -195,7 +195,7 @@ public class PolyglotServer implements Runnable
 					}
 					
 					Utility.writeObject(outs, output_file_data);
-					System.out.println("[" + host + "](" + session + "): sent file " + output_file_data.getName() + "." + output_file_data.getFormat());
+					if(output_file_data != null) System.out.println("[" + host + "](" + session + "): sent file " + output_file_data.getName() + "." + output_file_data.getFormat());
 				}else if(message.equals("close")){
 					Utility.writeObject(outs, "bye");
 					System.out.println("[" + host + "](" + session + "): closing connection");
@@ -209,6 +209,7 @@ public class PolyglotServer implements Runnable
 			}
 		}catch(Exception e){
 			System.out.println("[" + host + "](" + session + "): connection lost!");
+			//e.printStackTrace();
 		}
 		
 		synchronized(clients){

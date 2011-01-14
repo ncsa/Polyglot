@@ -127,7 +127,7 @@ public class PolyglotWebInterface implements Runnable
       }
     };
     
-    if(VERBOSE) System.out.println("\nPolyglot Web Server is running ...\n");
+    if(VERBOSE) System.out.println("\nPolyglot Web Interface is running ...\n");
 
     while(true){
     	//Read in the uploads directory
