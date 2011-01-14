@@ -1,12 +1,13 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.icr.SoftwareReuseAuxiliary.Application;
-import edu.ncsa.utility.Utility;
+import edu.ncsa.utility.*;
 import java.util.*;
 import org.restlet.*;
 import org.restlet.resource.*;
 import org.restlet.data.*;
 import org.restlet.representation.*;
+import org.restlet.routing.Router;
 
 /**
  * A restful conversion interface for a software reuse server.
@@ -123,7 +124,7 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 		buffer += "}\n";
 		buffer += "</script>\n\n";
 		
-		buffer += "<form name=\"converson\" action=\"\" method=\"get\">\n";
+		buffer += "<form name=\"converson\" action=\".\" method=\"get\">\n";
 		buffer += "<table>\n";
 		buffer += "<tr><td><b>Application:</b></td>\n";
 		buffer += "<td><select name=\"application\" id=\"application\" onchange=\"setFormats();\">\n";
@@ -246,50 +247,82 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 	 * @param application the application to use
 	 * @param file the URL of the file to convert
 	 * @param format the output format
+	 */
+	public synchronized void convert(String application, String file, String format)
+	{
+		Vector<Task> tasks = getTasks(application, Utility.getFilename(file), format);
+					
+		//Task.print(applications, tasks);
+	
+		Utility.downloadFile(server.getCachePath(), "0_" + Utility.getFilenameName(file), file);
+		server.executeTasks("localhost", 0, tasks);	
+	}
+	
+	/**
+	 * Convert a file (asynchronously) to the specified output format using the given application.
+	 * @param application the application to use
+	 * @param file the URL of the file to convert
+	 * @param format the output format
 	 * @return the results of the conversion
 	 */
-	public synchronized String convert(String application, String file, String format)
+	public String convertLater(String application, String file, String format)
 	{
-		String buffer = "";
-		Vector<Task> tasks = getTasks(application, Utility.getFilename(file), format);
-				
-		Utility.downloadFile(server.getCachePath(), "0_" + Utility.getFilenameName(file), file);
-		Task.print(applications, tasks);
-		server.executeTasks("localhost", 0, tasks);
+		final String application_final = application;
+		final String file_final = file;
+		final String format_final = format;
 		
-		buffer = "ok1";
+		new Thread(){
+			public void run(){
+				convert(application_final, file_final, format_final);
+			}
+		}.start();
 		
-		return buffer;
+		return Utility.getFilenameName(file) + "." + format;
 	}
 	
 	@Get
 	public Representation httpGetHandler()
 	{
-		Representation representation = null;
 		String application = null;
 		String file = null;
 		String format = null;
-		boolean SHOW_FORM = false;
 		Form form;
 		Parameter p;
 		
-		form = getRequest().getResourceRef().getQueryAsForm();
-		p = form.getFirst("application"); if(p != null) application = p.getValue();
-		p = form.getFirst("file"); if(p != null) file = p.getValue();
-		p = form.getFirst("format"); if(p != null) format = p.getValue();
-		p = form.getFirst("form"); if(p != null) SHOW_FORM = Boolean.valueOf(p.getValue());
-
-		if(application != null && file != null && format != null){
-			representation = new StringRepresentation(convert(application, file, format), MediaType.TEXT_HTML);
-		}else{
-			if(SHOW_FORM){
-				representation = new StringRepresentation(getForm(), MediaType.TEXT_HTML);
+		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
+		String part0 = (parts.size() > 0) ? parts.get(0) : "";
+		String part1 = (parts.size() > 1) ? parts.get(1) : "";
+				
+		if(part0.equals("software")){
+			return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("new")){
+			return new StringRepresentation(getForm(), MediaType.TEXT_HTML);
+		}else if(part0.equals("download")){
+			form = getRequest().getResourceRef().getQueryAsForm();
+			p = form.getFirst("file"); if(p != null) file = p.getValue();
+	
+			if(file != null){
+				return new StringRepresentation("ok1", MediaType.TEXT_PLAIN);
 			}else{
-				representation = new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
+				return new StringRepresentation("missing arguments", MediaType.TEXT_PLAIN);
 			}
+		}else if(part0.startsWith("?")){
+			form = getRequest().getResourceRef().getQueryAsForm();
+			p = form.getFirst("application"); if(p != null) application = p.getValue();
+			p = form.getFirst("file"); if(p != null) file = p.getValue();
+			p = form.getFirst("format"); if(p != null) format = p.getValue();
+	
+			if(application != null && file != null && format != null){
+				file = getReference().getBaseRef() + "/download/?file=" + convertLater(application, file, format);
+				return new StringRepresentation("<a href=" + file + ">" + file + "</a>", MediaType.TEXT_HTML);
+			}else{
+				return new StringRepresentation("missing arguments", MediaType.TEXT_PLAIN);
+			}
+		}else if(part0.isEmpty()){
+			return new StringRepresentation("missing arguments", MediaType.TEXT_PLAIN);
+		}else{
+			return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
 		}
-		
-		return representation;
 	}
 	
 	/**
@@ -300,8 +333,29 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 	{		
 		initialize();
 
+		/*
 		try{
 			new Server(Protocol.HTTP, 8182, SoftwareReuseConversionRestlet.class).start();
+		}catch(Exception e) {e.printStackTrace();}
+		*/
+		
+		try{			
+			Component component = new Component();
+			component.getServers().add(Protocol.HTTP, 8182);
+			component.getClients().add(Protocol.HTTP);
+			component.getLogService().setEnabled(false);
+			
+			org.restlet.Application application = new org.restlet.Application(){
+				@Override
+				public Restlet createInboundRoot(){
+					Router router = new Router(getContext());
+					router.attachDefault(SoftwareReuseConversionRestlet.class);
+					return router;
+				}
+			};
+			
+			component.getDefaultHost().attach("/convert", application);
+			component.start();
 		}catch(Exception e) {e.printStackTrace();}
 	}
 }

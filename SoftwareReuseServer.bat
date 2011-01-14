@@ -1,1 +1,1 @@
-java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0bin" -Xmx1g edu.ncsa.icr.SoftwareReuseServer %1 %2
+java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0bin" -Xmx1g edu.ncsa.icr.SoftwareReuseServer %*
