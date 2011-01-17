@@ -244,7 +244,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 				}
 				
 				if(application.icr == icr){
-					task.add(application.toString(), data_last, data_next);
+					task.addSubtasks(application.toString(), data_last, data_next);
 				}else{
 					if(task != null){		//Execute task list and retrieve result before proceeding
 						//task.print();

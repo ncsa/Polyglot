@@ -16,6 +16,14 @@ public class SoftwareReuseAuxiliary
 	{
 		public static final long serialVersionUID = 1L;
 
+  	/**
+		 * Get a string representation of this instance.
+		 */
+		public String toString()
+		{
+			return "null";
+		}
+		
 		/**
   	 * Compare this object to another object.
   	 * @param object the object to compare to
@@ -366,6 +374,7 @@ public class SoftwareReuseAuxiliary
 		public String type;
 		public String alias;
 		public String operation;
+		public String comment = "";
 		public String application; 
 		public TreeSet<String> types = new TreeSet<String>();
 		public TreeSet<String> inputs = new TreeSet<String>();
@@ -380,6 +389,7 @@ public class SoftwareReuseAuxiliary
 		{
 			Scanner scanner;  		
 			String line;
+			int tmpi;
 			
 			this.filename = Utility.unixPath(filename);
 			path = Utility.getFilenamePath(filename);
@@ -402,6 +412,12 @@ public class SoftwareReuseAuxiliary
 	    
 	    if(tokens.length > 1){
 	    	operation = tokens[1].toLowerCase();
+	    	tmpi = operation.lastIndexOf('#');
+	    	
+	    	if(tmpi >= 0){
+	    		comment = operation.substring(tmpi+1);
+	    		operation = operation.substring(0, tmpi);
+	    	}
 	    }else{
 	    	operation = "";
 	    	System.out.println("Warning: script \"" + filename + "\" violates naming convention (unknown operation)!");
@@ -856,6 +872,7 @@ public class SoftwareReuseAuxiliary
 		public static final long serialVersionUID = 1L;
   	public Application application;		//An operation belongs to an application!
   	public String name;
+  	public String comment = "";
   	public Vector<Data> inputs = new Vector<Data>();
   	public Vector<Data> outputs = new Vector<Data>();
   	public String script;
@@ -876,6 +893,7 @@ public class SoftwareReuseAuxiliary
   	public Operation(Script script)
   	{
       name = script.operation;
+      comment = script.comment;
       
       for(Iterator<String> itr=script.inputs.iterator(); itr.hasNext();){
       	inputs.add(FileData.newFormat(itr.next()));
@@ -992,7 +1010,7 @@ public class SoftwareReuseAuxiliary
 		public Task(SoftwareReuseClient icr, String application_string, Data input_data, Data output_data)
 		{
 			this(icr);
-			add(application_string, input_data, output_data);
+			addSubtasks(application_string, input_data, output_data);
 		}
 		
 		/**
@@ -1058,16 +1076,32 @@ public class SoftwareReuseAuxiliary
 			return task;
 		}
 		
-
+		/**
+		 * Get the string associated with the given application alias
+		 * @param alias an application alias
+		 * @return the application string
+		 */
+		public String getApplicationString(String alias)
+		{
+			for(int i=0; i<applications.size(); i++){
+				if(applications.get(i).alias.equals(alias)){
+					return applications.get(i).toString();
+				}
+			}
+			
+			return null;
+		}
+		
 		/**
 		 * Find a suitable application/operation given the desired application, operation, and data.
 		 * @param application_string the application string representation (can be null)
 		 * @param operation_name the operation name
+		 * @param operation_comment (can be null)
 		 * @param input_data input data (can be null)
 		 * @param output_data output data (can be null)
 		 * @return the index of the application and operation (null if none found)
 		 */
-		private Pair<Integer,Integer> getOperation(String application_string, String operation_name, Data input_data, Data output_data)
+		public Pair<Integer,Integer> getApplicationOperation(String application_string, String operation_name, String operation_comment, Data input_data, Data output_data)
 		{
 			Application application;
 			Operation operation;
@@ -1081,7 +1115,7 @@ public class SoftwareReuseAuxiliary
 					for(int j=0; j<application.operations.size(); j++){
 						operation = application.operations.get(j);
 						
-						if(operation.name.equals(operation_name)){
+						if(operation.name.equals(operation_name) && (operation_comment == null || operation.comment.equals(operation_comment))){
 							FOUND_INPUT = input_data == null;
 							
 							if(!FOUND_INPUT){		//Check for a matching input
@@ -1126,10 +1160,10 @@ public class SoftwareReuseAuxiliary
 		}
 
 		/**
-		 * Print information about a given operation.
+		 * Print information about a given application/operation.
 		 * @param apop a pair containing the index of an application and an operation
 		 */
-		private void printOperation(Pair<Integer,Integer> apop)
+		public void printApplicationOperation(Pair<Integer,Integer> apop)
 		{
 			if(apop != null){
 				System.out.println("Application: " + applications.get(apop.first).alias);
@@ -1216,37 +1250,6 @@ public class SoftwareReuseAuxiliary
 		}
 		
 		/**
-		 * Add a sequence of subtasks that will allow an application to go from the input to the output format.
-		 * @param application_string an applications string representation (can be null)
-		 * @param input_data the input file
-		 * @param output_data the output file
-		 */
-		public void add(String application_string, Data input_data, Data output_data)
-		{
-			Pair<Integer,Integer> apop, apop0, apop1;
-			
-			//Attempt a direct conversion operation
-			apop = getOperation(application_string, "convert", input_data, output_data);
-			
-			if(apop != null){
-				task.add(new Subtask(apop.first, apop.second, input_data, output_data));
-			}else{	//Attempt two part open/import -> save/export
-				apop0 = getOperation(application_string, "open", input_data, null);
-				if(apop0 == null) apop0 = getOperation(application_string, "import", input_data, null);
-				
-				if(apop0 != null){
-					apop1 = getOperation(applications.get(apop0.first).toString(), "save", null, output_data);
-					if(apop1 == null) apop1 = getOperation(applications.get(apop0.first).toString(), "export", null, output_data);
-		
-					if(apop1 != null){
-						task.add(new Subtask(apop0.first, apop0.second, input_data, null));
-						task.add(new Subtask(apop1.first, apop1.second, input_data, output_data));
-					}
-				}
-			}
-		}
-	
-		/**
 		 * Merge this task list with another.
 		 * @param task another task (must have same software reuse client!)
 		 */
@@ -1257,6 +1260,59 @@ public class SoftwareReuseAuxiliary
 					add(task.get(i));
 				}
 			}
+		}
+
+		/**
+		 * Add a sequence of subtasks that will allow an application to go from the input to the output format.
+		 * @param application_string an applications string representation (can be null)
+		 * @param operation_comment the desired operation comment (can be null)
+		 * @param input_data the input file
+		 * @param output_data the output file
+		 */
+		public void addSubtasks(String application_string, String operation_comment, Data input_data, Data output_data)
+		{
+			Pair<Integer,Integer> apop, apop0, apop1, apop2;
+			
+			//Attempt a direct conversion operation
+			apop = getApplicationOperation(application_string, "convert", operation_comment, input_data, output_data);
+			
+			if(apop != null){
+				task.add(new Subtask(apop.first, apop.second, input_data, output_data));
+			}else{	//Attempt two part open/import -> save/export
+				apop0 = getApplicationOperation(application_string, "open", null, input_data, null);
+				if(apop0 == null) apop0 = getApplicationOperation(application_string, "import", null, input_data, null);
+				
+				if(apop0 != null){
+					apop1 = getApplicationOperation(applications.get(apop0.first).toString(), "save", null, null, output_data);
+					if(apop1 == null) apop1 = getApplicationOperation(applications.get(apop0.first).toString(), "export", null, null, output_data);
+		
+					if(apop1 != null){
+						if(operation_comment == null){
+							task.add(new Subtask(apop0.first, apop0.second, input_data, null));
+							task.add(new Subtask(apop1.first, apop1.second, input_data, output_data));
+						}else{
+							apop2 = getApplicationOperation(applications.get(apop0.first).toString(), "modify", operation_comment, null, null);
+							
+							if(apop2 != null){
+								task.add(new Subtask(apop0.first, apop0.second, input_data, null));
+								task.add(new Subtask(apop2.first, apop2.second, null, null));
+								task.add(new Subtask(apop1.first, apop1.second, input_data, output_data));
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		/**
+		 * Add a sequence of subtasks that will allow an application to go from the input to the output format.
+		 * @param application_string an applications string representation (can be null)
+		 * @param input_data the input file
+		 * @param output_data the output file
+		 */
+		public void addSubtasks(String application_string, Data input_data, Data output_data)
+		{
+			addSubtasks(application_string, null, input_data, output_data);
 		}
 	
 		/**
@@ -1341,7 +1397,7 @@ public class SoftwareReuseAuxiliary
 		 * @param task the task to print
 		 * @param applications the application data referenced
 		 */
-		public static void printa(Vector<Subtask> task, Vector<Application> applications)
+		public static void print(Vector<Subtask> task, Vector<Application> applications)
 		{
 			Application application;
 			Operation operation;

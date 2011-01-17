@@ -186,76 +186,10 @@ public class SoftwareReuseRestlet extends ServerResource
 	 */
 	public Vector<Subtask> getTask(String application_alias, String filename, String output_format)
 	{
-		Vector<Subtask> task = new Vector<Subtask>();
-		Application application;
-		Operation operation;
-		String input_format = Utility.getFilenameExtension(filename);
-		String format;
-		int application_index = -1;
-		int input_operation_index = -1;
-		int output_operation_index = -1;
+		Task task = new Task(applications);
+		task.addSubtasks(task.getApplicationString(application_alias), new CachedFileData(filename), new CachedFileData(filename, output_format));
 		
-		//Find the application
-		for(int i=0; i<applications.size(); i++){
-			if(applications.get(i).alias.equals(application_alias)){
-				application_index = i;
-				break;
-			}
-		}
-		
-		//Find the needed operations
-		if(application_index != -1){
-			application = applications.get(application_index);
-			
-			for(int i=0; i<application.operations.size(); i++){
-				operation = application.operations.get(i);
-				
-				if(input_operation_index == -1){
-					for(int j=0; j<operation.inputs.size(); j++){
-						format = ((FileData)operation.inputs.get(j)).getFormat();
-						
-						if(format.equals(input_format)){
-							input_operation_index = i;
-							break;
-						}
-					}
-				}
-				
-				if(output_operation_index == -1){
-					for(int j=0; j<operation.outputs.size(); j++){
-						format = ((FileData)operation.outputs.get(j)).getFormat();
-						
-						if(format.equals(output_format)){
-							output_operation_index = i;
-							break;
-						}
-					}
-				}
-				
-				//Ignore incomplete converts
-				if(operation.name.equals("convert")){
-					if((input_operation_index == i || output_operation_index == i) && input_operation_index != output_operation_index){
-						input_operation_index = -1;
-						output_operation_index = -1;
-					}
-				}
-				
-				//Break if we have found both an input and an output operation
-				if(input_operation_index != -1 && output_operation_index != -1) break;
-			}
-			
-			//Build the task
-			if(input_operation_index != -1 && output_operation_index != -1){
-				if(input_operation_index == output_operation_index){	//Binary operation (e.g. "convert")
-					task.add(new Subtask(application_index, input_operation_index, new CachedFileData(filename), new CachedFileData(filename, output_format)));
-				}else{
-					task.add(new Subtask(application_index, input_operation_index, new CachedFileData(filename), new Data()));
-					task.add(new Subtask(application_index, output_operation_index, new Data(), new CachedFileData(filename, output_format)));
-				}
-			}
-		}
-		
-		return task;
+		return task.getSubtasks();
 	}
 	
 	/**
@@ -382,7 +316,7 @@ public class SoftwareReuseRestlet extends ServerResource
 				}
 			};
 			
-			component.getDefaultHost().attach("/convert", application);
+			component.getDefaultHost().attach("/software", application);
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
 	}
