@@ -567,11 +567,11 @@ public class SoftwareReuseMonkey_DS extends JPanel implements ActionListener, Mo
 		int screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length;
 		
 		if(screens > 1){
-			SoftwareReuseMonkey_DS icr_monkey = new SoftwareReuseMonkey_DS("SoftwareReuseMonkey_DS.ini");
+			SoftwareReuseMonkey_DS monkey = new SoftwareReuseMonkey_DS("SoftwareReuseMonkey_DS.ini");
 			Dimension screen_size = Toolkit.getDefaultToolkit().getScreenSize();
 
 	    JFrame frame = new JFrame("Monkey Script Session");
-	    frame.add(icr_monkey);
+	    frame.add(monkey);
 	    frame.setResizable(false);
 	    frame.pack();
 	    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

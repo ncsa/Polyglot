@@ -11,14 +11,14 @@ import java.net.Socket;
 import java.util.*;
 
 /**
- * A class that coordinates the use of several ICR clients via I/O-graphs to perform file
- * format conversions.
+ * A class that coordinates the use of several software reuse clients via I/O-graphs
+ * to perform file format conversions.
  * @author Kenton McHenry
  */
 public class PolyglotSteward extends Polyglot implements Runnable
 {
-	private Vector<SoftwareReuseClient> icr_clients = new Vector<SoftwareReuseClient>();
-	private TreeSet<String> icr_client_strings = new TreeSet<String>();
+	private Vector<SoftwareReuseClient> sr_clients = new Vector<SoftwareReuseClient>();
+	private TreeSet<String> sr_client_strings = new TreeSet<String>();
 	private IOGraph<Data,Application> iograph = new IOGraph<Data,Application>();
 	private int application_flexibility = 0;
 	
@@ -40,8 +40,8 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		
 		application_flexibility = polyglot.application_flexibility;
 		
-		for(int i=0; i<polyglot.icr_clients.size(); i++){
-			add(new SoftwareReuseClient(polyglot.icr_clients.get(i)));
+		for(int i=0; i<polyglot.sr_clients.size(); i++){
+			add(new SoftwareReuseClient(polyglot.sr_clients.get(i)));
 		}
 	}
 	
@@ -51,19 +51,19 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	 */
 	public int size()
 	{
-		return icr_clients.size();
+		return sr_clients.size();
 	}
 
 	/**
-	 * Add an ICR client.
-	 * @param icr an ICR client
+	 * Add a software reuse client.
+	 * @param icr a software reuse client
 	 * @return true if successfully added
 	 */
 	public synchronized boolean add(SoftwareReuseClient icr)
 	{
-		if(!icr_client_strings.contains(icr.toString())){
-			icr_client_strings.add(icr.toString());
-			icr_clients.add(icr);
+		if(!sr_client_strings.contains(icr.toString())){
+			sr_client_strings.add(icr.toString());
+			sr_clients.add(icr);
 			iograph.addGraph(new IOGraph<Data,Application>(icr));
 			
 			return true;
@@ -73,10 +73,10 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	}
 	
 	/**
-	 * Add an ICR client.
+	 * Add a software reuse client.
 	 * @param server the server name
 	 * @param port the port number
-	 * @return true if succesfully added
+	 * @return true if successfully added
 	 */
 	public boolean add(String server, int port)
 	{
@@ -90,7 +90,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	 */
 	public SoftwareReuseClient get(int index)
 	{
-		return icr_clients.get(index);
+		return sr_clients.get(index);
 	}
 	
 	/**
@@ -101,8 +101,8 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	{
 		Vector<String> servers = new Vector<String>();
 		
-		for(int i=0; i<icr_clients.size(); i++){
-			servers.add(icr_clients.get(i).toString());
+		for(int i=0; i<sr_clients.size(); i++){
+			servers.add(sr_clients.get(i).toString());
 		}
 		
 		return servers;
@@ -184,7 +184,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 
 	/**
 	 * Set the flexibility when choosing an application where 0=none (default), 1=allow parallel applications with
-	 * the same name (different ICR servers), 2=allow all parallel applications.  The higher the value the more 
+	 * the same name (different software reuse servers), 2=allow all parallel applications.  The higher the value the more 
 	 * parallelism can be taken advantage of.
 	 * @param value the flexibility value
 	 */
@@ -202,7 +202,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	public FileData convert(FileData input_file_data, Vector<Conversion<Data,Application>> conversions)
 	{
 		FileData output_file_data = null;
-		TaskList task_list = null;
+		Task task = null;
 		Application application;
 		Vector<Application> application_options = null;
 		FileData input, output;
@@ -219,7 +219,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 				output = (FileData)conversions.get(i).output;
 				data_next = new CachedFileData(input_file_data, output.getFormat());
 	
-				//Attempt to avoid busy ICR servers
+				//Attempt to avoid busy software reuse servers
 				if(application_flexibility > 0 && application.icr.isBusy()){
 					tmps = application.icr.toString();
 					
@@ -244,11 +244,11 @@ public class PolyglotSteward extends Polyglot implements Runnable
 				}
 				
 				if(application.icr == icr){
-					task_list.add(application.toString(), data_last, data_next);
+					task.add(application.toString(), data_last, data_next);
 				}else{
-					if(task_list != null){		//Execute task list and retrieve result before proceeding
-						//task_list.print();
-						data_last = task_list.execute();
+					if(task != null){		//Execute task list and retrieve result before proceeding
+						//task.print();
+						data_last = task.execute();
 						
 						if(data_last instanceof CachedFileData){
 							System.out.println("[Steward]: Retrieving intermediary result " + data_last.toString() + " from " + icr.toString());
@@ -258,14 +258,14 @@ public class PolyglotSteward extends Polyglot implements Runnable
 					
 					icr = application.icr;
 					icr.requestNewSession();	//Request a new session to avoid using files with similar names (e.g. weights tool having a failed conversion after a good conversion on the same type)
-					task_list = new TaskList(icr, application.toString(), data_last, data_next);
+					task = new Task(icr, application.toString(), data_last, data_next);
 				}
 				
 				data_last = data_next;
 			}
 			
-			//task_list.print();
-			output_file_data = task_list.execute(null);
+			//task.print();
+			output_file_data = task.execute(null);
 		}
 		
 		return output_file_data;
@@ -339,19 +339,19 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	}
 
 	/**
-	 * Close all ICR client connections.
+	 * Close all software reuse client connections.
 	 */
 	public void close()
 	{
 		waitOnPending();
 		
-		for(int i=0; i<icr_clients.size(); i++){
-			icr_clients.get(i).close();
+		for(int i=0; i<sr_clients.size(); i++){
+			sr_clients.get(i).close();
 		}
 	}
 
 	/**
-	 * Start listening for ICRServers.
+	 * Start listening for SoftwareReuseServers.
 	 * @param port the port to listen to
 	 */
 	public void listen(int port)
@@ -362,8 +362,8 @@ public class PolyglotSteward extends Polyglot implements Runnable
 			public void run(){
 				ServerSocket server_socket = null;
 				Socket client_socket = null;
-				String icr_server;
-				int icr_port;
+				String sr_server;
+				int sr_port;
 				
 				try{
 					server_socket = new ServerSocket(port_final);
@@ -378,11 +378,11 @@ public class PolyglotSteward extends Polyglot implements Runnable
 						client_socket = server_socket.accept();
 						
 						//Handle this connection
-						icr_server = client_socket.getInetAddress().getHostName();
-						icr_port = (Integer)Utility.readObject(client_socket.getInputStream());
+						sr_server = client_socket.getInetAddress().getHostName();
+						sr_port = (Integer)Utility.readObject(client_socket.getInputStream());
 						
-						if(add(icr_server, icr_port)){
-							System.out.println("[Steward]: Found Software Server - " + icr_server + ":" + icr_port);
+						if(add(sr_server, sr_port)){
+							System.out.println("[Steward]: Found Software Server - " + sr_server + ":" + sr_port);
 						}
 					}catch(Exception e) {e.printStackTrace();}
 				}
@@ -402,11 +402,11 @@ public class PolyglotSteward extends Polyglot implements Runnable
 			int i = 0;
 			
 			synchronized(this){
-				while(i < icr_clients.size()){
-					if(!icr_clients.get(i).isAlive()){
-						System.out.println("[Steward]: Lost Software Server - " + icr_clients.get(i).toString());
-						icr_client_strings.remove(icr_clients.get(i).toString());
-						icr_clients.remove(i);
+				while(i < sr_clients.size()){
+					if(!sr_clients.get(i).isAlive()){
+						System.out.println("[Steward]: Lost Software Server - " + sr_clients.get(i).toString());
+						sr_client_strings.remove(sr_clients.get(i).toString());
+						sr_clients.remove(i);
 						DROPPED_CONNECTION = true;
 					}else{
 						i++;
@@ -417,8 +417,8 @@ public class PolyglotSteward extends Polyglot implements Runnable
 				if(DROPPED_CONNECTION){
 					iograph.clear();
 	
-					for(i=0; i<icr_clients.size(); i++){
-						iograph.addGraph(new IOGraph<Data,Application>(icr_clients.get(i)));
+					for(i=0; i<sr_clients.size(); i++){
+						iograph.addGraph(new IOGraph<Data,Application>(sr_clients.get(i)));
 					}
 				}
 			}

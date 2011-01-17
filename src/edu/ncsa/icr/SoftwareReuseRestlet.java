@@ -12,11 +12,11 @@ import org.restlet.representation.*;
 import org.restlet.routing.Router;
 
 /**
- * A restful conversion interface for a software reuse server.
+ * A restful interface for a software reuse server.
  * Think of this as an extended software reuse server.
  * @author Kenton McHenry
  */
-public class SoftwareReuseConversionRestlet extends ServerResource
+public class SoftwareReuseRestlet extends ServerResource
 {
 	private static SoftwareReuseServer server;
 	private static Vector<Application> applications;
@@ -178,15 +178,15 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 	}
 	
 	/**
-	 * Get the tasks involved in using the given applications to convert the given file to the specified output format.
+	 * Get the task involved in using the given applications to convert the given file to the specified output format.
 	 * @param application_alias the alias of the application to use.
 	 * @param filename the file name of the cached file to convert
 	 * @param output_format the output format
-	 * @return the tasks to perform the conversion
+	 * @return the task to perform the conversion
 	 */
-	public Vector<Task> getTasks(String application_alias, String filename, String output_format)
+	public Vector<Subtask> getTask(String application_alias, String filename, String output_format)
 	{
-		Vector<Task> tasks = new Vector<Task>();
+		Vector<Subtask> task = new Vector<Subtask>();
 		Application application;
 		Operation operation;
 		String input_format = Utility.getFilenameExtension(filename);
@@ -247,15 +247,15 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 			//Build the task
 			if(input_operation_index != -1 && output_operation_index != -1){
 				if(input_operation_index == output_operation_index){	//Binary operation (e.g. "convert")
-					tasks.add(new Task(application_index, input_operation_index, new CachedFileData(filename), new CachedFileData(filename, output_format)));
+					task.add(new Subtask(application_index, input_operation_index, new CachedFileData(filename), new CachedFileData(filename, output_format)));
 				}else{
-					tasks.add(new Task(application_index, input_operation_index, new CachedFileData(filename), new Data()));
-					tasks.add(new Task(application_index, output_operation_index, new Data(), new CachedFileData(filename, output_format)));
+					task.add(new Subtask(application_index, input_operation_index, new CachedFileData(filename), new Data()));
+					task.add(new Subtask(application_index, output_operation_index, new Data(), new CachedFileData(filename, output_format)));
 				}
 			}
 		}
 		
-		return tasks;
+		return task;
 	}
 	
 	/**
@@ -266,12 +266,12 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 	 */
 	public synchronized void convert(String application, String file, String format)
 	{
-		Vector<Task> tasks = getTasks(application, Utility.getFilename(file), format);
+		Vector<Subtask> task = getTask(application, Utility.getFilename(file), format);
 					
-		//Task.print(applications, tasks);
+		//Task.print(task, applications);
 	
 		Utility.downloadFile(server.getCachePath(), "0_" + Utility.getFilenameName(file), file);
-		server.executeTasks("localhost", 0, tasks);	
+		server.executeTasks("localhost", 0, task);	
 	}
 	
 	/**
@@ -377,7 +377,7 @@ public class SoftwareReuseConversionRestlet extends ServerResource
 				@Override
 				public Restlet createInboundRoot(){
 					Router router = new Router(getContext());
-					router.attachDefault(SoftwareReuseConversionRestlet.class);
+					router.attachDefault(SoftwareReuseRestlet.class);
 					return router;
 				}
 			};

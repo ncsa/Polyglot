@@ -23,7 +23,7 @@ public class SoftwareReuseClient implements Comparable
 	
 	/**
 	 * Class constructor.
-	 * @param server the name of the ICR server
+	 * @param server the name of the software reuse server
 	 * @param port the port used for the connection
 	 */
 	public SoftwareReuseClient(String server, int port)
@@ -54,7 +54,7 @@ public class SoftwareReuseClient implements Comparable
 	
 	/**
 	 * Class copy constructor.
-	 * @param icr an ICR client session to copy
+	 * @param icr an software reuse client session to copy
 	 */
 	public SoftwareReuseClient(SoftwareReuseClient icr)
 	{
@@ -72,7 +72,7 @@ public class SoftwareReuseClient implements Comparable
 
 	/**
 	 * Get the server this client is connected to.
-	 * @return the ICR server
+	 * @return the software reuse server
 	 */
 	public String getServer()
 	{
@@ -81,7 +81,7 @@ public class SoftwareReuseClient implements Comparable
 	
 	/**
 	 * Get the port this client is connect to.
-	 * @return the ICR server port number
+	 * @return the software reuse server port number
 	 */
 	public int getPort()
 	{
@@ -107,7 +107,7 @@ public class SoftwareReuseClient implements Comparable
 	}
 	
 	/**
-	 * Get the list of applications available on the ICR server.
+	 * Get the list of applications available on the software reuse server.
 	 * @return the available applications/operations
 	 */
 	public Vector<Application> getApplications()
@@ -116,87 +116,7 @@ public class SoftwareReuseClient implements Comparable
 	}
 
 	/**
-	 * Find a suitable application/operation given the desired application, operation, and data.
-	 * @param application_string the application string representation (can be null)
-	 * @param operation_name the operation name
-	 * @param input_data input data (can be null)
-	 * @param output_data output data (can be null)
-	 * @return the index of the application and operation (null if none found)
-	 */
-	public Pair<Integer,Integer> getOperation(String application_string, String operation_name, Data input_data, Data output_data)
-	{
-		Application application;
-		Operation operation;
-		Data data;
-		boolean FOUND_INPUT, FOUND_OUTPUT;
-		
-		for(int i=0; i<applications.size(); i++){
-			application = applications.get(i);
-			
-			if(application_string == null || application.toString().equals(application_string)){
-				for(int j=0; j<application.operations.size(); j++){
-					operation = application.operations.get(j);
-					
-					if(operation.name.equals(operation_name)){
-						FOUND_INPUT = input_data == null;
-						
-						if(!FOUND_INPUT){		//Check for a matching input
-							for(int k=0; k<operation.inputs.size(); k++){
-								data = operation.inputs.get(k);
-								
-								if(data instanceof FileData){		//FileData
-									if((input_data instanceof FileData && ((FileData)data).getFormat().equals(((FileData)input_data).getFormat())) ||
-										 (input_data instanceof CachedFileData && ((FileData)data).getFormat().equals(((CachedFileData)input_data).getFormat()))){
-										FOUND_INPUT = true;
-										break;
-									}
-								}
-							}
-						}
-						
-						FOUND_OUTPUT = output_data == null;
-						
-						if(!FOUND_OUTPUT){		//Check for a matching output
-							for(int k=0; k<operation.outputs.size(); k++){
-								data = operation.outputs.get(k);
-								
-								if(data instanceof FileData){		//FileData
-									if((output_data instanceof FileData && ((FileData)data).getFormat().equals(((FileData)output_data).getFormat())) ||
-										 (output_data instanceof CachedFileData && ((FileData)data).getFormat().equals(((CachedFileData)output_data).getFormat()))){
-										FOUND_OUTPUT = true;
-										break;
-									}
-								}
-							}
-						}
-												
-						if(FOUND_INPUT && FOUND_OUTPUT){
-							return new Pair<Integer,Integer>(i,j);
-						}
-					}
-				}
-			}
-		}
-		
-		return null;
-	}
-
-	/**
-	 * Print information about a given operation.
-	 * @param apop a pair containing the index of an application and an operation
-	 */
-	public void printOperation(Pair<Integer,Integer> apop)
-	{
-		if(apop != null){
-			System.out.println("Application: " + applications.get(apop.first).alias);
-			System.out.println("Operation: " + applications.get(apop.first).operations.get(apop.second).name);
-		}else{
-			System.out.println("No operation found!");
-		}
-	}
-
-	/**
-	 * Send file data to the ICR server.
+	 * Send file data to the software reuse server.
 	 * @param file_data the file data to send
 	 * @return a cached version of the given file data (i.e. a pointer to the data on the server)
 	 */
@@ -237,7 +157,7 @@ public class SoftwareReuseClient implements Comparable
 	}
 	
 	/**
-	 * Retrieve cached file data from the ICR server.
+	 * Retrieve cached file data from the software reuse server.
 	 * @param cached_file_data the cached file data to retrieve
 	 * @return the actual file data from the server
 	 */
@@ -278,17 +198,17 @@ public class SoftwareReuseClient implements Comparable
 	}
 	
 	/**
-	 * Execute tasks on the ICR server.
-	 * @param tasks a list of tasks to execute (note, all input file data should be cached already!)
+	 * Execute task on the software reuse server.
+	 * @param task a list of subtasks to execute (note, all input file data should be cached already!)
 	 * @return server response (0=success)
 	 */
-	public synchronized int executeTasks(Vector<Task> tasks)
+	public synchronized int executeTasks(Vector<Subtask> task)
 	{		
 		Integer response = null;
 		
 		try{
 			Utility.writeObject(outs, "execute");
-			Utility.writeObject(outs, tasks);
+			Utility.writeObject(outs, task);
 			response = (Integer)Utility.readObject(ins);
 		}catch(Exception e) {e.printStackTrace();}
 		
@@ -296,21 +216,21 @@ public class SoftwareReuseClient implements Comparable
 	}
 	
 	/**
-	 * Asynchronously execute tasks on the ICR server.
-	 * @param tasks a list of tasks to execute (note, all input file data should be cached already!)
+	 * Asynchronously execute a task on the software reuse server.
+	 * @param task a list of subtasks to execute (note, all input file data should be cached already!)
 	 * @return status, 0=success
 	 */
-	public AsynchronousObject<Integer> executeTasksLater(Vector<Task> tasks)
+	public AsynchronousObject<Integer> executeTasksLater(Vector<Subtask> task)
 	{
 		AsynchronousObject<Integer> async_object = new AsynchronousObject<Integer>();
 		final AsynchronousObject<Integer> async_object_final = async_object;
-		final Vector<Task> tasks_final = tasks;
+		final Vector<Subtask> task_final = task;
 		
 		pending_asynchronous_calls.incrementAndGet();
 
 		new Thread(){
 			public void run(){
-				async_object_final.set(executeTasks(tasks_final));
+				async_object_final.set(executeTasks(task_final));
 				pending_asynchronous_calls.decrementAndGet();
 			}
 		}.start();
@@ -330,8 +250,8 @@ public class SoftwareReuseClient implements Comparable
 	}
 	
 	/**
-	 * Check if the ICR Server is busy executing another task.
-	 * @return true if the ICR Server is currently busy
+	 * Check if the software reuse server is busy executing another task.
+	 * @return true if the software reuse server is currently busy
 	 */
 	public synchronized boolean isBusy()
 	{
@@ -371,7 +291,7 @@ public class SoftwareReuseClient implements Comparable
 	}
 
 	/**
-	 * Close the connection to the ICR server.
+	 * Close the connection to the software reuse server.
 	 */
 	public synchronized void close()
 	{
@@ -402,8 +322,8 @@ public class SoftwareReuseClient implements Comparable
 	}
 
 	/**
-	 * Debug tests for an ICRClient.
-	 * @param icr an ICR client
+	 * Debug tests for a SoftwareReuseClient.
+	 * @param icr a software reuse client
 	 */
 	public static void debug(SoftwareReuseClient icr)
 	{
@@ -425,14 +345,14 @@ public class SoftwareReuseClient implements Comparable
 			file_data1.save(debug_output_path, null);
 		}
 		
-		//Test tasks execution
+		//Test task execution
 		if(false){
 			FileData file_data0 = new FileData(debug_input_path + "heart.wrl", true);
 			CachedFileData cached_file_data0 = icr.sendData(file_data0);
 			CachedFileData cached_file_data1 = new CachedFileData(cached_file_data0, "stp");		//stl, stp
 			
-			Vector<Task> tasks = (new TaskList(icr, null, cached_file_data0, cached_file_data1)).getTasks();
-			icr.executeTasks(tasks);
+			Vector<Subtask> task = (new Task(icr, null, cached_file_data0, cached_file_data1)).getSubtasks();
+			icr.executeTasks(task);
 						
 			FileData file_data1 = icr.retrieveData(cached_file_data1);
 			file_data1.save(debug_output_path, null);
@@ -444,42 +364,42 @@ public class SoftwareReuseClient implements Comparable
 			AsynchronousObject<CachedFileData> cached_file_data0 = icr.sendDataLater(file_data0);
 			CachedFileData cached_file_data1 = new CachedFileData(file_data0, "stl");		//stl, stp
 			
-			Vector<Task> tasks = (new TaskList(icr, null, cached_file_data0.get(), cached_file_data1)).getTasks();
-			AsynchronousObject<Integer> response = icr.executeTasksLater(tasks);
+			Vector<Subtask> task = (new Task(icr, null, cached_file_data0.get(), cached_file_data1)).getSubtasks();
+			AsynchronousObject<Integer> response = icr.executeTasksLater(task);
 						
 			response.waitUntilAvailable();
 			AsynchronousObject<FileData> file_data1 = icr.retrieveDataLater(cached_file_data1);
 			file_data1.get().save(debug_output_path, null);
 		}
 
-		//Test user specified tasks execution
+		//Test user specified task execution
 		if(false){
-			TaskList tasks = new TaskList(icr);
-			tasks.add("A3DReviewer", "open", debug_input_path + "heart.wrl", "");
-			tasks.add("A3DReviewer", "export", "", "heart.stp");
-			tasks.print();
-			tasks.execute(debug_output_path);
+			Task task = new Task(icr);
+			task.add("A3DReviewer", "open", debug_input_path + "heart.wrl", "");
+			task.add("A3DReviewer", "export", "", "heart.stp");
+			task.print();
+			task.execute(debug_output_path);
 		}
 		
-		//Test user specified tasks execution
+		//Test user specified task execution
 		if(true){
-			TaskList tasks = new TaskList(icr);
-			tasks.add("Blender", "convert", debug_input_path + "heart.wrl", "heart.stl");
-			tasks.add("A3DReviewer", "open", "heart.stl", "");
-			tasks.add("A3DReviewer", "export", "", "heart.stp");
-			tasks.print();
-			tasks.execute(debug_output_path);
+			Task task = new Task(icr);
+			task.add("Blender", "convert", debug_input_path + "heart.wrl", "heart.stl");
+			task.add("A3DReviewer", "open", "heart.stl", "");
+			task.add("A3DReviewer", "export", "", "heart.stp");
+			task.print();
+			task.execute(debug_output_path);
 		}
 	}
 	
 	/**
-	 * Startup an ICR client command prompt.
+	 * Startup a software reuse client command prompt.
 	 * @param args command line arguments
 	 */
 	public static void main(String args[])
 	{
 		boolean DEBUG = false;
-		TaskList tasks = null;
+		Task task = null;
 		Console console;
 		String cwd = Utility.unixPath(System.getProperty("user.dir")) + "/";
 		String line, alias, operation, input, output;
@@ -571,14 +491,14 @@ public class SoftwareReuseClient implements Comparable
 					}else if(line.equals("help")){
 						System.out.println();
 						Application.print(icr.getApplications());
-					}else if(line.equals("tasks")){
-						tasks = new TaskList(icr);
+					}else if(line.equals("task")){
+						task = new Task(icr);
 						
 						while(true){
-							line = console.readLine("task " + (tasks.size()+1) + "> ");
+							line = console.readLine("subtask " + (task.size()+1) + "> ");
 							
 							if(line.equals("end")){
-								tasks.execute(cwd);
+								task.execute(cwd);
 								break;
 							}else{
 								String[] strings = line.split(" ");
@@ -591,7 +511,7 @@ public class SoftwareReuseClient implements Comparable
 									input = cwd + input.substring(2);
 								}
 								
-								tasks.add(alias, operation, input, output);
+								task.add(alias, operation, input, output);
 							}
 						}
 					}else if(line.equals("quit") || line.equals("exit")){

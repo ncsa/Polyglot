@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * An Imposed Code Reuse server application.
+ * An Imposed Code Reuse server.
  * @author Kenton McHenry
  */
 public class SoftwareReuseServer implements Runnable
@@ -247,14 +247,14 @@ public class SoftwareReuseServer implements Runnable
   }
   
   /**
-   * Execute the given list of tasks.
+   * Execute the given task.
    * @param host the host requesting this task execution
    * @param session the session id
-   * @param tasks a list of tasks to execute
+   * @param task a list of subtasks to execute
    */
-  public synchronized void executeTasks(String host, int session, Vector<Task> tasks)
+  public synchronized void executeTasks(String host, int session, Vector<Subtask> task)
   {
-  	Task task;
+  	Subtask subtask;
   	Application application;
   	TreeSet<Integer> application_set = new TreeSet<Integer>();
   	Operation operation;
@@ -267,13 +267,13 @@ public class SoftwareReuseServer implements Runnable
   	
   	BUSY = true;  
   	
-  	//Execute each task
-  	for(int i=0; i<tasks.size(); i++){
-  		task = tasks.get(i);
-  		application = applications.get(task.application); application_set.add(task.application);
-  		operation = application.operations.get(task.operation);
-  		input_data = task.input_data;
-  		output_data = task.output_data;	
+  	//Execute each subtask
+  	for(int i=0; i<task.size(); i++){
+  		subtask = task.get(i);
+  		application = applications.get(subtask.application); application_set.add(subtask.application);
+  		operation = application.operations.get(subtask.operation);
+  		input_data = subtask.input_data;
+  		output_data = subtask.output_data;	
 			source = null;
 			target = null;
 			
@@ -405,7 +405,7 @@ public class SoftwareReuseServer implements Runnable
 		Data data;
 		FileData file_data;
 		CachedFileData cached_file_data;
-		Vector<Task> tasks;
+		Vector<Subtask> task;
 		String host = client_socket.getInetAddress().getHostName();
 		
 		System.out.println("[" + host + "](" + session + "): connection established");
@@ -447,11 +447,11 @@ public class SoftwareReuseServer implements Runnable
 						}
 					}
 				}else if(message.equals("execute")){
-					tasks = (Vector<Task>)Utility.readObject(ins);
+					task = (Vector<Subtask>)Utility.readObject(ins);
 					System.out.println("[" + host + "](" + session + "): requested task execution ...");
-					executeTasks(host, session, tasks);
+					executeTasks(host, session, task);
 					Utility.writeObject(outs, new Integer(0));
-					System.out.println("[" + host + "](" + session + "): executed " + tasks.size() + " task(s)");
+					System.out.println("[" + host + "](" + session + "): executed " + task.size() + " task(s)");
 				}else if(message.equals("new_session")){
 					System.out.print("[" + host + "](" + session + "): requesting new session");
 					session = session_counter.incrementAndGet();
@@ -497,7 +497,7 @@ public class SoftwareReuseServer implements Runnable
 				Operation operation;
 				int input_operation, input_extension, output_operation, output_extension;
 				CachedFileData input_file, output_file;
-				Vector<Task> tasks = new Vector<Task>();
+				Vector<Subtask> task = new Vector<Subtask>();
 				String results = "";
 				
 				server.waitUntilRunning();
@@ -558,7 +558,7 @@ public class SoftwareReuseServer implements Runnable
 						if(input_operation != -1 && output_operation != -1) break;
 					}
 					
-					//Create tasks and run test (using application index as session)
+					//Create task and run test (using application index as session)
 					if(input_operation != -1 && output_operation != -1){
 						extension = application.operations.get(input_operation).inputs.get(input_extension).toString();
 						input_file = new CachedFileData(new FileData(test_path + test_files.get(extension), true), i, server.cache_path);
@@ -568,14 +568,14 @@ public class SoftwareReuseServer implements Runnable
 						extension = application.operations.get(output_operation).outputs.get(output_extension).toString();
 						output_file = new CachedFileData(name + "." + extension);
 						
-						tasks.clear();
+						task.clear();
 						
 						if(application.operations.get(input_operation).name.equals("convert")){
 							results += "  " + application.toString() + " (convert";
 							results += " " + application.operations.get(input_operation).inputs.get(input_extension).toString();
 							results += " " + application.operations.get(output_operation).outputs.get(output_extension).toString() + ")";
 													
-							tasks.add(new Task(i, input_operation, input_file, output_file));
+							task.add(new Subtask(i, input_operation, input_file, output_file));
 						}else{
 							results += "  " + application.toString();
 							results += " (" + application.operations.get(input_operation).name;
@@ -583,11 +583,11 @@ public class SoftwareReuseServer implements Runnable
 							results += " " + application.operations.get(output_operation).name;
 							results += " " + application.operations.get(output_operation).outputs.get(output_extension).toString() + ")";
 							
-							tasks.add(new Task(i, input_operation, input_file, new Data()));
-							tasks.add(new Task(i, output_operation, new Data(), output_file));
+							task.add(new Subtask(i, input_operation, input_file, new Data()));
+							task.add(new Subtask(i, output_operation, new Data(), output_file));
 						}
 						
-						server.executeTasks("localhost", i, tasks);	//Use application index as the session
+						server.executeTasks("localhost", i, task);	//Use application index as the session
 						
 						if(output_file.exists(i, server.cache_path)){
 							results += " -> [OK]\n";
