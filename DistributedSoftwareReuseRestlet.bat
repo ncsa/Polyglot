@@ -1,0 +1,1 @@
+java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0bin" -Xmx1g edu.ncsa.icr.DistributedSoftwareReuseRestlet %*

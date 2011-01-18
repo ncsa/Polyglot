@@ -329,6 +329,15 @@ public class SoftwareReuseServer implements Runnable
   }
   
   /**
+	 * Is the server busy executing a task?
+	 * @return true if the server is busy
+	 */
+	public boolean isBusy()
+	{
+		return BUSY;
+	}
+
+	/**
    * Process ICR requests.
    */
   public void run()

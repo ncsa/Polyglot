@@ -18,6 +18,7 @@ public class SoftwareReuseAuxiliary
 
   	/**
 		 * Get a string representation of this instance.
+		 * @return the string representation of this instance
 		 */
 		public String toString()
 		{
@@ -81,6 +82,7 @@ public class SoftwareReuseAuxiliary
   	
   	/**
 		 * Get a string representation of this instance.
+		 * @return the string representation of this instance
 		 */
 		public String toString()
 		{
@@ -268,6 +270,7 @@ public class SoftwareReuseAuxiliary
 
 		/**
 		 * Get a string representation of this instance.
+		 * @return the string representation of this instance
 		 */
 		public String toString()
 		{
@@ -1287,7 +1290,7 @@ public class SoftwareReuseAuxiliary
 					if(apop1 == null) apop1 = getApplicationOperation(applications.get(apop0.first).toString(), "export", null, null, output_data);
 		
 					if(apop1 != null){
-						if(operation_comment == null){
+						if(operation_comment == null || operation_comment.isEmpty()){
 							task.add(new Subtask(apop0.first, apop0.second, input_data, null));
 							task.add(new Subtask(apop1.first, apop1.second, input_data, output_data));
 						}else{
@@ -1412,5 +1415,206 @@ public class SoftwareReuseAuxiliary
 				System.out.print(task.get(i).output_data + "\n");
 			}
 		}
+
+		/**
+		 * Get the tasks available for each of the given applications.
+		 * @param applications a list of applications
+		 * @return the tasks available for each application
+		 */
+		public static Vector<TreeSet<TaskInfo>> getApplicationTasks(Vector<Application> applications)
+		{
+			Vector<TreeSet<TaskInfo>> application_tasks = new Vector<TreeSet<TaskInfo>>();
+			TaskInfo convert_info = null, task_info;
+			Application application;
+			Operation operation;
+			boolean FOUND_CONVERT, FOUND_OPEN, FOUND_SAVE;
+			
+			for(int i=0; i<applications.size(); i++){
+				application = applications.get(i);
+				application_tasks.add(new TreeSet<TaskInfo>());
+				FOUND_CONVERT = false;
+				FOUND_OPEN = false;
+				FOUND_SAVE = false;
+				
+				//Check for pure convert, open, and save operations
+				for(int j=0; j<application.operations.size(); j++){
+					operation = application.operations.get(j);
+					
+					if(operation.name.equals("convert") && operation.comment.isEmpty()){
+						FOUND_CONVERT = true;
+					}else if(operation.name.equals("open") || operation.name.equals("import")){
+						FOUND_OPEN = true;
+					}else if(operation.name.equals("save") || operation.name.equals("export")){
+						FOUND_SAVE = true;
+					}
+				}
+								
+				//Record tasks for this application
+				if(FOUND_CONVERT || (FOUND_OPEN && FOUND_SAVE)){
+					convert_info = new TaskInfo(application, "convert");
+					application_tasks.lastElement().add(convert_info);
+				}
+				
+				for(int j=0; j<application.operations.size(); j++){
+					operation = application.operations.get(j);
+					
+					if(!operation.comment.isEmpty()){
+						if(operation.name.equals("convert")){
+							task_info = new TaskInfo(application, operation.comment);
+							application_tasks.lastElement().add(task_info);
+							
+							//Record inputs/outputs
+							for(int k=0; k<operation.inputs.size(); k++){
+								task_info.inputs.add(operation.inputs.get(k).toString());
+							}
+							
+							for(int k=0; k<operation.outputs.size(); k++){
+								task_info.outputs.add(operation.outputs.get(k).toString());
+							}
+						}else if(operation.name.equals("modify") && FOUND_OPEN && FOUND_SAVE){
+							task_info = new TaskInfo(application, operation.comment);
+							application_tasks.lastElement().add(task_info);
+							
+							//Record inputs/outputs
+							for(int k=0; k<application.operations.size(); k++){
+								if(application.operations.get(k).name.equals("open") || application.operations.get(k).name.equals("import")){
+									for(int l=0; l<application.operations.get(k).inputs.size(); l++){
+										task_info.inputs.add(application.operations.get(k).inputs.get(l).toString());
+									}
+								}else if(application.operations.get(k).name.equals("save") || application.operations.get(k).name.equals("export")){
+									for(int l=0; l<application.operations.get(k).outputs.size(); l++){
+										task_info.outputs.add(application.operations.get(k).outputs.get(l).toString());
+									}
+								}
+							}
+						}
+					}else{	//Add inputs/outputs to convert task
+						for(int k=0; k<operation.inputs.size(); k++){
+							convert_info.inputs.add(operation.inputs.get(k).toString());
+						}
+						
+						for(int k=0; k<operation.outputs.size(); k++){
+							convert_info.outputs.add(operation.outputs.get(k).toString());
+						}
+					}
+				}				
+			}
+			
+			return application_tasks;
+		}
+	}
+	
+  /**
+   * A structure storing a task name, its inputs, and its outputs.
+   */
+	public static class TaskInfo implements Comparable
+	{
+		public Application application;
+		public String name;
+		public TreeSet<String> inputs = new TreeSet<String>();
+		public TreeSet<String> outputs = new TreeSet<String>();
+		
+		/**
+		 * Class constructor.
+		 * @param name the name of this task
+		 */
+		public TaskInfo(String name)
+		{
+			this.name = name;
+		}
+		
+		/**
+		 * Class constructor.
+		 * @param application the application this task belongs to
+		 * @param name the name of this task
+		 */
+		public TaskInfo(Application application, String name)
+		{
+			this.application = application;
+			this.name = name;
+		}
+		
+  	/**
+		 * Get a string representation of this instance.
+		 * @return the string representation of this instance
+		 */
+		public String toString()
+		{
+			return name;
+		}
+		
+		/**
+  	 * Compare this object to another object.
+  	 * @param object the object to compare to
+  	 * @return 0 if the same, -1 if less, and 1 if greater
+  	 */
+  	public int compareTo(Object object)
+  	{
+  		if(this == object){
+  			return 0;
+  		}else if(object instanceof TaskInfo){
+  			return name.compareTo(((TaskInfo)object).name);
+  		}else{
+  			return -1;
+  		}
+  	}
+  	
+  	/**
+  	 * Find the task information for the specified task name.
+  	 * @param tasks the set of tasks to search in
+  	 * @param task the task name to search for
+  	 * @return the task information found
+  	 */
+  	public static TaskInfo getTask(TreeSet<TaskInfo> tasks, String task)
+  	{
+  		TaskInfo task_info;
+  		
+			for(Iterator<TaskInfo> itr=tasks.iterator(); itr.hasNext();){
+				task_info = itr.next();
+				
+				if(task_info.name.equals(task)){
+					return task_info;
+				}
+			}
+			
+			return null;
+  	}
+	}
+	
+	/**
+	 * A structure storing information about a task on a remote server.
+	 */
+	public class RemoteTaskInfo implements Comparable
+	{
+		public String application;
+		public String task;
+		public String output;
+		public String input;
+		public Vector<String> servers = new Vector<String>();
+		
+  	/**
+		 * Get a string representation of this instance.
+		 * @return the string representation of this instance
+		 */
+		public String toString()
+		{
+			return application + "/" + task + "/" + output + "/" + input;
+		}
+		
+		/**
+  	 * Compare this object to another object.
+  	 * @param object the object to compare to
+  	 * @return 0 if the same, -1 if less, and 1 if greater
+  	 */
+  	public int compareTo(Object object)
+  	{
+  		if(this == object){
+  			return 0;
+  		}else if(object instanceof RemoteTaskInfo){
+  			return toString().compareTo(((RemoteTaskInfo)object).toString());
+  		}else{
+  			return -1;
+  		}
+  	}
 	}
 }
