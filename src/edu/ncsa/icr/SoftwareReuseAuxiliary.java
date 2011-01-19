@@ -1584,13 +1584,30 @@ public class SoftwareReuseAuxiliary
 	/**
 	 * A structure storing information about a task on a remote server.
 	 */
-	public class RemoteTaskInfo implements Comparable
+	public static class RemoteTaskInfo implements Comparable
 	{
-		public String application;
+		public String application_alias;
+		public String application_name;
 		public String task;
 		public String output;
 		public String input;
-		public Vector<String> servers = new Vector<String>();
+		public TreeSet<String> servers = new TreeSet<String>();
+		
+		/**
+		 * Class constructor.
+		 * @param alias the application alias
+		 * @param task the application task
+		 * @param output the task output
+		 * @param input the task input
+		 */
+		public RemoteTaskInfo(String alias, String task, String output, String input)
+		{
+			this.application_alias = alias;
+			this.application_name = alias;
+			this.task = task;
+			this.output = output;
+			this.input = input;
+		}
 		
   	/**
 		 * Get a string representation of this instance.
@@ -1598,7 +1615,7 @@ public class SoftwareReuseAuxiliary
 		 */
 		public String toString()
 		{
-			return application + "/" + task + "/" + output + "/" + input;
+			return application_alias + "/" + task + "/" + output + "/" + input;
 		}
 		
 		/**

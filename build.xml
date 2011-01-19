@@ -74,9 +74,15 @@
 		<echo file="${tmp}/SoftwareReuseServer.ini" append="true">#ShellScripts=scripts/sh${line.separator}</echo>
 		<echo file="${tmp}/SoftwareReuseServer.ini" append="true">#PolyglotSteward=localhost:${steward_port}</echo>
 		
-		<echo file="${tmp}/SoftwareReuseConversionRestlet.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseConversionRestlet %*</echo>
-		<echo file="${tmp}/SoftwareReuseConversionRestlet.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.SoftwareReuseConversionRestlet $1 $2</echo>
-		
+		<echo file="${tmp}/SoftwareReuseRestlet.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseRestlet %*</echo>
+		<echo file="${tmp}/SoftwareReuseRestlet.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.SoftwareReuseRestlet</echo>
+		<echo file="${tmp}/SoftwareReuseRestlet.ini" append="false">Port=8182${line.separator}</echo>
+		<echo file="${tmp}/SoftwareReuseRestlet.ini" append="true">#DistributedServer=localhost:8183</echo>
+
+		<echo file="${tmp}/DistributedSoftwareReuseRestlet.bat">java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareReuseRestlet %*</echo>
+		<echo file="${tmp}/DistributedSoftwareReuseRestlet.sh">java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareReuseRestlet</echo>
+		<echo file="${tmp}/DistributedSoftwareReuseRestlet.ini" append="false">Port=8183</echo>
+
 		<echo file="${tmp}/SoftwareReuseClient.bat">cmd /c java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseClient %*</echo>
 		<echo file="${tmp}/SoftwareReuseClient.sh">cmd /c java -cp lib/ncsa/Utilities.jar:Polyglot2.jar -Xmx1g edu.ncsa.icr.SoftwareReuseClient $1</echo>
 		<echo file="${tmp}/SoftwareReuseClient.ini" append="false">SoftwareReuseServer=localhost:${icr_port}${line.separator}</echo>

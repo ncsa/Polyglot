@@ -1,10 +1,12 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
 import edu.ncsa.icr.SoftwareReuseAuxiliary.Application;
+import edu.ncsa.icr.SoftwareReuseAuxiliary.TaskInfo;
 import edu.ncsa.utility.*;
 import java.util.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.InputStreamReader;
 import java.net.*;
 import org.restlet.*;
 import org.restlet.resource.*;
@@ -73,6 +75,36 @@ public class SoftwareReuseRestlet extends ServerResource
 	}
 	
 	/**
+	 * Get the output formats supported by the given task.
+	 * @param alias the application alias
+	 * @param task the application task
+	 * @return the output formats supported
+	 */
+	public String getApplicationTaskOutputs(String alias, String task)
+	{
+		TaskInfo task_info;
+		String buffer = "";
+	
+		for(int i=0; i<applications.size(); i++){
+			if(applications.get(i).alias.equals(alias)){
+				for(Iterator<TaskInfo> itr1=application_tasks.get(i).iterator(); itr1.hasNext();){
+					task_info = itr1.next();
+					
+					if(task_info.name.equals(task)){	
+						for(Iterator<String> itr2=task_info.outputs.iterator(); itr2.hasNext();){
+							buffer += itr2.next() + "\n";
+						}
+					}
+				}
+				
+				break;
+			}
+		}
+		
+		return buffer;
+	}
+
+	/**
 	 * Get the input formats supported by the given task.
 	 * @param alias the application alias
 	 * @param task the application task
@@ -90,36 +122,6 @@ public class SoftwareReuseRestlet extends ServerResource
 					
 					if(task_info.name.equals(task)){	
 						for(Iterator<String> itr2=task_info.inputs.iterator(); itr2.hasNext();){
-							buffer += itr2.next() + "\n";
-						}
-					}
-				}
-				
-				break;
-			}
-		}
-		
-		return buffer;
-	}
-	
-	/**
-	 * Get the output formats supported by the given task.
-	 * @param alias the application alias
-	 * @param task the application task
-	 * @return the output formats supported
-	 */
-	public String getApplicationTaskOutputs(String alias, String task)
-	{
-		TaskInfo task_info;
-		String buffer = "";
-
-		for(int i=0; i<applications.size(); i++){
-			if(applications.get(i).alias.equals(alias)){
-				for(Iterator<TaskInfo> itr1=application_tasks.get(i).iterator(); itr1.hasNext();){
-					task_info = itr1.next();
-					
-					if(task_info.name.equals(task)){	
-						for(Iterator<String> itr2=task_info.outputs.iterator(); itr2.hasNext();){
 							buffer += itr2.next() + "\n";
 						}
 					}
@@ -425,6 +427,9 @@ public class SoftwareReuseRestlet extends ServerResource
 	}
 	
 	@Get
+	/**
+	 * Handle HTTP GET requests.
+	 */
 	public Representation httpGetHandler()
 	{
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
@@ -480,16 +485,18 @@ public class SoftwareReuseRestlet extends ServerResource
 				}else{
 					return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
 				}
+			}else if(part0.equals("alive")){
+				return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
 			}else if(part0.equals("busy")){
 				return new StringRepresentation("" + server.isBusy(), MediaType.TEXT_PLAIN);
 			}else if(part1.isEmpty()){
 				return new StringRepresentation(getApplicationTasks(part0), MediaType.TEXT_PLAIN);
 			}else{
 				if(part2.isEmpty()){
-					return new StringRepresentation(getApplicationTaskInputs(part0, part1), MediaType.TEXT_PLAIN);
+					return new StringRepresentation(getApplicationTaskOutputs(part0, part1), MediaType.TEXT_PLAIN);
 				}else{
 					if(part3.isEmpty()){
-						return new StringRepresentation(getApplicationTaskOutputs(part0, part1), MediaType.TEXT_PLAIN);
+						return new StringRepresentation(getApplicationTaskInputs(part0, part1), MediaType.TEXT_PLAIN);
 					}else{
 						application = part0;
 						task = part1;
@@ -506,18 +513,55 @@ public class SoftwareReuseRestlet extends ServerResource
 	}
 	
 	/**
+	 * Query an endpoint.
+	 * @param url the URL of the endpoint
+	 * @return the text obtained from the endpoint
+	 */
+	public static String queryEndpoint(String url)
+	{
+		HttpURLConnection.setFollowRedirects(false);
+	  HttpURLConnection conn = null;
+	  BufferedReader ins;
+	  StringBuilder outs = new StringBuilder();
+	  char[] buffer = new char[1024];
+	  String text = null;
+	  int tmpi;
+			  			
+	  try{
+	    conn = (HttpURLConnection)new URL(url).openConnection();
+	    conn.connect();
+	    ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+	    
+	    do{
+	      tmpi = ins.read(buffer, 0, buffer.length);
+	      if(tmpi>0) outs.append(buffer, 0, tmpi);
+	    }while(tmpi >= 0);
+	    
+	    text = outs.toString();
+	    conn.disconnect();
+	  }catch(Exception e){
+	    //e.printStackTrace();
+	  }finally{
+	    if(conn != null) conn.disconnect();
+	  }
+	  
+	  return text;
+	}
+
+	/**
 	 * Start the restful service.
 	 * @param args the input arguments
 	 */
 	public static void main(String[] args)
 	{		
 		int port = 8182;
-		String master_resltet = null;
+		String distributed_server = null;
 		
 		//Load *.ini file
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader("SoftwareReuseRestlet.ini"));
 	    String line, key, value;
+	    int tmpi;
 	    
 	    while((line=ins.readLine()) != null){
 	      if(line.contains("=")){
@@ -527,8 +571,8 @@ public class SoftwareReuseRestlet extends ServerResource
 	        if(key.charAt(0) != '#'){
 	        	if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
-	          }else if(key.equals("Master")){
-	          	master_resltet = value;
+	          }else if(key.equals("DistributedServer")){
+	          	distributed_server = value;
 	          }
 	        }
 	      }
@@ -539,7 +583,7 @@ public class SoftwareReuseRestlet extends ServerResource
 		
 	  //Initialize and start the service
 		initialize();
-
+  	
 		/*
 		try{
 			new Server(Protocol.HTTP, port, SoftwareReuseConversionRestlet.class).start();
@@ -564,5 +608,30 @@ public class SoftwareReuseRestlet extends ServerResource
 			component.getDefaultHost().attach("/software", application);
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
+		
+  	//Notify a distributed software restlet
+  	if(distributed_server != null){
+  		final int port_final = port;
+  		final String distributed_server_final = distributed_server;
+  		  		
+  		System.out.println("\nStarting distributed software restlet notification thread...");
+
+	  	new Thread(){
+	  		public void run(){
+	  			String hostname = "", url;
+	  			
+	  			try{
+	  				hostname = InetAddress.getLocalHost().getHostAddress();		  			
+	  			}catch(Exception e) {e.printStackTrace();}
+	  			
+	  			url = "http://" + distributed_server_final + "/distributed_software/register/" + URLEncoder.encode(hostname + ":" + port_final);
+	  			
+	  			while(true){
+	  				queryEndpoint(url);
+	  				Utility.pause(2000);
+	  			}
+	  		}
+	  	}.start();
+  	}
 	}
 }
