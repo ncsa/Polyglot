@@ -135,6 +135,48 @@ public class SoftwareReuseRestlet extends ServerResource
 	}
 	
 	/**
+	 * Get the input and output formats supported by the given task.
+	 * @param alias the application alias
+	 * @param task the application task
+	 * @return the input and output formats supported
+	 */
+	public String getApplicationTaskInputsOutputs(String alias, String task)
+	{
+		TaskInfo task_info;
+		String buffer = "";
+		boolean FIRST_VALUE;
+		
+		for(int i=0; i<applications.size(); i++){
+			if(applications.get(i).alias.equals(alias)){
+				for(Iterator<TaskInfo> itr1=application_tasks.get(i).iterator(); itr1.hasNext();){
+					task_info = itr1.next();
+					
+					if(task_info.name.equals(task)){
+						FIRST_VALUE = true;
+						
+						for(Iterator<String> itr2=task_info.inputs.iterator(); itr2.hasNext();){
+							if(FIRST_VALUE) FIRST_VALUE = false; else buffer += ", ";
+							buffer += itr2.next();
+						}
+						
+						buffer += "\n";
+						FIRST_VALUE = true;
+						
+						for(Iterator<String> itr2=task_info.outputs.iterator(); itr2.hasNext();){
+							if(FIRST_VALUE) FIRST_VALUE = false; else buffer += ", ";
+							buffer += itr2.next();
+						}
+					}
+				}
+				
+				break;
+			}
+		}
+		
+		return buffer;
+	}
+	
+	/**
 	 * Get a web form interface for this restful service.
 	 * @return the form
 	 */
@@ -144,7 +186,8 @@ public class SoftwareReuseRestlet extends ServerResource
 		String format;
 		TaskInfo task_info;
 		int count;
-		boolean FIRST_IF;
+		boolean FIRST_BLOCK;
+		boolean FIRST_VALUE;
 		
 		buffer += "<script type=\"text/javascript\">\n";
 		buffer += "function setTasks(){\n";
@@ -185,26 +228,19 @@ public class SoftwareReuseRestlet extends ServerResource
 		buffer += "  outputs.options.length = 0;\n";
 		buffer += "  \n";
 		
-		FIRST_IF = true;
+		FIRST_BLOCK = true;
 		
 		for(int i=0; i<applications.size(); i++){
 			for(Iterator<TaskInfo> itr1=application_tasks.get(i).iterator(); itr1.hasNext();){
-				if(FIRST_IF){
-					FIRST_IF = false;
-				}else{
-					 buffer += "\n";
-				}
-				
 				task_info = itr1.next();
-				buffer += "  if(application == \"" + applications.get(i).alias + "\" && task == \"" + task_info.name + "\"){\n";
-				count = 0;
-	
+				if(FIRST_BLOCK) FIRST_BLOCK = false; else	buffer += "\n";
+				buffer += "  if(application == \"" + applications.get(i).alias + "\" && task == \"" + task_info.name + "\"){\n";	
 				buffer += "    inputs.innerHTML = \"";
+				FIRST_VALUE = true;
 				
 				for(Iterator<String> itr2=task_info.inputs.iterator(); itr2.hasNext();){
-					if(count > 0) buffer += ", ";
+					if(FIRST_VALUE) FIRST_VALUE = false; else buffer += ", ";
 					buffer += itr2.next();
-					count++;
 				}
 				
 				buffer += "\";\n";
@@ -243,13 +279,11 @@ public class SoftwareReuseRestlet extends ServerResource
 		
 		buffer += "</select></td></tr>\n";
 		buffer += "<tr><td><td width=\"100\"><i><font size=\"-1\"><div id=\"inputs\">";
-		
-		count = 0;
+		FIRST_VALUE = true;
 
 		for(Iterator<String> itr=application_tasks.get(0).first().inputs.iterator(); itr.hasNext();){
-			if(count > 0) buffer += ", ";
+			if(FIRST_VALUE) FIRST_VALUE = false; else buffer += ", ";
 			buffer += itr.next();
-			count++;
 		}
 		
 		buffer += "</div></font></i></td></tr>\n";
@@ -280,6 +314,7 @@ public class SoftwareReuseRestlet extends ServerResource
 		String buffer = "";
 		String format;
 		int count;
+		boolean FIRST_VALUE;
 		
 		buffer += "<script type=\"text/javascript\">\n";
 		buffer += "function setFormats(){\n";
@@ -297,15 +332,13 @@ public class SoftwareReuseRestlet extends ServerResource
 			
 			if(convert_task != null){
 				if(i > 0) buffer += "\n";
-				buffer += "  if(application == \"" + applications.get(i).alias + "\"){\n";
-				count = 0;
-	
+				buffer += "  if(application == \"" + applications.get(i).alias + "\"){\n";	
 				buffer += "    inputs.innerHTML = \"";
+				FIRST_VALUE = true;
 				
 				for(Iterator<String> itr=convert_task.inputs.iterator(); itr.hasNext();){
-					if(count > 0) buffer += ", ";
+					if(FIRST_VALUE) FIRST_VALUE = false; else buffer += ", ";
 					buffer += itr.next();
-					count++;
 				}
 				
 				buffer += "\";\n";
@@ -340,12 +373,11 @@ public class SoftwareReuseRestlet extends ServerResource
 		convert_task = TaskInfo.getTask(application_tasks.get(0), "convert");
 		
 		if(convert_task != null){
-			count = 0;
+			FIRST_VALUE = true;
 
 			for(Iterator<String> itr=convert_task.inputs.iterator(); itr.hasNext();){
-				if(count > 0) buffer += ", ";
+				if(FIRST_VALUE) FIRST_VALUE = false; else buffer += ", ";
 				buffer += itr.next();
-				count++;
 			}
 		}
 		
@@ -433,20 +465,20 @@ public class SoftwareReuseRestlet extends ServerResource
 	public Representation httpGetHandler()
 	{
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
-		String part0 = (parts.size() > 0) ? parts.get(0) : "";
-		String part1 = (parts.size() > 1) ? parts.get(1) : "";
-		String part2 = (parts.size() > 2) ? parts.get(2) : "";
-		String part3 = (parts.size() > 3) ? parts.get(3) : "";
+		String part1 = (parts.size() > 0) ? parts.get(0) : "";
+		String part2 = (parts.size() > 1) ? parts.get(1) : "";
+		String part3 = (parts.size() > 2) ? parts.get(2) : "";
+		String part4 = (parts.size() > 3) ? parts.get(3) : "";
 		String application = null, task = null, file = null, format = null, url;
 		String buffer;
 		Form form;
 		Parameter p;
 		
-		if(part0.isEmpty()){
+		if(part1.isEmpty()){
 			return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
 		}else{
-			if(part0.equals("form")){
-				if(part1.isEmpty()){
+			if(part1.equals("form")){
+				if(part2.isEmpty()){
 					buffer = "";
 					buffer += "general\n";
 					buffer += "convert";
@@ -464,18 +496,18 @@ public class SoftwareReuseRestlet extends ServerResource
 	
 						return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
 					}else{
-						if(part1.equals("general")){
+						if(part2.equals("general")){
 							return new StringRepresentation(getForm(), MediaType.TEXT_HTML);
-						}else if(part1.equals("convert")){
+						}else if(part2.equals("convert")){
 							return new StringRepresentation(getConvertForm(), MediaType.TEXT_HTML);
 						}else{
 							return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
 						}
 					}
 				}
-			}else if(part0.equals("result")){
-				if(!part1.isEmpty()){	
-					file = server.getCachePath() + "0_" + part1;
+			}else if(part1.equals("result")){
+				if(!part2.isEmpty()){	
+					file = server.getCachePath() + "0_" + part2;
 					
 					if(Utility.exists(file)){
 						return new FileRepresentation(file, MediaType.MULTIPART_ALL);
@@ -485,23 +517,25 @@ public class SoftwareReuseRestlet extends ServerResource
 				}else{
 					return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
 				}
-			}else if(part0.equals("alive")){
+			}else if(part1.equals("alive")){
 				return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
-			}else if(part0.equals("busy")){
+			}else if(part1.equals("busy")){
 				return new StringRepresentation("" + server.isBusy(), MediaType.TEXT_PLAIN);
-			}else if(part1.isEmpty()){
-				return new StringRepresentation(getApplicationTasks(part0), MediaType.TEXT_PLAIN);
+			}else if(part2.isEmpty()){
+				return new StringRepresentation(getApplicationTasks(part1), MediaType.TEXT_PLAIN);
 			}else{
-				if(part2.isEmpty()){
-					return new StringRepresentation(getApplicationTaskOutputs(part0, part1), MediaType.TEXT_PLAIN);
+				if(part3.isEmpty()){
+					return new StringRepresentation(getApplicationTaskOutputs(part1, part2), MediaType.TEXT_PLAIN);
 				}else{
-					if(part3.isEmpty()){
-						return new StringRepresentation(getApplicationTaskInputs(part0, part1), MediaType.TEXT_PLAIN);
+					if(part3.equals("*")){
+						return new StringRepresentation(getApplicationTaskInputsOutputs(part1, part2), MediaType.TEXT_PLAIN);
+					}else if(part4.isEmpty()){
+						return new StringRepresentation(getApplicationTaskInputs(part1, part2), MediaType.TEXT_PLAIN);
 					}else{
-						application = part0;
-						task = part1;
-						format = part2;
-						file = URLDecoder.decode(part3);
+						application = part1;
+						task = part2;
+						format = part3;
+						file = URLDecoder.decode(part4);
 						
 						file = getReference().getBaseRef() + "/result/" + convertLater(application, task.equals("convert") ? "" : task, file, format);
 						
@@ -614,7 +648,7 @@ public class SoftwareReuseRestlet extends ServerResource
   		final int port_final = port;
   		final String distributed_server_final = distributed_server;
   		  		
-  		System.out.println("\nStarting distributed software restlet notification thread...");
+  		System.out.println("\nStarting distributed software restlet notification thread...\n");
 
 	  	new Thread(){
 	  		public void run(){

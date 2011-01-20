@@ -7,11 +7,17 @@
 <body link="blue" vlink="blue">
 
 <div style="float:left;">
-<a href="iograph.html">Conversion Graph</a>
+<a href="iograph.php">Conversion Graph</a>
 &nbsp;
 <b>Convert</b>
 &nbsp;
 <a href="view.php">View</a>
+<?php
+if(file_exists("SHOW_SOFTWARE.txt")){
+	echo "&nbsp;\n";
+	echo "<a href=\"http://" . $_SERVER['SERVER_ADDR'] . ":8183/distributed_software/form\"><i>Software</i></a>\n";
+}
+?>
 </div>
 
 <div style="float:right;">

@@ -18,6 +18,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 {
 	private static TreeMap<RemoteTaskInfo, TreeSet<String>> tasks = new TreeMap<RemoteTaskInfo, TreeSet<String>>();
 	private static TreeSet<String> servers = new TreeSet<String>();
+	private static String[] servers_array = new String[0];
 	
 	/**
 	 * Record the existence of a software server and the applications/tasks it provides.
@@ -26,6 +27,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	public synchronized static void addServer(String server)
 	{
 		Vector<String> applications, application_tasks, task_outputs, task_inputs;
+		Vector<Vector<String>> task_inputs_outputs;
 		RemoteTaskInfo rti;
 		String server_url = "http://" + server + "/software/";
 		String application_name;
@@ -34,6 +36,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		if(SoftwareReuseRestlet.queryEndpoint(server_url + "alive") != null){
 			System.out.print("Adding server: " + server + " ");
 			servers.add(server);
+			servers_array = servers.toArray(new String[0]);
 			applications = getEndpointValues(server_url);
 			
 			for(String application : applications){
@@ -51,11 +54,11 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 				application_tasks = getEndpointValues(server_url + application);
 				
 				for(String task : application_tasks){
-					task_outputs = getEndpointValues(server_url + application + "/" + task);
-	
-					for(String output : task_outputs){
-						task_inputs = getEndpointValues(server_url + application + "/" + task + "/" + output);
-						
+					task_inputs_outputs = getEndpointCommaSeparatedValues(server_url + application + "/" + task + "/*");
+					task_inputs = task_inputs_outputs.get(0);
+					task_outputs = task_inputs_outputs.get(1);
+					
+					for(String output : task_outputs){						
 						for(String input : task_inputs){
 							rti = new RemoteTaskInfo(application, task, output, input);
 							
@@ -100,6 +103,10 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 				}
 			}
 		}
+		
+		if(servers_array.length != servers.size()){
+			servers_array = servers.toArray(new String[0]);
+		}
 	}
 	
 	/**
@@ -127,7 +134,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		TreeSet<String> applications = new TreeSet<String>();
 				
 		for(RemoteTaskInfo rti : tasks.keySet()){
-			applications.add(rti.application_alias);
+			applications.add(rti.application_alias + " (" + rti.application_name + ")");
 		}
 		
 		for(String application : applications){
@@ -209,6 +216,44 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	}
 	
 	/**
+	 * Get the input and output formats supported by the given task.
+	 * @param alias the application alias
+	 * @param task the application task
+	 * @return the input and output formats supported
+	 */
+	public String getApplicationTaskInputsOutputs(String alias, String task)
+	{
+		String buffer = "";
+		TreeSet<String> task_inputs = new TreeSet<String>();
+		TreeSet<String> task_outputs = new TreeSet<String>();
+		boolean FIRST_VALUE;
+		
+		for(RemoteTaskInfo rti : tasks.keySet()){
+			if(rti.application_alias.equals(alias) && rti.task.equals(task)){
+				task_inputs.add(rti.input);
+				task_outputs.add(rti.output);
+			}
+		}
+		
+		FIRST_VALUE = true;
+		
+		for(String input : task_inputs){
+			if(FIRST_VALUE) FIRST_VALUE = false; else buffer += ", ";
+			buffer += input;
+		}
+		
+		buffer += "\n";
+		FIRST_VALUE = true;
+		
+		for(String output : task_outputs){
+			if(FIRST_VALUE) FIRST_VALUE = false; else buffer += ", ";
+			buffer += output;
+		}
+		
+		return buffer;
+	}
+	
+	/**
 	 * Get a web form interface for this restful service.
 	 * @return the form
 	 */
@@ -220,7 +265,8 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		TreeSet<String> task_outputs = new TreeSet<String>();
 		String buffer = "";
 		int count;
-		boolean FIRST_ITEM;
+		boolean FIRST_BLOCK;
+		boolean FIRST_VALUE;
 		
 		buffer += "<script type=\"text/javascript\">\n";
 		buffer += "function setTasks(){\n";
@@ -237,17 +283,11 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		}
 		
 		//Build application selection options
-		FIRST_ITEM = true;
+		FIRST_BLOCK = true;
 		
 		for(Pair<String,String> application : applications){
-			if(FIRST_ITEM){
-				FIRST_ITEM = false;
-			}else{
-				buffer += "\n";
-			}
-			
+			if(FIRST_BLOCK) FIRST_BLOCK = false; else	buffer += "\n";
 			buffer += "  if(application == \"" + application.first + "\"){\n";
-			count = 0;
 			
 			//Build application tasks
 			application_tasks.clear();
@@ -259,6 +299,8 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 			}
 			
 			//Add task selection options
+			count = 0;
+
 			for(String task : application_tasks){
 				buffer += "    tasks.options[" + count + "] = new Option(\"" + task + "\", \"" + task + "\", " + (count == 0) + ", " + (count == 0) + ");\n";
 				count++;
@@ -283,7 +325,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		buffer += "  outputs.options.length = 0;\n";
 		buffer += "  \n";
 		
-		FIRST_ITEM = true;
+		FIRST_BLOCK = true;
 		
 		for(Pair<String,String> application : applications){
 			//Build application tasks
@@ -314,21 +356,14 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 				}
 				
 				//Add input/output selection options
-				if(FIRST_ITEM){
-					FIRST_ITEM = false;
-				}else{
-					 buffer += "\n";
-				}
-				
-				buffer += "  if(application == \"" + application.first + "\" && task == \"" + task + "\"){\n";
-				count = 0;
-	
+				if(FIRST_BLOCK) FIRST_BLOCK = false; else	buffer += "\n";
+				buffer += "  if(application == \"" + application.first + "\" && task == \"" + task + "\"){\n";	
 				buffer += "    inputs.innerHTML = \"";
+				FIRST_VALUE = true;
 				
 				for(String input : task_inputs){
-					if(count > 0) buffer += ", ";
+					if(FIRST_VALUE) FIRST_VALUE = false; else buffer += ", ";
 					buffer += input;
-					count++;
 				}
 				
 				buffer += "\";\n";
@@ -394,12 +429,11 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		}
 		
 		//Add input/output selection options
-		count = 0;
+		FIRST_VALUE = true;
 
 		for(String input : task_inputs){
-			if(count > 0) buffer += ", ";
+			if(FIRST_VALUE) FIRST_VALUE = false; else buffer += ", ";
 			buffer += input;
-			count++;
 		}
 		
 		buffer += "</div></font></i></td></tr>\n";
@@ -419,6 +453,16 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		return buffer;
 	}
 	
+	/**
+	 * Check if the given server is busy.
+	 * @param server the software server to check
+	 * @return true if the server said it was busy
+	 */
+	private boolean isServerBusy(String server)
+	{		
+		return SoftwareReuseRestlet.queryEndpoint("http://" + server + "/software/busy").equals("true");
+	}
+
 	@Get
 	/**
 	 * Handle HTTP GET requests.
@@ -426,19 +470,19 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	public Representation httpGetHandler()
 	{
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
-		String part0 = (parts.size() > 0) ? parts.get(0) : "";
-		String part1 = (parts.size() > 1) ? parts.get(1) : "";
-		String part2 = (parts.size() > 2) ? parts.get(2) : "";
-		String part3 = (parts.size() > 3) ? parts.get(3) : "";
+		String part1 = (parts.size() > 0) ? parts.get(0) : "";
+		String part2 = (parts.size() > 1) ? parts.get(1) : "";
+		String part3 = (parts.size() > 2) ? parts.get(2) : "";
+		String part4 = (parts.size() > 3) ? parts.get(3) : "";
 		String application = null, task = null, file = null, format = null, file_format, server, url;
 		Form form;
 		Parameter p;
 		RemoteTaskInfo rti;
 		
-		if(part0.isEmpty()){
+		if(part1.isEmpty()){
 			return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
 		}else{
-			if(part0.equals("form")){
+			if(part1.equals("form")){
 				form = getRequest().getResourceRef().getQueryAsForm();
 				p = form.getFirst("application"); if(p != null) application = p.getValue();
 				p = form.getFirst("task"); if(p != null) task = p.getValue();
@@ -452,42 +496,66 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 				}else{
 					return new StringRepresentation(getForm(), MediaType.TEXT_HTML);
 				}
-			}else if(part0.equals("register")){
-				if(part1.isEmpty()){
+			}else if(part1.equals("register")){
+				if(part2.isEmpty()){
 					return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
 				}else{
-					final String server_final = URLDecoder.decode(part1);
-					
-			  	new Thread(){
-			  		public void run(){
-			  			checkServers();		//While we are here go ahead and check on previously added servers
-			  			if(!servers.contains(server_final)) addServer(server_final);
-			  		}
-			  	}.start();
-					
-					return new StringRepresentation(server_final + " scheduled to be queried", MediaType.TEXT_PLAIN);
-				}
-			}else if(part0.equals("servers")){				
-				return new StringRepresentation(getServers(), MediaType.TEXT_PLAIN);
-			}else if(part1.isEmpty()){
-				return new StringRepresentation(getApplicationTasks(part0), MediaType.TEXT_PLAIN);
-			}else{
-				if(part2.isEmpty()){
-					return new StringRepresentation(getApplicationTaskInputs(part0, part1), MediaType.TEXT_PLAIN);
-				}else{
-					if(part3.isEmpty()){
-						return new StringRepresentation(getApplicationTaskOutputs(part0, part1), MediaType.TEXT_PLAIN);
+					server = URLDecoder.decode(part2);
+
+					if(!servers.contains(server)){
+						final String server_final = server;
+						
+				  	new Thread(){
+				  		public void run(){
+				  			checkServers();		//While we are here go ahead and check on previously added servers
+				  			addServer(server_final);
+				  		}
+				  	}.start();
+						
+						return new StringRepresentation(server + " scheduled to be queried", MediaType.TEXT_PLAIN);
 					}else{
-						application = part0;
-						task = part1;
-						format = part2;
-						file = part3;
+						return new StringRepresentation(server + " registered", MediaType.TEXT_PLAIN);
+					}
+				}
+			}else if(part1.equals("servers")){				
+				return new StringRepresentation(getServers(), MediaType.TEXT_PLAIN);
+			}else if(part1.equals("alive")){
+				return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
+			}else if(part2.isEmpty()){
+				return new StringRepresentation(getApplicationTasks(part1), MediaType.TEXT_PLAIN);
+			}else{
+				if(part3.isEmpty()){
+					return new StringRepresentation(getApplicationTaskInputs(part1, part2), MediaType.TEXT_PLAIN);
+				}else{
+					if(part3.equals("*")){
+						return new StringRepresentation(getApplicationTaskInputsOutputs(part1, part2), MediaType.TEXT_PLAIN);
+					}else if(part4.isEmpty()){
+						return new StringRepresentation(getApplicationTaskOutputs(part1, part2), MediaType.TEXT_PLAIN);
+					}else{
+						application = part1;
+						task = part2;
+						format = part3;
+						file = part4;
 						
 						file_format = Utility.getFilenameExtension(file);
 						rti = new RemoteTaskInfo(application, task, format, file_format);
 						rti.servers = tasks.get(rti);
-						server = rti.servers.first();
 						
+						//Find a non-busy server
+						server = null;
+						
+						for(int i=0; i<servers_array.length; i++){
+							if(!isServerBusy(servers_array[i])){
+								server = servers_array[i];
+								break;
+							}
+						}
+						
+						if(server == null){		//If all servers are busy then pick one randomly
+							server = servers_array[new Random().nextInt()%servers_array.length];
+						}
+						
+						//Return the software server connection that will perform the task
 						System.out.println("[" + server + "]: " + application + "/" + task + " " + file_format + "->" + format);
 						url = "http://" + server + "/software/" + application + "/" + task + "/" + format + "/" + file;
 						
@@ -511,6 +579,26 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 				
 		while(scanner.hasNextLine()){
 			values.add(scanner.nextLine().trim());
+		}
+		
+		return values;
+	}
+	
+	/**
+	 * Query a restlet endpoint that responds with lines of comma separated values.
+	 * @param url the URL of the restlet endpoint to query
+	 * @return the values returned from the endpoint
+	 */
+	public static Vector<Vector<String>> getEndpointCommaSeparatedValues(String url)
+	{
+		Vector<Vector<String>> values = new Vector<Vector<String>>();
+		String text = SoftwareReuseRestlet.queryEndpoint(url);
+		String line;
+		Scanner scanner = new Scanner(text);
+
+		while(scanner.hasNextLine()){
+			line = scanner.nextLine().trim();
+			values.add(Utility.split(line, ',', true, true));
 		}
 		
 		return values;
@@ -565,6 +653,6 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
 		
-		System.out.println();
+		System.out.println("\nDistributed software reuse restlet is running...\n");
 	}
 }
