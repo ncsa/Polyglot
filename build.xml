@@ -59,7 +59,7 @@
 		<echo file="${tmp}/ScriptDebugger.ini" append="false">DataPath=data${line.separator}</echo>
 		<echo file="${tmp}/ScriptDebugger.ini" append="true">SearchPath=C:/Program Files;C:/Program Files (x86)</echo>
 		
-		<echo file="${tmp}/ScriptInstaller.bat">java -cp "%%~dp0Polyglot2.jar;~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller %*</echo>
+		<echo file="${tmp}/ScriptInstaller.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller %*</echo>
 		<echo file="${tmp}/ScriptInstaller.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptInstaller $1 $2 $3 $4</echo>
 		
 		<echo file="${tmp}/SoftwareReuseServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseServer %*</echo>

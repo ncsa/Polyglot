@@ -227,7 +227,7 @@ public class ScriptInstaller
 				}
 			}
 				
-			result = Utility.readURL(Utility.urlEncode(csr_script_url + "get_scripts.php?software=" + software));
+			result = Utility.readURL(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software));
 			scanner = new Scanner(result);
 			
 			while(scanner.hasNextLine()){
