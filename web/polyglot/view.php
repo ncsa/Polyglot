@@ -11,9 +11,13 @@
 &nbsp;
 <b>View</b>
 <?php
-if(file_exists("SHOW_SOFTWARE.txt")){
+include "bin/utils.php";
+
+$server_url = "http://" . $_SERVER['SERVER_ADDR'] . ":8183/distributed_software/";
+
+if(url_exists($server_url . "alive")){
 	echo "&nbsp;\n";
-	echo "<a href=\"http://" . $_SERVER['SERVER_ADDR'] . ":8183/distributed_software/form\"><i>Software</i></a>\n";
+	echo "<a href=\"" . $server_url . "form\"><i>Software</i></a>\n";
 }
 ?>
 </div>

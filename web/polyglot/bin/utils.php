@@ -36,4 +36,11 @@ function scandir_bydate($dir)
 
   return $files_sorted;
 }
+
+function url_exists($url)
+{
+	$headers = @get_headers($url);
+
+	return is_array($headers) ? preg_match('/^HTTP\\/\\d+\\.\\d+\\s+2\\d\\d\\s+.*$/',$headers[0]) : false;
+}
 ?>

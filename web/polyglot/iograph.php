@@ -11,9 +11,13 @@
 &nbsp;
 <a href="view.php">View</a>
 <?php
-if(file_exists("SHOW_SOFTWARE.txt")){
+include "bin/utils.php";
+
+$server_url = "http://" . $_SERVER['SERVER_ADDR'] . ":8183/distributed_software/";
+
+if(url_exists($server_url . "alive")){
 	echo "&nbsp;\n";
-	echo "<a href=\"http://" . $_SERVER['SERVER_ADDR'] . ":8183/distributed_software/form\"><i>Software</i></a>\n";
+	echo "<a href=\"" . $server_url . "form\"><i>Software</i></a>\n";
 }
 ?>
 </div>
@@ -48,7 +52,7 @@ Use the I/O-Graph to check which applications will be used when converting betwe
 </td><td width="100%" align="center">
 
 <applet codebase="lib" archive="PolyglotUtils-signed.jar" code="edu.ncsa.icr.polyglot.IOGraphApplet.class" width="900" height="650">
-<param name="url" value="polyglot1.ncsa.illinois.edu:50002">
+<param name="url" value="<?php echo $_SERVER['SERVER_ADDR']?>:50002">
 <param name="side_pane_width" value="275">
 <param name="output_panel_height" value="0">
 <param name="vertex_color" value="000000">
