@@ -67,6 +67,8 @@
 		<echo file="${tmp}/SoftwareReuseServer.ini" append="false">RootPath=tmp/SoftwareReuseServer${line.separator}</echo>
 		<echo file="${tmp}/SoftwareReuseServer.ini" append="true">Port=${icr_port}${line.separator}</echo>
 		<echo file="${tmp}/SoftwareReuseServer.ini" append="true">MaxOperationTime=30000${line.separator}</echo>
+		<echo file="${tmp}/SoftwareReuseServer.ini" append="true">HandleOperationOutput=false${line.separator}</echo>
+		<echo file="${tmp}/SoftwareReuseServer.ini" append="true">ShowOperationOutput=false${line.separator}</echo>
 		<echo file="${tmp}/SoftwareReuseServer.ini" append="true">MaxOperationAttempts=2${line.separator}</echo>
 		<echo file="${tmp}/SoftwareReuseServer.ini" append="true">EnableMonitors=true${line.separator}</echo>
 		<echo file="${tmp}/SoftwareReuseServer.ini" append="true">AHKScripts=scripts/ahk${line.separator}</echo>

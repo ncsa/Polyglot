@@ -731,30 +731,48 @@ public class SoftwareReuseAuxiliary
 		/**
 		 * Execute this script.
 		 * @param command the command executing the script
-		 * @param max_operation_time the maximum allowed time to run (in milli-seconds, -1 indicates forever)
+		 * @param max_runtime the maximum allowed time to run (in milli-seconds, -1 indicates forever)
+		 * @param HANDLE_OUTPUT true if the process output should be handled
+		 * @param SHOW_OUTPUT true if the process output should be shown
 		 * @return true if the operation completed within the given time frame
 		 */
-		public static boolean executeAndWait(String command, int max_operation_time)
+		public static boolean executeAndWait(String command, int max_runtime, boolean HANDLE_OUTPUT, boolean SHOW_OUTPUT)
 		{
 			Process process;
 			TimedProcess timed_process;
 			boolean COMPLETE = false;
-	
+			
 	  	if(!command.isEmpty()){
 		  	try{
 			  	process = Runtime.getRuntime().exec(command);
 			  	
-			  	if(max_operation_time >= 0){
-					  timed_process = new TimedProcess(process);    
-					  COMPLETE = timed_process.waitFor(max_operation_time); System.out.println();
+			  	if(max_runtime >= 0){
+					  timed_process = new TimedProcess(process, HANDLE_OUTPUT, SHOW_OUTPUT);    
+					  COMPLETE = timed_process.waitFor(max_runtime); System.out.println();
 			  	}else{
-		        process.waitFor();
-		        COMPLETE = true;
+			  		if(HANDLE_OUTPUT){
+			  			Utility.handleProcessOutput(process, SHOW_OUTPUT);
+			  		}else{
+			        process.waitFor();
+			  		}
+			  		
+			  		COMPLETE = true;
 			  	}
 		  	}catch(Exception e) {e.printStackTrace();}
 	  	}
 	  	
 	  	return COMPLETE;
+		}
+		
+		/**
+		 * Execute this script.
+		 * @param command the command executing the script
+		 * @param max_runtime the maximum allowed time to run (in milli-seconds, -1 indicates forever)
+		 * @return true if the operation completed within the given time frame
+		 */
+		public static boolean executeAndWait(String command, int max_runtime)
+		{
+			return executeAndWait(command, max_runtime, false, false);
 		}
 		
 		/**
@@ -771,14 +789,14 @@ public class SoftwareReuseAuxiliary
 		 * @param source the first argument to pass to the script
 		 * @param target the second argument to pass to the script
 		 * @param temp_path the third argument to pass to the script
-		 * @param max_operation_time the maximum allowed time to run (in milli-seconds)
+		 * @param max_runtime the maximum allowed time to run (in milli-seconds)
 		 * @return true if the operation completed within the given time frame
 		 */
-		public boolean executeAndWait(String source, String target, String temp_path, int max_operation_time)
+		public boolean executeAndWait(String source, String target, String temp_path, int max_runtime)
 		{
 			String command = getCommand(filename, source, target, temp_path);
 			
-			return executeAndWait(command, max_operation_time);
+			return executeAndWait(command, max_runtime);
 		}
 	
 		/**
@@ -1487,13 +1505,14 @@ public class SoftwareReuseAuxiliary
 					operation = application.operations.get(j);
 					
 					if(operation.name.equals("convert") || operation.name.equals("open") || operation.name.equals("save") || operation.name.equals("import") || operation.name.equals("export")){
-						//Add inputs/outputs to convert task
-						for(int k=0; k<operation.inputs.size(); k++){
-							convert_info.inputs.add(operation.inputs.get(k).toString());
-						}
-						
-						for(int k=0; k<operation.outputs.size(); k++){
-							convert_info.outputs.add(operation.outputs.get(k).toString());
+						if(convert_info != null){																					//Add inputs/outputs to convert task
+							for(int k=0; k<operation.inputs.size(); k++){
+								convert_info.inputs.add(operation.inputs.get(k).toString());
+							}
+							
+							for(int k=0; k<operation.outputs.size(); k++){
+								convert_info.outputs.add(operation.outputs.get(k).toString());
+							}
 						}
 					}else if(!operation.name.equals("exit") && !operation.name.equals("monitor") && !operation.name.equals("kill")){
 						if(!operation.inputs.isEmpty() && !operation.outputs.isEmpty()){	//"Modify" script with inputs and outputs (i.e. a conversion)

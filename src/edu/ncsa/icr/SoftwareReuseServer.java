@@ -25,6 +25,8 @@ public class SoftwareReuseServer implements Runnable
 	private int steward_port;
 	private String status = "idle";
 	
+	private boolean HANDLE_OPERATION_OUTPUT = false;
+	private boolean SHOW_OPERATION_OUTPUT = false;
 	private boolean ENABLE_MONITORS = false;
 	private boolean STARTED_MONITORS = false;
 	private boolean RUNNING;
@@ -109,6 +111,10 @@ public class SoftwareReuseServer implements Runnable
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("MaxOperationTime")){
 	            max_operation_time = Integer.valueOf(value);
+	          }else if(key.equals("HandleOperationOutput")){
+	            HANDLE_OPERATION_OUTPUT = Boolean.valueOf(value);
+	          }else if(key.equals("ShowOperationOutput")){
+	            SHOW_OPERATION_OUTPUT = Boolean.valueOf(value);
 	          }else if(key.equals("MaxOperationAttempts")){
 	            max_operation_attempts = Integer.valueOf(value);
 	          }else if(key.equals("EnableMonitors")){
@@ -300,7 +306,7 @@ public class SoftwareReuseServer implements Runnable
 	  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
 	  	if(!command.isEmpty()){
 	  		for(int j=0; j<max_operation_attempts; j++){
-		  		COMPLETE = Script.executeAndWait(command, max_operation_time);
+		  		COMPLETE = Script.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
 			  	
 			    //Try again if command failed
           if(!COMPLETE && application.kill_operation != null){
