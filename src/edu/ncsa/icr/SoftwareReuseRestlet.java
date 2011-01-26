@@ -401,15 +401,15 @@ public class SoftwareReuseRestlet extends ServerResource
 	/**
 	 * Get the task involved in using the given applications to convert the given file to the specified output format.
 	 * @param application_alias the alias of the application to use.
-	 * @param operation_comment the operation comment
+	 * @param operation_hint an operation hint
 	 * @param filename the file name of the cached file to convert
 	 * @param output_format the output format
 	 * @return the task to perform the conversion
 	 */
-	public Vector<Subtask> getTask(String application_alias, String operation_comment, String filename, String output_format)
+	public Vector<Subtask> getTask(String application_alias, String operation_hint, String filename, String output_format)
 	{
 		Task task = new Task(applications);
-		task.addSubtasks(task.getApplicationString(application_alias), operation_comment, new CachedFileData(filename), new CachedFileData(filename, output_format));
+		task.addSubtasks(task.getApplicationString(application_alias), operation_hint, new CachedFileData(filename), new CachedFileData(filename, output_format));
 		
 		return task.getSubtasks();
 	}
@@ -417,15 +417,15 @@ public class SoftwareReuseRestlet extends ServerResource
 	/**
 	 * Convert a file to the specified output format using the given application.
 	 * @param application_alias the application to use
-	 * @param operation_comment the operation comment
+	 * @param operation_hint an operation hint
 	 * @param file the URL of the file to convert
 	 * @param format the output format
 	 */
-	public synchronized void convert(String application_alias, String operation_comment, String file, String format)
+	public synchronized void convert(String application_alias, String operation_hint, String file, String format)
 	{
-		Vector<Subtask> task = getTask(application_alias, operation_comment, Utility.getFilename(file), format);
+		Vector<Subtask> task = getTask(application_alias, operation_hint, Utility.getFilename(file), format);
 		
-		//Task.print(task, applications);
+		Task.print(task, applications);
 	
 		Utility.downloadFile(server.getCachePath(), "0_" + Utility.getFilenameName(file), file);
 		server.executeTasks("localhost", 0, task);	
@@ -434,21 +434,21 @@ public class SoftwareReuseRestlet extends ServerResource
 	/**
 	 * Convert a file (asynchronously) to the specified output format using the given application.
 	 * @param application_alias the application to use
-	 * @param operation_comment the operation comment
+	 * @param operation_hint an operation hint
 	 * @param file the URL of the file to convert
 	 * @param format the output format
 	 * @return the results of the conversion
 	 */
-	public String convertLater(String application_alias, String operation_comment, String file, String format)
+	public String convertLater(String application_alias, String operation_hint, String file, String format)
 	{
 		final String application_alias_final = application_alias;
-		final String comment_final = operation_comment;
+		final String operation_hint_final = operation_hint;
 		final String file_final = file;
 		final String format_final = format;
 		
 		new Thread(){
 			public void run(){
-				convert(application_alias_final, comment_final, file_final, format_final);
+				convert(application_alias_final, operation_hint_final, file_final, format_final);
 			}
 		}.start();
 		

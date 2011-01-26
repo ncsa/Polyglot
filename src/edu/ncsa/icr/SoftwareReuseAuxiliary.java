@@ -377,7 +377,6 @@ public class SoftwareReuseAuxiliary
 		public String type;
 		public String alias;
 		public String operation;
-		public String comment = "";
 		public String application; 
 		public TreeSet<String> types = new TreeSet<String>();
 		public TreeSet<String> inputs = new TreeSet<String>();
@@ -423,12 +422,6 @@ public class SoftwareReuseAuxiliary
 	    
 	    if(tokens.length > 1){
 	    	operation = tokens[1].toLowerCase();
-	    	tmpi = operation.lastIndexOf('#');
-	    	
-	    	if(tmpi >= 0){
-	    		comment = operation.substring(tmpi+1);
-	    		operation = operation.substring(0, tmpi);
-	    	}
 	    }else{
 	    	operation = "";
 	    	System.out.println("Warning: script \"" + filename + "\" violates naming convention (unknown operation)!");
@@ -439,7 +432,7 @@ public class SoftwareReuseAuxiliary
 	        inputs.add(tokens[2]);
 	      }else if(operation.equals("save") || operation.equals("export")){
 	        outputs.add(tokens[2]);
-	      }else if(operation.equals("convert")){
+	      }else if(tokens.length > 3){
 	        inputs.add(tokens[2]);
 	        outputs.add(tokens[3]);
 	      }
@@ -468,36 +461,40 @@ public class SoftwareReuseAuxiliary
 	      	application = application.substring(0, application.indexOf('(')).trim();
 	      }
 	
-	      if(operation.equals("open") || operation.equals("import") || operation.equals("save") || operation.equals("export") || operation.equals("convert")){
+	      if(!operation.equals("exit") && !operation.equals("kill") && !operation.equals("monitor")){
 	      	//Get content types supported by the application
 	      	line = ins.readLine();
-	        line = line.substring(comment_head.length());				//Remove comment characters
-	        
-	        scanner = new Scanner(line);
-	        scanner.useDelimiter("[\\s,]+");
-	        
-	        while(scanner.hasNext()){
-	        	types.add(scanner.next());
-	        }         	
-	      
-	        //Extract supported file formats
-	        if(inputs.isEmpty() && outputs.isEmpty()){
-	          line = ins.readLine();
-	          line = line.substring(comment_head.length());     //Remove comment characters
-	          
-	          if(operation.equals("open") || operation.equals("import")){
-	          	inputs = parseFormatList(line);
-	          }else if(operation.equals("save") || operation.equals("export")){
-	          	outputs = parseFormatList(line);
-	          }else if(operation.equals("convert")){
-	          	inputs = parseFormatList(line);
-	            
-	            //Convert is a binary operation thus we must read in outputs as well
-	            line = ins.readLine();
-	            line = line.substring(comment_head.length());		//Remove comment characters
-	            outputs = parseFormatList(line);
-	          }
-	        }
+	      	
+	      	if(line != null && line.startsWith(comment_head)){
+		        line = line.substring(comment_head.length());				//Remove comment characters
+		        scanner = new Scanner(line);
+		        scanner.useDelimiter("[\\s,]+");
+		        
+		        while(scanner.hasNext()){
+		        	types.add(scanner.next());
+		        }         	
+		      
+		        //Extract supported file formats
+		        if(inputs.isEmpty() && outputs.isEmpty()){
+		          line = ins.readLine();
+		          
+		          if(line != null && line.startsWith(comment_head)){
+			          line = line.substring(comment_head.length());     //Remove comment characters
+			          
+			          if(operation.equals("open") || operation.equals("import")){
+			          	inputs = parseFormatList(line);
+			          }else if(operation.equals("save") || operation.equals("export")){
+			          	outputs = parseFormatList(line);
+			          }else{																						//If we have gotten this far this must by a binary operation
+			          	inputs = parseFormatList(line);
+			            
+			            line = ins.readLine();
+			            line = line.substring(comment_head.length());		//Remove comment characters
+			            outputs = parseFormatList(line);
+			          }
+		          }
+		        }
+	      	}
 	      }
 	      
 	      ins.close();
@@ -905,7 +902,6 @@ public class SoftwareReuseAuxiliary
 		public static final long serialVersionUID = 1L;
   	public Application application;		//An operation belongs to an application!
   	public String name;
-  	public String comment = "";
   	public Vector<Data> inputs = new Vector<Data>();
   	public Vector<Data> outputs = new Vector<Data>();
   	public String script;
@@ -926,7 +922,6 @@ public class SoftwareReuseAuxiliary
   	public Operation(Script script)
   	{
       name = script.operation;
-      comment = script.comment;
       
       for(Iterator<String> itr=script.inputs.iterator(); itr.hasNext();){
       	inputs.add(FileData.newFormat(itr.next()));
@@ -1129,12 +1124,11 @@ public class SoftwareReuseAuxiliary
 		 * Find a suitable application/operation given the desired application, operation, and data.
 		 * @param application_string the application string representation (can be null)
 		 * @param operation_name the operation name
-		 * @param operation_comment (can be null)
 		 * @param input_data input data (can be null)
 		 * @param output_data output data (can be null)
 		 * @return the index of the application and operation (null if none found)
 		 */
-		public Pair<Integer,Integer> getApplicationOperation(String application_string, String operation_name, String operation_comment, Data input_data, Data output_data)
+		public Pair<Integer,Integer> getApplicationOperation(String application_string, String operation_name, Data input_data, Data output_data)
 		{
 			Application application;
 			Operation operation;
@@ -1148,7 +1142,7 @@ public class SoftwareReuseAuxiliary
 					for(int j=0; j<application.operations.size(); j++){
 						operation = application.operations.get(j);
 						
-						if(operation.name.equals(operation_name) && (operation_comment == null || operation.comment.equals(operation_comment))){
+						if(operation.name.equals(operation_name)){
 							FOUND_INPUT = input_data == null;
 							
 							if(!FOUND_INPUT){		//Check for a matching input
@@ -1298,37 +1292,41 @@ public class SoftwareReuseAuxiliary
 		/**
 		 * Add a sequence of subtasks that will allow an application to go from the input to the output format.
 		 * @param application_string an applications string representation (can be null)
-		 * @param operation_comment the desired operation comment (can be null)
+		 * @param operation_hint a hint as to an operation to use (can be null)
 		 * @param input_data the input file
 		 * @param output_data the output file
 		 */
-		public void addSubtasks(String application_string, String operation_comment, Data input_data, Data output_data)
+		public void addSubtasks(String application_string, String operation_hint, Data input_data, Data output_data)
 		{
-			Pair<Integer,Integer> apop, apop0, apop1, apop2;
+			Pair<Integer,Integer> apop = null, apop0, apop1, apop2;
 			
 			//Attempt a direct conversion operation
-			apop = getApplicationOperation(application_string, "convert", operation_comment, input_data, output_data);
+			if(operation_hint == null || operation_hint.isEmpty()){
+				apop = getApplicationOperation(application_string, "convert", input_data, output_data);
+			}else{
+				apop = getApplicationOperation(application_string, operation_hint, input_data, output_data);
+			}
 			
 			if(apop != null){
 				task.add(new Subtask(apop.first, apop.second, input_data, output_data));
 			}else{	//Attempt two part open/import -> save/export
-				apop0 = getApplicationOperation(application_string, "open", null, input_data, null);
-				if(apop0 == null) apop0 = getApplicationOperation(application_string, "import", null, input_data, null);
+				apop0 = getApplicationOperation(application_string, "open", input_data, null);
+				if(apop0 == null) apop0 = getApplicationOperation(application_string, "import", input_data, null);
 				
 				if(apop0 != null){
-					apop1 = getApplicationOperation(applications.get(apop0.first).toString(), "save", null, null, output_data);
-					if(apop1 == null) apop1 = getApplicationOperation(applications.get(apop0.first).toString(), "export", null, null, output_data);
+					apop1 = getApplicationOperation(applications.get(apop0.first).toString(), "save", null, output_data);
+					if(apop1 == null) apop1 = getApplicationOperation(applications.get(apop0.first).toString(), "export", null, output_data);
 		
 					if(apop1 != null){
-						if(operation_comment == null || operation_comment.isEmpty()){
+						if(operation_hint == null || operation_hint.isEmpty()){
 							task.add(new Subtask(apop0.first, apop0.second, input_data, null));
 							task.add(new Subtask(apop1.first, apop1.second, input_data, output_data));
 						}else{
-							apop2 = getApplicationOperation(applications.get(apop0.first).toString(), "modify", operation_comment, null, null);
+							apop2 = getApplicationOperation(applications.get(apop0.first).toString(), operation_hint, null, null);
 							
 							if(apop2 != null){
 								task.add(new Subtask(apop0.first, apop0.second, input_data, null));
-								task.add(new Subtask(apop2.first, apop2.second, null, null));
+								task.add(new Subtask(apop2.first, apop2.second, input_data, null));
 								task.add(new Subtask(apop1.first, apop1.second, input_data, output_data));
 							}
 						}
@@ -1439,7 +1437,7 @@ public class SoftwareReuseAuxiliary
 				application = applications.get(task.get(i).application);
 				operation = application.operations.get(task.get(i).operation);
 				
-				System.out.print("\"" + application + "\" ");
+				System.out.print(application.alias + " ");
 				System.out.print(operation.name + " ");
 				System.out.print(task.get(i).input_data + " ");
 				System.out.print(task.get(i).output_data + "\n");
@@ -1470,7 +1468,7 @@ public class SoftwareReuseAuxiliary
 				for(int j=0; j<application.operations.size(); j++){
 					operation = application.operations.get(j);
 					
-					if(operation.name.equals("convert") && operation.comment.isEmpty()){
+					if(operation.name.equals("convert")){
 						FOUND_CONVERT = true;
 					}else if(operation.name.equals("open") || operation.name.equals("import")){
 						FOUND_OPEN = true;
@@ -1488,9 +1486,18 @@ public class SoftwareReuseAuxiliary
 				for(int j=0; j<application.operations.size(); j++){
 					operation = application.operations.get(j);
 					
-					if(!operation.comment.isEmpty()){
-						if(operation.name.equals("convert")){
-							task_info = new TaskInfo(application, operation.comment);
+					if(operation.name.equals("convert") || operation.name.equals("open") || operation.name.equals("save") || operation.name.equals("import") || operation.name.equals("export")){
+						//Add inputs/outputs to convert task
+						for(int k=0; k<operation.inputs.size(); k++){
+							convert_info.inputs.add(operation.inputs.get(k).toString());
+						}
+						
+						for(int k=0; k<operation.outputs.size(); k++){
+							convert_info.outputs.add(operation.outputs.get(k).toString());
+						}
+					}else if(!operation.name.equals("exit") && !operation.name.equals("monitor") && !operation.name.equals("kill")){
+						if(!operation.inputs.isEmpty() && !operation.outputs.isEmpty()){	//"Modify" script with inputs and outputs (i.e. a conversion)
+							task_info = new TaskInfo(application, operation.name);
 							application_tasks.lastElement().add(task_info);
 							
 							//Record inputs/outputs
@@ -1501,8 +1508,8 @@ public class SoftwareReuseAuxiliary
 							for(int k=0; k<operation.outputs.size(); k++){
 								task_info.outputs.add(operation.outputs.get(k).toString());
 							}
-						}else if(operation.name.equals("modify") && FOUND_OPEN && FOUND_SAVE){
-							task_info = new TaskInfo(application, operation.comment);
+						}else if(FOUND_OPEN && FOUND_SAVE){																//"Modify" script requiring a corresponding open/save operation
+							task_info = new TaskInfo(application, operation.name);
 							application_tasks.lastElement().add(task_info);
 							
 							//Record inputs/outputs
@@ -1518,16 +1525,8 @@ public class SoftwareReuseAuxiliary
 								}
 							}
 						}
-					}else{	//Add inputs/outputs to convert task
-						for(int k=0; k<operation.inputs.size(); k++){
-							convert_info.inputs.add(operation.inputs.get(k).toString());
-						}
-						
-						for(int k=0; k<operation.outputs.size(); k++){
-							convert_info.outputs.add(operation.outputs.get(k).toString());
-						}
 					}
-				}				
+				}
 			}
 			
 			return application_tasks;
