@@ -385,6 +385,7 @@ public class ScriptInstaller
 		TreeSet<String> methods = new TreeSet<String>();
 		TreeSet<String> local_software = new TreeSet<String>();
 		Vector<String> scripts = new Vector<String>();
+		Vector<String> scripts_configured = new Vector<String>();
 		Vector<String> test_files;
 		File[] files;
 		String software, filename;
@@ -472,21 +473,16 @@ public class ScriptInstaller
 			}
 		}
 		
-		//Set scripts to configured names (assume configured previously if not configured now)
-		if(false){
-			for(int i=0; i<scripts.size(); i++){
-				scripts.set(i, configured_script_path + Utility.getFilename(scripts.get(i)));
-			}
-		}else{
-			files = new File(configured_script_path).listFiles();
-			scripts.clear();
+		//Set scripts to configured names (checking if configured script actually exists)
+		for(int i=0; i<scripts.size(); i++){
+			filename = configured_script_path + Utility.getFilename(scripts.get(i));
 			
-			for(int i=0; i<files.length; i++){
-				if(!files[i].getName().startsWith(".")){
-					scripts.add(configured_script_path + files[i].getName());
-				}
+			if(Utility.exists(filename)){
+				scripts_configured.add(filename);
 			}
 		}
+		
+		scripts = scripts_configured;
 		
 		//Test downloaded scripts on this system
 		if(TEST_SCRIPTS){
