@@ -99,6 +99,10 @@ public class SoftwareReuseServer implements Runnable
 	          	addScriptedOperations(value + "/", "ahk", ";");
 	        	}else if(key.equals("AppleScripts")){
 	          	addScriptedOperations(value + "/", "applescript", "--");
+	        	}else if(key.equals("SikuliScripts")){
+	          	addScriptedOperations(value + "/", "sikuli", "#");
+	        	}else if(key.equals("PythonScripts")){
+	          	addScriptedOperations(value + "/", "py", "#");
 	        	}else if(key.equals("ShellScripts")){
 	          	addScriptedOperations(value + "/", "sh", "#");
 	        	}else if(key.equals("Port")){

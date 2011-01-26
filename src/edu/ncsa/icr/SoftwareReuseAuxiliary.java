@@ -395,14 +395,22 @@ public class SoftwareReuseAuxiliary
 			int tmpi;
 			
 			this.filename = Utility.unixPath(filename);
-			path = Utility.getFilenamePath(filename);
-	    name = Utility.getFilenameName(filename);
-	    type = Utility.getFilenameExtension(filename);
-	  	
+			path = Utility.getFilenamePath(this.filename);
+	    name = Utility.getFilenameName(this.filename);
+	    type = Utility.getFilenameExtension(this.filename);
+	    
 	    //Set comment syntax if not set already
 	    if(comment_head == null){
 	    	if(type.equals("ahk")){
 	    		comment_head = ";";
+	    	}else if(type.equals("applescript")){
+		    	comment_head = "--";
+	    	}else if(type.equals("sikuli")){
+		    	comment_head = "#";
+	    	}else if(type.equals("py")){
+		    	comment_head = "#";
+	    	}else if(type.equals("sh")){
+		    	comment_head = "#";
 	    	}else{
 	    		System.out.println("Warning: Unknown comment style for script of type: " + type + "!");
 	    		comment_head = "#";
@@ -439,10 +447,20 @@ public class SoftwareReuseAuxiliary
 	    
 	    //Examine script header
 	    try{
+		    //Check for scripts within sub-directories
+		    if(new File(filename).isDirectory()){
+		    	if(type.equals("sikuli")){
+		    		filename = this.filename + "/" + name + ".py"; 
+			    }else{
+		    		System.out.println("Warning: Unknown script type: " + type + "!");
+		    	}
+		    }
+		    
 	      BufferedReader ins = new BufferedReader(new FileReader(filename));
 	      
 	      //Get application pretty name
 	      line = ins.readLine();
+	      if(line.startsWith("#!")) line = ins.readLine();			//Skip first line if it contains a shell/interpreter (unix scripts)
 	      application = line.substring(comment_head.length());  //Remove comment characters
 	      
 	      //Remove version if present
@@ -644,6 +662,16 @@ public class SoftwareReuseAuxiliary
 				return "AutoHotKey " + script;
 			}else if(script.endsWith(".applescript")){
 				return "osascript " + script;
+			}else if(script.endsWith(".sikuli")){
+				String os = System.getProperty("os.name");
+
+				if(os.contains("Windows")){
+					return "sikuli-ide.bat -s -r " + script + " --args ";
+				}else{
+					return "sikuli-ide.sh -s -r " + script + " --args ";
+				}
+			}else if(script.endsWith(".py")){
+				return "python " + script;
 			}
 			
 			return script;
@@ -659,6 +687,7 @@ public class SoftwareReuseAuxiliary
 		 */
 		public static String getCommand(String script, String source, String target, String temp_path)
 		{
+			String os = System.getProperty("os.name");
 			String command = getCommand(script);
 			String operation = getOperation(script);
 			String type = Utility.getFilenameExtension(script);
@@ -669,7 +698,8 @@ public class SoftwareReuseAuxiliary
 				temp_path += System.currentTimeMillis() + "_";	
 			}
 			
-			if(type.equals("ahk")){		//*.ahk scripts are likely running on Windows
+			//if(type.equals("ahk")){		//*.ahk scripts are likely running on Windows
+			if(os.contains("Windows")){
 				WINDOWS_PATHS = true;
 				QUOTED_PATHS = true;
 			}
