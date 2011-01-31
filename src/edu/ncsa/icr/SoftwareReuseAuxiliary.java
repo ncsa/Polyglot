@@ -429,12 +429,12 @@ public class SoftwareReuseAuxiliary
 	  
 	    if(tokens.length > 2){
 	      if(operation.equals("open") || operation.equals("import")){
-	        inputs.add(tokens[2]);
+	        inputs.add(tokens[2].toLowerCase());
 	      }else if(operation.equals("save") || operation.equals("export")){
-	        outputs.add(tokens[2]);
+	        outputs.add(tokens[2].toLowerCase());
 	      }else if(tokens.length > 3){
-	        inputs.add(tokens[2]);
-	        outputs.add(tokens[3]);
+	        inputs.add(tokens[2].toLowerCase());
+	        outputs.add(tokens[3].toLowerCase());
 	      }
 	    }
 	    
@@ -471,7 +471,7 @@ public class SoftwareReuseAuxiliary
 		        scanner.useDelimiter("[\\s,]+");
 		        
 		        while(scanner.hasNext()){
-		        	types.add(scanner.next());
+		        	types.add(scanner.next().toLowerCase());
 		        }         	
 		      
 		        //Extract supported file formats
@@ -522,7 +522,7 @@ public class SoftwareReuseAuxiliary
 	    	option_string = line.substring(tmpi+1, line.length()-1).trim();
 	    }
 	    
-	    //Read in options
+	    //Read in options (TODO: utilize this or get rid of it!)
 	    if(option_string != null){
 	      scanner = new Scanner(option_string);
 	      scanner.useDelimiter("[\\s,]+");
@@ -537,7 +537,7 @@ public class SoftwareReuseAuxiliary
 	    scanner.useDelimiter("[\\s,]+");
 	    
 	    while(scanner.hasNext()){
-	    	format = scanner.next();
+	    	format = scanner.next().toLowerCase();
 	    	
 	    	if(options.isEmpty()){
 	    		formats.add(format);
@@ -784,6 +784,22 @@ public class SoftwareReuseAuxiliary
 		  executeAndWait(Script.getCommand(script), -1);
 		}
 	
+		/**
+		 * Execute this script.
+		 * @param source the first argument to pass to the script
+		 * @param target the second argument to pass to the script
+		 * @param temp_path the third argument to pass to the script
+		 * @param max_runtime the maximum allowed time to run (in milli-seconds)
+		 * @param HANDLE_OUTPUT true if the process output should be handled
+		 * @return true if the operation completed within the given time frame
+		 */
+		public boolean executeAndWait(String source, String target, String temp_path, int max_runtime, boolean HANDLE_OUTPUT)
+		{
+			String command = getCommand(filename, source, target, temp_path);
+			
+			return executeAndWait(command, max_runtime, HANDLE_OUTPUT, false);
+		}
+		
 		/**
 		 * Execute this script.
 		 * @param source the first argument to pass to the script

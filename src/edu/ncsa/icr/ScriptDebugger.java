@@ -269,8 +269,9 @@ public class ScriptDebugger
 	/**
 	 * Check the conversions claimed by the given script.
 	 * @param script_filename the script filename
+	 * @param max_operation_time the maximum number of milli-seconds to wait for an operation to finish
 	 */
-	public void checkConversions(String script_filename)
+	public void checkConversions(String script_filename, int max_operation_time)
 	{
 		Script script;
 		Script monitor_script = null;
@@ -283,7 +284,6 @@ public class ScriptDebugger
 		String input_file, output_file;
 		String filename, extension;
 		int input_script_index;
-		int max_operation_time = 30000;
 		
 		if(!Utility.exists(script_filename)){
 			System.out.println("Script doesn't exist!");
@@ -457,10 +457,11 @@ public class ScriptDebugger
 	 * Check the robustness of the script by running it over and over again.
 	 * @param script_filename the script filename
 	 * @param n the number of times to run the script
+	 * @param max_operation_time the maximum number of milli-seconds to wait for an operation to finish
 	 * @param VERBOSE true if verbosity should be turned on
 	 * @return the percentage of successful runs
 	 */
-	public double grindScript(String script_filename, int n, boolean VERBOSE)
+	public double grindScript(String script_filename, int n, int max_operation_time, boolean VERBOSE)
 	{
 		Script script;
 		Script monitor_script = null;
@@ -476,8 +477,8 @@ public class ScriptDebugger
 		String filename, extension;
 		Random random = new Random();
 		int input_script_index;
-		int max_operation_time = 30000;
 		int successes = 0;
+		int tmpi;
 
 		if(!Utility.exists(script_filename)){
 			System.out.println("Script doesn't exist!");
@@ -555,8 +556,15 @@ public class ScriptDebugger
 	
 					for(int i=0; i<n; i++){
 						input_type = inputs.get(Math.abs(random.nextInt())%inputs.size());
-						input_file = data_path + test_files.get(input_type).get(Math.abs(random.nextInt()%test_files.get(input_type).size()));		
-						output_type = outputs.get(Math.abs(random.nextInt())%outputs.size());
+						input_file = data_path + test_files.get(input_type).get(Math.abs(random.nextInt()%test_files.get(input_type).size()));
+
+						tmpi = Math.abs(random.nextInt());
+						output_type = outputs.get(tmpi%outputs.size());
+						
+						if(input_type.equals(output_type) && outputs.size() > 1){		//Try to avoid self conversions
+							output_type = outputs.get((tmpi+1)%outputs.size());
+						}
+						
 						output_file = temp_path + Utility.getFilenameName(input_file) + "." + output_type;
 	
 						System.out.println("\n" + Utility.toString(i+1, 4) + ": " + input_type + "->" + output_type);
@@ -693,11 +701,12 @@ public class ScriptDebugger
 	 * Check the robustness of the script by running it over and over again.
 	 * @param script_filename the script filename
 	 * @param n the number of times to run the script
+	 * @param max_operation_time the maximum number of milli-seconds to wait for an operation to finish
 	 * @return the percentage of successful runs
 	 */
-	public double grindScript(String script_filename, int n)
+	public double grindScript(String script_filename, int n, int max_operation_time)
 	{
-		return grindScript(script_filename, n, false);
+		return grindScript(script_filename, n, max_operation_time, false);
 	}
 	
 	/**
@@ -723,6 +732,7 @@ public class ScriptDebugger
 	public static void main(String args[])
 	{
 		ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.ini");
+		int max_operation_time = 30000;
 		
 		//Test arguments
 		if(true && args.length == 0){
@@ -748,9 +758,11 @@ public class ScriptDebugger
 			}else if(args[0].equals("-config")){
 				debugger.configureScript(args[1]);
 			}else if(args[0].equals("-grind")){
-				debugger.grindScript(args[2], Integer.valueOf(args[1]), true);
+				if(args.length > 3) max_operation_time = Integer.valueOf(args[3]);
+				debugger.grindScript(args[2], Integer.valueOf(args[1]), max_operation_time, true);
 			}else{
-				debugger.checkConversions(args[0]);
+				if(args.length > 1) max_operation_time = Integer.valueOf(args[1]);
+				debugger.checkConversions(args[0], max_operation_time);
 			}
 		}
 	}

@@ -393,6 +393,7 @@ public class ScriptInstaller
 		ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.ini"); debugger.setDataPath(data_download_path);
 		Script script;
 		int tests = 5;
+		int max_operation_time = 30000;
 		double success_rate;
 		boolean downloaded;
 		boolean NO_CONFIG = false;
@@ -413,6 +414,7 @@ public class ScriptInstaller
 				System.out.println("  -method x: set the method to use to determine what software is installed (wmic, reg)");
 				System.out.println("  -noconfig: just download scripts and do not configure them");
 				System.out.println("  -test n: download relevant test data and grind the obtained scripts n times");
+				System.out.println("  -wait t: the amount of time to wait for an operation to complete (in milli-seconds)");
 				System.out.println();
 				System.exit(0);
 			}else if(args[i].equals("-method")){
@@ -422,6 +424,8 @@ public class ScriptInstaller
 			}else if(args[i].equals("-test")){
 				TEST_SCRIPTS = true;
 				tests = Integer.valueOf(args[++i]);
+			}else if(args[i].equals("-wait")){
+				max_operation_time = Integer.valueOf(args[++i]);
 			}else{
 				software = args[i];
 				
@@ -516,7 +520,7 @@ public class ScriptInstaller
 				script = new Script(scripts.get(i), null);
 				
 				if(script.operation.equals("convert") || script.operation.equals("open") || script.operation.equals("import")){
-					success_rate = debugger.grindScript(scripts.get(i), tests);
+					success_rate = debugger.grindScript(scripts.get(i), tests, max_operation_time);
 					
 					if(success_rate > 0.5){
 						System.out.println("[Using \"" + script.alias + "\"]");
