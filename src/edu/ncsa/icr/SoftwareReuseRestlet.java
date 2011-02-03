@@ -5,11 +5,15 @@ import edu.ncsa.utility.*;
 import java.util.*;
 import java.io.*;
 import java.net.*;
+import javax.servlet.*;
 import org.restlet.*;
 import org.restlet.resource.*;
 import org.restlet.data.*;
 import org.restlet.representation.*;
-import org.restlet.routing.Router;
+import org.restlet.routing.*;
+import org.restlet.ext.fileupload.*;
+import org.apache.commons.fileupload.*;
+import org.apache.commons.fileupload.disk.*;
 
 /**
  * A restful interface for a software reuse server.
@@ -175,9 +179,10 @@ public class SoftwareReuseRestlet extends ServerResource
 	
 	/**
 	 * Get a web form interface for this restful service.
+	 * @param USE_POST true if this form should use POST rather than GET
 	 * @return the form
 	 */
-	public String getForm()
+	public String getForm(boolean USE_POST)
 	{
 		String buffer = "";
 		String format;
@@ -256,7 +261,12 @@ public class SoftwareReuseRestlet extends ServerResource
 		buffer += "}\n";
 		buffer += "</script>\n\n";
 		
-		buffer += "<form name=\"converson\" action=\"form/\" method=\"get\">\n";
+		if(!USE_POST){
+			buffer += "<form name=\"converson\" action=\"\" method=\"get\">\n";
+		}else{
+			buffer += "<form enctype=\"multipart/form-data\" name=\"converson\" action=\"\" method=\"post\">\n";
+		}
+		
 		buffer += "<table>\n";
 		buffer += "<tr><td><b>Application:</b></td>\n";
 		buffer += "<td><select name=\"application\" id=\"application\" onchange=\"setTasks();\">\n";
@@ -284,7 +294,13 @@ public class SoftwareReuseRestlet extends ServerResource
 		}
 		
 		buffer += "</div></font></i></td></tr>\n";
-		buffer += "<tr><td><b>File:</b></td><td><input type=\"text\" name=\"file\" size=\"100\"></td></tr>\n";
+		
+		if(!USE_POST){
+			buffer += "<tr><td><b>File:</b></td><td><input type=\"text\" name=\"file\" size=\"100\"></td></tr>\n";
+		}else{
+			buffer += "<tr><td><b>File:</b></td><td><input type=\"file\" name=\"file\" size=\"100\"></td></tr>\n";
+		}
+		
 		buffer += "<tr><td><b>Format:</b></td>\n";
 		buffer += "<td><select name=\"format\" id=\"format\">\n";
 		
@@ -299,6 +315,15 @@ public class SoftwareReuseRestlet extends ServerResource
 		buffer += "</form>";
 		
 		return buffer;
+	}
+	
+	/**
+	 * Get a web form interface for this restful service.
+	 * @return the form
+	 */
+	public String getForm()
+	{
+		return getForm(false);
 	}
 
 	/**
@@ -425,9 +450,12 @@ public class SoftwareReuseRestlet extends ServerResource
 	{
 		Vector<Subtask> task = getTask(application_alias, operation_hint, Utility.getFilename(file), format);
 		
-		Task.print(task, applications);
-	
-		Utility.downloadFile(server.getCachePath(), "0_" + Utility.getFilenameName(file), file);
+		//Task.print(task, applications);
+		
+		if(!file.startsWith(getReference().getBaseRef() + "/file/")){		//Don't download files already within cache
+			Utility.downloadFile(server.getCachePath(), "0_" + Utility.getFilenameName(file), file);
+		}
+		
 		server.executeTasks("localhost", 0, task);	
 	}
 	
@@ -477,7 +505,8 @@ public class SoftwareReuseRestlet extends ServerResource
 			if(part1.equals("form")){
 				if(part2.isEmpty()){
 					buffer = "";
-					buffer += "general\n";
+					buffer += "task\n";
+					buffer += "task_post\n";
 					buffer += "convert";
 					
 					return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
@@ -493,8 +522,10 @@ public class SoftwareReuseRestlet extends ServerResource
 	
 						return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
 					}else{
-						if(part2.equals("general")){
+						if(part2.equals("task")){
 							return new StringRepresentation(getForm(), MediaType.TEXT_HTML);
+						}else if(part2.equals("task_post")){
+							return new StringRepresentation(getForm(true), MediaType.TEXT_HTML);
 						}else if(part2.equals("convert")){
 							return new StringRepresentation(getConvertForm(), MediaType.TEXT_HTML);
 						}else{
@@ -502,7 +533,7 @@ public class SoftwareReuseRestlet extends ServerResource
 						}
 					}
 				}
-			}else if(part1.equals("result")){
+			}else if(part1.equals("file")){
 				if(!part2.isEmpty()){	
 					file = server.getCachePath() + "0_" + part2;
 					
@@ -534,13 +565,62 @@ public class SoftwareReuseRestlet extends ServerResource
 						format = part3;
 						file = URLDecoder.decode(part4);
 						
-						file = getReference().getBaseRef() + "/result/" + convertLater(application, task.equals("convert") ? "" : task, file, format);
+						file = getReference().getBaseRef() + "/file/" + convertLater(application, task.equals("convert") ? "" : task, file, format);
 						
 						return new StringRepresentation("<a href=" + file + ">" + file + "</a>", MediaType.TEXT_HTML);
 					}
 				}
 			}
 		}
+	}
+	
+	@Post
+	/**
+	 * Handle HTTP POST requests.
+	 */
+	public Representation httpPostHandler(Representation entity)
+	{
+		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
+		String part1 = (parts.size() > 0) ? parts.get(0) : "";
+		TreeMap<String,String> parameters = new TreeMap<String,String>();
+		String application, task, file = null, format, url;
+				
+		if(!part1.isEmpty() && part1.equals("form")){
+			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
+				DiskFileItemFactory factory = new DiskFileItemFactory();
+				factory.setSizeThreshold(1000240);
+				RestletFileUpload upload = new RestletFileUpload(factory);
+				List<FileItem> items;
+				FileItem fi;
+				
+				try{
+					items = upload.parseRequest(getRequest());
+					
+					for(Iterator<FileItem> itr = items.iterator(); itr.hasNext();){
+						fi = itr.next();
+						
+						if(fi.getName() == null){
+							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
+						}else{
+							fi.write(new File(server.getCachePath() + "0_" + fi.getName()));
+							file = getReference().getBaseRef() + "/file/" + fi.getName();
+						}
+					}
+				}catch(Exception e) {e.printStackTrace();}
+			}
+			
+			application = parameters.get("application");
+			task = parameters.get("task");
+			format = parameters.get("format");
+						
+			if(application != null && task != null && file != null && format != null){
+				url = getRootRef() + "/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
+				
+				return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
+			}
+		}
+		
+		return httpGetHandler();
 	}
 	
 	/**
