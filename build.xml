@@ -303,7 +303,8 @@
 		<unjar src="web/utils/UploadApplet.jar" dest="${tmp_utils}"/>
 		<unjar src="web/utils/ModelViewer_Lite.jar" dest="${tmp_utils}"/>
 		<jar basedir="${tmp_utils}" destfile="build/PolyglotUtils.jar"/>
-		<signjar jar="build/PolyglotUtils.jar" signedjar="build/PolyglotUtils-signed.jar" alias="mykey" storepass="isdapass"/>
+		<input message="keystore password:" addproperty="storepass"/>
+		<signjar jar="build/PolyglotUtils.jar" signedjar="build/PolyglotUtils-signed.jar" alias="mykey" storepass="${storepass}"/>
 	</target>
 	
 	<target name="iograph_archive" depends="compile" description="Archive the code needed for the I/O-graph applet">
@@ -316,7 +317,8 @@
 		</copy>
 		<unjar src="lib/ncsa/Utilities.jar" dest="${tmp_iograph}"/>
 		<jar basedir="${tmp_iograph}" destfile="build/IOGraphApplet.jar"/>
-		<signjar jar="build/IOGraphApplet.jar" signedjar="build/IOGraphApplet-signed.jar" alias="mykey" storepass="isdapass"/>
+		<input message="keystore password:" addproperty="storepass"/>
+		<signjar jar="build/IOGraphApplet.jar" signedjar="build/IOGraphApplet-signed.jar" alias="mykey" storepass="${storepass}"/>
 	</target>
 	
 	<target name="clean_tmp" description="Deletes tmp folder">
