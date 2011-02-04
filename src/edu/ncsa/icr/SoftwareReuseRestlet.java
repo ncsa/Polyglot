@@ -577,6 +577,7 @@ public class SoftwareReuseRestlet extends ServerResource
 	@Post
 	/**
 	 * Handle HTTP POST requests.
+	 * @param entity the entity
 	 */
 	public Representation httpPostHandler(Representation entity)
 	{

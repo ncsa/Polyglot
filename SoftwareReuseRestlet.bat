@@ -1,1 +1,1 @@
-java -cp "%~dp0bin;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseRestlet %*
+java -cp "%~dp0bin;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.restlet.ext.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.io.jar;%~dp0lib/restlet-2.0.4/javax.servlet.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseRestlet %*

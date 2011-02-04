@@ -93,13 +93,13 @@
 		<echo file="${tmp_zip}/SoftwareReuseServer.ini" append="true">#ShellScripts=scripts/sh${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareReuseServer.ini" append="true">#PolyglotSteward=localhost:${steward_port}</echo>
 		
-		<echo file="${tmp_zip}/SoftwareReuseRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseRestlet %*</echo>
-		<echo file="${tmp_zip}/SoftwareReuseRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.SoftwareReuseRestlet</echo>
+		<echo file="${tmp_zip}/SoftwareReuseRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.restlet.ext.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.io.jar;%~dp0lib/restlet-2.0.4/javax.servlet.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseRestlet %*</echo>
+		<echo file="${tmp_zip}/SoftwareReuseRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.restlet.ext.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.io.jar:lib/restlet-2.0.4/javax.servlet.jar -Xmx1g edu.ncsa.icr.SoftwareReuseRestlet</echo>
 		<echo file="${tmp_zip}/SoftwareReuseRestlet.ini" append="false">Port=8182${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareReuseRestlet.ini" append="true">#DistributedServer=localhost:8183</echo>
 
-		<echo file="${tmp_zip}/DistributedSoftwareReuseRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareReuseRestlet %*</echo>
-		<echo file="${tmp_zip}/DistributedSoftwareReuseRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareReuseRestlet</echo>
+		<echo file="${tmp_zip}/DistributedSoftwareReuseRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareReuseRestlet %*</echo>
+		<echo file="${tmp_zip}/DistributedSoftwareReuseRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareReuseRestlet</echo>
 		<echo file="${tmp_zip}/DistributedSoftwareReuseRestlet.ini" append="false">Port=8183</echo>
 
 		<echo file="${tmp_zip}/SoftwareReuseClient.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseClient %*</echo>
