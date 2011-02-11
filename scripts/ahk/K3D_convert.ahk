@@ -52,4 +52,4 @@ doc.set_dependency(target.get_property("input_mesh"), source.get_property("outpu
 ), %tmp_path%_K3D_convert.py
 
 ;Run program
-RunWait, C:\k3d\k3d.exe --script "%tmp_path%_K3D_convert.py" --ui none --exit
+RunWait, "C:\k3d\k3d.exe" --script "%tmp_path%_K3D_convert.py" --ui none --exit

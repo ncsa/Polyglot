@@ -98,8 +98,8 @@
 		<echo file="${tmp_zip}/SoftwareReuseRestlet.ini" append="false">Port=8182${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareReuseRestlet.ini" append="true">#DistributedServer=localhost:8183</echo>
 
-		<echo file="${tmp_zip}/DistributedSoftwareReuseRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareReuseRestlet %*</echo>
-		<echo file="${tmp_zip}/DistributedSoftwareReuseRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareReuseRestlet</echo>
+		<echo file="${tmp_zip}/DistributedSoftwareReuseRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareReuseRestlet %*</echo>
+		<echo file="${tmp_zip}/DistributedSoftwareReuseRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareReuseRestlet</echo>
 		<echo file="${tmp_zip}/DistributedSoftwareReuseRestlet.ini" append="false">Port=8183</echo>
 
 		<echo file="${tmp_zip}/SoftwareReuseClient.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseClient %*</echo>
@@ -315,6 +315,7 @@
 				<include name="**/Polyglot*.class"/>
 			</fileset>
 		</copy>
+		<unjar src="lib/ncsa/ImageUtilities.jar" dest="${tmp_iograph}"/>
 		<unjar src="lib/ncsa/Utilities.jar" dest="${tmp_iograph}"/>
 		<jar basedir="${tmp_iograph}" destfile="build/IOGraphApplet.jar"/>
 		<input message="keystore password:" addproperty="storepass"/>

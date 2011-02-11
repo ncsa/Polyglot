@@ -551,22 +551,31 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 
 	/**
 	 * Load edge weights from the given file.
-	 * @param filename a file containing lines with: edge source target weight
+	 * @param filename a file containing lines with: edge source target weight (can be a URL)
 	 * @param invalid_value the value to use for null weights (can be null indicating they should be ignored)
 	 */
 	public void loadEdgeWeights(String filename, Double invalid_value)
 	{
-		String buffer = Utility.loadToString(filename);
-		Vector<String> lines = Utility.split(buffer, '\n', false);
 		TreeMap<String,Vector<Double>> edge_weights = new TreeMap<String,Vector<Double>>();
 		Vector<Double> vector;
+		Vector<String> lines;
+		String buffer;
 		String string, weight_string, edge_string, edge, input, output;
 		Double weight;
 		int tmpi;
 		
+		if(filename.startsWith("http://")){
+			buffer = Utility.readURL(filename);
+		}else{
+			buffer = Utility.loadToString(filename);
+		}
+		
+		lines = Utility.split(buffer, '\n', false);
+		
 		//Accumulate weights for each edge
 		for(int i=0; i<lines.size(); i++){
 	  	string = lines.get(i);
+	  	if(string.endsWith("<br>")) string = string.substring(0, string.length()-4).trim();
 	  	tmpi = string.lastIndexOf(' ');
 	  	weight_string = string.substring(tmpi+1);
 	  	edge_string = string.substring(0, tmpi);
