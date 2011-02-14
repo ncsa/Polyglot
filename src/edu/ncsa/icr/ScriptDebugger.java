@@ -101,6 +101,7 @@ public class ScriptDebugger
 		ignored_executables.add("taskkill");
 		
 		//Get script names
+		script_filename = Utility.unixPath(script_filename);
 		script_path = Utility.getFilenamePath(script_filename);
 		script_output_path = script_path.substring(0, script_path.length()-1) + "-configured/";
 	

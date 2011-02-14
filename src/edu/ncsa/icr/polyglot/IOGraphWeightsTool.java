@@ -1145,7 +1145,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        			
 	        			if(Utility.exists(filenamei)){
 	        				if(extractor != null){
-	        					result = VersusDiff.compare(filename0, filenamei, adapter, extractor, measure);
+	        					result = VersusCompare.compare(filename0, filenamei, adapter, extractor, measure);
 	        				}else{
 	        					result = 1.0;	//Result is based on the existence of the output file
 	        				}
