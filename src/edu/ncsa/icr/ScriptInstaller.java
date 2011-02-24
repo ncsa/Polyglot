@@ -377,8 +377,7 @@ public class ScriptInstaller
 	 */
 	public static void main(String args[])
 	{				
-		String csr_script_url = "http://isda.ncsa.uiuc.edu/~kmchenry/tmp/CSRDebug/";
-		String csr_download_url = "http://isda.ncsa.uiuc.edu/NARA/CSR/php/search/download.php?file=";
+		String csr_script_url = "http://isda.ncsa.uiuc.edu/NARA/CSR/php/search/";
 		String script_download_path = "scripts/csr/";
 		String configured_script_path = script_download_path.substring(0, script_download_path.length()-1) + "-configured/";
 		String data_download_path = "data/csr/";
@@ -451,7 +450,7 @@ public class ScriptInstaller
 				filename = Utility.getFilename(getScriptFileName(scripts.get(i)));
 				System.out.print("  " + filename);
 				
-				downloaded = Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_download_url + scripts.get(i));
+				downloaded = Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_script_url + "download.php?file=" + scripts.get(i));
 				
 				if(downloaded){
 					System.out.println();
@@ -503,7 +502,7 @@ public class ScriptInstaller
 				filename = Utility.getFilename(test_files.get(i));
 				System.out.print("  " + filename);
 				
-				downloaded = Utility.downloadFile(data_download_path, Utility.getFilenameName(filename), csr_download_url + test_files.get(i));
+				downloaded = Utility.downloadFile(data_download_path, Utility.getFilenameName(filename), csr_script_url + "download.php?file=" + test_files.get(i));
 				
 				if(downloaded){
 					System.out.println();

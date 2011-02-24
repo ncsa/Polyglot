@@ -1019,7 +1019,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 		Vector<Conversion<V,E>> conversions = getShortestConversionPath(source_string, target_string, ENABLE_WEIGHTED_PATHS);
 	  String task = "";
 
-    if(conversions.isEmpty()){
+    if(conversions == null || conversions.isEmpty()){
       task = "null\n";
     }else{
       for(int i=0; i<conversions.size(); i++){

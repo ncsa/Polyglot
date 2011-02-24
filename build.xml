@@ -166,7 +166,7 @@
 		<echo file="${tmp_zip}/AutoUpdate.bat">java -cp "%~dp0lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp_zip}/AutoUpdate.sh">java -cp lib/ncsa/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp_zip}/AutoUpdate.ini" append="false">!ini, scripts/${line.separator}</echo>
-		<echo file="${tmp_zip}/AutoUpdate.ini" append="true">http://isda.ncsa.uiuc.edu/~kmchenry/tmp/Polyglot2/Polyglot2.zip</echo>
+		<echo file="${tmp_zip}/AutoUpdate.ini" append="true">http://isda.ncsa.uiuc.edu/kmchenry/tmp/Polyglot2/Polyglot2.zip</echo>
 		
 		<!--
 		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.bat">java -cp "%~dp0../../lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
@@ -181,7 +181,7 @@
 	</target>
 	
 	<target name="publish" depends="zip" description="Publish zip archive">
-		<copy file="build/Polyglot2.zip" todir="\\isda.ncsa.uiuc.edu\kmchenry\public_html\tmp\Polyglot2"/>
+		<copy file="build/Polyglot2.zip" todir="\\isda.ncsa.uiuc.edu\www\kmchenry\tmp\Polyglot2"/>
 	</target>
 	
 	<target name="installer" depends="archive" description="Build an installer for this project">
