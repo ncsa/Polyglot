@@ -2,26 +2,11 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="lib/ncsa/Utilities.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/Polyglot2/doc/Utilities.zip!/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="lib/ncsa/ImageUtilities.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/Polyglot2/doc/ImageUtilities.zip!/"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-5.1.10/mysql-connector-java-5.1.10-bin.jar"/>
 	<classpathentry kind="lib" path="lib/j3d-1.5.2/j3dcore.jar"/>
 	<classpathentry kind="lib" path="lib/j3d-1.5.2/j3dutils.jar"/>
 	<classpathentry kind="lib" path="lib/j3d-1.5.2/vecmath.jar"/>
 	<classpathentry kind="lib" path="lib/ncsa/3DUtilities.jar"/>
-	<classpathentry kind="lib" path="lib/ncsa/MatrixUtilities.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/Polyglot2/doc/MatrixUtilities.zip!/"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="lib" path="lib/misc/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/jama-1.0.2/Jama-1.0.2.jar"/>
 	<classpathentry kind="lib" path="lib/ncsa/versus-impl-0.5.jar"/>
@@ -49,5 +34,16 @@
 	<classpathentry kind="lib" path="lib/restlet-2.0.4/org.apache.commons.fileupload.jar"/>
 	<classpathentry kind="lib" path="lib/restlet-2.0.4/javax.servlet.jar"/>
 	<classpathentry kind="lib" path="lib/restlet-2.0.4/org.apache.commons.io.jar"/>
+	<classpathentry kind="lib" path="lib/ncsa/im2learn/commons-logging.jar"/>
+	<classpathentry kind="lib" path="lib/ncsa/im2learn/Im2Learn.jar"/>
+	<classpathentry kind="lib" path="lib/ncsa/im2learn/log4j-1.2.8.jar"/>
+	<classpathentry kind="lib" path="lib/ij143/ij.jar"/>
+	<classpathentry kind="lib" path="lib/javacv-20110219/javacpp.jar"/>
+	<classpathentry kind="lib" path="lib/javacv-20110219/javacv-windows-x86_64.jar"/>
+	<classpathentry kind="lib" path="lib/javacv-20110219/javacv.jar"/>
+	<classpathentry kind="lib" path="lib/jmf2.1.1e/jmf.jar"/>
+	<classpathentry kind="lib" path="lib/ij143/plugins/mpicbg_.jar"/>
+	<classpathentry kind="lib" path="lib/ij143/plugins/TrakEM2_.jar"/>
+	<classpathentry kind="lib" path="lib/ij143/plugins/jars/mpicbg.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
