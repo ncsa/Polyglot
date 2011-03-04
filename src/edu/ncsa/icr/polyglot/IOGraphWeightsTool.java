@@ -10,6 +10,7 @@ import javax.swing.event.*;
 import javax.swing.border.*;
 import javax.swing.tree.*;
 import java.io.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -1175,15 +1176,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 		    dt = (t1-t0) / 1000.0;
 		          	    	      
 	    	//Set the filename and save results
-	      Calendar calendar = new GregorianCalendar();
-	    	
-	      output_filename = test_root + "_" + extractor;	    	
-	      output_filename += "." +  calendar.get(Calendar.YEAR);
-	      output_filename += Utility.toString((calendar.get(Calendar.MONTH) + 1), 2);
-	      output_filename += Utility.toString(calendar.get(Calendar.DAY_OF_MONTH), 2);
-	      output_filename += Utility.toString(calendar.get(Calendar.HOUR_OF_DAY), 2);
-	      output_filename += Utility.toString(calendar.get(Calendar.MINUTE), 2);
-	      output_filename += Utility.toString(calendar.get(Calendar.SECOND), 2);
+	      output_filename = test_root + "_" + extractor;
+	      output_filename += new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
 	      output_filename += ".txt";
 	    	
 	      Utility.save(test_path + test + "/" + output_filename, output_data);
