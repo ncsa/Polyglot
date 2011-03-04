@@ -780,15 +780,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
       if(RUNNING_CONVERSIONS || MEASURING_QUALITY){
         output_panel.addText("<br><b><font color=red>A test is running!</font></b>");
       }else{
-        Calendar calendar = new GregorianCalendar();
-        
         test = test_root;
-        test += "." +  calendar.get(Calendar.YEAR);
-        test += Utility.toString((calendar.get(Calendar.MONTH) + 1), 2);
-        test += Utility.toString(calendar.get(Calendar.DAY_OF_MONTH), 2);
-        test += Utility.toString(calendar.get(Calendar.HOUR_OF_DAY), 2);
-        test += Utility.toString(calendar.get(Calendar.MINUTE), 2);
-        test += Utility.toString(calendar.get(Calendar.SECOND), 2);
+        test += "." + new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
         
         new File(test_path + test).mkdir();
         new File(test_path + test + "/0").mkdir();
@@ -857,16 +850,10 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
      	if(test == null){
         output_panel.addText("<br><b><font color=red>No tests found!</font></b>");
       }else{ 
-	      Calendar calendar = new GregorianCalendar();
 	      String log_filename;
 	      
-	      log_filename = "log";
-	      log_filename += "." +  calendar.get(Calendar.YEAR);
-	      log_filename += Utility.toString((calendar.get(Calendar.MONTH) + 1), 2);
-	      log_filename += Utility.toString(calendar.get(Calendar.DAY_OF_MONTH), 2);
-	      log_filename += Utility.toString(calendar.get(Calendar.HOUR_OF_DAY), 2);
-	      log_filename += Utility.toString(calendar.get(Calendar.MINUTE), 2);
-	      log_filename += Utility.toString(calendar.get(Calendar.SECOND), 2);
+	      log_filename = "log.";
+	      log_filename += new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
 	      log_filename += ".html";
 	      
 	      Utility.save(test_path + test + "/" + log_filename, output_panel.getText());
