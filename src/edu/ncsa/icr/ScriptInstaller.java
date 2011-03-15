@@ -17,17 +17,25 @@ public class ScriptInstaller
 	 * @param script the full script name with path and time stamp
 	 * @return the script file name
 	 */
-	private static String getScriptFileName(String script)
+	private static String getScriptFileName(boolean addsoftware, String script)
 	{
-		String filename = null;
+		String filename = "";
 		int dash, dot;
 		
+		if(addsoftware){
+			String[] parts = script.split("/");
+			if(parts.length == 3) {
+				filename = parts[0] + "-";
+			}
+		}
+		
+
 		script = Utility.getFilename(script);
 		dash = script.lastIndexOf('-');
 		dot = script.lastIndexOf('.');
 		
 		if(dash >= 0 && dot >= 0){
-			filename = script.substring(0, dash) + script.substring(dot);
+			filename = filename + script.substring(0, dash) + script.substring(dot);
 		}
 		
 		return filename;
@@ -173,6 +181,9 @@ public class ScriptInstaller
 			
 			while(scanner.hasNextLine()){
 				software = scanner.nextLine().trim();
+				if(software.isEmpty()) {
+					continue;
+				}
 				software = software.substring(0, software.length()-4);		//Remove "<br>"
 				scripted_software.add(software);
 			}
@@ -232,6 +243,7 @@ public class ScriptInstaller
 			
 			while(scanner.hasNextLine()){
 				line = scanner.nextLine().trim();
+				if(line.isEmpty()) continue;
 				line = line.substring(0, line.length()-4);		//Remove "<br>"
 				scripts.add(line);
 			}
@@ -249,7 +261,7 @@ public class ScriptInstaller
 			
 			//Keep only the newest version of each script
 			for(int i=0; i<scripts.size(); i++){
-				filename = getScriptFileName(scripts.get(i));
+				filename = getScriptFileName(false, scripts.get(i));
 				timestamp = getScriptTimeStamp(scripts.get(i));
 				
 				if(newest_scripts.get(filename) == null){
@@ -378,6 +390,7 @@ public class ScriptInstaller
 	public static void main(String args[])
 	{				
 		String csr_script_url = "http://isda.ncsa.uiuc.edu/NARA/CSR/php/search/";
+		boolean add_software = false;
 		String script_download_path = "scripts/csr/";
 		String configured_script_path = script_download_path.substring(0, script_download_path.length()-1) + "-configured/";
 		String data_download_path = "data/csr/";
@@ -414,6 +427,8 @@ public class ScriptInstaller
 				System.out.println("  -noconfig: just download scripts and do not configure them");
 				System.out.println("  -test n: download relevant test data and grind the obtained scripts n times");
 				System.out.println("  -wait t: the amount of time to wait for an operation to complete (in milli-seconds)");
+				System.out.println("  -url u: the url of the CSR server to use");
+				System.out.println("  -alias: add softwre_id to script name");
 				System.out.println();
 				System.exit(0);
 			}else if(args[i].equals("-method")){
@@ -425,6 +440,10 @@ public class ScriptInstaller
 				tests = Integer.valueOf(args[++i]);
 			}else if(args[i].equals("-wait")){
 				max_operation_time = Integer.valueOf(args[++i]);
+			}else if(args[i].equals("-url")) {
+				csr_script_url = args[++i];
+			}else if(args[i].equals("-alias")){
+				add_software = true;
 			}else{
 				software = args[i];
 				
@@ -433,6 +452,14 @@ public class ScriptInstaller
 				}
 				
 				local_software.add(software);
+			}
+		}
+		
+		if (!csr_script_url.endsWith("php/search/")) {
+			if (!csr_script_url.endsWith("/")) {
+				csr_script_url += "/php/search/";
+			} else {
+				csr_script_url += "php/search/";
 			}
 		}
 		
@@ -447,10 +474,15 @@ public class ScriptInstaller
 			System.out.println("\nDownloading scripts:\n");
 			
 			for(int i=0; i<scripts.size(); i++){
-				filename = Utility.getFilename(getScriptFileName(scripts.get(i)));
+				filename = Utility.getFilename(getScriptFileName(add_software, scripts.get(i)));
 				System.out.print("  " + filename);
 				
-				downloaded = Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_script_url + "download.php?file=" + scripts.get(i));
+				String downloadme = scripts.get(i);
+				int idx = downloadme.indexOf('/');
+				if (idx != -1) {
+					downloadme = downloadme.substring(idx);
+				}
+				downloaded = Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_script_url + "download.php?file=" + downloadme);
 				
 				if(downloaded){
 					System.out.println();
