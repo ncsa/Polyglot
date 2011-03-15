@@ -74,7 +74,8 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
   private boolean VIEW_DOMAIN = false;
   private boolean VIEW_EDGE_QUALITY = false;
   private boolean ENABLE_WEIGHTED_PATHS = false;
-  
+  private boolean MENU_SEPERATOR = false;
+
   /**
    * Class constructor.
    */
@@ -174,6 +175,17 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     menuitem_WORKINGSET_REMOVE = new JMenuItem("Remove from Working Set"); menuitem_WORKINGSET_REMOVE.addActionListener(this); popup_menu.add(menuitem_WORKINGSET_REMOVE);
   }
   
+  /**
+   * Add a new item to the popup menu. If this is the first time called it will also add a seperator bar.
+   * @param item the item to be added.
+   */
+  public void addPopupMenu(JMenuItem item) {
+  	if (!MENU_SEPERATOR) {
+  		MENU_SEPERATOR = true;
+  		popup_menu.addSeparator();
+  	}
+  	popup_menu.add(item);
+  }
   /**
    * Set up the GUI and graph based on the loaded IOGraph data.
    * @param iograph the IO-Graph to use
@@ -665,20 +677,8 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	        target = mini;
 	        domain = iograph.getDomain(target);
 	      }
+	      computePath();
 	    
-	      if((source >= 0) && (target >= 0)){
-	        highlighted_path = IOGraph.getPath(paths, source, target);
-	        highlighted_path_quality = iograph.getMaxPathWeights(highlighted_path);
-	        output_string = iograph.getPathString(highlighted_path);
-	          
-	        if(!highlighted_path.isEmpty()){
-	        	output_string = "\n" + output_string;
-	        }else{
-	          output_string = "\nNo path exists!";
-	        }
-	        
-	        output_panel.alignCenter(true);
-	      }
 	    }else if(event_source == menuitem_WORKINGSET_ADD || event_source == menuitem_WORKINGSET_REMOVE){
 	      if(event_source == menuitem_WORKINGSET_ADD){
 	        working_set.add(mini);
@@ -712,6 +712,23 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	    menuitem_VIEW_DOMAIN.setState(VIEW_DOMAIN);
 	  }
 	
+	  repaint();
+	}
+	
+	public void computePath() {
+    if((source >= 0) && (target >= 0)){
+      highlighted_path = IOGraph.getPath(paths, source, target);
+      highlighted_path_quality = iograph.getMaxPathWeights(highlighted_path);
+      output_string = iograph.getPathString(highlighted_path);
+        
+      if(!highlighted_path.isEmpty()){
+      	output_string = "\n" + output_string;
+      }else{
+        output_string = "\nNo path exists!";
+      }
+      
+      output_panel.alignCenter(true);
+    }
 	  repaint();
 	}
 
