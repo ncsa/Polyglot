@@ -113,12 +113,17 @@ public class IOGraphApplet extends JApplet
 					  		if (line.toLowerCase().endsWith("<br>")) {
 					  			line = line.substring(0, line.length() - 4);
 					  		}
-					  		String[] parts = line.split(" ", 4);
+					  		String[] parts = line.split("\t");
 					  		if (parts.length != 4) {
 					  			System.err.println("Bad line : " + line);
 					  		} else {
-					  			Double w = Math.abs(Double.parseDouble(parts[3]));
-					  			iograph.setEdgeWeight(parts[1], parts[2], parts[0], w);
+					  			try {
+						  			Double w = Math.abs(Double.parseDouble(parts[3]));
+						  			iograph.setEdgeWeight(parts[1], parts[2], parts[0], w);
+					  			} catch (NumberFormatException exc) {
+						  			System.err.println("Bad line : " + line);
+					  				exc.printStackTrace();
+					  			}
 					  		}
 					  	}
 					  	br.close();
