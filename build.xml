@@ -22,7 +22,7 @@
 	
 	<target name="compile" description="Compiles the Java source code">
 		<mkdir dir="${classes}"/>
-		<javac srcdir="src" destdir="${classes}" classpathref="classpath"/>
+		<javac srcdir="src" destdir="${classes}" classpathref="classpath" debug="true"/>
 	</target>
 	
 	<target name="archive" depends="compile" description="Creates the JAR file">
@@ -86,7 +86,7 @@
 		<echo file="${tmp_zip}/SoftwareReuseServer.ini" append="true">ShowOperationOutput=false${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareReuseServer.ini" append="true">MaxOperationAttempts=2${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareReuseServer.ini" append="true">EnableMonitors=true${line.separator}</echo>
-		<echo file="${tmp_zip}/SoftwareReuseServer.ini" append="true">AHKScripts=scripts/ahk${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareReuseServer.ini" append="true">AHKScripts=scripts/csr-configured${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareReuseServer.ini" append="true">#AppleScripts=scripts/applescript${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareReuseServer.ini" append="true">#SikuliScripts=scripts/sikuli${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareReuseServer.ini" append="true">#PythonScripts=scripts/py${line.separator}</echo>
@@ -166,7 +166,7 @@
 		<echo file="${tmp_zip}/AutoUpdate.bat">java -cp "%~dp0lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp_zip}/AutoUpdate.sh">java -cp lib/ncsa/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp_zip}/AutoUpdate.ini" append="false">!ini, scripts/${line.separator}</echo>
-		<echo file="${tmp_zip}/AutoUpdate.ini" append="true">http://isda.ncsa.uiuc.edu/kmchenry/tmp/Polyglot2/Polyglot2.zip</echo>
+		<echo file="${tmp_zip}/AutoUpdate.ini" append="true">http://isda.ncsa.uiuc.edu/~kooper/Polyglot2.zip</echo>
 		
 		<!--
 		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.bat">java -cp "%~dp0../../lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
@@ -176,12 +176,23 @@
 		
 		<echo file="${tmp_zip}/InstallWeb.bat">xcopy web\polyglot "C:\Program Files\Apache Software Foundation\Apache2.2\htdocs\polyglot" /e /i /y</echo>
 		<echo file="${tmp_zip}/AUTOEXEC.BAT">start cmd /c "cd C:\Docume~1\polyglot\Desktop\Polyglot2 &amp;&amp; SoftwareReuseServer.bat"</echo>
+		
+		<fixcrlf srcdir="${tmp_zip}" includes="**/*.sh" eol="unix" eof="remove" />
+		<fixcrlf srcdir="${tmp_zip}" includes="**/*.bat, **/*.ini" eol="dos" eof="asis" />
 
 		<zip basedir="${tmp_zip}" destfile="build/Polyglot2.zip"/>
 	</target>
 	
 	<target name="publish" depends="zip" description="Publish zip archive">
 		<copy file="build/Polyglot2.zip" todir="\\isda.ncsa.uiuc.edu\www\kmchenry\tmp\Polyglot2"/>
+	</target>
+	
+	<target name="publish.rob" depends="zip" description="Publish zip archive">
+		<!-- <copy file="build/Polyglot2.zip" todir="\\isda.ncsa.uiuc.edu\www\kmchenry\tmp\Polyglot2"/> -->
+		<exec executable="scp">
+			<arg value="build/Polyglot2.zip"/>
+			<arg value="kooper@isda:public_html"/>
+		</exec>
 	</target>
 	
 	<target name="installer" depends="archive" description="Build an installer for this project">
@@ -297,9 +308,9 @@
 				<include name="**/SoftwareReuseClient*.class"/>
 				<include name="**/polyglot/IOGraph*.class"/>
 				<include name="**/polyglot/Polyglot*.class"/>
+				<include name="edu/ncsa/utility/**/*.class"/>
 			</fileset>
 		</copy>
-		<unjar src="lib/ncsa/Utilities.jar" dest="${tmp_utils}"/>
 		<unjar src="web/utils/UploadApplet.jar" dest="${tmp_utils}"/>
 		<unjar src="web/utils/ModelViewer_Lite.jar" dest="${tmp_utils}"/>
 		<jar basedir="${tmp_utils}" destfile="build/PolyglotUtils.jar"/>
@@ -313,13 +324,13 @@
 			<fileset dir="${classes}">
 				<include name="**/IOGraph*.class"/>
 				<include name="**/Polyglot*.class"/>
+				<include name="edu/ncsa/utility/**/*.class"/>
 			</fileset>
 		</copy>
-		<unjar src="lib/ncsa/ImageUtilities.jar" dest="${tmp_iograph}"/>
-		<unjar src="lib/ncsa/Utilities.jar" dest="${tmp_iograph}"/>
 		<jar basedir="${tmp_iograph}" destfile="build/IOGraphApplet.jar"/>
 		<input message="keystore password:" addproperty="storepass"/>
 		<signjar jar="build/IOGraphApplet.jar" signedjar="build/IOGraphApplet-signed.jar" alias="mykey" storepass="${storepass}"/>
+		<copy file="build/IOGraphApplet-signed.jar" todir="../CSR/java" failonerror="false" />
 	</target>
 	
 	<target name="clean_tmp" description="Deletes tmp folder">
