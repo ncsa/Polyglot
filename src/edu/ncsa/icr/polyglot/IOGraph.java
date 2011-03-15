@@ -491,6 +491,19 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	}
 	
 	/**
+	 * Sets the weight for all edges.
+	 * @param weight the weight for all edges.
+	 */
+	public void setEdgeWeight(Double weight) {
+		for(int i=0; i<weights.size(); i++) {
+			Vector<Double> inner = weights.get(i);
+			for(int j=0; j<inner.size(); j++) {
+				inner.set(j, weight);
+			}
+		}
+	}
+	
+	/**
 	 * Set the weight of the given edge.
 	 * @param source the source vertex string
 	 * @param target the target vertex string
