@@ -14,15 +14,16 @@ public class ScriptInstaller
 	
 	/**
 	 * Parse out the file name given a script name including a path and time stamp.
+	 * @param addId should the id of the software be added to the script
 	 * @param script the full script name with path and time stamp
 	 * @return the script file name
 	 */
-	private static String getScriptFileName(boolean addsoftware, String script)
+	private static String getScriptFileName(boolean addId, String script)
 	{
 		String filename = "";
 		int dash, dot;
 		
-		if(addsoftware){
+		if(addId){
 			String[] parts = script.split("/");
 			if(parts.length == 3) {
 				filename = parts[0] + "-";
@@ -238,7 +239,7 @@ public class ScriptInstaller
 				}
 			}
 				
-			result = Utility.readURL(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software));
+			result = Utility.readURL(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software) + "&software_keys=true");
 			scanner = new Scanner(result);
 			
 			while(scanner.hasNextLine()){
