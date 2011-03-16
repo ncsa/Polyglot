@@ -77,6 +77,10 @@
 		<echo file="${tmp_zip}/ScriptInstaller.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptInstaller $1 $2 $3 $4</echo>
 		<echo file="${tmp_zip}/TestScripts.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller -test 5 %*</echo>
 
+		<echo file="${tmp_zip}/Share.bat" append="false">cd "%~dp0"${line.separator}</echo>
+		<echo file="${tmp_zip}/Share.bat" append="true">call ScriptInstaller "%~n1"${line.separator}</echo>
+		<echo file="${tmp_zip}/Share.bat" append="true">SoftwareReuseRestlet</echo>
+				
 		<echo file="${tmp_zip}/SoftwareReuseServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareReuseServer %*</echo>
 		<echo file="${tmp_zip}/SoftwareReuseServer.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareReuseServer $1 $2</echo>
 		<echo file="${tmp_zip}/SoftwareReuseServer.ini" append="false">RootPath=tmp/SoftwareReuseServer${line.separator}</echo>
