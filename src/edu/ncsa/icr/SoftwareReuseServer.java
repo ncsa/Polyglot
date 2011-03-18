@@ -273,7 +273,8 @@ public class SoftwareReuseServer implements Runnable
   	CachedFileData input_file_data, output_file_data;
   	String source, target;
   	String command = "";
-  	boolean COMPLETE;
+  	boolean COMMAND_COMPLETED;
+  	boolean SUBTASK_FAILURE = false;
   	
   	BUSY = true;  
   	
@@ -306,10 +307,10 @@ public class SoftwareReuseServer implements Runnable
 	  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
 	  	if(!command.isEmpty()){
 	  		for(int j=0; j<max_operation_attempts; j++){
-		  		COMPLETE = Script.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
+		  		COMMAND_COMPLETED = Script.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
 			  	
 			    //Try again if command failed
-          if(!COMPLETE && application.kill_operation != null){
+          if(!COMMAND_COMPLETED && application.kill_operation != null){
             if(j < (max_operation_attempts-1)){
               System.out.println("retrying...");
             }else{
@@ -318,10 +319,13 @@ public class SoftwareReuseServer implements Runnable
             
             Script.executeAndWait(application.kill_operation.script);
           }else{
+          	SUBTASK_FAILURE = true;
             break;
           }
 	  		}
 	  	}
+	  	
+	  	if(SUBTASK_FAILURE) break;
   	}
   	
   	//Exit all used applications

@@ -94,7 +94,7 @@ public class ScriptDebugger
 		Vector<String> matches;
 		Scanner scanner;
 		String line, name, alias, executable, buffer;
-		boolean IGNORED, SAVE;
+		boolean QUOTATIONS, IGNORED, SAVE;
 		int tmpi;
 		
 		//Create list of executables to ignore
@@ -189,7 +189,11 @@ public class ScriptDebugger
 							line = line.substring(tmpi+1).trim();
 							
 							//Get executable
+							QUOTATIONS = false;
+							
 							if(line.startsWith("\"")){
+								QUOTATIONS = true;
+								
 								line = line.substring(1);
 								tmpi = line.indexOf("\"");
 								executable = line.substring(0, tmpi);
@@ -210,7 +214,11 @@ public class ScriptDebugger
 							}
 							
 							if(IGNORED || Utility.getFilenamePath(Utility.unixPath(executable)).isEmpty()){	//Ignore specified executables or those using system path variable
-								buffer += "\"" + executable + "\" " + line + "\n";
+								if(QUOTATIONS){
+									buffer += "\"" + executable + "\" " + line + "\n";
+								}else{
+									buffer += executable + " " + line + "\n";
+								}
 							}else{
 								System.out.print("  checking for " + executable + "...");
 	
