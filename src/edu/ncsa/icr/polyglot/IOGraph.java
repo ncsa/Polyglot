@@ -8,18 +8,20 @@ import java.net.*;
 import java.sql.*;
 import java.util.*;
 import java.util.zip.*;
+import javax.swing.JFrame;
 
 public class IOGraph<V extends Comparable,E> implements Serializable
 {
 	public static final long serialVersionUID = 1L;
 	private Vector<V> vertices = new Vector<V>();
 	private TreeMap<V,Integer> vertex_map = new TreeMap<V,Integer>();
-  private TreeMap<String,Integer> vertex_string_map = new TreeMap<String,Integer>();  
+	private TreeMap<String,Integer> vertex_string_map = new TreeMap<String,Integer>();  
 	private Vector<Vector<E>> edges = new Vector<Vector<E>>();
 	private Vector<Vector<Integer>> adjacency_list = new Vector<Vector<Integer>>();
 	private Vector<Vector<Double>> weights = new Vector<Vector<Double>>();
 	private Vector<Vector<Boolean>> active = new Vector<Vector<Boolean>>();
-	
+	private double minimum_weight = -Double.MAX_VALUE;
+
 	public IOGraph() {}
 	
 	/**
@@ -201,12 +203,25 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	 */
 	public void addEdge(V source, V target, E edge)
 	{
+		addEdge(source, target, edge, null);
+	}
+
+	/**
+	 * Add an edge to the graph.
+	 * 
+	 * @param source the source vertex
+	 * @param target the target vertex
+	 * @param edge the edge
+	 * @param w the weight of the edge
+	 */
+	public void addEdge(V source, V target, E edge, Double w)
+	{
 		int source_index = addVertex(source);
 		int target_index = addVertex(target);
-		
+
 		edges.get(source_index).add(edge);
 		adjacency_list.get(source_index).add(target_index);
-		weights.get(source_index).add(null);
+		weights.get(source_index).add(w);
 		active.get(source_index).add(true);
 	}
 	
@@ -466,6 +481,32 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	}
 
 	/**
+	 * Returns the minimum weight a path can be to be considered.
+	 * 
+	 * @return the minimum weight allowed.
+	 */
+	public double getMinimumWeight()
+	{
+		return minimum_weight;
+	}
+
+	/**
+	 * Sets the minimum weight a path can be to be considered path of the graph.
+	 * 
+	 * @param weight
+	 *          the minimum weight a path is allowed to be.
+	 */
+	public void setMinimumWeight(double weight)
+	{
+		minimum_weight = weight;
+	}
+
+	public boolean showEdge(int source, int target)
+	{
+		return weights.get(source).get(target) > minimum_weight;
+	}
+
+	/**
 	 * Get the maximum weight among parallel edges between the vertices specified.
 	 * @param v0 the index of the starting vertex
 	 * @param v1 the index of the ending vertex
@@ -684,12 +725,195 @@ public class IOGraph<V extends Comparable,E> implements Serializable
   }
   
   /**
+   * Dijstra shortest path. This is a greedy algorithm and will not be able to handle negative weights.
+   * 
+   * This has a running time of O( |E| + |V| log |V| )
+   * 
+   * @param source the node to start the search from
+   * @return a pair of distance for a node to the source, and the previous node to reach the source.
+   */
+	public Pair<Vector<Integer>,Vector<Double>> dijkstra(int source)
+	{
+		double[] dist = new double[vertices.size()];
+		int[] previous = new int[vertices.size()];
+		List<Integer> Q = new ArrayList<Integer>();
+
+		for(int i = 0; i < dist.length; i++){
+			dist[i] = Double.MAX_VALUE;
+			previous[i] = -1;
+			Q.add(i);
+		}
+		dist[source] = 0;
+
+		while(!Q.isEmpty()){
+			// u := vertex in Q with smallest dist[] ;
+			Integer u = Q.get(0);
+			for(Integer x : Q){
+				if(dist[x] < dist[u]){
+					u = x;
+				}
+			}
+
+			// all remaining vertices are inaccessible from source.
+			if(dist[u] == Double.MAX_VALUE){
+				break;
+			}
+
+			// remove from Q
+			Q.remove(u);
+
+			// for each neighbor v of u:
+			Vector<Integer> neighbors = adjacency_list.get(u);
+			for(int i = 0; i < neighbors.size(); i++){
+				Integer v = neighbors.get(i);
+				if (Q.contains(v)) {
+					Double w = weights.get(u).get(i);
+					if(active.get(u).get(i) && (w != null) && (w > minimum_weight)){
+						double alt = dist[u] + w;
+						if(alt < dist[v]){
+							dist[v] = alt;
+							previous[v] = u;
+						}
+					}
+				}
+			}
+		}
+
+		// return dist[]
+		Pair<Vector<Integer>, Vector<Double>> p = new Pair<Vector<Integer>, Vector<Double>>();
+		p.first = new Vector<Integer>();
+		p.second = new Vector<Double>();
+		for(int i=0; i<previous.length; i++) {
+			p.first.add(previous[i]);
+			p.second.add(dist[i]);
+		}
+		return p;
+	}
+
+  /**
+   * Bellman Ford shortest path. Unlike Dijstra this can handle negative weights. 
+   * 
+   * This has a running time of O(|E| * |V|).
+   * 
+   * @param source the node to start the search from
+   * @return a pair of distance for a node to the source, and the previous node to reach the source.
+   * @throws will throw an exception if a negative cycle is detected
+   */
+	public Pair<Vector<Integer>,Vector<Double>> bellmanFord(int source) throws Exception
+	{
+		double[] dist = new double[vertices.size()];
+		int[] previous = new int[vertices.size()];
+		List<Integer> Q = new ArrayList<Integer>();
+
+		for(int i = 0; i < dist.length; i++){
+			dist[i] = Double.MAX_VALUE;
+			previous[i] = -1;
+			Q.add(i);
+		}
+		dist[source] = 0;
+
+		while(!Q.isEmpty()){
+			// u := vertex in Q with smallest dist[] ;
+			Integer u = Q.get(0);
+			for(Integer x:Q){
+				if(dist[x] < dist[u]){
+					u = x;
+				}
+			}
+
+			// all remaining vertices are inaccessible from source.
+			if(dist[u] == Double.MAX_VALUE){
+				break;
+			}
+
+			// remove from Q
+			Q.remove(u);
+
+			// for each neighbor v of u:
+			Vector<Integer> neighbors = adjacency_list.get(u);
+			for(int i = 0; i < neighbors.size(); i++){
+				int v = neighbors.get(i);
+				Double w = weights.get(u).get(i);
+				if(active.get(u).get(i) && (w != null) && (w > minimum_weight)){
+					double alt = dist[u] + w;
+					if(alt < dist[v]){
+						dist[v] = alt;
+						previous[v] = u;
+					}
+				}
+			}
+		}
+
+		// check for negative weight cycles
+		for(int u = 0; u<adjacency_list.size(); u++) {
+			Vector<Integer> neighbors = adjacency_list.get(u);
+			for(int i = 0; i<neighbors.size(); i++) {
+				int v = neighbors.get(i);
+				if (dist[u] + weights.get(u).get(i) < dist[v]) {
+					List<V> seen = new ArrayList<V>();
+					do {
+						seen.add(getVertices().get(u));
+						u = previous[u];
+					} while(! seen.contains(getVertices().get(u)));
+					String cycle = seen.get(seen.size()-1).toString();
+					while (!seen.isEmpty()) {
+						cycle = seen.remove(0) + " -> " + cycle;
+					}
+					System.err.println(getVertices().get(u) + " " + getVertices().get(v) + " " + dist[u] + " + " + weights.get(u).get(i) + " < " + dist[v]);
+					System.err.println("Graph contains negative-weight cycle [" + cycle + "]");
+					throw(new Exception("Graph contains negative cycle " + cycle));
+				}
+			}
+		}
+
+
+    // compute result
+		Pair<Vector<Integer>, Vector<Double>> p = new Pair<Vector<Integer>, Vector<Double>>();
+		p.first = new Vector<Integer>();
+		p.second = new Vector<Double>();
+		for(int i=0; i<previous.length; i++) {
+			if (previous[i] == -1) {
+				p.first.add(-1);
+				p.second.add(Double.MAX_VALUE);
+			} else {
+				// fix distance vector
+				double d = 0;
+				int u = i;
+				while(u != -1) {
+					int v = u;
+					u = previous[u];
+					if (u != -1) {
+						Vector<Integer> neighbors = adjacency_list.get(u);
+						double x = Double.MAX_VALUE;
+						for(int j = 0; j<neighbors.size(); j++) {
+							if (neighbors.get(j) == v) {
+								if (weights.get(u).get(j) < x) {
+									x = weights.get(u).get(j);
+								}
+							}
+						}
+						d += x;
+					}
+				}
+				p.first.add(previous[i]);
+				p.second.add(d);
+			}
+		}				
+		return p;
+	}
+
+  /**
    * Perform Dijkstra's algorithm from the vertex at the given source index and store the resulting paths.
    * @param source the index of the source vertex
    * @return the paths vector indicating from which vertex we must come to get to this vertex and the weight along each path
    */
   public Pair<Vector<Integer>,Vector<Double>> getShortestWeightedPaths(int source)
-  {    
+  {  
+  	return dijkstra(source);
+  }
+  
+  public Pair<Vector<Integer>,Vector<Double>> getShortestWeightedPathsOriginal(int source)
+  {
   	PriorityQueue<Pair<Double,Integer>> queue = new PriorityQueue<Pair<Double,Integer>>();
   	Pair<Double,Integer> pair;
     Vector<Integer> paths = new Vector<Integer>();
@@ -1337,11 +1561,130 @@ public class IOGraph<V extends Comparable,E> implements Serializable
   	}
   }
   
+  public void complexity() {
+  	int total_edges = 0;
+  	Set<E> edge_names = new HashSet<E>();
+  	for(int i=0; i<edges.size(); i++) {
+  		total_edges += edges.get(i).size();
+  		for(int j=0; j<edges.get(i).size(); j++) {
+  			edge_names.add(edges.get(i).get(j));
+  		}
+  	}
+  	
+  	double x = 0;
+  	for(int i=0; i<adjacency_list.size(); i++) {
+  		Vector<Integer> neighbors = adjacency_list.get(i);
+  		x += neighbors.size();
+  	}
+  	
+  	System.out.println("TOTAL EDGES       : " + total_edges);
+  	System.out.println("TOTAL VERTICES    : " + vertices.size());
+  	System.out.println("TOTAL EDGES NAMES : " + edge_names.size());
+  	System.out.println("AVERAGE NEIGHBORS : " + (x / adjacency_list.size()));
+  }
+  
+	public static void timings(int edges, int formats, int software) {
+		long l;
+		IOGraph<String,String> iograph = new IOGraph<String,String>();
+
+		l = System.currentTimeMillis();
+		Random r = new Random();
+		int s, t;
+		for(int i = 0, j=0; i < edges; i++){
+			do {
+				s = r.nextInt(formats);
+				t = r.nextInt(formats);
+			} while (s == t);
+			iograph.addEdge("" + s, "" + t, "" +  r.nextInt(software), (double)r.nextInt(100));
+		}
+	
+		l = System.currentTimeMillis() - l;
+		iograph.complexity();
+		System.out.println("CREATE   : " + l);
+		
+		l = System.currentTimeMillis();
+		iograph.getShortestWeightedPaths(0);
+		l = System.currentTimeMillis() - l;
+		System.out.println("OLD      : " + l);
+
+		l = System.currentTimeMillis();
+		iograph.dijkstra(0);
+		l = System.currentTimeMillis() - l;
+		System.out.println("DIJKSTRA : " + l);
+		
+		l = System.currentTimeMillis();
+		try{
+			iograph.bellmanFord(0);
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		l = System.currentTimeMillis() - l;
+		System.out.println("BELLMAN  : " + l);
+	}
+	
+	public static void main(String... args)
+	{
+		//timings2();
+		timings(1000000, 2000, 200);
+
+		IOGraph<String,String> iograph = new IOGraph<String,String>();
+
+		iograph.addEdge("a", "b", "A",  1.0);
+		iograph.addEdge("b", "c", "A",  1.0);
+		iograph.addEdge("c", "a", "A",  -4.0);
+
+		Pair<Vector<Integer>,Vector<Double>> path = iograph.getShortestWeightedPaths(0);
+		int u = 2;
+		System.out.print(path.second.get(u) + " ");
+		while(u != -1){
+			System.out.print(iograph.getVertices().get(u) + " ");
+			u = path.first.get(u);
+		}
+		System.out.println();
+
+		path = iograph.dijkstra(0);
+		u = 2;
+		System.out.print(path.second.get(u) + " ");
+		while(u != -1){
+			System.out.print(iograph.getVertices().get(u) + " ");
+			u = path.first.get(u);
+		}
+		System.out.println();
+
+		try {
+			path = iograph.bellmanFord(0);
+			u = 2;
+			System.out.print(path.second.get(u) + " ");
+			while(u != -1){
+				System.out.print(iograph.getVertices().get(u) + " ");
+				u = path.first.get(u);
+			}
+			System.out.println();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		System.out.println("done");
+		
+		iograph.printEdgeInformation();
+//		
+//		IOGraphPanel<String,String> iograph_panel = new IOGraphPanel<String,String>(iograph, 2);
+//  	iograph_panel.setViewEdgeQuality(true);
+//  	iograph_panel.setEnableWeightedPaths(true);
+//
+//    JFrame frame = new JFrame("IOGraph Viewer");
+//    frame.add(iograph_panel.getAuxiliaryInterfacePane());
+//    frame.pack();
+//    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); 
+//    frame.setVisible(true);
+
+	}
+
   /**
    * A main for debug purposes.
    * @param args command line arguments
    */
-  public static void main(String args[])
+  public static void mainx(String args[])
   {  
   	IOGraph iograph = null;
   	Vector<String> vector;
