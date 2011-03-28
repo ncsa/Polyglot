@@ -103,7 +103,8 @@ public class IOGraphApplet extends JApplet
 					public void actionPerformed(ActionEvent e) {
 						iograph_panel.setEnableWeightedPaths(true);
 						iograph_panel.setViewEdgeQuality(true);
-						iograph.setEdgeWeight(9999.0);
+						iograph.setEdgeWeight(-1.0);
+						iograph.setMinimumWeight(0.0);
 						
 						try {
 					  	URL m_url = new URL(url, "get_weights_average.php?measure=" + URLEncoder.encode(menuitem, "UTF8"));
