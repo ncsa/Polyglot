@@ -8,10 +8,13 @@ import java.net.*;
 import java.sql.*;
 import java.util.*;
 import java.util.zip.*;
-import javax.swing.JFrame;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 public class IOGraph<V extends Comparable,E> implements Serializable
 {
+	private static Log log = LogFactory.getLog(IOGraph.class);
+	
 	public static final long serialVersionUID = 1L;
 	private Vector<V> vertices = new Vector<V>();
 	private TreeMap<V,Integer> vertex_map = new TreeMap<V,Integer>();
@@ -909,7 +912,24 @@ public class IOGraph<V extends Comparable,E> implements Serializable
    */
   public Pair<Vector<Integer>,Vector<Double>> getShortestWeightedPaths(int source)
   {  
-  	return dijkstra(source);
+  	try{
+			return bellmanFord(source);
+		}catch(Exception e){
+			log.error("Could not compute path due to negative cycle, returning no paths at all.", e);
+			
+	    Vector<Integer> paths = new Vector<Integer>();
+	    Vector<Double> path_weights = new Vector<Double>();
+	    for(int i=0; i<vertices.size(); i++){
+	      paths.add(-1); 
+	      
+	    	if(i == source){
+	    		path_weights.add(0.0);
+	    	}else{
+	    		path_weights.add(Double.MAX_VALUE);
+	    	}
+	    }
+			return new Pair<Vector<Integer>,Vector<Double>>(paths, path_weights);
+		}
   }
   
   public Pair<Vector<Integer>,Vector<Double>> getShortestWeightedPathsOriginal(int source)
@@ -1624,6 +1644,11 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	
 	public static void main(String... args)
 	{
+		String string1 = new String("<BB>");
+		String string2 = new String("<Aa>");
+		System.out.println("BB hash Code:"+string1.hashCode()+
+				   ",Aa hash Code:"+string2.hashCode());
+
 		//timings2();
 		timings(1000000, 2000, 200);
 
