@@ -1,5 +1,6 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
+import edu.ncsa.image.ImageUtility;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.util.*;
@@ -25,11 +26,11 @@ public class ScriptInstaller
 		
 		if(addId){
 			String[] parts = script.split("/");
-			if(parts.length == 3) {
+			
+			if(parts.length == 3){
 				filename = parts[0] + "-";
 			}
 		}
-		
 
 		script = Utility.getFilename(script);
 		dash = script.lastIndexOf('-');
@@ -182,9 +183,7 @@ public class ScriptInstaller
 			
 			while(scanner.hasNextLine()){
 				software = scanner.nextLine().trim();
-				if(software.isEmpty()) {
-					continue;
-				}
+				if(software.isEmpty()) continue;
 				software = software.substring(0, software.length()-4);		//Remove "<br>"
 				scripted_software.add(software);
 			}
@@ -239,7 +238,8 @@ public class ScriptInstaller
 				}
 			}
 				
-			result = Utility.readURL(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software) + "&software_keys=true");
+			result = Utility.readURL(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software));
+			//result = Utility.readURL(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software) + "&software_keys=true");
 			scanner = new Scanner(result);
 			
 			while(scanner.hasNextLine()){
@@ -391,7 +391,6 @@ public class ScriptInstaller
 	public static void main(String args[])
 	{				
 		String csr_script_url = "http://isda.ncsa.uiuc.edu/NARA/CSR/php/search/";
-		boolean add_software = false;
 		String script_download_path = "scripts/csr/";
 		String configured_script_path = script_download_path.substring(0, script_download_path.length()-1) + "-configured/";
 		String data_download_path = "data/csr/";
@@ -401,6 +400,8 @@ public class ScriptInstaller
 		Vector<String> scripts_configured = new Vector<String>();
 		Vector<String> test_files;
 		File[] files;
+		String shortcut = null;
+		String executable_hint = null;
 		String software, filename;
 		String buffer;
 		ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.ini"); debugger.setDataPath(data_download_path);
@@ -409,12 +410,14 @@ public class ScriptInstaller
 		int max_operation_time = 30000;
 		double success_rate;
 		boolean downloaded;
+		boolean add_software = false;
 		boolean NO_CONFIG = false;
 		boolean TEST_SCRIPTS = false;
 
-		//Debug arguments
-		if(true && args.length == 0){
-			args = new String[]{"-method", "reg"};
+		//Default arguments
+		if(args.length == 0){
+			//args = new String[]{"-method", "reg"};
+			args = new String[]{"-?"};
 		}
 		
 		//Process command line arguments
@@ -424,6 +427,7 @@ public class ScriptInstaller
 				System.out.println();
 				System.out.println("Options: ");
 				System.out.println("  -?: display this help");
+				System.out.println("  -shortcut file.lnk: add an application from a shortcut");
 				System.out.println("  -method x: set the method to use to determine what software is installed (wmic, reg)");
 				System.out.println("  -noconfig: just download scripts and do not configure them");
 				System.out.println("  -test n: download relevant test data and grind the obtained scripts n times");
@@ -432,6 +436,15 @@ public class ScriptInstaller
 				System.out.println("  -alias: add softwre_id to script name");
 				System.out.println();
 				System.exit(0);
+			}else if(args[i].equals("-shortcut")){
+				shortcut = args[++i];
+				
+				if(shortcut.charAt(0) == '"'){	//Remove quotes
+					shortcut = shortcut.substring(1, shortcut.length()-1);
+				}
+				
+				//Use the shortcut name to identify the software in the CSR
+				local_software.add(Utility.getFilenameName(shortcut));	
 			}else if(args[i].equals("-method")){
 				methods.add(args[++i]);
 			}else if(args[i].equals("-noconfig")){
@@ -456,10 +469,10 @@ public class ScriptInstaller
 			}
 		}
 		
-		if (!csr_script_url.endsWith("php/search/")) {
-			if (!csr_script_url.endsWith("/")) {
+		if(!csr_script_url.endsWith("php/search/")){
+			if(!csr_script_url.endsWith("/")){
 				csr_script_url += "/php/search/";
-			} else {
+			}else{
 				csr_script_url += "php/search/";
 			}
 		}
@@ -478,12 +491,10 @@ public class ScriptInstaller
 				filename = Utility.getFilename(getScriptFileName(add_software, scripts.get(i)));
 				System.out.print("  " + filename);
 				
-				String downloadme = scripts.get(i);
-				int idx = downloadme.indexOf('/');
-				if (idx != -1) {
-					downloadme = downloadme.substring(idx);
-				}
-				downloaded = Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_script_url + "download.php?file=" + downloadme);
+				String scriptname = scripts.get(i);
+				int tmpi = scriptname.indexOf('/');
+				if(tmpi != -1) scriptname = scriptname.substring(tmpi);
+				downloaded = Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_script_url + "download.php?file=" + scriptname);
 				
 				if(downloaded){
 					System.out.println();
@@ -503,9 +514,14 @@ public class ScriptInstaller
 		}
 		
 		//Configure downloaded scripts
-		if(!NO_CONFIG){			
+		if(!NO_CONFIG){
+			//Set executable hint if shortcut was given and no other software was specified
+			if(shortcut != null && local_software.size() == 1){
+				executable_hint = Utility.getShortcutTarget(shortcut);
+			}
+			
 			for(int i=0; i<scripts.size(); i++){
-				debugger.configureScript(scripts.get(i));
+				debugger.configureScript(scripts.get(i), executable_hint);
 			}
 		}
 		
@@ -519,6 +535,11 @@ public class ScriptInstaller
 		}
 		
 		scripts = scripts_configured;
+		
+		//Save icon if a shortcut was given (assume no other software was specified so we can get the needed alias from any script)
+		if(shortcut != null && local_software.size() == 1){
+			ImageUtility.saveIcon(configured_script_path + new Script(scripts.firstElement(), null).alias + ".jpg", shortcut);
+		}
 		
 		//Test downloaded scripts on this system
 		if(TEST_SCRIPTS){

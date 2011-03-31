@@ -206,6 +206,11 @@ public class SoftwareReuseServer implements Runnable
           //If the application doesn't exist yet, create it
           if(application == null){
             application = new Application(script.application, alias);
+            
+            if(Utility.exists(path + alias + ".jpg")){
+            	application.icon = path + alias + ".jpg";
+            }
+            
             applications.add(application);
           }
           
@@ -274,59 +279,61 @@ public class SoftwareReuseServer implements Runnable
   	String source, target;
   	String command = "";
   	boolean COMMAND_COMPLETED;
-  	boolean SUBTASK_FAILURE = false;
+  	boolean TASK_COMPLETED = false;
   	
   	BUSY = true;  
   	
-  	//Execute each subtask
-  	for(int i=0; i<task.size(); i++){
-  		subtask = task.get(i);
-  		application = applications.get(subtask.application); application_set.add(subtask.application);
-  		operation = application.operations.get(subtask.operation);
-  		input_data = subtask.input_data;
-  		output_data = subtask.output_data;	
-			source = null;
-			target = null;
-			
-			status = "executing, " + application.name + ", " + operation.name + ", " + input_data.toString();
-			
-			//Set the source, target, and command to execute
-			if(input_data != null && input_data instanceof CachedFileData){
-  			input_file_data = (CachedFileData)input_data;
-  			source = Utility.windowsPath(cache_path) + input_file_data.getCacheFilename(session);
-			}
-			
-			if(output_data != null && output_data instanceof CachedFileData){
-  			output_file_data = (CachedFileData)output_data;
-  			target = Utility.windowsPath(cache_path) + output_file_data.getCacheFilename(session);
-			}
-	  	
-	  	command = Script.getCommand(operation.script, source, target, Utility.windowsPath(temp_path) + session);
-	  	System.out.print("[" + host + "](" + session + "): " + command + " ");
-	  	
-	  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
-	  	if(!command.isEmpty()){
-	  		for(int j=0; j<max_operation_attempts; j++){
+  	//Execute each subtask in the task
+		for(int i=0; i<max_operation_attempts; i++){
+	  	for(int j=0; j<task.size(); j++){
+	  		subtask = task.get(j);
+	  		application = applications.get(subtask.application); application_set.add(subtask.application);
+	  		operation = application.operations.get(subtask.operation);
+	  		input_data = subtask.input_data;
+	  		output_data = subtask.output_data;	
+				source = null;
+				target = null;
+				
+				status = "executing, " + application.name + ", " + operation.name + ", " + input_data.toString();
+				
+				//Set the source, target, and command to execute
+				if(input_data != null && input_data instanceof CachedFileData){
+	  			input_file_data = (CachedFileData)input_data;
+	  			source = Utility.windowsPath(cache_path) + input_file_data.getCacheFilename(session);
+				}
+				
+				if(output_data != null && output_data instanceof CachedFileData){
+	  			output_file_data = (CachedFileData)output_data;
+	  			target = Utility.windowsPath(cache_path) + output_file_data.getCacheFilename(session);
+				}
+		  	
+		  	command = Script.getCommand(operation.script, source, target, Utility.windowsPath(temp_path) + session);
+		  	System.out.print("[" + host + "](" + session + "): " + command + " ");
+		  	
+		  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
+		  	if(!command.isEmpty()){
 		  		COMMAND_COMPLETED = Script.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
 			  	
-			    //Try again if command failed
-          if(!COMMAND_COMPLETED && application.kill_operation != null){
-            if(j < (max_operation_attempts-1)){
-              System.out.println("retrying...");
-            }else{
-              System.out.println("killing...");
-            }
-            
-            Script.executeAndWait(application.kill_operation.script);
-          }else{
-          	SUBTASK_FAILURE = true;
-            break;
+          if(!COMMAND_COMPLETED){
+          	if(application.kill_operation != null){
+	            if(i < (max_operation_attempts-1)){
+	              System.out.println("retrying...");
+	            }else{
+	              System.out.println("killing...");
+	            }
+	            
+	            Script.executeAndWait(application.kill_operation.script);
+          	}
+          	
+          	break;	//Try the entire task again!
           }
-	  		}
+		  	}
+		  	
+		  	if(j == task.size()-1) TASK_COMPLETED = true;		//If we got past the last subtask then the task is complete!
 	  	}
 	  	
-	  	if(SUBTASK_FAILURE) break;
-  	}
+	  	if(TASK_COMPLETED) break;
+		}
   	
   	//Exit all used applications
   	for(Iterator<Integer> itr=application_set.iterator(); itr.hasNext();){

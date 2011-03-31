@@ -83,8 +83,9 @@ public class ScriptDebugger
 	/**
 	 * Configure the given ICR script(s) to run on the current machine.
 	 * @param script_filename the script filename
+	 * @param executable_hint a hint as to what an executable may be on the local system
 	 */
-	public void configureScript(String script_filename)
+	public void configureScript(String script_filename, String executable_hint)
 	{
 		String script_path, script_output_path, script_extension;
 		String aliases_filename;
@@ -241,11 +242,19 @@ public class ScriptDebugger
 										System.out.println("  found " + matches.size() + " matches:");
 										System.out.println("    [0] None");
 										
+										tmpi = -1;
+										
 										for(int j=0; j<matches.size(); j++){
 											System.out.println("    [" + (j+1) + "] " + matches.get(j));
+											
+											if(executable_hint != null){
+												if(matches.get(j).equals(executable_hint)){
+													tmpi = j;
+												}
+											}
 										}
 										
-										tmpi = Integer.valueOf(System.console().readLine("  enter choice: "))-1;
+										if(tmpi < 0) tmpi = Integer.valueOf(System.console().readLine("  enter choice: "))-1;
 										
 										if(tmpi < 0){
 											System.out.println("  no matches found!");
@@ -273,6 +282,15 @@ public class ScriptDebugger
 				}
 			}catch(Exception e) {e.printStackTrace();}
 		}
+	}
+	
+	/**
+	 * Configure the given ICR script(s) to run on the current machine.
+	 * @param script_filename the script filename
+	 */
+	public void configureScript(String script_filename)
+	{
+		configureScript(script_filename, null);
 	}
 
 	/**

@@ -851,6 +851,7 @@ public class SoftwareReuseAuxiliary
 		public static final long serialVersionUID = 1L;
     public String name = "";
     public String alias = "";
+    public String icon = null;
     public Vector<Operation> operations = new Vector<Operation>();
     public Operation monitor_operation = null;
     public Operation exit_operation = null;

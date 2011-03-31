@@ -29,7 +29,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		Vector<String> applications, application_tasks, task_outputs, task_inputs;
 		Vector<Vector<String>> task_inputs_outputs;
 		RemoteTaskInfo rti;
-		String server_url = "http://" + server + "/software/";
+		String server_url = "http://" + server + "/";
 		String application_name;
 		int tmpi;
 		
@@ -37,7 +37,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 			System.out.print("Adding server: " + server + " ");
 			servers.add(server);
 			servers_array = servers.toArray(new String[0]);
-			applications = getEndpointValues(server_url);
+			applications = getEndpointValues(server_url + "software");
 			
 			for(String application : applications){
 				tmpi = application.indexOf('(');
@@ -51,10 +51,10 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 				
 				System.out.print(".");
 				
-				application_tasks = getEndpointValues(server_url + application);
+				application_tasks = getEndpointValues(server_url + "software/" + application);
 				
 				for(String task : application_tasks){
-					task_inputs_outputs = getEndpointCommaSeparatedValues(server_url + application + "/" + task + "/*");
+					task_inputs_outputs = getEndpointCommaSeparatedValues(server_url + "software/" + application + "/" + task + "/*");
 					task_inputs = task_inputs_outputs.get(0);
 					task_outputs = task_inputs_outputs.get(1);
 					
@@ -84,14 +84,13 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	 */
 	public synchronized static void checkServers()
 	{
-		String server, server_url;
+		String server;
 		RemoteTaskInfo rti;
 				
 		for(Iterator<String> itr1=servers.iterator(); itr1.hasNext();){
 			server = itr1.next();
-			server_url = "http://" + server + "/software/";
 			
-			if(SoftwareReuseRestlet.queryEndpoint(server_url + "alive") == null){
+			if(SoftwareReuseRestlet.queryEndpoint("http://" + server + "/alive") == null){
 				System.out.println("Dropping: " + server);
 				itr1.remove();
 				
@@ -460,7 +459,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	 */
 	private boolean isServerBusy(String server)
 	{		
-		return SoftwareReuseRestlet.queryEndpoint("http://" + server + "/software/busy").equals("true");
+		return SoftwareReuseRestlet.queryEndpoint("http://" + server + "/busy").equals("true");
 	}
 
 	@Get
@@ -470,99 +469,106 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	public Representation httpGetHandler()
 	{
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
-		String part1 = (parts.size() > 0) ? parts.get(0) : "";
-		String part2 = (parts.size() > 1) ? parts.get(1) : "";
-		String part3 = (parts.size() > 2) ? parts.get(2) : "";
-		String part4 = (parts.size() > 3) ? parts.get(3) : "";
+		String part0 = (parts.size() > 0) ? parts.get(0) : "";
+		String part1 = (parts.size() > 1) ? parts.get(1) : "";
+		String part2 = (parts.size() > 2) ? parts.get(2) : "";
+		String part3 = (parts.size() > 3) ? parts.get(3) : "";
+		String part4 = (parts.size() > 4) ? parts.get(4) : "";
 		String application = null, task = null, file = null, format = null, file_format, server, url;
 		Form form;
 		Parameter p;
 		RemoteTaskInfo rti;
 		
-		if(part1.isEmpty()){
-			return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
-		}else{
-			if(part1.equals("form")){
-				form = getRequest().getResourceRef().getQueryAsForm();
-				p = form.getFirst("application"); if(p != null) application = p.getValue();
-				p = form.getFirst("task"); if(p != null) task = p.getValue();
-				p = form.getFirst("file"); if(p != null) file = p.getValue();
-				p = form.getFirst("format"); if(p != null) format = p.getValue();
-								
-				if(application != null && task != null && file != null && format != null){
-					url = getRootRef() + "/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
-
-					return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
-				}else{
-					return new StringRepresentation(getForm(), MediaType.TEXT_HTML);
-				}
-			}else if(part1.equals("register")){
-				if(part2.isEmpty()){
-					return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
-				}else{
-					server = URLDecoder.decode(part2);
-
-					if(!servers.contains(server)){
-						final String server_final = server;
-						
-				  	new Thread(){
-				  		public void run(){
-				  			checkServers();		//While we are here go ahead and check on previously added servers
-				  			addServer(server_final);
-				  		}
-				  	}.start();
-						
-						return new StringRepresentation(server + " scheduled to be queried", MediaType.TEXT_PLAIN);
-					}else{
-						return new StringRepresentation(server + " registered", MediaType.TEXT_PLAIN);
-					}
-				}
-			}else if(part1.equals("servers")){				
-				return new StringRepresentation(getServers(), MediaType.TEXT_PLAIN);
-			}else if(part1.equals("alive")){
-				return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
-			}else if(part2.isEmpty()){
-				return new StringRepresentation(getApplicationTasks(part1), MediaType.TEXT_PLAIN);
+		if(part0.isEmpty()){
+			return new StringRepresentation("Manager", MediaType.TEXT_PLAIN);
+		}else if(part0.equals("software")){
+			if(part1.isEmpty()){
+				return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
 			}else{
-				if(part3.isEmpty()){
-					return new StringRepresentation(getApplicationTaskInputs(part1, part2), MediaType.TEXT_PLAIN);
+				if(part2.isEmpty()){
+					return new StringRepresentation(getApplicationTasks(part1), MediaType.TEXT_PLAIN);
 				}else{
-					if(part3.equals("*")){
-						return new StringRepresentation(getApplicationTaskInputsOutputs(part1, part2), MediaType.TEXT_PLAIN);
-					}else if(part4.isEmpty()){
-						return new StringRepresentation(getApplicationTaskOutputs(part1, part2), MediaType.TEXT_PLAIN);
+					if(part3.isEmpty()){
+						return new StringRepresentation(getApplicationTaskInputs(part1, part2), MediaType.TEXT_PLAIN);
 					}else{
-						application = part1;
-						task = part2;
-						format = part3;
-						file = part4;
-						
-						file_format = Utility.getFilenameExtension(file);
-						rti = new RemoteTaskInfo(application, task, format, file_format);
-						rti.servers = tasks.get(rti);
-						
-						//Find a non-busy server
-						server = null;
-						
-						for(int i=0; i<servers_array.length; i++){
-							if(!isServerBusy(servers_array[i])){
-								server = servers_array[i];
-								break;
+						if(part3.equals("*")){
+							return new StringRepresentation(getApplicationTaskInputsOutputs(part1, part2), MediaType.TEXT_PLAIN);
+						}else if(part4.isEmpty()){
+							return new StringRepresentation(getApplicationTaskOutputs(part1, part2), MediaType.TEXT_PLAIN);
+						}else{
+							application = part1;
+							task = part2;
+							format = part3;
+							file = part4;
+							
+							file_format = Utility.getFilenameExtension(file);
+							rti = new RemoteTaskInfo(application, task, format, file_format);
+							rti.servers = tasks.get(rti);
+							
+							//Find a non-busy server
+							server = null;
+							
+							for(int i=0; i<servers_array.length; i++){
+								if(!isServerBusy(servers_array[i])){
+									server = servers_array[i];
+									break;
+								}
 							}
+							
+							if(server == null){		//If all servers are busy then pick one randomly
+								server = servers_array[new Random().nextInt()%servers_array.length];
+							}
+							
+							//Return the software server connection that will perform the task
+							System.out.println("[" + server + "]: " + application + "/" + task + " " + file_format + "->" + format);
+							url = "http://" + server + "/software/" + application + "/" + task + "/" + format + "/" + file;
+							
+							return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
 						}
-						
-						if(server == null){		//If all servers are busy then pick one randomly
-							server = servers_array[new Random().nextInt()%servers_array.length];
-						}
-						
-						//Return the software server connection that will perform the task
-						System.out.println("[" + server + "]: " + application + "/" + task + " " + file_format + "->" + format);
-						url = "http://" + server + "/software/" + application + "/" + task + "/" + format + "/" + file;
-						
-						return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
 					}
 				}
 			}
+		}else if(part0.equals("form")){
+			form = getRequest().getResourceRef().getQueryAsForm();
+			p = form.getFirst("application"); if(p != null) application = p.getValue();
+			p = form.getFirst("task"); if(p != null) task = p.getValue();
+			p = form.getFirst("file"); if(p != null) file = p.getValue();
+			p = form.getFirst("format"); if(p != null) format = p.getValue();
+							
+			if(application != null && task != null && file != null && format != null){
+				url = getRootRef() + "software/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
+
+				return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
+			}else{
+				return new StringRepresentation(getForm(), MediaType.TEXT_HTML);
+			}
+		}else if(part0.equals("register")){
+			if(part1.isEmpty()){
+				return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
+			}else{
+				server = URLDecoder.decode(part1);
+
+				if(!servers.contains(server)){
+					final String server_final = server;
+					
+			  	new Thread(){
+			  		public void run(){
+			  			checkServers();		//While we are here go ahead and check on previously added servers
+			  			addServer(server_final);
+			  		}
+			  	}.start();
+					
+					return new StringRepresentation(server + " scheduled to be queried", MediaType.TEXT_PLAIN);
+				}else{
+					return new StringRepresentation(server + " registered", MediaType.TEXT_PLAIN);
+				}
+			}
+		}else if(part0.equals("servers")){				
+			return new StringRepresentation(getServers(), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("alive")){
+			return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
+		}else{
+			return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
 		}
 	}
 	
@@ -649,7 +655,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 				}
 			};
 			
-			component.getDefaultHost().attach("/distributed_software", application);
+			component.getDefaultHost().attach("/", application);
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
 		

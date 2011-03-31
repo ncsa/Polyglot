@@ -4,6 +4,8 @@ import edu.ncsa.matrix.*;
 import java.awt.*;
 import java.awt.geom.*;
 import java.awt.image.*;
+import sun.awt.shell.*;
+import javax.swing.*;
 import javax.imageio.*;
 import java.io.*;
 import java.util.*;
@@ -250,6 +252,31 @@ public class ImageUtility
   	}
   	
   	return img_bw;
+  }
+  
+  /**
+   * Convert an RGB color image to a BGR color image.
+   * @param Irgb a color image in ARGB format
+   * @return a color image in ABGR format
+   */
+  public static int[][] argb2abgr(int[][] Irgb)
+  {
+  	int h = Irgb.length;
+  	int w = Irgb[0].length;
+  	int[][] Ibgr = new int[h][w];
+  	int rgb, r, g, b;
+  	
+  	for(int x=0; x<w; x++){
+  		for(int y=0; y<h; y++){
+				rgb = Irgb[y][x];
+				r = (rgb >> 16) & 0x000000ff;
+				g = (rgb >> 8) & 0x000000ff;
+				b = rgb & 0x000000ff;
+				Ibgr[y][x] = (b<<16) | (g<<8) | r;
+			}
+  	}
+  	
+  	return Ibgr;
   }
   
   /**
@@ -1915,6 +1942,33 @@ public class ImageUtility
   {
   	save(filename, argb2image(img));
   }
+  
+	/**
+	 * Save the icon of the given file to an image.
+	 * @param imagename the image to save the icon to
+	 * @param filename the name of the file whose icon we want
+	 */
+	public static void saveIcon(String imagename, String filename)
+	{
+		try{
+			ShellFolder shell_folder = ShellFolder.getShellFolder(new File(filename));
+			ImageIcon icon = new ImageIcon(shell_folder.getIcon(true));
+			int[][] image = image2argb((BufferedImage)icon.getImage());
+			int h = image.length;
+			int w = image[0].length;
+			
+			//Change black background to white
+			for(int x=0; x<w; x++){
+				for(int y=0; y<h; y++){
+					if(image[y][x] == 0){
+						image[y][x] = 0xffffffff;
+					}
+				}
+			}
+						
+	  	save(imagename, image);
+		}catch(Exception e) {e.printStackTrace();}
+	}
   
 	/**
    * Draw the given point onto the given image.
@@ -4015,7 +4069,7 @@ public class ImageUtility
 	  	viewer.add(n2argb(Is, Irgb), w, h, true);
   	}
   	
-  	if(true){			//Test image rotation
+  	if(false){			//Test image rotation
   		ImageViewer viewer = new ImageViewer();
 	  	int[][] Irgb = load("C:/Users/kmchenry/Files/Data/Images/scar1.jpg");
 	  	double[] Ig = argb2g(Irgb);
@@ -4027,6 +4081,10 @@ public class ImageUtility
 	  	
 	  	viewer.add(Ig, w, h, false);
 	  	viewer.add(Ig_r, w, h, true);
+  	}
+  	
+  	if(true){				//Test icon extraction
+  		saveIcon("C:/Users/kmchenry/Files/Temp/icon.jpg", "C:/Users/kmchenry/Desktop/Notes.txt.lnk");
   	}
   }
 }

@@ -25,17 +25,21 @@ public class SoftwareReuseRestlet extends ServerResource
 	private static SoftwareReuseServer server;
 	private static Vector<Application> applications;
 	private static Vector<TreeSet<TaskInfo>> application_tasks;
+	private static TreeMap<String,Application> alias_map = new TreeMap<String,Application>();
 	
 	/**
 	 * Initialize.
 	 */
 	public static void initialize()
-	{
-		Operation operation;
-		
+	{		
 		server = new SoftwareReuseServer("SoftwareReuseServer.ini");
 		applications = server.getApplications();
 		application_tasks = Task.getApplicationTasks(applications);
+		
+		//Build alias map
+		for(int i=0; i<applications.size(); i++){
+			alias_map.put(applications.get(i).alias, applications.get(i));
+		}
 	}
 
 	/**
@@ -178,14 +182,45 @@ public class SoftwareReuseRestlet extends ServerResource
 	}
 	
 	/**
+	 * Get an icon representation of the available software.
+	 * @return the HTML for the icon representation
+	 */
+	public String getApplicationStack()
+	{
+		String buffer = "";
+		
+		for(int i=0; i<applications.size(); i++){
+			if(i == 0){
+				buffer += "<table align=\"left\">\n";
+			}else{			
+				buffer += "<table>\n";
+			}
+			
+			buffer += "<tr><td align=\"center\">\n";
+			buffer += "<a href=\"form/get?application=" + applications.get(i).alias + "\">";
+			buffer += "<img src=\"image/" + applications.get(i).alias + ".jpg\" width=\"50\">";
+			buffer += "</a>\n";
+			buffer += "</td></tr><tr><td align=\"center\">\n";
+			buffer += "<font size=\"-1\">" + applications.get(i).name + "</font>";
+			buffer += "</td></tr>";
+			buffer += "</table>";
+		}
+		
+		return buffer;
+	}
+	
+	/**
 	 * Get a web form interface for this restful service.
-	 * @param USE_POST true if this form should use POST rather than GET
+	 * @param POST_UPLOADS true if this form should use POST rather than GET for uploading files
+	 * @param selected_application the default application
+	 * @param HIDE_APPLICATIONS true if applications menu should be hidden
 	 * @return the form
 	 */
-	public String getForm(boolean USE_POST)
+	public String getForm(boolean POST_UPLOADS, String selected_application, boolean HIDE_APPLICATIONS)
 	{
 		String buffer = "";
 		String format;
+		Application application;
 		TaskInfo task_info;
 		int count;
 		boolean FIRST_BLOCK;
@@ -259,20 +294,63 @@ public class SoftwareReuseRestlet extends ServerResource
 		}
 		
 		buffer += "}\n";
-		buffer += "</script>\n\n";
+		buffer += "\n";
+		buffer += "function setAPICall(){\n";
+		buffer += "  var select = document.getElementById('application');\n";
+		buffer += "  var application = select.options[select.selectedIndex].value;\n";
+		buffer += "  var select = document.getElementById('task');\n";
+		buffer += "  var task = select.options[select.selectedIndex].value;\n";
+		buffer += "  var file = document.getElementById('file').value;\n";
+		buffer += "  var select = document.getElementById('format');\n";
+		buffer += "  var format = select.options[select.selectedIndex].value;\n";
 		
-		if(!USE_POST){
+		if(!POST_UPLOADS){
+			buffer += "  var api_url = \"http://\" + location.host + \"/software/\" + application + \"/\" + task + \"/\" + format + \"/\" + encodeURIComponent(file);\n";
+			buffer += "  var api_html = \"http://\" + location.host + \"/software/<font color=\\\"#ff7777\\\">\" + application + \"</font>/<font color=\\\"#77ff77\\\">\" + task + \"</font>/<font color=\\\"#7777ff\\\">\" + format + \"</font>/<font color=\\\"#777777\\\">\" + encodeURIComponent(file) + \"</font>\";\n";
+		}else{
+			buffer += "  var api_url = \"http://\" + location.host + \"/software/\" + application + \"/\" + task + \"/\" + format + \"/\";\n";
+			buffer += "  var api_html = \"http://\" + location.host + \"/software/<font color=\\\"#ff7777\\\">\" + application + \"</font>/<font color=\\\"#77ff77\\\">\" + task + \"</font>/<font color=\\\"#7777ff\\\">\" + format + \"</font>/\";\n";
+		}
+		
+		buffer += "  \n";
+		buffer += "  api.innerHTML = \"<i><b><font color=\\\"#777777\\\">RESTful API call</font></b><br><br><a href=\\\"\" + api_url + \"\\\"style=\\\"text-decoration:none; color:#777777\\\">\" + api_html + \"</a></i>\";\n";
+		buffer += "  setTimeout('setAPICall()', 500);\n";
+		buffer += "}\n";
+		buffer += "</script>\n";
+		buffer += "\n";
+		buffer += "<center>\n";
+		
+		if(!POST_UPLOADS){
 			buffer += "<form name=\"converson\" action=\"\" method=\"get\">\n";
 		}else{
 			buffer += "<form enctype=\"multipart/form-data\" name=\"converson\" action=\"\" method=\"post\">\n";
 		}
 		
 		buffer += "<table>\n";
-		buffer += "<tr><td><b>Application:</b></td>\n";
-		buffer += "<td><select name=\"application\" id=\"application\" onchange=\"setTasks();\">\n";
+		
+		if(selected_application != null && HIDE_APPLICATIONS){
+			application = alias_map.get(selected_application);
+			
+			buffer += "<tr><td>";
+			if(application.icon != null) buffer += "<img src=\"../image/" + application.alias + ".jpg\" width=\"50\">";
+			buffer += "</td><td><h2>" + application.name + "</h2></td></tr>\n";
+		}
+		
+		buffer += "<tr><td>";
+		if(!HIDE_APPLICATIONS) buffer += "<b>Application:</b>";
+		buffer += "</td>\n";
+		buffer += "<td><select name=\"application\" id=\"application\" onchange=\"setTasks();\"";
+		if(HIDE_APPLICATIONS) buffer += " style=\"visibility:hidden;\"";
+		buffer += ">\n";
 		
 		for(int i=0; i<applications.size(); i++){
-			buffer += "<option value=\"" + applications.get(i).alias + "\">" + applications.get(i) + "</option>\n";
+			buffer += "<option value=\"" + applications.get(i).alias + "\"";
+			
+			if(selected_application != null && selected_application.equals(applications.get(i).alias)){
+				buffer += " selected";
+			}
+
+			buffer += ">" + applications.get(i) + "</option>\n";
 		}
 		
 		buffer += "</select></td></tr>\n";
@@ -295,10 +373,10 @@ public class SoftwareReuseRestlet extends ServerResource
 		
 		buffer += "</div></font></i></td></tr>\n";
 		
-		if(!USE_POST){
-			buffer += "<tr><td><b>File:</b></td><td><input type=\"text\" name=\"file\" size=\"100\"></td></tr>\n";
+		if(!POST_UPLOADS){
+			buffer += "<tr><td><b>File URL:</b></td><td><input type=\"text\" name=\"file\" id=\"file\" size=\"100\"></td></tr>\n";
 		}else{
-			buffer += "<tr><td><b>File:</b></td><td><input type=\"file\" name=\"file\" size=\"100\"></td></tr>\n";
+			buffer += "<tr><td><b>File:</b></td><td><input type=\"file\" name=\"file\" id=\"file\" size=\"100\"></td></tr>\n";
 		}
 		
 		buffer += "<tr><td><b>Format:</b></td>\n";
@@ -311,8 +389,17 @@ public class SoftwareReuseRestlet extends ServerResource
 		
 		buffer += "</select></td></tr>\n";		
 		buffer += "<tr><td></td><td><input type=\"submit\" value=\"Submit\"></td></tr>\n";
+		buffer += "<tr><td height=\"25\"></td><td></td></tr>\n";
+		buffer += "<tr><td></td><td align=\"center\"><div name=\"api\" id=\"api\"></div></td></tr>\n";
 		buffer += "</table>\n";
-		buffer += "</form>";
+		buffer += "</form>\n";
+		buffer += "</center>\n";
+		buffer += "\n";
+		buffer += "<script type=\"text/javascript\">setAPICall();</script>\n";
+	
+		if(selected_application != null){
+			buffer += "<script type=\"text/javascript\">setTasks();</script>\n";
+		}
 		
 		return buffer;
 	}
@@ -323,7 +410,7 @@ public class SoftwareReuseRestlet extends ServerResource
 	 */
 	public String getForm()
 	{
-		return getForm(false);
+		return getForm(false, null, false);
 	}
 
 	/**
@@ -490,87 +577,106 @@ public class SoftwareReuseRestlet extends ServerResource
 	public Representation httpGetHandler()
 	{
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
-		String part1 = (parts.size() > 0) ? parts.get(0) : "";
-		String part2 = (parts.size() > 1) ? parts.get(1) : "";
-		String part3 = (parts.size() > 2) ? parts.get(2) : "";
-		String part4 = (parts.size() > 3) ? parts.get(3) : "";
+		String part0 = (parts.size() > 0) ? parts.get(0) : "";
+		String part1 = (parts.size() > 1) ? parts.get(1) : "";
+		String part2 = (parts.size() > 2) ? parts.get(2) : "";
+		String part3 = (parts.size() > 3) ? parts.get(3) : "";
+		String part4 = (parts.size() > 4) ? parts.get(4) : "";
 		String application = null, task = null, file = null, format = null, url;
 		String buffer;
 		Form form;
 		Parameter p;
 		
-		if(part1.isEmpty()){
-			return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
-		}else{
-			if(part1.equals("form")){
+		if(part0.isEmpty()){
+			return new StringRepresentation(getApplicationStack(), MediaType.TEXT_HTML);
+		}else if(part0.equals("software")){
+			if(part1.isEmpty()){
+				return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
+			}else{
 				if(part2.isEmpty()){
-					buffer = "";
-					buffer += "task\n";
-					buffer += "task_post\n";
-					buffer += "convert";
-					
-					return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
+					return new StringRepresentation(getApplicationTasks(part1), MediaType.TEXT_PLAIN);
 				}else{
-					form = getRequest().getResourceRef().getQueryAsForm();
-					p = form.getFirst("application"); if(p != null) application = p.getValue();
-					p = form.getFirst("task"); if(p != null) task = p.getValue();
-					p = form.getFirst("file"); if(p != null) file = p.getValue();
-					p = form.getFirst("format"); if(p != null) format = p.getValue();
-									
-					if(application != null && task != null && file != null && format != null){
-						url = getRootRef() + "/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
-	
-						return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
+					if(part3.isEmpty()){
+						return new StringRepresentation(getApplicationTaskOutputs(part1, part2), MediaType.TEXT_PLAIN);
 					}else{
-						if(part2.equals("task")){
-							return new StringRepresentation(getForm(), MediaType.TEXT_HTML);
-						}else if(part2.equals("task_post")){
-							return new StringRepresentation(getForm(true), MediaType.TEXT_HTML);
-						}else if(part2.equals("convert")){
-							return new StringRepresentation(getConvertForm(), MediaType.TEXT_HTML);
+						if(part3.equals("*")){
+							return new StringRepresentation(getApplicationTaskInputsOutputs(part1, part2), MediaType.TEXT_PLAIN);
+						}else if(part4.isEmpty()){
+							return new StringRepresentation(getApplicationTaskInputs(part1, part2), MediaType.TEXT_PLAIN);
 						}else{
-							return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
+							application = part1;
+							task = part2;
+							format = part3;
+							file = URLDecoder.decode(part4);
+							
+							file = getReference().getBaseRef() + "/file/" + convertLater(application, task.equals("convert") ? "" : task, file, format);
+							
+							return new StringRepresentation("<a href=" + file + ">" + file + "</a>", MediaType.TEXT_HTML);
 						}
 					}
 				}
-			}else if(part1.equals("file")){
-				if(!part2.isEmpty()){	
-					file = server.getCachePath() + "0_" + part2;
-					
-					if(Utility.exists(file)){
-						return new FileRepresentation(file, MediaType.MULTIPART_ALL);
-					}else{
-						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
-					}
-				}else{
-					return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
-				}
-			}else if(part1.equals("alive")){
-				return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
-			}else if(part1.equals("busy")){
-				return new StringRepresentation("" + server.isBusy(), MediaType.TEXT_PLAIN);
-			}else if(part2.isEmpty()){
-				return new StringRepresentation(getApplicationTasks(part1), MediaType.TEXT_PLAIN);
+			}
+		}else if(part0.equals("form")){
+			if(part1.isEmpty()){
+				buffer = "";
+				buffer += "get\n";
+				buffer += "post\n";
+				buffer += "convert";
+				
+				return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
 			}else{
-				if(part3.isEmpty()){
-					return new StringRepresentation(getApplicationTaskOutputs(part1, part2), MediaType.TEXT_PLAIN);
+				form = getRequest().getResourceRef().getQueryAsForm();
+				p = form.getFirst("application"); if(p != null) application = p.getValue();
+				p = form.getFirst("task"); if(p != null) task = p.getValue();
+				p = form.getFirst("file"); if(p != null) file = p.getValue();
+				p = form.getFirst("format"); if(p != null) format = p.getValue();
+								
+				if(application != null && task != null && file != null && format != null){
+					url = getRootRef() + "software/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
+
+					return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
 				}else{
-					if(part3.equals("*")){
-						return new StringRepresentation(getApplicationTaskInputsOutputs(part1, part2), MediaType.TEXT_PLAIN);
-					}else if(part4.isEmpty()){
-						return new StringRepresentation(getApplicationTaskInputs(part1, part2), MediaType.TEXT_PLAIN);
+					if(part1.startsWith("get")){
+						return new StringRepresentation(getForm(false, application, application!=null), MediaType.TEXT_HTML);
+					}else if(part1.equals("post")){
+						return new StringRepresentation(getForm(true, application, application!=null), MediaType.TEXT_HTML);
+					}else if(part1.equals("convert")){
+						return new StringRepresentation(getConvertForm(), MediaType.TEXT_HTML);
 					}else{
-						application = part1;
-						task = part2;
-						format = part3;
-						file = URLDecoder.decode(part4);
-						
-						file = getReference().getBaseRef() + "/file/" + convertLater(application, task.equals("convert") ? "" : task, file, format);
-						
-						return new StringRepresentation("<a href=" + file + ">" + file + "</a>", MediaType.TEXT_HTML);
+						return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
 					}
 				}
 			}
+		}else if(part0.equals("file")){
+			if(!part1.isEmpty()){	
+				file = server.getCachePath() + "0_" + part1;
+				
+				if(Utility.exists(file)){
+					return new FileRepresentation(file, MediaType.MULTIPART_ALL);
+				}else{
+					return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
+				}
+			}else{
+				return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
+			}
+		}else if(part0.equals("image")){
+			if(!part1.isEmpty()){					
+				file = alias_map.get(Utility.getFilenameName(part1)).icon;
+				
+				if(file != null){
+					return new FileRepresentation(file, MediaType.IMAGE_JPEG);
+				}else{
+					return new StringRepresentation("Image doesn't exist", MediaType.TEXT_PLAIN);
+				}
+			}else{
+				return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
+			}
+		}else if(part0.equals("alive")){
+			return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
+		}else if(part0.equals("busy")){
+			return new StringRepresentation("" + server.isBusy(), MediaType.TEXT_PLAIN);
+		}else{
+			return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
 		}
 	}
 	
@@ -582,11 +688,11 @@ public class SoftwareReuseRestlet extends ServerResource
 	public Representation httpPostHandler(Representation entity)
 	{
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
-		String part1 = (parts.size() > 0) ? parts.get(0) : "";
+		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		TreeMap<String,String> parameters = new TreeMap<String,String>();
 		String application, task, file = null, format, url;
 				
-		if(!part1.isEmpty() && part1.equals("form")){
+		if(!part0.isEmpty() && part0.equals("form")){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
 				DiskFileItemFactory factory = new DiskFileItemFactory();
 				factory.setSizeThreshold(1000240);
@@ -615,7 +721,7 @@ public class SoftwareReuseRestlet extends ServerResource
 			format = parameters.get("format");
 						
 			if(application != null && task != null && file != null && format != null){
-				url = getRootRef() + "/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
+				url = getRootRef() + "software/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
 				
 				return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
 			}
@@ -698,7 +804,7 @@ public class SoftwareReuseRestlet extends ServerResource
   	
 		/*
 		try{
-			new Server(Protocol.HTTP, port, SoftwareReuseConversionRestlet.class).start();
+			new Server(Protocol.HTTP, port, SoftwareReuseRestlet.class).start();
 		}catch(Exception e) {e.printStackTrace();}
 		*/
 		
@@ -717,7 +823,7 @@ public class SoftwareReuseRestlet extends ServerResource
 				}
 			};
 			
-			component.getDefaultHost().attach("/software", application);
+			component.getDefaultHost().attach("/", application);
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
 		
@@ -736,7 +842,7 @@ public class SoftwareReuseRestlet extends ServerResource
 	  				hostname = InetAddress.getLocalHost().getHostAddress();		  			
 	  			}catch(Exception e) {e.printStackTrace();}
 	  			
-	  			url = "http://" + distributed_server_final + "/distributed_software/register/" + URLEncoder.encode(hostname + ":" + port_final);
+	  			url = "http://" + distributed_server_final + "/register/" + URLEncoder.encode(hostname + ":" + port_final);
 	  			
 	  			while(true){
 	  				queryEndpoint(url);

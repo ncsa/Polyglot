@@ -1116,6 +1116,98 @@ public class Utility
 	}
 
 	/**
+	 * Get the target of a Windows shortcut.
+	 * @param shortcut the shortcut (*.lnk) file to parse
+	 * @return the target of the shortcut
+	 */
+	public static String getShortcutTarget(String shortcut)
+	{
+		String target = null;
+		byte[] bytes = null;
+		
+		//Read file into a byte buffer
+    try{
+	    FileInputStream fis = new FileInputStream(new File(shortcut));
+	    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+	    byte[] buff = new byte[256];
+	    int n;
+	    
+	    while(true){
+	      n = fis.read(buff);
+	      if(n == -1) break;
+	      baos.write(buff, 0, n);
+	    }
+	    
+	    fis.close();
+	    bytes = baos.toByteArray();
+    }catch(Exception e) {e.printStackTrace();}
+    
+    //Extract information
+    byte flags = bytes[0x14];
+    byte attributes = bytes[0x18];
+    boolean DIRECTORY = (attributes & (byte)0x10) > 0;
+    int shell_len = 0;
+
+    if((flags & (byte)0x01) > 0){    						//If the shell settings are present, skip them
+    	shell_len = bytes2short(bytes, 0x4c) + 2;  //The plus 2 accounts for the length marker itself
+    }
+
+    int file_start = 0x4c + shell_len;
+    int finalname_offset = bytes[file_start + 0x18] + file_start;
+    String finalname = getNullDelimitedString(bytes, finalname_offset);
+        
+    //int file_location_info_flag = bytes[file_start + 0x08];
+    //boolean LOCAL = (file_location_info_flag & 2) == 0;
+    
+    //if(!LOCAL){      
+    //	int networkvolumetable_offset = bytes[file_start + 0x14] + file_start;
+    //  int sharename_offset = bytes[networkvolumetable_offset + 0x08] + networkvolumetable_offset;
+    //  String sharename = getNullDelimitedString(bytes, sharename_offset);
+      
+    //  target = sharename + "\\" + finalname;
+    //}else{
+      int basename_offset = bytes[file_start + 0x10] + file_start;
+      String basename = getNullDelimitedString(bytes, basename_offset);
+      
+      target = basename + finalname;
+    //}
+    
+		return target;
+	}
+	
+	/**
+	 * Convert a series of bytes to a short.
+	 * @param bytes a byte array
+	 * @param off an offset within the byte array
+	 * @return a short
+	 */
+  private static int bytes2short(byte[] bytes, int off)
+  {
+    int low = bytes[off]<0 ? bytes[off]+256 : bytes[off];
+    int high = (bytes[off+1]<0 ? bytes[off+1]+256 : bytes[off+1])<<8;
+    
+    return 0 | low | high;
+  }
+  
+  /**
+   * Extract a string from a byte array.
+   * @param bytes a byte array
+   * @param off an offset within the byte array
+   * @return a string
+   */
+  private static String getNullDelimitedString(byte[] bytes, int off)
+  {
+    int len = 0;
+    
+    while(true){	//Count bytes until the null character
+      if(bytes[off + len] == 0) break;
+      len++;
+    }
+    
+    return new String(bytes, off, len);
+  }
+
+	/**
 	 * Search the given directory for files containing the given string.
 	 * @param path the path to search
 	 * @param string the string to match
@@ -1523,9 +1615,13 @@ public class Utility
   		}
   	}
   	
-  	if(true){
+  	if(false){
   		//System.out.println(Utility.getMD5Checksum("C:/Users/kmchenry/Files/Data/Images/scar1.jpg"));
   		System.out.println(Utility.windowsDrivePath("C:/Users/kmchenry/Files/Data/Images/scar1.jpg"));
+  	}
+  	
+  	if(true){
+  		System.out.println(Utility.getShortcutTarget("C:/Users/kmchenry/Desktop/Notes.txt.lnk"));
   	}
   }
 }

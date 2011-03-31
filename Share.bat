@@ -1,3 +1,4 @@
+taskkill /f /im java.exe
 cd "%~dp0"
-call ScriptInstaller "%~n1"
+call ScriptInstaller -shortcut \"%1\"
 SoftwareReuseRestlet
