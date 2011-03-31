@@ -15,16 +15,16 @@ public class ScriptInstaller
 	
 	/**
 	 * Parse out the file name given a script name including a path and time stamp.
-	 * @param addId should the id of the software be added to the script
 	 * @param script the full script name with path and time stamp
+	 * @param SOFTWARE_KEYS set to true if software keys have been appended to the given script name
 	 * @return the script file name
 	 */
-	private static String getScriptFileName(boolean addId, String script)
+	private static String getScriptFileName(String script, boolean SOFTWARE_KEYS)
 	{
 		String filename = "";
 		int dash, dot;
 		
-		if(addId){
+		if(SOFTWARE_KEYS){
 			String[] parts = script.split("/");
 			
 			if(parts.length == 3){
@@ -262,7 +262,7 @@ public class ScriptInstaller
 			
 			//Keep only the newest version of each script
 			for(int i=0; i<scripts.size(); i++){
-				filename = getScriptFileName(false, scripts.get(i));
+				filename = getScriptFileName(scripts.get(i), false);
 				timestamp = getScriptTimeStamp(scripts.get(i));
 				
 				if(newest_scripts.get(filename) == null){
@@ -402,15 +402,16 @@ public class ScriptInstaller
 		File[] files;
 		String shortcut = null;
 		String executable_hint = null;
-		String software, filename;
+		String software, filename, scriptname;
 		String buffer;
 		ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.ini"); debugger.setDataPath(data_download_path);
 		Script script;
 		int tests = 5;
 		int max_operation_time = 30000;
+		int tmpi;
 		double success_rate;
 		boolean downloaded;
-		boolean add_software = false;
+		boolean SOFTWARE_KEYS = false;
 		boolean NO_CONFIG = false;
 		boolean TEST_SCRIPTS = false;
 
@@ -433,7 +434,7 @@ public class ScriptInstaller
 				System.out.println("  -test n: download relevant test data and grind the obtained scripts n times");
 				System.out.println("  -wait t: the amount of time to wait for an operation to complete (in milli-seconds)");
 				System.out.println("  -url u: the url of the CSR server to use");
-				System.out.println("  -alias: add softwre_id to script name");
+				System.out.println("  -keys: append software keys to script filenames");
 				System.out.println();
 				System.exit(0);
 			}else if(args[i].equals("-shortcut")){
@@ -456,8 +457,8 @@ public class ScriptInstaller
 				max_operation_time = Integer.valueOf(args[++i]);
 			}else if(args[i].equals("-url")) {
 				csr_script_url = args[++i];
-			}else if(args[i].equals("-alias")){
-				add_software = true;
+			}else if(args[i].equals("-keys")){
+				SOFTWARE_KEYS = true;
 			}else{
 				software = args[i];
 				
@@ -488,12 +489,15 @@ public class ScriptInstaller
 			System.out.println("\nDownloading scripts:\n");
 			
 			for(int i=0; i<scripts.size(); i++){
-				filename = Utility.getFilename(getScriptFileName(add_software, scripts.get(i)));
+				filename = Utility.getFilename(getScriptFileName(scripts.get(i), SOFTWARE_KEYS));
 				System.out.print("  " + filename);
+				scriptname = scripts.get(i);
 				
-				String scriptname = scripts.get(i);
-				int tmpi = scriptname.indexOf('/');
-				if(tmpi != -1) scriptname = scriptname.substring(tmpi);
+				if(SOFTWARE_KEYS){
+					tmpi = scriptname.indexOf('/');
+					if(tmpi != -1) scriptname = scriptname.substring(tmpi);
+				}
+				
 				downloaded = Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_script_url + "download.php?file=" + scriptname);
 				
 				if(downloaded){
