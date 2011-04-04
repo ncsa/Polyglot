@@ -94,11 +94,11 @@ public class IOGraphApplet extends JApplet
 	    group.add(mi);
 
 	  	while((line = br.readLine()) != null) {
-	  		if (line.toLowerCase().endsWith("<br>")) {
-	  			line = line.substring(0, line.length() - 4);
+	  		String[] pieces = line.split("\t");
+	  		if (pieces.length != 5) {
+	  			continue;
 	  		}
-	  		
-	  		final String menuitem = line;
+	  		final String menuitem = pieces[1];
 		    mi = new JRadioButtonMenuItem(new AbstractAction(menuitem) {					
 					public void actionPerformed(ActionEvent e) {
 						iograph_panel.setEnableWeightedPaths(true);
