@@ -190,7 +190,7 @@ public class SoftwareReuseRestlet extends ServerResource
 		String buffer = "";
 		
 		for(int i=0; i<applications.size(); i++){
-			if(i == 0){
+			if(i < applications.size()-1){
 				buffer += "<table align=\"left\">\n";
 			}else{			
 				buffer += "<table>\n";
@@ -609,7 +609,7 @@ public class SoftwareReuseRestlet extends ServerResource
 							format = part3;
 							file = URLDecoder.decode(part4);
 							
-							file = getReference().getBaseRef() + "/file/" + convertLater(application, task.equals("convert") ? "" : task, file, format);
+							file = getReference().getBaseRef() + "file/" + convertLater(application, task.equals("convert") ? "" : task, file, format);
 							
 							return new StringRepresentation("<a href=" + file + ">" + file + "</a>", MediaType.TEXT_HTML);
 						}
