@@ -333,6 +333,7 @@
 				<include name="edu/ncsa/image/**/*.class"/>
 			</fileset>
 		</copy>
+		<unjar src="lib/misc/commons-logging-1.1.1.jar" dest="${tmp_iograph}"/>
 		<jar basedir="${tmp_iograph}" destfile="build/IOGraphApplet.jar"/>
 		<input message="keystore password:" addproperty="storepass"/>
 		<signjar jar="build/IOGraphApplet.jar" signedjar="build/IOGraphApplet-signed.jar" alias="mykey" storepass="${storepass}"/>
