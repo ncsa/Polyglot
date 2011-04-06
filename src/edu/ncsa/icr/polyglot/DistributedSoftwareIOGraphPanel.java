@@ -37,9 +37,7 @@ public class DistributedSoftwareIOGraphPanel extends IOGraphPanel<String,String>
   		for(int j=0; j<edge_strings.get(i).size(); j++){
   			server = edge_strings.get(i).get(j);
   			tmpi = server.indexOf('[');
-  			if (tmpi != -1) {
-  				server = server.substring(tmpi+1, server.length()-1);
-  			}
+  			if(tmpi != -1) server = server.substring(tmpi+1, server.length()-1);
   			servers.add(server);
   		}
   	}

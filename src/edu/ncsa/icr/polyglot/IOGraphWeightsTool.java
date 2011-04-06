@@ -780,7 +780,22 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
       if(RUNNING_CONVERSIONS || MEASURING_QUALITY){
         output_panel.addText("<br><b><font color=red>A test is running!</font></b>");
       }else{
-      	createTests();
+        test = test_root;
+        test += "." + new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
+        
+        new File(test_path + test).mkdir();
+        new File(test_path + test + "/0").mkdir();
+        
+        //Reset the jobs status
+        job_status.clear();
+        
+        for(int i=0; i<jobs.size(); i++){
+          job_status.add(-1);  
+        }
+        
+        loadJobs();
+  
+        output_panel.addText("<br><br><b>New test created: </b>" + test);
       }
     }else if(e.getSource() == run_button || e.getSource() == measure_button){
     	if(test == null){
@@ -877,26 +892,6 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
     }
 
     repaint();
-  }
-  
-  public void createTests()
-  {
-    test = test_root;
-    test += "." + new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
-    
-    new File(test_path + test).mkdir();
-    new File(test_path + test + "/0").mkdir();
-    
-    //Reset the jobs status
-    job_status.clear();
-    
-    for(int i=0; i<jobs.size(); i++){
-      job_status.add(-1);  
-    }
-    
-    loadJobs();
-
-    output_panel.addText("<br><br><b>New test created: </b>" + test);
   }
   
   /**
@@ -1180,7 +1175,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	  	MEASURING_QUALITY = false;
 	  }
 	}
-	
+
 	/**
    * Start the I/O-Graph weights tool.
    * @param args not used
