@@ -1,4 +1,4 @@
-;Microsoft Word (2007)
+;Microsoft Office Word (2007)
 ;document
 ;doc, docx, html, odt, rtf, txt, wpd, wps
 ;doc, docx, odt
