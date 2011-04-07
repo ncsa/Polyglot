@@ -15,7 +15,7 @@ input_filename := SubStr(arg1, index)
 IfWinNotExist, Presentation1 - Microsoft PowerPoint
 {
   Run, "C:\Program Files (x86)\Microsoft Office\Office14\POWERPNT.EXE" "%1%"
-  WinWait, Presentation1 - Microsoft PowerPoint
+  ;WinWait, Presentation1 - Microsoft PowerPoint
 }
 
 ;Make sure image is loaded before continuing
