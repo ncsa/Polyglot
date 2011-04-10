@@ -251,7 +251,16 @@ public class SoftwareReuseServer implements Runnable
 	{
 		return cache_path;
 	}
-
+	
+	/**
+	 * Get a new session number.
+	 * @return a session number
+	 */
+	public int getSession()
+	{
+		return session_counter.incrementAndGet();
+	}
+	
 	/**
    * Get the utilized applications.
    * @return a list of applications being used
@@ -267,7 +276,7 @@ public class SoftwareReuseServer implements Runnable
    * @param session the session id
    * @param task a list of subtasks to execute
    */
-  public synchronized void executeTasks(String host, int session, Vector<Subtask> task)
+  public synchronized void executeTask(String host, int session, Vector<Subtask> task)
   {
   	Subtask subtask;
   	Application application;
@@ -479,7 +488,7 @@ public class SoftwareReuseServer implements Runnable
 				}else if(message.equals("execute")){
 					task = (Vector<Subtask>)Utility.readObject(ins);
 					System.out.println("[" + host + "](" + session + "): requested task execution ...");
-					executeTasks(host, session, task);
+					executeTask(host, session, task);
 					Utility.writeObject(outs, new Integer(0));
 					System.out.println("[" + host + "](" + session + "): executed " + task.size() + " task(s)");
 				}else if(message.equals("new_session")){
@@ -503,6 +512,44 @@ public class SoftwareReuseServer implements Runnable
 		}catch(Exception e){
 			System.out.println("[" + host + "](" + session + "): connection lost!");
 		}
+	}
+
+	/**
+	 * Parse the session id from the cached filename.
+	 * @param filename the cached filename
+	 * @return the session id
+	 */
+	public static int getSession(String filename)
+	{
+		int tmpi;
+		
+		filename = Utility.getFilename(filename);
+		tmpi = filename.indexOf('_');
+		
+		if(tmpi >= 0){
+			return Integer.valueOf(filename.substring(0, tmpi));
+		}
+		
+		return -1;
+	}
+
+	/**
+	 * Parse the filename from the cached filename.
+	 * @param filename the cached filename
+	 * @return the filename
+	 */
+	public static String getFilename(String filename)
+	{
+		int tmpi;
+		
+		filename = Utility.getFilename(filename);
+		tmpi = filename.indexOf('_');
+		
+		if(tmpi >= 0){
+			return filename.substring(tmpi+1);
+		}
+		
+		return null;
 	}
 
 	/**
@@ -617,7 +664,7 @@ public class SoftwareReuseServer implements Runnable
 							task.add(new Subtask(i, output_operation, new Data(), output_file));
 						}
 						
-						server.executeTasks("localhost", i, task);	//Use application index as the session
+						server.executeTask("localhost", i, task);	//Use application index as the session
 						
 						if(output_file.exists(i, server.cache_path)){
 							results += " -> [OK]\n";

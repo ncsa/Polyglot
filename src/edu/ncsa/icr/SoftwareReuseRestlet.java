@@ -189,21 +189,47 @@ public class SoftwareReuseRestlet extends ServerResource
 	{
 		String buffer = "";
 		
-		for(int i=0; i<applications.size(); i++){
-			if(i < applications.size()-1){
-				buffer += "<table align=\"left\">\n";
-			}else{			
-				buffer += "<table>\n";
-			}
-			
+		for(int i=0; i<applications.size(); i++){	
+			buffer += "<div style=\"float:left\">\n";
+			buffer += "<table>\n";
 			buffer += "<tr><td align=\"center\">\n";
 			buffer += "<a href=\"form/get?application=" + applications.get(i).alias + "\">";
-			buffer += "<img src=\"image/" + applications.get(i).alias + ".jpg\" width=\"50\">";
+			buffer += "<img src=\"image/" + applications.get(i).alias + ".jpg\" width=\"50\" border=\"0\">";
 			buffer += "</a>\n";
 			buffer += "</td></tr><tr><td align=\"center\">\n";
-			buffer += "<font size=\"-1\">" + applications.get(i).name + "</font>";
-			buffer += "</td></tr>";
-			buffer += "</table>";
+			buffer += "<font size=\"-1\">" + applications.get(i).name + "</font>\n";
+			buffer += "</td></tr>\n";
+			buffer += "</table>\n";
+			buffer += "</div>\n";
+			buffer += "\n";
+		}
+		
+		
+		//Add ping
+		if(true){
+			buffer += "<i><font size=\"-1\" color=\"#777777\"><div name=\"ping\" id=\"ping\" style=\"position:absolute;bottom:0\"></div></font></i>\n";
+			buffer += "\n";
+			buffer += "<script type=\"text/javascript\" src=\"https://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js\"></script>\n";
+			buffer += "<script type=\"text/javascript\">\n";
+			buffer += "function refreshPing(){\n";
+			buffer += "  $.ajax({\n";
+			buffer += "    beforeSend: function(){\n";
+			buffer += "      window.startTime = new Date();\n";
+			buffer += "    },\n";
+			buffer += "    \n";
+			buffer += "    url: '/',\n";
+			buffer += "    \n";
+			buffer += "    success: function(){\n";
+			buffer += "      window.endTime = new Date();\n";
+			buffer += "      document.getElementById('ping').innerHTML = window.endTime - window.startTime + \" ms\";\n";
+			buffer += "    }\n";
+			buffer += "  });\n";
+			buffer += "  \n";
+			buffer += "  setTimeout('refreshPing()', 1000);\n";
+			buffer += "}\n";
+			buffer += "\n";
+			buffer += "refreshPing();\n";
+			buffer += "</script>\n";
 		}
 		
 		return buffer;
@@ -332,7 +358,7 @@ public class SoftwareReuseRestlet extends ServerResource
 			application = alias_map.get(selected_application);
 			
 			buffer += "<tr><td>";
-			if(application.icon != null) buffer += "<img src=\"../image/" + application.alias + ".jpg\" width=\"50\">";
+			if(application.icon != null) buffer += "<img src=\"../image/" + application.alias + ".jpg\" width=\"50\" border=\"0\">";
 			buffer += "</td><td><h2>" + application.name + "</h2></td></tr>\n";
 		}
 		
@@ -513,61 +539,67 @@ public class SoftwareReuseRestlet extends ServerResource
 	/**
 	 * Get the task involved in using the given applications to convert the given file to the specified output format.
 	 * @param application_alias the alias of the application to use.
-	 * @param operation_hint an operation hint
+	 * @param task_string the task to perform
 	 * @param filename the file name of the cached file to convert
 	 * @param output_format the output format
 	 * @return the task to perform the conversion
 	 */
-	public Vector<Subtask> getTask(String application_alias, String operation_hint, String filename, String output_format)
+	public Vector<Subtask> getTask(String application_alias, String task_string, String filename, String output_format)
 	{
 		Task task = new Task(applications);
-		task.addSubtasks(task.getApplicationString(application_alias), operation_hint, new CachedFileData(filename), new CachedFileData(filename, output_format));
+		task.addSubtasks(task.getApplicationString(application_alias), task_string, new CachedFileData(filename), new CachedFileData(filename, output_format));
 		
 		return task.getSubtasks();
 	}
 	
 	/**
-	 * Convert a file to the specified output format using the given application.
+	 * Execute a task.
+	 * @param session the session id to use while executing the task
 	 * @param application_alias the application to use
-	 * @param operation_hint an operation hint
+	 * @param task_string the task to perform (nothing assumed to be a conversion)
 	 * @param file the URL of the file to convert
 	 * @param format the output format
 	 */
-	public synchronized void convert(String application_alias, String operation_hint, String file, String format)
+	public synchronized void executeTask(int session, String application_alias, String task_string, String file, String format)
 	{
-		Vector<Subtask> task = getTask(application_alias, operation_hint, Utility.getFilename(file), format);
+		Vector<Subtask> task;
+				
+		if(session >= 0){
+			if(file.startsWith(getReference().getBaseRef() + "file/")){	//Remove session id from filenames of locally cached files
+				file = SoftwareReuseServer.getFilename(Utility.getFilename(file));
+			}else{																												//Download remote files
+				Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file), file);
+				file = Utility.getFilename(file);
+			}
 		
-		//Task.print(task, applications);
-		
-		if(!file.startsWith(getReference().getBaseRef() + "/file/")){		//Don't download files already within cache
-			Utility.downloadFile(server.getCachePath(), "0_" + Utility.getFilenameName(file), file);
+			task = getTask(application_alias, task_string, file, format);
+			//Task.print(task, applications);
+			
+			server.executeTask("localhost", session, task);
 		}
-		
-		server.executeTasks("localhost", 0, task);	
 	}
 	
 	/**
-	 * Convert a file (asynchronously) to the specified output format using the given application.
+	 * Execute a task asynchronously.
+	 * @param session the session id to use while executing the task
 	 * @param application_alias the application to use
-	 * @param operation_hint an operation hint
-	 * @param file the URL of the file to convert
+	 * @param task_string the task to perform (nothing assumed to be a conversion)
+	 * @param file the URL of the input file
 	 * @param format the output format
-	 * @return the results of the conversion
 	 */
-	public String convertLater(String application_alias, String operation_hint, String file, String format)
+	public void executeTaskLater(int session, String application_alias, String task_string, String file, String format)
 	{
+		final int session_final = session;
 		final String application_alias_final = application_alias;
-		final String operation_hint_final = operation_hint;
+		final String task_string_final = task_string;
 		final String file_final = file;
 		final String format_final = format;
 		
 		new Thread(){
 			public void run(){
-				convert(application_alias_final, operation_hint_final, file_final, format_final);
+				executeTask(session_final, application_alias_final, task_string_final, file_final, format_final);
 			}
 		}.start();
-		
-		return Utility.getFilenameName(file) + "." + format;
 	}
 	
 	@Get
@@ -582,11 +614,12 @@ public class SoftwareReuseRestlet extends ServerResource
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
 		String part3 = (parts.size() > 3) ? parts.get(3) : "";
 		String part4 = (parts.size() > 4) ? parts.get(4) : "";
-		String application = null, task = null, file = null, format = null, url;
+		String application = null, task = null, file = null, format = null, result, url;
 		String buffer;
 		Form form;
 		Parameter p;
-		
+		int session;
+				
 		if(part0.isEmpty()){
 			return new StringRepresentation(getApplicationStack(), MediaType.TEXT_HTML);
 		}else if(part0.equals("software")){
@@ -608,10 +641,23 @@ public class SoftwareReuseRestlet extends ServerResource
 							task = part2;
 							format = part3;
 							file = URLDecoder.decode(part4);
+							session = -1;
 							
-							file = getReference().getBaseRef() + "file/" + convertLater(application, task.equals("convert") ? "" : task, file, format);
+							if(file.startsWith(getReference().getBaseRef() + "/file/")){		//Locally cached files already have session ids
+								session = SoftwareReuseServer.getSession(file);
+								result = getReference().getBaseRef() + "file/" + Utility.getFilenameName(file) + "." + format;
+							}else{																													//Remote files must be assigned a session id
+								session = server.getSession();
+								result = getReference().getBaseRef() + "file/" + session + "_" + Utility.getFilenameName(file) + "." + format;
+							}
+														
+							executeTaskLater(session, application, task, file, format);
 							
-							return new StringRepresentation("<a href=" + file + ">" + file + "</a>", MediaType.TEXT_HTML);
+							if(isTextOnly(Request.getCurrent())){
+								return new StringRepresentation(result, MediaType.TEXT_PLAIN);
+							}else{
+								return new StringRepresentation("<a href=" + result + ">" + result + "</a>", MediaType.TEXT_HTML);
+							}
 						}
 					}
 				}
@@ -624,7 +670,7 @@ public class SoftwareReuseRestlet extends ServerResource
 				buffer += "convert";
 				
 				return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
-			}else{
+			}else{				
 				form = getRequest().getResourceRef().getQueryAsForm();
 				p = form.getFirst("application"); if(p != null) application = p.getValue();
 				p = form.getFirst("task"); if(p != null) task = p.getValue();
@@ -638,7 +684,7 @@ public class SoftwareReuseRestlet extends ServerResource
 				}else{
 					if(part1.startsWith("get")){
 						return new StringRepresentation(getForm(false, application, application!=null), MediaType.TEXT_HTML);
-					}else if(part1.equals("post")){
+					}else if(part1.startsWith("post")){
 						return new StringRepresentation(getForm(true, application, application!=null), MediaType.TEXT_HTML);
 					}else if(part1.equals("convert")){
 						return new StringRepresentation(getConvertForm(), MediaType.TEXT_HTML);
@@ -649,11 +695,12 @@ public class SoftwareReuseRestlet extends ServerResource
 			}
 		}else if(part0.equals("file")){
 			if(!part1.isEmpty()){	
-				file = server.getCachePath() + "0_" + part1;
+				file = server.getCachePath() + part1;
 				
 				if(Utility.exists(file)){
 					return new FileRepresentation(file, MediaType.MULTIPART_ALL);
 				}else{
+					setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 					return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 				}
 			}else{
@@ -689,10 +736,16 @@ public class SoftwareReuseRestlet extends ServerResource
 	{
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
+		String part1 = (parts.size() > 1) ? parts.get(1) : "";
+		String part2 = (parts.size() > 2) ? parts.get(2) : "";
+		String part3 = (parts.size() > 3) ? parts.get(3) : "";
 		TreeMap<String,String> parameters = new TreeMap<String,String>();
-		String application, task, file = null, format, url;
-				
-		if(!part0.isEmpty() && part0.equals("form")){
+		String application = null, task = null, file = null, format = null, result;
+		int session = server.getSession();
+		boolean FORM_POST = !part0.isEmpty() && part0.equals("form");
+		boolean TASK_POST = !part1.isEmpty() && !part2.isEmpty() && !part3.isEmpty();
+		
+		if(FORM_POST || TASK_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
 				DiskFileItemFactory factory = new DiskFileItemFactory();
 				factory.setSizeThreshold(1000240);
@@ -709,21 +762,33 @@ public class SoftwareReuseRestlet extends ServerResource
 						if(fi.getName() == null){
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
 						}else{
-							fi.write(new File(server.getCachePath() + "0_" + fi.getName()));
-							file = getReference().getBaseRef() + "/file/" + fi.getName();
+							fi.write(new File(server.getCachePath() + session + "_" + fi.getName()));
+							file = getReference().getBaseRef() + "file/" + session + "_" + fi.getName();
 						}
 					}
 				}catch(Exception e) {e.printStackTrace();}
 			}
 			
-			application = parameters.get("application");
-			task = parameters.get("task");
-			format = parameters.get("format");
-						
-			if(application != null && task != null && file != null && format != null){
-				url = getRootRef() + "software/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
+			if(FORM_POST){
+				application = parameters.get("application");
+				task = parameters.get("task");
+				format = parameters.get("format");
+			}else if(TASK_POST){
+				application = part1;
+				task = part2;
+				format = part3;				
+			}
+			
+			if(application != null && task != null && file != null && format != null){		
+				executeTaskLater(session, application, task, file, format);
 				
-				return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
+				result = getReference().getBaseRef() + "file/" + Utility.getFilenameName(file) + "." + format;
+
+				if(isTextOnly(Request.getCurrent())){
+					return new StringRepresentation(result, MediaType.TEXT_PLAIN);
+				}else{
+					return new StringRepresentation("<a href=" + result + ">" + result + "</a>", MediaType.TEXT_HTML);
+				}
 			}
 		}
 		
@@ -766,6 +831,22 @@ public class SoftwareReuseRestlet extends ServerResource
 	  return text;
 	}
 
+	/**
+	 * Check if the given request is for plain text only.
+	 * @param request the request
+	 * @return true if plain/text only
+	 */
+	public static boolean isTextOnly(Request request)
+	{
+		List<Preference<MediaType>> types = request.getClientInfo().getAcceptedMediaTypes();
+
+		if(types.size() == 1 && types.get(0).getMetadata().getName().equals("text/plain")){
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
 	/**
 	 * Start the restful service.
 	 * @param args the input arguments

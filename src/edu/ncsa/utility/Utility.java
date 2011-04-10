@@ -453,10 +453,11 @@ public class Utility
   
   /**
    * Read the contents of the specified URL and store it in a string.
-   *  @param url the URL to read
-   *  @return a string containing the URL contents
+   * @param url the URL to read
+   * @param type the accepted content type
+   * @return a string containing the URL contents
    */
-  public static String readURL(String url)
+  public static String readURL(String url, String type)
   {
     HttpURLConnection.setFollowRedirects(false);
     HttpURLConnection conn = null;
@@ -468,7 +469,8 @@ public class Utility
     int tmpi;
     
     try{
-      conn = (HttpURLConnection)new URL(url).openConnection();
+      conn = (HttpURLConnection)new URL(url).openConnection();     
+      if(type != null) conn.setRequestProperty("Accept", type);
       conn.connect();
       
       if(url.endsWith(".gz")){
@@ -498,6 +500,16 @@ public class Utility
     }
     
     return contents;
+  }
+  
+  /**
+   * Read the contents of the specified URL and store it in a string.
+   * @param url the URL to read
+   * @return a string containing the URL contents
+   */
+  public static String readURL(String url)
+  {
+  	return readURL(url, null);
   }
   
   /**
@@ -1585,8 +1597,8 @@ public class Utility
 			}
 		}catch(Exception e) {e.printStackTrace();}
 	}
-  
-  /**
+	
+	/**
    * A main for debug purposes.
    * @param args command line arguments
    */
@@ -1620,8 +1632,13 @@ public class Utility
   		System.out.println(Utility.windowsDrivePath("C:/Users/kmchenry/Files/Data/Images/scar1.jpg"));
   	}
   	
+  	if(false){
+  		System.out.println("Shortcut target: " + Utility.getShortcutTarget("C:/Users/kmchenry/Desktop/Notes.txt.lnk"));
+  		//System.out.println("Shorcut target: " + Utility.getShortcutTarget("C:/Users/kmchenry/Desktop/Microsoft Office Word 2007.lnk"));
+  	}
+  	
   	if(true){
-  		System.out.println(Utility.getShortcutTarget("C:/Users/kmchenry/Desktop/Notes.txt.lnk"));
+  		System.out.println(readURL("http://localhost:8182/software/A3DReviewer/convert/igs/http%3A%2F%2Fisda.ncsa.uiuc.edu%2Fkmchenry%2Ftmp%2FPolyglot2%2FPolyglotDemo%2Fpump.stp", "text/plain"));
   	}
   }
 }

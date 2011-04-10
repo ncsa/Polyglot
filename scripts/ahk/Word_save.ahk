@@ -1,4 +1,4 @@
-;Microsoft Office Word (2010)
+;Microsoft Word (2010)
 ;document
 ;doc, docx, odt
 

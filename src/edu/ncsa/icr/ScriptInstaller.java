@@ -77,6 +77,8 @@ public class ScriptInstaller
 		String arch = System.getProperty("os.arch");
 		TreeSet<String> scripted_software = new TreeSet<String>();
 		Vector<String> local_scripted_software = new Vector<String>();
+		Vector<Vector<String>> local_scripted_software_versions = new Vector<Vector<String>>();
+		Vector<String> local_scripted_software_version = new Vector<String>();
 		Vector<String> scripts = new Vector<String>();
 		TreeMap<String,String> newest_scripts = new TreeMap<String,String>();
 		Process p;
@@ -84,6 +86,7 @@ public class ScriptInstaller
 		String method, line, software, result;
 		String filename;
 		int timestamp;
+		int tmpi;
 		boolean FOUND;
 		
 		//Build software list
@@ -227,15 +230,51 @@ public class ScriptInstaller
 				System.out.println();
 			}
 			
-			//Get scripts
+			//Get the versions available for the scripted local software
 			software = "";
 			
 			for(int i=0; i<local_scripted_software.size(); i++){
-				if(software.isEmpty()){
-					software = local_scripted_software.get(i);
+				if(!software.isEmpty()) software += ", ";
+				software += local_scripted_software.get(i);
+			}
+				
+			result = Utility.readURL(csr_script_url + "get_versions.php?software=" + Utility.urlEncode(software));
+			scanner = new Scanner(result);
+			
+			while(scanner.hasNextLine()){
+				line = scanner.nextLine().trim();
+				if(line.isEmpty()) continue;
+				line = line.substring(0, line.length()-4);		//Remove "<br>"
+				local_scripted_software_versions.add(Utility.split(line, ',', true, true));
+			}
+			
+			//If more than one version ask the user
+			for(int i=0; i<local_scripted_software_versions.size(); i++){
+				if(!local_scripted_software_versions.get(i).isEmpty()){
+					if(local_scripted_software_versions.get(i).size() == 1){
+						local_scripted_software_version.add(local_scripted_software_versions.get(i).firstElement());
+					}else{
+						System.out.println("  found " + local_scripted_software_versions.get(i).size() + " versions of \"" + local_scripted_software.get(i) + "\":");
+
+						for(int j=0; j<local_scripted_software_versions.get(i).size(); j++){
+							System.out.println("    [" + (j+1) + "] " + local_scripted_software_versions.get(i).get(j));
+						}
+						
+						tmpi = Integer.valueOf(System.console().readLine("  enter choice: "))-1;
+						local_scripted_software_version.add(local_scripted_software_versions.get(i).get(tmpi));
+					}
 				}else{
-					software += ", " + local_scripted_software.get(i);
+					local_scripted_software_version.add(null);
 				}
+			}
+			
+			//Get the scripts
+			software = "";
+			
+			for(int i=0; i<local_scripted_software.size(); i++){
+				if(!software.isEmpty()) software += ", ";
+				software += local_scripted_software.get(i);
+				if(local_scripted_software_version.get(i) != null) software += "(" + local_scripted_software_version.get(i) + ")";
 			}
 				
 			result = Utility.readURL(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software));

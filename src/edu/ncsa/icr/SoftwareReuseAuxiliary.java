@@ -1327,19 +1327,19 @@ public class SoftwareReuseAuxiliary
 		/**
 		 * Add a sequence of subtasks that will allow an application to go from the input to the output format.
 		 * @param application_string an applications string representation (can be null)
-		 * @param operation_hint a hint as to an operation to use (can be null)
+		 * @param task_string the task to perform (null assumed to be conversion)
 		 * @param input_data the input file
 		 * @param output_data the output file
 		 */
-		public void addSubtasks(String application_string, String operation_hint, Data input_data, Data output_data)
+		public void addSubtasks(String application_string, String task_string, Data input_data, Data output_data)
 		{
 			Pair<Integer,Integer> apop = null, apop0, apop1, apop2;
 			
 			//Attempt a direct conversion operation
-			if(operation_hint == null || operation_hint.isEmpty()){
+			if(task_string == null || task_string.isEmpty() || task_string.equals("convert")){
 				apop = getApplicationOperation(application_string, "convert", input_data, output_data);
 			}else{
-				apop = getApplicationOperation(application_string, operation_hint, input_data, output_data);
+				apop = getApplicationOperation(application_string, task_string, input_data, output_data);
 			}
 			
 			if(apop != null){
@@ -1353,11 +1353,11 @@ public class SoftwareReuseAuxiliary
 					if(apop1 == null) apop1 = getApplicationOperation(applications.get(apop0.first).toString(), "export", null, output_data);
 		
 					if(apop1 != null){
-						if(operation_hint == null || operation_hint.isEmpty()){
+						if(task_string == null || task_string.isEmpty() || task_string.equals("convert")){
 							task.add(new Subtask(apop0.first, apop0.second, input_data, null));
 							task.add(new Subtask(apop1.first, apop1.second, input_data, output_data));
 						}else{
-							apop2 = getApplicationOperation(applications.get(apop0.first).toString(), operation_hint, null, null);
+							apop2 = getApplicationOperation(applications.get(apop0.first).toString(), task_string, null, null);
 							
 							if(apop2 != null){
 								task.add(new Subtask(apop0.first, apop0.second, input_data, null));

@@ -18,7 +18,11 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 {
 	private static TreeMap<RemoteTaskInfo, TreeSet<String>> tasks = new TreeMap<RemoteTaskInfo, TreeSet<String>>();
 	private static TreeSet<String> servers = new TreeSet<String>();
+	
 	private static String[] servers_array = new String[0];
+	private static TreeSet<String> applications = new TreeSet<String>();
+	private static TreeMap<String,String> name_map = new TreeMap<String,String>();
+	private static TreeMap<String,String> server_map = new TreeMap<String,String>();
 	
 	/**
 	 * Record the existence of a software server and the applications/tasks it provides.
@@ -26,7 +30,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	 */
 	public synchronized static void addServer(String server)
 	{
-		Vector<String> applications, application_tasks, task_outputs, task_inputs;
+		Vector<String> server_applications, application_tasks, task_outputs, task_inputs;
 		Vector<Vector<String>> task_inputs_outputs;
 		RemoteTaskInfo rti;
 		String server_url = "http://" + server + "/";
@@ -37,9 +41,9 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 			System.out.print("Adding server: " + server + " ");
 			servers.add(server);
 			servers_array = servers.toArray(new String[0]);
-			applications = getEndpointValues(server_url + "software");
+			server_applications = getEndpointValues(server_url + "software");
 			
-			for(String application : applications){
+			for(String application : server_applications){
 				tmpi = application.indexOf('(');
 				
 				if(tmpi >= 0){
@@ -49,6 +53,9 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 					application_name = application;
 				}
 				
+				applications.add(application);
+				name_map.put(application, application_name);
+				server_map.put(application, server_url);
 				System.out.print(".");
 				
 				application_tasks = getEndpointValues(server_url + "software/" + application);
@@ -86,13 +93,15 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	{
 		String server;
 		RemoteTaskInfo rti;
-				
+		boolean SERVER_DROPPED = false;
+		
 		for(Iterator<String> itr1=servers.iterator(); itr1.hasNext();){
 			server = itr1.next();
 			
 			if(SoftwareReuseRestlet.queryEndpoint("http://" + server + "/alive") == null){
 				System.out.println("Dropping: " + server);
 				itr1.remove();
+				SERVER_DROPPED = true;
 				
 				//Remove associated tasks
 				for(Iterator<RemoteTaskInfo> itr2=tasks.keySet().iterator(); itr2.hasNext();){
@@ -105,6 +114,14 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		
 		if(servers_array.length != servers.size()){
 			servers_array = servers.toArray(new String[0]);
+		}
+		
+		if(SERVER_DROPPED){
+			applications.clear();
+			
+			for(Iterator<RemoteTaskInfo> itr = tasks.keySet().iterator(); itr.hasNext();){
+				applications.add(itr.next().application_alias);
+			}
 		}
 	}
 	
@@ -130,14 +147,9 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	public String getApplications()
 	{
 		String buffer = "";
-		TreeSet<String> applications = new TreeSet<String>();
-				
-		for(RemoteTaskInfo rti : tasks.keySet()){
-			applications.add(rti.application_alias + " (" + rti.application_name + ")");
-		}
 		
 		for(String application : applications){
-			buffer += application + "\n";
+			buffer += application + " (" + name_map.get(application) + ")\n";
 		}
 		
 		return buffer;
@@ -253,16 +265,45 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	}
 	
 	/**
+	 * Get an icon representation of the available software.
+	 * @return the HTML for the icon representation
+	 */
+	public String getApplicationStack()
+	{
+		String buffer = "";
+		
+		for(String application : applications){
+			buffer += "<div style=\"float:left\">\n";
+			buffer += "<table>\n";
+			buffer += "<tr><td align=\"center\">\n";
+			buffer += "<a href=\"form/get?application=" + application + "\">";
+			buffer += "<img src=\"" + server_map.get(application) + "image/" + application + ".jpg\" width=\"50\" border=\"0\">";
+			buffer += "</a>\n";
+			buffer += "</td></tr><tr><td align=\"center\">\n";
+			buffer += "<font size=\"-1\">" + name_map.get(application) + "</font>\n";
+			buffer += "</td></tr>\n";
+			buffer += "</table>\n";
+			buffer += "</div>\n";
+			buffer += "\n";
+		}
+		
+		return buffer;
+	}
+	
+	/**
 	 * Get a web form interface for this restful service.
+	 * @param selected_application the default application
+	 * @param HIDE_APPLICATIONS true if applications menu should be hidden
 	 * @return the form
 	 */
-	public String getForm()
+	public String getForm(String selected_application, boolean HIDE_APPLICATIONS)
 	{		
 		TreeSet<Pair<String,String>> applications = new TreeSet<Pair<String,String>>();
 		TreeSet<String> application_tasks = new TreeSet<String>();
 		TreeSet<String> task_inputs = new TreeSet<String>();
 		TreeSet<String> task_outputs = new TreeSet<String>();
 		String buffer = "";
+		String icon_url;
 		int count;
 		boolean FIRST_BLOCK;
 		boolean FIRST_VALUE;
@@ -378,15 +419,49 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		}
 		
 		buffer += "}\n";
+		buffer += "\n";
+		buffer += "function setAPICall(){\n";
+		buffer += "  var select = document.getElementById('application');\n";
+		buffer += "  var application = select.options[select.selectedIndex].value;\n";
+		buffer += "  var select = document.getElementById('task');\n";
+		buffer += "  var task = select.options[select.selectedIndex].value;\n";
+		buffer += "  var file = document.getElementById('file').value;\n";
+		buffer += "  var select = document.getElementById('format');\n";
+		buffer += "  var format = select.options[select.selectedIndex].value;\n";
+		buffer += "  var api_url = \"http://\" + location.host + \"/software/\" + application + \"/\" + task + \"/\" + format + \"/\" + encodeURIComponent(file);\n";
+		buffer += "  var api_html = \"http://\" + location.host + \"/software/<font color=\\\"#ff7777\\\">\" + application + \"</font>/<font color=\\\"#77ff77\\\">\" + task + \"</font>/<font color=\\\"#7777ff\\\">\" + format + \"</font>/<font color=\\\"#777777\\\">\" + encodeURIComponent(file) + \"</font>\";\n";
+		buffer += "  \n";
+		buffer += "  api.innerHTML = \"<i><b><font color=\\\"#777777\\\">RESTful API call</font></b><br><br><a href=\\\"\" + api_url + \"\\\"style=\\\"text-decoration:none; color:#777777\\\">\" + api_html + \"</a></i>\";\n";
+		buffer += "  setTimeout('setAPICall()', 500);\n";
+		buffer += "}\n";
 		buffer += "</script>\n\n";
 		
+		buffer += "<center>\n";
 		buffer += "<form name=\"converson\" action=\"form/\" method=\"get\">\n";
 		buffer += "<table>\n";
-		buffer += "<tr><td><b>Application:</b></td>\n";
-		buffer += "<td><select name=\"application\" id=\"application\" onchange=\"setTasks();\">\n";
+		
+		if(selected_application != null && HIDE_APPLICATIONS){			
+			buffer += "<tr><td>";
+			icon_url = server_map.get(selected_application) + "image/" + selected_application + ".jpg";
+			if(Utility.existsURL(icon_url)) buffer += "<img src=\"" + icon_url + "\" width=\"50\" border=\"0\">";
+			buffer += "</td><td><h2>" + name_map.get(selected_application) + "</h2></td></tr>\n";
+		}
+		
+		buffer += "<tr><td>";
+		if(!HIDE_APPLICATIONS) buffer += "<b>Application:</b>";
+		buffer += "</td>\n";
+		buffer += "<td><select name=\"application\" id=\"application\" onchange=\"setTasks();\"";
+		if(HIDE_APPLICATIONS) buffer += " style=\"visibility:hidden;\"";
+		buffer += ">\n";
 		
 		for(Pair<String,String> application : applications){
-			buffer += "<option value=\"" + application.first + "\">" + application.second + "</option>\n";
+			buffer += "<option value=\"" + application.first + "\"";
+			
+			if(selected_application != null && selected_application.equals(application.first)){
+				buffer += " selected";
+			}
+			
+			buffer += ">" + application.second + "</option>\n";
 		}
 		
 		buffer += "</select></td></tr>\n";
@@ -436,7 +511,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		}
 		
 		buffer += "</div></font></i></td></tr>\n";
-		buffer += "<tr><td><b>File:</b></td><td><input type=\"text\" name=\"file\" size=\"100\"></td></tr>\n";
+		buffer += "<tr><td><b>File URL:</b></td><td><input type=\"text\" name=\"file\" id=\"file\" size=\"100\"></td></tr>\n";
 		buffer += "<tr><td><b>Format:</b></td>\n";
 		buffer += "<td><select name=\"format\" id=\"format\">\n";
 		
@@ -446,10 +521,28 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		
 		buffer += "</select></td></tr>\n";		
 		buffer += "<tr><td></td><td><input type=\"submit\" value=\"Submit\"></td></tr>\n";
+		buffer += "<tr><td height=\"25\"></td><td></td></tr>\n";
+		buffer += "<tr><td></td><td align=\"center\"><div name=\"api\" id=\"api\"></div></td></tr>\n";
 		buffer += "</table>\n";
 		buffer += "</form>";
+		buffer += "</center>\n";
+		buffer += "\n";
+		buffer += "<script type=\"text/javascript\">setAPICall();</script>\n";		
+		
+		if(selected_application != null){
+			buffer += "<script type=\"text/javascript\">setTasks();</script>\n";
+		}
 		
 		return buffer;
+	}
+	
+	/**
+	 * Get a web form interface for this restful service.
+	 * @return the form
+	 */
+	public String getForm()
+	{
+		return getForm(null, false);
 	}
 	
 	/**
@@ -480,7 +573,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		RemoteTaskInfo rti;
 		
 		if(part0.isEmpty()){
-			return new StringRepresentation("Manager", MediaType.TEXT_PLAIN);
+			return new StringRepresentation(getApplicationStack(), MediaType.TEXT_HTML);
 		}else if(part0.equals("software")){
 			if(part1.isEmpty()){
 				return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
@@ -540,7 +633,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 
 				return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
 			}else{
-				return new StringRepresentation(getForm(), MediaType.TEXT_HTML);
+				return new StringRepresentation(getForm(application, application!=null), MediaType.TEXT_HTML);
 			}
 		}else if(part0.equals("register")){
 			if(part1.isEmpty()){
