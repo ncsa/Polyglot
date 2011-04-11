@@ -1,6 +1,6 @@
 package edu.ncsa.icr;
-import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
-import edu.ncsa.icr.SoftwareReuseAuxiliary.Application;
+import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.icr.ICRAuxiliary.Application;
 import edu.ncsa.utility.*;
 import java.util.*;
 import java.io.*;
@@ -20,9 +20,9 @@ import org.apache.commons.fileupload.disk.*;
  * Think of this as an extended software reuse server.
  * @author Kenton McHenry
  */
-public class SoftwareReuseRestlet extends ServerResource
+public class SoftwareServerRestlet extends ServerResource
 {
-	private static SoftwareReuseServer server;
+	private static SoftwareServer server;
 	private static Vector<Application> applications;
 	private static Vector<TreeSet<TaskInfo>> application_tasks;
 	private static TreeMap<String,Application> alias_map = new TreeMap<String,Application>();
@@ -32,7 +32,7 @@ public class SoftwareReuseRestlet extends ServerResource
 	 */
 	public static void initialize()
 	{		
-		server = new SoftwareReuseServer("SoftwareReuseServer.ini");
+		server = new SoftwareServer("SoftwareReuseServer.ini");
 		applications = server.getApplications();
 		application_tasks = Task.getApplicationTasks(applications);
 		
@@ -566,7 +566,7 @@ public class SoftwareReuseRestlet extends ServerResource
 				
 		if(session >= 0){
 			if(file.startsWith(getReference().getBaseRef() + "file/")){	//Remove session id from filenames of locally cached files
-				file = SoftwareReuseServer.getFilename(Utility.getFilename(file));
+				file = SoftwareServer.getFilename(Utility.getFilename(file));
 			}else{																												//Download remote files
 				Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file), file);
 				file = Utility.getFilename(file);
@@ -644,7 +644,7 @@ public class SoftwareReuseRestlet extends ServerResource
 							session = -1;
 							
 							if(file.startsWith(getReference().getBaseRef() + "/file/")){		//Locally cached files already have session ids
-								session = SoftwareReuseServer.getSession(file);
+								session = SoftwareServer.getSession(file);
 								result = getReference().getBaseRef() + "file/" + Utility.getFilenameName(file) + "." + format;
 							}else{																													//Remote files must be assigned a session id
 								session = server.getSession();
@@ -899,7 +899,7 @@ public class SoftwareReuseRestlet extends ServerResource
 				@Override
 				public Restlet createInboundRoot(){
 					Router router = new Router(getContext());
-					router.attachDefault(SoftwareReuseRestlet.class);
+					router.attachDefault(SoftwareServerRestlet.class);
 					return router;
 				}
 			};

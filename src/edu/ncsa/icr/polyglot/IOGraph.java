@@ -1,7 +1,7 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.*;
-import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
+import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
@@ -31,7 +31,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	 * Class constructor.
 	 * @param icr an ICR client
 	 */
-	public IOGraph(SoftwareReuseClient icr)
+	public IOGraph(SoftwareServerClient icr)
 	{
 		Vector<Application> applications = icr.getApplications();
 		Application application;
@@ -1721,7 +1721,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
     int count = 0;
     
     if(true){
-    	SoftwareReuseClient icr = new SoftwareReuseClient("localhost", 30);
+    	SoftwareServerClient icr = new SoftwareServerClient("localhost", 30);
     	iograph = new IOGraph<Data,Application>(icr);
     	icr.close();
     }else{

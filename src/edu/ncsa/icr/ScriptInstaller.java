@@ -1,5 +1,5 @@
 package edu.ncsa.icr;
-import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
+import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.image.ImageUtility;
 import edu.ncsa.utility.*;
 import java.io.*;

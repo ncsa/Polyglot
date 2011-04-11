@@ -1,5 +1,5 @@
 package edu.ncsa.icr;
-import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
+import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * An Imposed Code Reuse server.
  * @author Kenton McHenry
  */
-public class SoftwareReuseServer implements Runnable
+public class SoftwareServer implements Runnable
 {
 	private ServerSocket server_socket;
 	private Vector<Application> applications = new Vector<Application>();
@@ -35,7 +35,7 @@ public class SoftwareReuseServer implements Runnable
 	/**
 	 * Class constructor.
 	 */
-	public SoftwareReuseServer()
+	public SoftwareServer()
 	{
 		this(null);
 	}
@@ -44,7 +44,7 @@ public class SoftwareReuseServer implements Runnable
 	 * Class constructor.
 	 * @param filename the file name of an initialization file
 	 */
-	public SoftwareReuseServer(String filename)
+	public SoftwareServer(String filename)
 	{		
 		if(filename != null) loadINI(filename);
 		
@@ -558,7 +558,7 @@ public class SoftwareReuseServer implements Runnable
 	 */
 	public static void main(String args[])
 	{
-		SoftwareReuseServer server = new SoftwareReuseServer("SoftwareReuseServer.ini");
+		SoftwareServer server = new SoftwareServer("SoftwareReuseServer.ini");
 
 		//Test arguments
 		//args = new String[]{"-test", "../../Data/Temp/PolyglotDemo"};

@@ -1,6 +1,6 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
-import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
+import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
 import edu.illinois.ncsa.versus.engine.impl.*;
 import java.awt.*;

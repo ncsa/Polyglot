@@ -1,5 +1,5 @@
 package edu.ncsa.icr;
-import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
+import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.*;
  * An Imposed Code Reuse client interface.
  * @author Kenton McHenry
  */
-public class SoftwareReuseClient implements Comparable
+public class SoftwareServerClient implements Comparable
 {
 	private String server;
 	private int port;
@@ -26,7 +26,7 @@ public class SoftwareReuseClient implements Comparable
 	 * @param server the name of the software reuse server
 	 * @param port the port used for the connection
 	 */
-	public SoftwareReuseClient(String server, int port)
+	public SoftwareServerClient(String server, int port)
 	{				
 		this.server = server;
 		this.port = port;
@@ -56,7 +56,7 @@ public class SoftwareReuseClient implements Comparable
 	 * Class copy constructor.
 	 * @param icr an software reuse client session to copy
 	 */
-	public SoftwareReuseClient(SoftwareReuseClient icr)
+	public SoftwareServerClient(SoftwareServerClient icr)
 	{
 		this(icr.server, icr.port);
 	}
@@ -325,7 +325,7 @@ public class SoftwareReuseClient implements Comparable
 	 * Debug tests for a SoftwareReuseClient.
 	 * @param icr a software reuse client
 	 */
-	public static void debug(SoftwareReuseClient icr)
+	public static void debug(SoftwareServerClient icr)
 	{
 		String debug_input_path = "C:/Kenton/Data/NARA/DataSets/PolyglotDemo/";
 		String debug_output_path = "C:/Kenton/Data/Temp/";
@@ -459,7 +459,7 @@ public class SoftwareReuseClient implements Comparable
 		}
     
 	  //Establish connection
-		SoftwareReuseClient icr = new SoftwareReuseClient(server, port);
+		SoftwareServerClient icr = new SoftwareServerClient(server, port);
 		
 		//Process ICR requests
 		if(DEBUG){

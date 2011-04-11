@@ -13,7 +13,7 @@ import com.tightvnc.vncviewer.*;
  * A program for creating monkey scripts (monkey see, monkey do)
  * @author Kenton McHenry
  */
-public class SoftwareReuseMonkey_VNC extends Component implements ActionListener, MouseListener, MouseMotionListener, KeyListener
+public class SoftwareMonkey_VNC extends Component implements ActionListener, MouseListener, MouseMotionListener, KeyListener
 {
 	private Vector<String> servers = new Vector<String>();
 	private String data_path = "./";
@@ -54,7 +54,7 @@ public class SoftwareReuseMonkey_VNC extends Component implements ActionListener
 	 * Class constructor.
 	 * @param filename the name of the *.ini file to load
 	 */
-	public SoftwareReuseMonkey_VNC(String filename)
+	public SoftwareMonkey_VNC(String filename)
 	{
 		int index = 0;
 		
@@ -506,6 +506,6 @@ public class SoftwareReuseMonkey_VNC extends Component implements ActionListener
 	 */
 	public static void main(String[] args)
 	{
-		SoftwareReuseMonkey_VNC monkey = new SoftwareReuseMonkey_VNC("SoftwareReuseMonkey_VNC.ini");
+		SoftwareMonkey_VNC monkey = new SoftwareMonkey_VNC("SoftwareReuseMonkey_VNC.ini");
 	}
 }

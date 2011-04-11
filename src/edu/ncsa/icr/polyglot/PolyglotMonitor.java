@@ -42,11 +42,11 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable, ActionListen
 	{
 		TreeSet<String> servers = new TreeSet<String>();
 		Vector<String> clients = new Vector<String>();
-		TreeSet<SoftwareReuseClient> server_clients = new TreeSet<SoftwareReuseClient>();
+		TreeSet<SoftwareServerClient> server_clients = new TreeSet<SoftwareServerClient>();
 		TreeSet<String> server_client_strings = new TreeSet<String>();
-		Vector<SoftwareReuseClient> lost_server_clients = new Vector<SoftwareReuseClient>();
+		Vector<SoftwareServerClient> lost_server_clients = new Vector<SoftwareServerClient>();
 		Vector<String> lost_server_client_strings = new Vector<String>();
-		SoftwareReuseClient server_client;
+		SoftwareServerClient server_client;
 		Vector<String> tokens;
 		String server;
 		String line, buffer, color;
@@ -63,7 +63,7 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable, ActionListen
 			//Remove lost connections
 			lost_server_clients.clear();
 			
-			for(Iterator<SoftwareReuseClient> itr=server_clients.iterator(); itr.hasNext();){
+			for(Iterator<SoftwareServerClient> itr=server_clients.iterator(); itr.hasNext();){
 				server_client = itr.next();
 				
 				if(!servers.contains(server_client.toString())){
@@ -95,7 +95,7 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable, ActionListen
 				server = itr.next();
 				
 				if(!server_client_strings.contains(server)){
-					server_client = new SoftwareReuseClient(Utility.getHost(server), Utility.getPort(server));
+					server_client = new SoftwareServerClient(Utility.getHost(server), Utility.getPort(server));
 					server_clients.add(server_client);
 					server_client_strings.add(server_client.toString());
 				}
@@ -113,7 +113,7 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable, ActionListen
 			
 			count = 0;
 			
-			for(Iterator<SoftwareReuseClient> itr=server_clients.iterator(); itr.hasNext();){
+			for(Iterator<SoftwareServerClient> itr=server_clients.iterator(); itr.hasNext();){
 				server_client = itr.next(); 
 				count++;
 				

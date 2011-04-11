@@ -1,9 +1,9 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.*;
-import edu.ncsa.icr.SoftwareReuseAuxiliary.Application;
-import edu.ncsa.icr.SoftwareReuseAuxiliary.Data;
-import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
+import edu.ncsa.icr.ICRAuxiliary.Application;
+import edu.ncsa.icr.ICRAuxiliary.Data;
+import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.ServerSocket;
@@ -17,7 +17,7 @@ import java.util.*;
  */
 public class PolyglotSteward extends Polyglot implements Runnable
 {
-	private Vector<SoftwareReuseClient> sr_clients = new Vector<SoftwareReuseClient>();
+	private Vector<SoftwareServerClient> sr_clients = new Vector<SoftwareServerClient>();
 	private TreeSet<String> sr_client_strings = new TreeSet<String>();
 	private IOGraph<Data,Application> iograph = new IOGraph<Data,Application>();
 	private int application_flexibility = 0;
@@ -41,7 +41,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		application_flexibility = polyglot.application_flexibility;
 		
 		for(int i=0; i<polyglot.sr_clients.size(); i++){
-			add(new SoftwareReuseClient(polyglot.sr_clients.get(i)));
+			add(new SoftwareServerClient(polyglot.sr_clients.get(i)));
 		}
 	}
 	
@@ -59,7 +59,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	 * @param icr a software reuse client
 	 * @return true if successfully added
 	 */
-	public synchronized boolean add(SoftwareReuseClient icr)
+	public synchronized boolean add(SoftwareServerClient icr)
 	{
 		if(!sr_client_strings.contains(icr.toString())){
 			sr_client_strings.add(icr.toString());
@@ -80,7 +80,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	 */
 	public boolean add(String server, int port)
 	{
-		return add(new SoftwareReuseClient(server, port));
+		return add(new SoftwareServerClient(server, port));
 	}
 	
 	/**
@@ -88,7 +88,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	 * @param index the index of the desired client
 	 * @return the software reuse client
 	 */
-	public SoftwareReuseClient get(int index)
+	public SoftwareServerClient get(int index)
 	{
 		return sr_clients.get(index);
 	}
@@ -207,7 +207,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		Vector<Application> application_options = null;
 		FileData input, output;
 		Data data_last, data_next;
-		SoftwareReuseClient icr = null;
+		SoftwareServerClient icr = null;
 		String tmps;
 				
 		if(conversions != null){

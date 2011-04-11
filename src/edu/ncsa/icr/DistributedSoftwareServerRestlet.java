@@ -1,5 +1,5 @@
 package edu.ncsa.icr;
-import edu.ncsa.icr.SoftwareReuseAuxiliary.*;
+import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.util.*;
 import java.io.*;
@@ -14,7 +14,7 @@ import org.restlet.routing.*;
  * A restful interface to multiple software reuse servers.
  * @author Kenton McHenry
  */
-public class DistributedSoftwareReuseRestlet extends ServerResource
+public class DistributedSoftwareServerRestlet extends ServerResource
 {
 	private static TreeMap<RemoteTaskInfo, TreeSet<String>> tasks = new TreeMap<RemoteTaskInfo, TreeSet<String>>();
 	private static TreeSet<String> servers = new TreeSet<String>();
@@ -37,7 +37,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		String application_name;
 		int tmpi;
 		
-		if(SoftwareReuseRestlet.queryEndpoint(server_url + "alive") != null){
+		if(SoftwareServerRestlet.queryEndpoint(server_url + "alive") != null){
 			System.out.print("Adding server: " + server + " ");
 			servers.add(server);
 			servers_array = servers.toArray(new String[0]);
@@ -98,7 +98,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 		for(Iterator<String> itr1=servers.iterator(); itr1.hasNext();){
 			server = itr1.next();
 			
-			if(SoftwareReuseRestlet.queryEndpoint("http://" + server + "/alive") == null){
+			if(SoftwareServerRestlet.queryEndpoint("http://" + server + "/alive") == null){
 				System.out.println("Dropping: " + server);
 				itr1.remove();
 				SERVER_DROPPED = true;
@@ -552,7 +552,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	 */
 	private boolean isServerBusy(String server)
 	{		
-		return SoftwareReuseRestlet.queryEndpoint("http://" + server + "/busy").equals("true");
+		return SoftwareServerRestlet.queryEndpoint("http://" + server + "/busy").equals("true");
 	}
 
 	@Get
@@ -673,7 +673,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	public static Vector<String> getEndpointValues(String url)
 	{
 		Vector<String> values = new Vector<String>();
-		String text = SoftwareReuseRestlet.queryEndpoint(url);
+		String text = SoftwareServerRestlet.queryEndpoint(url);
 		Scanner scanner = new Scanner(text);
 				
 		while(scanner.hasNextLine()){
@@ -691,7 +691,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 	public static Vector<Vector<String>> getEndpointCommaSeparatedValues(String url)
 	{
 		Vector<Vector<String>> values = new Vector<Vector<String>>();
-		String text = SoftwareReuseRestlet.queryEndpoint(url);
+		String text = SoftwareServerRestlet.queryEndpoint(url);
 		String line;
 		Scanner scanner = new Scanner(text);
 
@@ -743,7 +743,7 @@ public class DistributedSoftwareReuseRestlet extends ServerResource
 				@Override
 				public Restlet createInboundRoot(){
 					Router router = new Router(getContext());
-					router.attachDefault(DistributedSoftwareReuseRestlet.class);
+					router.attachDefault(DistributedSoftwareServerRestlet.class);
 					return router;
 				}
 			};

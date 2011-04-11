@@ -7,7 +7,7 @@ import java.io.*;
  * Helper classes for the Imposed Code Reuse package.
  * @author Kenton McHenry
  */
-public class SoftwareReuseAuxiliary
+public class ICRAuxiliary
 {
 	/**
 	 * An container for some kind of data.
@@ -856,7 +856,7 @@ public class SoftwareReuseAuxiliary
     public Operation monitor_operation = null;
     public Operation exit_operation = null;
     public Operation kill_operation = null;
-  	public SoftwareReuseClient icr = null;		//An application belongs to an software reuse server (set by the client)!
+  	public SoftwareServerClient icr = null;		//An application belongs to an software reuse server (set by the client)!
 
     /**
      * Class constructor.
@@ -1047,7 +1047,7 @@ public class SoftwareReuseAuxiliary
 	 */
 	public static class Task
 	{
-		private SoftwareReuseClient icr = null;
+		private SoftwareServerClient icr = null;
 		private Vector<Application> applications = null;
 		private Vector<Subtask> task = new Vector<Subtask>();
 		private TreeMap<String,FileData> files = new TreeMap<String,FileData>();
@@ -1057,7 +1057,7 @@ public class SoftwareReuseAuxiliary
 		 * Class constructor.
 		 * @param icr the software reuse client we will create tasks for
 		 */
-		public Task(SoftwareReuseClient icr)
+		public Task(SoftwareServerClient icr)
 		{
 			this.icr = icr;
 			applications = icr.getApplications();
@@ -1070,7 +1070,7 @@ public class SoftwareReuseAuxiliary
 		 * @param input_data the input file
 		 * @param output_data the output file
 		 */
-		public Task(SoftwareReuseClient icr, String application_string, Data input_data, Data output_data)
+		public Task(SoftwareServerClient icr, String application_string, Data input_data, Data output_data)
 		{
 			this(icr);
 			addSubtasks(application_string, input_data, output_data);
@@ -1114,7 +1114,7 @@ public class SoftwareReuseAuxiliary
 		 * Get the associated software reuse client.
 		 * @return the associated software reuse client
 		 */
-		public SoftwareReuseClient getSoftwareReuseClient()
+		public SoftwareServerClient getSoftwareReuseClient()
 		{
 			return icr;
 		}
