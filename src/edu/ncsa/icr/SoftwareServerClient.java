@@ -429,9 +429,9 @@ public class SoftwareServerClient implements Comparable
     }
     
     //Read in *.ini file
-		if(Utility.exists("SoftwareReuseClient.ini")){	
+		if(Utility.exists("SoftwareServerClient.ini")){	
 		  try{
-		    BufferedReader ins = new BufferedReader(new FileReader("SoftwareReuseClient.ini"));
+		    BufferedReader ins = new BufferedReader(new FileReader("SoftwareServerClient.ini"));
 		    String key, value;
 		    
 		    while((line=ins.readLine()) != null){
@@ -440,7 +440,7 @@ public class SoftwareServerClient implements Comparable
 		        value = line.substring(line.indexOf('=')+1);
 		        
 		        if(key.charAt(0) != '#'){
-		        	if(key.equals("SoftwareReuseServer")){
+		        	if(key.equals("SoftwareServer")){
 		          	tmpi = value.lastIndexOf(':');
 		        		
 		        		if(tmpi != -1){

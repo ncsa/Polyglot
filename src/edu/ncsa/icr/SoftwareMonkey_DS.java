@@ -567,7 +567,7 @@ public class SoftwareMonkey_DS extends JPanel implements ActionListener, MouseLi
 		int screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length;
 		
 		if(screens > 1){
-			SoftwareMonkey_DS monkey = new SoftwareMonkey_DS("SoftwareReuseMonkey_DS.ini");
+			SoftwareMonkey_DS monkey = new SoftwareMonkey_DS("SoftwareMonkey_DS.ini");
 			Dimension screen_size = Toolkit.getDefaultToolkit().getScreenSize();
 
 	    JFrame frame = new JFrame("Monkey Script Session");

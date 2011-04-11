@@ -558,7 +558,7 @@ public class SoftwareServer implements Runnable
 	 */
 	public static void main(String args[])
 	{
-		SoftwareServer server = new SoftwareServer("SoftwareReuseServer.ini");
+		SoftwareServer server = new SoftwareServer("SoftwareServer.ini");
 
 		//Test arguments
 		//args = new String[]{"-test", "../../Data/Temp/PolyglotDemo"};

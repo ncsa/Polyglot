@@ -32,7 +32,7 @@ public class SoftwareServerRestlet extends ServerResource
 	 */
 	public static void initialize()
 	{		
-		server = new SoftwareServer("SoftwareReuseServer.ini");
+		server = new SoftwareServer("SoftwareServer.ini");
 		applications = server.getApplications();
 		application_tasks = Task.getApplicationTasks(applications);
 		
@@ -858,7 +858,7 @@ public class SoftwareServerRestlet extends ServerResource
 		
 		//Load *.ini file
 	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader("SoftwareReuseRestlet.ini"));
+	    BufferedReader ins = new BufferedReader(new FileReader("SoftwareServerRestlet.ini"));
 	    String line, key, value;
 	    int tmpi;
 	    

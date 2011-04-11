@@ -506,6 +506,6 @@ public class SoftwareMonkey_VNC extends Component implements ActionListener, Mou
 	 */
 	public static void main(String[] args)
 	{
-		SoftwareMonkey_VNC monkey = new SoftwareMonkey_VNC("SoftwareReuseMonkey_VNC.ini");
+		SoftwareMonkey_VNC monkey = new SoftwareMonkey_VNC("SoftwareMonkey_VNC.ini");
 	}
 }

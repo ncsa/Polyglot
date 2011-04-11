@@ -713,7 +713,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		
 		//Load *.ini file
 	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader("DistributedSoftwareReuseRestlet.ini"));
+	    BufferedReader ins = new BufferedReader(new FileReader("DistributedSoftwareServerRestlet.ini"));
 	    String line, key, value;
 	    
 	    while((line=ins.readLine()) != null){

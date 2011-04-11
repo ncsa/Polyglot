@@ -1,1 +1,0 @@
-cmd /c java -cp "%~dp0bin;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/misc/VncViewer.jar" -Xmx1g edu.ncsa.icr.ICRMonkey_VNC

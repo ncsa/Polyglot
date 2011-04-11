@@ -227,7 +227,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	        		if(steward_port >= 0){
 	        			polyglot.listen(steward_port);
 	        		}
-          	}else if(key.equals("SoftwareReuseServer")){
+          	}else if(key.equals("SoftwareServer")){
           		tmpi = value.lastIndexOf(':');
 	        		
 	        		if(tmpi != -1){

@@ -51,7 +51,7 @@ public class PolyglotWebInterface implements Runnable
           if(key.charAt(0) != '#'){
             if(key.equals("PolyglotPath")){
               path = Utility.unixPath(value) + "/";
-	          }else if(key.equals("SoftwareReuseServer")){
+	          }else if(key.equals("SoftwareServer")){
 	          	if(polyglot == null || !(polyglot instanceof PolyglotSteward)){
 	          		polyglot = new PolyglotSteward();
 	          	}

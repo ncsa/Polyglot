@@ -351,7 +351,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	}
 
 	/**
-	 * Start listening for SoftwareReuseServers.
+	 * Start listening for SoftwareServers.
 	 * @param port the port to listen to
 	 */
 	public void listen(int port)
@@ -468,7 +468,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#'){
-	        	if(key.equals("SoftwareReuseServer")){
+	        	if(key.equals("SoftwareServer")){
 	        		tmpi = value.lastIndexOf(':');
 	        		
 	        		if(tmpi != -1){
