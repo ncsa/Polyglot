@@ -4,6 +4,7 @@ import edu.ncsa.icr.ICRAuxiliary.Application;
 import edu.ncsa.utility.*;
 import java.util.*;
 import java.io.*;
+import java.lang.management.ManagementFactory;
 import java.net.*;
 import javax.servlet.*;
 import org.restlet.*;
@@ -26,6 +27,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static Vector<Application> applications;
 	private static Vector<TreeSet<TaskInfo>> application_tasks;
 	private static TreeMap<String,Application> alias_map = new TreeMap<String,Application>();
+	private static String public_path = "./";
 	
 	/**
 	 * Initialize.
@@ -39,6 +41,13 @@ public class SoftwareServerRestlet extends ServerResource
 		//Build alias map
 		for(int i=0; i<applications.size(); i++){
 			alias_map.put(applications.get(i).alias, applications.get(i));
+		}
+		
+		//Create public folder for results
+		public_path = server.getTempPath() + "public/";
+		
+		if(!Utility.exists(public_path)){
+			new File(public_path).mkdir();
 		}
 	}
 
@@ -563,11 +572,12 @@ public class SoftwareServerRestlet extends ServerResource
 	public synchronized void executeTask(int session, String application_alias, String task_string, String file, String format)
 	{
 		Vector<Subtask> task;
-				
+		String result;
+		
 		if(session >= 0){
 			if(file.startsWith(getReference().getBaseRef() + "file/")){	//Remove session id from filenames of locally cached files
 				file = SoftwareServer.getFilename(Utility.getFilename(file));
-			}else{																												//Download remote files
+			}else{																											//Download remote files
 				Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file), file);
 				file = Utility.getFilename(file);
 			}
@@ -575,7 +585,16 @@ public class SoftwareServerRestlet extends ServerResource
 			task = getTask(application_alias, task_string, file, format);
 			//Task.print(task, applications);
 			
-			server.executeTask("localhost", session, task);
+			result = server.executeTask("localhost", session, task);
+
+			//Create empty output if not created (e.g. when no conversion path was found)
+			if(result == null){
+				result = server.getCachePath() + session + "_" + Utility.getFilenameName(file) + "." + format;
+				Utility.touch(result);
+			}
+			
+			//Move result to public folder
+			Utility.copyFile(result, public_path + Utility.getFilename(result));
 		}
 	}
 	
@@ -695,7 +714,7 @@ public class SoftwareServerRestlet extends ServerResource
 			}
 		}else if(part0.equals("file")){
 			if(!part1.isEmpty()){	
-				file = server.getCachePath() + part1;
+				file = public_path + part1;
 				
 				if(Utility.exists(file)){
 					return new FileRepresentation(file, MediaType.MULTIPART_ALL);
@@ -722,6 +741,12 @@ public class SoftwareServerRestlet extends ServerResource
 			return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
 		}else if(part0.equals("busy")){
 			return new StringRepresentation("" + server.isBusy(), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("processors")){
+			return new StringRepresentation("" + Runtime.getRuntime().availableProcessors(), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("memory")){
+			return new StringRepresentation("" + Runtime.getRuntime().maxMemory(), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("load")){
+			return new StringRepresentation("" + ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage(), MediaType.TEXT_PLAIN);
 		}else{
 			return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
 		}

@@ -570,6 +570,101 @@ public class Utility
   }
   
   /**
+   * Download a file from the web.   
+   * @param path the location to save the file to
+   * @param url the URL to the file
+   * @return true if the download occurred without problems
+   */
+  public static boolean downloadFile(String path, String url)
+  {
+  	return downloadFile(path, null, url, false);
+  }
+  
+  /**
+   * Post a file to a URL.
+   * @param url the URL to post to
+   * @param filename the name of the file to post
+   * @param type the accepted content type
+   * @return a string the resulting URL contents
+   */
+  public static String postFile(String url, String filename, String type)
+  {
+    HttpURLConnection conn = null;
+    OutputStream os;
+    PrintWriter writer = null;
+    BufferedInputStream bis;
+    BufferedReader br;
+    StringBuilder sb = new StringBuilder();
+    String boundary = Long.toHexString(System.currentTimeMillis());
+    String response = "";
+    char[] char_buffer = new char[1024];
+    byte[] byte_buffer = new byte[1024];
+    int tmpi;
+    
+    try{
+      conn = (HttpURLConnection)new URL(url).openConnection();
+      conn.setDoInput(true);
+      conn.setDoOutput(true);
+      //conn.setRequestMethod("POST");
+      conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+      if(type != null) conn.setRequestProperty("Accept", type);
+      conn.connect();
+            
+      //Upload file
+      os = conn.getOutputStream();
+      writer = new PrintWriter(new OutputStreamWriter(os), true);
+      writer.println("--" + boundary);
+      writer.println("Content-Disposition: form-data; name=\"file\"; filename=\"" + getFilename(filename) + "\";");
+      writer.println("Content-Type: " + URLConnection.guessContentTypeFromName(getFilename(filename)));
+      writer.println("Content-Transfer-Encoding: binary");
+      writer.println();
+            
+      bis = new BufferedInputStream(new FileInputStream(filename));
+
+      do{
+        tmpi = bis.read(byte_buffer, 0, byte_buffer.length);
+        if(tmpi>0) os.write(byte_buffer, 0, tmpi);
+      }while(tmpi>=0);
+            
+      os.flush();
+      bis.close(); 
+
+      writer.println();
+      writer.println("--" + boundary + "--");
+      
+      //Get response
+      br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+      do{
+        tmpi = br.read(char_buffer, 0, char_buffer.length);
+        if(tmpi>0) sb.append(char_buffer, 0, tmpi);
+      }while(tmpi>=0);
+      
+      response = sb.toString();
+ 
+      conn.disconnect();
+    }catch(Exception e){
+      e.printStackTrace();
+    }finally{
+      if(writer != null) writer.close();
+      if(conn != null) conn.disconnect();
+    }
+    
+    return response;
+  }
+  
+  /**
+   * Post a file to a URL.
+   * @param url the URL to post to
+   * @param filename the name of the file to post
+   * @return a string the resulting URL contents
+   */
+  public static String postFile(String url, String filename)
+  {
+  	return postFile(url, filename, null);
+  }
+  
+  /**
    * Convert a string to an URL safe version (e.g. spaces -> %20).
    *  @param str the string to convert
    *  @return the URL safe version
@@ -1275,6 +1370,46 @@ public class Utility
   	return vector;
   }
   
+  /**
+   * Calculate the mean of the given vector's values
+   * @param vector the vector
+   * @return the mean value
+   */
+  public static double mean(Vector<Double> vector)
+  {
+  	double mean = 0;
+  	
+  	for(int i=0; i<vector.size(); i++){
+  		mean += vector.get(i);
+  	}
+  	
+  	if(!vector.isEmpty()) mean /= vector.size();
+  	
+  	return mean;
+  }
+  
+  /**
+   * Calculate the standard deviation of the given vector's values
+   * @param vector the vector
+   * @param mean the mean value
+   * @return the standard deviation
+   */
+  public static double std(Vector<Double> vector, double mean)
+  {
+  	double std = 0;
+  	double tmpd;
+  	
+  	for(int i=0; i<vector.size(); i++){
+  		tmpd = vector.get(i) - mean;
+  		std += tmpd*tmpd;
+  	}
+  	
+  	if(!vector.isEmpty()) std /= vector.size();
+  	std = Math.sqrt(std);
+  	
+  	return std;
+  }
+  
 	/**
 	 * Convert an integer into an array of 4 bytes.
 	 * @param integer the integer to convert
@@ -1638,7 +1773,8 @@ public class Utility
   	}
   	
   	if(true){
-  		System.out.println(readURL("http://localhost:8182/software/A3DReviewer/convert/igs/http%3A%2F%2Fisda.ncsa.uiuc.edu%2Fkmchenry%2Ftmp%2FPolyglot2%2FPolyglotDemo%2Fpump.stp", "text/plain"));
+  		//System.out.println(readURL("http://localhost:8182/software/A3DReviewer/convert/igs/http%3A%2F%2Fisda.ncsa.uiuc.edu%2Fkmchenry%2Ftmp%2FPolyglot2%2FPolyglotDemo%2Fpump.stp", "text/plain"));
+  		System.out.println(postFile("http://localhost:8182/software/A3DReviewer/convert/igs/", "C:/Users/kmchenry/Files/Data/NARA/DataSets/PolyglotDemo/pump.stp", "text/plain"));
   	}
   }
 }

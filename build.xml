@@ -263,6 +263,19 @@
 		
 		<echo file="${tmp_srs}/ScriptInstaller.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller %*</echo>
 		<echo file="${tmp_srs}/ScriptInstaller.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptInstaller $1 $2 $3 $4</echo>
+		<echo file="${tmp_zip}/TestScripts.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller -test 5 %*</echo>
+
+		<echo file="${tmp_zip}/Share.bat" append="false">taskkill /f /im java.exe${line.separator}</echo>
+		<echo file="${tmp_zip}/Share.bat" append="true">cd "%~dp0"${line.separator}</echo>
+		<echo file="${tmp_zip}/Share.bat" append="true">call ScriptInstaller -shortcut \"%1\"${line.separator}</echo>
+		<echo file="${tmp_zip}/Share.bat" append="true">SoftwareServerRestlet</echo>
+		
+		<echo file="${tmp_zip}/Windows7AddShare.reg" append="false">Windows Registry Editor Version 5.00${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell]${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share]${line.separator}</echo>
+		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">@="Share Software"${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share\command]${line.separator}</echo>
+		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">@="C:\\Users\\polyglot\\Desktop\\Polyglot2\\Share.bat \"%1\""</echo>
 		
 		<echo file="${tmp_srs}/SoftwareServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServer %*</echo>
 		<echo file="${tmp_srs}/SoftwareServer.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServer $1 $2</echo>

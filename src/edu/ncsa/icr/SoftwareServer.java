@@ -25,6 +25,7 @@ public class SoftwareServer implements Runnable
 	private int steward_port;
 	private String status = "idle";
 	
+	private boolean WINDOWS = false;
 	private boolean HANDLE_OPERATION_OUTPUT = false;
 	private boolean SHOW_OPERATION_OUTPUT = false;
 	private boolean ENABLE_MONITORS = false;
@@ -47,6 +48,7 @@ public class SoftwareServer implements Runnable
 	public SoftwareServer(String filename)
 	{		
 		if(filename != null) loadINI(filename);
+		WINDOWS = System.getProperty("os.name").contains("Windows");
 		
 		try{
 			server_socket = new ServerSocket(port);
@@ -253,6 +255,15 @@ public class SoftwareServer implements Runnable
 	}
 	
 	/**
+	 * Get the servers temp path.
+	 * @return the servers temp path
+	 */
+	public String getTempPath()
+	{
+		return temp_path;
+	}
+	
+	/**
 	 * Get a new session number.
 	 * @return a session number
 	 */
@@ -275,8 +286,9 @@ public class SoftwareServer implements Runnable
    * @param host the host requesting this task execution
    * @param session the session id
    * @param task a list of subtasks to execute
+   * @return the result (i.e. the last output file)
    */
-  public synchronized void executeTask(String host, int session, Vector<Subtask> task)
+  public synchronized String executeTask(String host, int session, Vector<Subtask> task)
   {
   	Subtask subtask;
   	Application application;
@@ -285,8 +297,10 @@ public class SoftwareServer implements Runnable
   	Data input_data, output_data;
   	
   	CachedFileData input_file_data, output_file_data;
-  	String source, target;
+  	String source, target, temp;
+  	String temp_target, temp_target_path;
   	String command = "";
+  	String result = null;
   	boolean COMMAND_COMPLETED;
   	boolean TASK_COMPLETED = false;
   	
@@ -302,21 +316,41 @@ public class SoftwareServer implements Runnable
 	  		output_data = subtask.output_data;	
 				source = null;
 				target = null;
+				temp_target = null;
 				
 				status = "executing, " + application.name + ", " + operation.name + ", " + input_data.toString();
 				
 				//Set the source, target, and command to execute
 				if(input_data != null && input_data instanceof CachedFileData){
 	  			input_file_data = (CachedFileData)input_data;
-	  			source = Utility.windowsPath(cache_path) + input_file_data.getCacheFilename(session);
+	  			source = cache_path + input_file_data.getCacheFilename(session);
+	  			if(WINDOWS) source = Utility.windowsPath(source);
 				}
 				
 				if(output_data != null && output_data instanceof CachedFileData){
 	  			output_file_data = (CachedFileData)output_data;
-	  			target = Utility.windowsPath(cache_path) + output_file_data.getCacheFilename(session);
+	  			target = cache_path + output_file_data.getCacheFilename(session);
+	  			result = target;
+	  			
+	  			//Prevent applications from complaining about overwriting files
+	  			temp_target = null;
+	  			
+	  			if(Utility.exists(target)){	
+	  			  //Create a new temporary directory (import to not change name as scripts can use the name)
+	  				temp_target_path = temp_path + System.currentTimeMillis() + "/";				
+	  				if(!Utility.exists(temp_target_path)) new File(temp_target_path).mkdir();
+	  				
+		  			temp_target = temp_target_path + Utility.getFilename(target);
+		  			if(WINDOWS) temp_target = Utility.windowsPath(temp_target);
+	  			}
+	  			
+	  			if(WINDOWS) target = Utility.windowsPath(target);
 				}
+				
+				temp = temp_path + session + "_";
+				if(WINDOWS) temp = Utility.windowsPath(temp);
 		  	
-		  	command = Script.getCommand(operation.script, source, target, Utility.windowsPath(temp_path) + session);
+		  	command = Script.getCommand(operation.script, source, temp_target != null ? temp_target : target, temp);
 		  	System.out.print("[" + host + "](" + session + "): " + command + " ");
 		  	
 		  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
@@ -338,11 +372,18 @@ public class SoftwareServer implements Runnable
           }
 		  	}
 		  	
-		  	if(j == task.size()-1) TASK_COMPLETED = true;		//If we got past the last subtask then the task is complete!
+		  	//Move the output if a temporary target was used
+		  	if(temp_target != null) Utility.copyFile(temp_target, target);
+		  	
+		  	//If we got past the last subtask then the task is complete!
+		  	if(j == task.size()-1) TASK_COMPLETED = true;
 	  	}
 	  	
 	  	if(TASK_COMPLETED) break;
 		}
+		
+		//Guarantee output by creating an empty file if need be
+		if(result != null && !Utility.exists(result)) Utility.touch(result);
   	
   	//Exit all used applications
   	for(Iterator<Integer> itr=application_set.iterator(); itr.hasNext();){
@@ -356,6 +397,8 @@ public class SoftwareServer implements Runnable
   	
   	status = "idle";
   	BUSY = false;
+  	
+  	return result;
   }
   
   /**

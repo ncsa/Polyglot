@@ -1567,6 +1567,29 @@ public class ICRAuxiliary
 			
 			return application_tasks;
 		}
+		
+		/**
+		 * Get the result of the given task (i.e. the last output).
+		 * @param cache_path the cache path (assumes data resides in server cache)
+		 * @param session the session id
+		 * @param task the task
+		 * @return the output of the task
+		 */
+		public static String getResult(String cache_path, int session, Vector<Subtask> task)
+		{
+			Data output_data;
+			String result = null;
+			
+			for(int i=0; i<task.size(); i++){
+				output_data = task.get(i).output_data;
+			
+				if(output_data != null && output_data instanceof CachedFileData){
+	  			result = cache_path + ((CachedFileData)output_data).getCacheFilename(session);
+				}
+			}
+			
+			return result;
+		}
 	}
 	
   /**

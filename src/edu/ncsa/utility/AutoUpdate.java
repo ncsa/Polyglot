@@ -1,5 +1,6 @@
 package edu.ncsa.utility;
 import java.io.*;
+import java.text.*;
 import java.util.*;
 
 /**
@@ -10,6 +11,8 @@ public class AutoUpdate
 {
 	String temp_path = null;
 	TreeSet<String> excluded_types = new TreeSet<String>();
+	TreeSet<String> windows_excluded_types = new TreeSet<String>();
+	TreeSet<String> unix_excluded_types = new TreeSet<String>();
 	TreeSet<String> excluded_folders = new TreeSet<String>();
 	
 	/**
@@ -18,53 +21,60 @@ public class AutoUpdate
 	 */
 	public AutoUpdate(String filename)
 	{			
+		Scanner scanner1, scanner2;
 		String url = null;
 		Vector<String> files = new Vector<String>();
 		String string;
 		
 		//Read *.ini file
 		try{
-			Scanner scanner1 = new Scanner(new File(filename));
+			scanner1 = new Scanner(new File(filename));
 			String line;
 			
 			while(scanner1.hasNextLine()){
 				line = scanner1.nextLine();
 				
-				if(line.charAt(0) == '!'){
-					Scanner scanner2 = new Scanner(line.substring(1));
-					scanner2.useDelimiter("[\\s,]+");
-          
-          while(scanner2.hasNext()){
-          	string = scanner2.next();
-          	
-          	if(string.endsWith("/")){
-          		excluded_folders.add(string);
-          	}else{
-          		excluded_types.add(string);
-          	}
-          }  
-				}else{
-					if(url == null){
-						url = line;
+				if(line.charAt(0) == '!'){		//Read file/folder exclusions
+					if(line.startsWith("!win:")){
+						scanner2 = new Scanner(line.substring(5).trim());
+						scanner2.useDelimiter("[\\s,]+");
+	          
+	          while(scanner2.hasNext()){
+	          	windows_excluded_types.add(scanner2.next());
+	          }
+					}else if(line.startsWith("!unix:")){
+						scanner2 = new Scanner(line.substring(6).trim());
+						scanner2.useDelimiter("[\\s,]+");
+	          
+	          while(scanner2.hasNext()){
+	          	unix_excluded_types.add(scanner2.next());
+	          }
 					}else{
+						scanner2 = new Scanner(line.substring(1));
+						scanner2.useDelimiter("[\\s,]+");
+	          
+	          while(scanner2.hasNext()){
+	          	string = scanner2.next();
+	          	
+	          	if(string.endsWith("/")){
+	          		excluded_folders.add(string);
+	          	}else{
+	          		excluded_types.add(string);
+	          	}
+	          }
+					}
+				}else{
+					if(url == null){						//The URL to download from
+						url = line;
+					}else{											//Individual files at the above URL to download
 						files.add(line);
 					}
 				}
 			}
 		}catch(Exception e) {e.printStackTrace();}
 		
-		//Make a temp directory
-    Calendar calendar = new GregorianCalendar();
-    
-    temp_path = ".update_";
-    temp_path += "." +  calendar.get(Calendar.YEAR);
-    temp_path += Utility.toString((calendar.get(Calendar.MONTH) + 1), 2);
-    temp_path += Utility.toString(calendar.get(Calendar.DAY_OF_MONTH), 2);
-    temp_path += Utility.toString(calendar.get(Calendar.HOUR_OF_DAY), 2);
-    temp_path += Utility.toString(calendar.get(Calendar.MINUTE), 2);
-    temp_path += Utility.toString(calendar.get(Calendar.SECOND), 2);
-    temp_path += "/";
-    
+		//Make a temp directory    
+    temp_path = ".update_" + new SimpleDateFormat("yyyyMMddhhmmss").format(new Date()) + "/";    
 		new File(temp_path).mkdir();
 		
 		//Download files to temp directory
@@ -108,7 +118,10 @@ public class AutoUpdate
 	private void apply(String update_path)
 	{
 	  File[] files = new File(update_path).listFiles();
+		String os = System.getProperty("os.name");
 	  String path, filename, extension;
+	  boolean WINDOWS = os.contains("Windows");
+	  boolean UNIX = os.contains("Linux") || os.contains("Mac");
 	  int tmpi;
 	  
 	  for(int i=0; i<files.length; i++){
@@ -125,7 +138,11 @@ public class AutoUpdate
 	  			if(!files[i].isDirectory()){
 	  				extension = Utility.getFilenameExtension(filename);
 	
-	  				if(Utility.exists(filename)){
+	  				if(WINDOWS && windows_excluded_types.contains(extension)){
+	  					System.out.println(" !" + filename);
+	  				}else if(UNIX && unix_excluded_types.contains(extension)){
+	  					System.out.println(" !" + filename);
+	  				}else if(Utility.exists(filename)){
 		  				if(excluded_types.contains(extension)){
 		  					System.out.println(" !" + filename);
 		  					
