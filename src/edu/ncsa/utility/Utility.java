@@ -613,24 +613,26 @@ public class Utility
       //Upload file
       os = conn.getOutputStream();
       writer = new PrintWriter(new OutputStreamWriter(os), true);
-      writer.println("--" + boundary);
-      writer.println("Content-Disposition: form-data; name=\"file\"; filename=\"" + getFilename(filename) + "\";");
-      writer.println("Content-Type: " + URLConnection.guessContentTypeFromName(getFilename(filename)));
-      writer.println("Content-Transfer-Encoding: binary");
-      writer.println();
-            
+      writer.print("--" + boundary + "\r\n");
+      writer.print("Content-Disposition: form-data; name=\"file\"; filename=\"" + getFilename(filename) + "\";\r\n");
+      writer.print("Content-Type: " + URLConnection.guessContentTypeFromName(getFilename(filename)) + "\r\n");
+      writer.print("Content-Transfer-Encoding: binary\r\n");
+      writer.print("\r\n");
+      writer.flush();
+      
       bis = new BufferedInputStream(new FileInputStream(filename));
 
       do{
         tmpi = bis.read(byte_buffer, 0, byte_buffer.length);
         if(tmpi>0) os.write(byte_buffer, 0, tmpi);
       }while(tmpi>=0);
-            
+      
       os.flush();
       bis.close(); 
 
-      writer.println();
-      writer.println("--" + boundary + "--");
+      writer.print("\r\n");
+      writer.print("--" + boundary + "--\r\n");
+      writer.flush();
       
       //Get response
       br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
