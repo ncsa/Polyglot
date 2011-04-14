@@ -381,6 +381,7 @@ public class ICRAuxiliary
 		public TreeSet<String> types = new TreeSet<String>();
 		public TreeSet<String> inputs = new TreeSet<String>();
 		public TreeSet<String> outputs = new TreeSet<String>();
+		public TreeSet<String> executables = new TreeSet<String>();
 		
 		/**
 		 * Class constructor.
@@ -495,6 +496,26 @@ public class ICRAuxiliary
 		          }
 		        }
 	      	}
+	      }
+	      
+	      //Find executables
+	      if(type.equals("ahk")){
+	      	while((line=ins.readLine()) != null){
+						if(line.trim().startsWith("Run") || line.trim().startsWith("RunWait")){
+							//Remove command
+							tmpi = line.indexOf(',');
+							line = line.substring(tmpi+1).trim();
+							
+							//Get executable							
+							if(line.startsWith("\"")){								
+								line = line.substring(1);
+								tmpi = line.indexOf("\"");
+								executables.add(line.substring(0, tmpi));
+							}else{
+								executables.add(line);
+							}
+						}
+					}
 	      }
 	      
 	      ins.close();
@@ -634,6 +655,15 @@ public class ICRAuxiliary
 		}
 		
 		/**
+		 * Get the executables called by the script.
+		 * @return a set of found executables
+		 */
+		public TreeSet<String> getExecutables()
+		{
+			return executables;
+		}
+		
+		/**
 		 * Get the operation performed by the given script.
 		 * @param script the script filename
 		 * @return the operation performed by the script
@@ -729,59 +759,12 @@ public class ICRAuxiliary
 		}
 		
 		/**
-		 * Execute this script.
-		 * @param command the command executing the script
-		 * @param max_runtime the maximum allowed time to run (in milli-seconds, -1 indicates forever)
-		 * @param HANDLE_OUTPUT true if the process output should be handled
-		 * @param SHOW_OUTPUT true if the process output should be shown
-		 * @return true if the operation completed within the given time frame
-		 */
-		public static boolean executeAndWait(String command, int max_runtime, boolean HANDLE_OUTPUT, boolean SHOW_OUTPUT)
-		{
-			Process process;
-			TimedProcess timed_process;
-			boolean COMPLETE = false;
-			
-	  	if(!command.isEmpty()){
-		  	try{
-			  	process = Runtime.getRuntime().exec(command);
-			  	
-			  	if(max_runtime >= 0){
-					  timed_process = new TimedProcess(process, HANDLE_OUTPUT, SHOW_OUTPUT);    
-					  COMPLETE = timed_process.waitFor(max_runtime); System.out.println();
-			  	}else{
-			  		if(HANDLE_OUTPUT){
-			  			Utility.handleProcessOutput(process, SHOW_OUTPUT);
-			  		}else{
-			        process.waitFor();
-			  		}
-			  		
-			  		COMPLETE = true;
-			  	}
-		  	}catch(Exception e) {e.printStackTrace();}
-	  	}
-	  	
-	  	return COMPLETE;
-		}
-		
-		/**
-		 * Execute this script.
-		 * @param command the command executing the script
-		 * @param max_runtime the maximum allowed time to run (in milli-seconds, -1 indicates forever)
-		 * @return true if the operation completed within the given time frame
-		 */
-		public static boolean executeAndWait(String command, int max_runtime)
-		{
-			return executeAndWait(command, max_runtime, false, false);
-		}
-		
-		/**
 		 * Execute a script.
 		 * @param script the absolute filename of the script
 		 */
 		public static void executeAndWait(String script)
 		{
-		  executeAndWait(Script.getCommand(script), -1);
+		  Utility.executeAndWait(Script.getCommand(script), -1);
 		}
 	
 		/**
@@ -797,7 +780,7 @@ public class ICRAuxiliary
 		{
 			String command = getCommand(filename, source, target, temp_path);
 			
-			return executeAndWait(command, max_runtime, HANDLE_OUTPUT, false);
+			return Utility.executeAndWait(command, max_runtime, HANDLE_OUTPUT, false);
 		}
 		
 		/**
@@ -812,7 +795,7 @@ public class ICRAuxiliary
 		{
 			String command = getCommand(filename, source, target, temp_path);
 			
-			return executeAndWait(command, max_runtime);
+			return Utility.executeAndWait(command, max_runtime);
 		}
 	
 		/**
@@ -856,6 +839,7 @@ public class ICRAuxiliary
     public Operation monitor_operation = null;
     public Operation exit_operation = null;
     public Operation kill_operation = null;
+    public TreeSet<String> executables = new TreeSet<String>();
   	public SoftwareServerClient icr = null;		//An application belongs to an software reuse server (set by the client)!
 
     /**
@@ -867,6 +851,16 @@ public class ICRAuxiliary
     {
     	this.name = name;
       this.alias = alias;
+    }
+    
+    /**
+     * Class constructor.
+     * @param script a scripted operation within an application
+     */
+    public Application(Script script)
+    {
+    	this.name = script.application;
+      this.alias = script.alias;
     }
     
     /**
@@ -908,6 +902,19 @@ public class ICRAuxiliary
     		exit_operation = operation;
     	}else if(operation.name.equals("kill")){
     		kill_operation = operation;
+    	}
+    }
+    
+		/**
+     * Add an operation to this application.
+     * @param script a scripted operation for this application
+     */
+    public void add(Script script)
+    {
+    	add(new Operation(script));
+    	
+    	if(!script.operation.equals("monitor") && !script.operation.equals("exit") && !script.operation.equals("kill")){
+    		executables.addAll(script.getExecutables());
     	}
     }
     
@@ -1721,5 +1728,20 @@ public class ICRAuxiliary
   			return -1;
   		}
   	}
+	}
+	
+	/**
+	 * A main for debug purposes.
+	 * @param args command line arguments
+	 */
+	public static void main(String args[])
+	{
+		if(true){
+			Script script = new Script("scripts/ahk/A3DReviewer_open.ahk", ";");
+			
+			for(String executable : script.getExecutables()){
+				System.out.println(Utility.getFilename(Utility.unixPath(executable)));
+			}
+		}
 	}
 }

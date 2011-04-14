@@ -23,8 +23,9 @@ public class Benchmarks
 		Vector<Double> times = new Vector<Double>();
 		String application = null, task = null, output, input, url, output_url;
 		Random random = new Random();
-		long benchmark_start;
+		long benchmark_start, wait_start;
 		long t0, t1;
+		int max_wait_time = 30000;
 		int count, successes, tmpi;
 		
 		//Load *.ini file
@@ -48,6 +49,8 @@ public class Benchmarks
 	        		data_path = value + "/";
 	          }else if(key.equals("TempPath")){
 	        		temp_path = value + "/";
+	          }else if(key.equals("MaxWaitTime")){
+	        		max_wait_time = Integer.valueOf(value);
 	          }
 	        }
 	      }
@@ -88,9 +91,11 @@ public class Benchmarks
 	  	System.out.print("-> " + output_url + " ");
 	  	
 	  	//Wait for result
+	  	wait_start = System.currentTimeMillis();
 	  	tmpi = 0;
 	  	
 	  	while(!Utility.existsURL(output_url)){
+	  		if(System.currentTimeMillis()-wait_start > max_wait_time) break;
 	  		if(tmpi%10 == 0) System.out.print(".");
 	  		tmpi++;
 	  	}
@@ -99,7 +104,7 @@ public class Benchmarks
 	  	times.add((t1-t0)/1000.0);
 	  	
 	  	//Check result
-	  	Utility.downloadFile(temp_path + "tmp/", output_url);
+	  	if(Utility.existsURL(output_url)) Utility.downloadFile(temp_path + "tmp/", output_url);
 	  	
 	  	if(ScriptDebugger.exists(temp_path + "tmp/" + Utility.getFilename(output_url))){
 	  		successes++;
@@ -118,13 +123,13 @@ public class Benchmarks
 	  	
 	  	String message = "";
 	  	message += "[time: " + Utility.toString(whole_hours, 2) + ":" + Utility.toString(whole_minutes, 2) + ":" + Utility.toString(seconds, 2);
-	  	message += ", ops/hour: " + Utility.round(operations_per_hour, 2);
+	  	message += ", tasks/hour: " + Utility.round(operations_per_hour, 2);
 	  	message += ", success rate: " + Utility.round(success_rate, 2) + "%";
 	  	message += ", average wait: " + Utility.round(wait_mean, 2) + " s (" + Utility.round(wait_std, 2) + " s)";
-	  	message += "]\n";
+	  	message += "]";
 	  	
 	  	Utility.println(temp_path + "log.txt", message);
-	  	System.out.println("\n" + message);
+	  	System.out.println("\n" + message + "\n");
 	  }
 	}
 }

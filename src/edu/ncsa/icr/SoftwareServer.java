@@ -25,10 +25,12 @@ public class SoftwareServer implements Runnable
 	private int steward_port;
 	private String status = "idle";
 	
-	private boolean WINDOWS = false;
+	private boolean SHOW_EXECUTABLES = true;
 	private boolean HANDLE_OPERATION_OUTPUT = false;
 	private boolean SHOW_OPERATION_OUTPUT = false;
 	private boolean ENABLE_MONITORS = false;
+	private boolean ATTEMPT_AUTO_KILL = false;
+	private boolean WINDOWS = false;
 	private boolean STARTED_MONITORS = false;
 	private boolean RUNNING;
 	private boolean BUSY = false;
@@ -113,14 +115,18 @@ public class SoftwareServer implements Runnable
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("MaxOperationTime")){
 	            max_operation_time = Integer.valueOf(value);
+	          }else if(key.equals("MaxOperationAttempts")){
+	            max_operation_attempts = Integer.valueOf(value);
+	          }else if(key.equals("ShowExecutables")){
+	            SHOW_EXECUTABLES = Boolean.valueOf(value);
 	          }else if(key.equals("HandleOperationOutput")){
 	            HANDLE_OPERATION_OUTPUT = Boolean.valueOf(value);
 	          }else if(key.equals("ShowOperationOutput")){
 	            SHOW_OPERATION_OUTPUT = Boolean.valueOf(value);
-	          }else if(key.equals("MaxOperationAttempts")){
-	            max_operation_attempts = Integer.valueOf(value);
 	          }else if(key.equals("EnableMonitors")){
 	          	ENABLE_MONITORS = Boolean.valueOf(value);
+	          }else if(key.equals("AttemptAutoKill")){
+	          	ATTEMPT_AUTO_KILL = Boolean.valueOf(value);
 	          }else if(key.equals("PolyglotSteward")){
 	        		tmpi = value.lastIndexOf(':');
 	        		
@@ -217,7 +223,8 @@ public class SoftwareServer implements Runnable
           }
           
           //Add a new operation to the application      
-          application.add(new Operation(script));
+          //application.add(new Operation(script));
+          application.add(script);
       	}
       }
     }
@@ -355,17 +362,23 @@ public class SoftwareServer implements Runnable
 		  	
 		  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
 		  	if(!command.isEmpty()){
-		  		COMMAND_COMPLETED = Script.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
+		  		COMMAND_COMPLETED = Utility.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
 			  	
           if(!COMMAND_COMPLETED){
+            if(i < (max_operation_attempts-1)){
+              System.out.println("retrying...");
+            }else{
+              System.out.println("killing...");
+            }  
+            
           	if(application.kill_operation != null){
-	            if(i < (max_operation_attempts-1)){
-	              System.out.println("retrying...");
-	            }else{
-	              System.out.println("killing...");
-	            }
-	            
 	            Script.executeAndWait(application.kill_operation.script);
+          	}else if(ATTEMPT_AUTO_KILL && !application.executables.isEmpty()){
+          		if(WINDOWS){
+          			try{
+          				Utility.executeAndWait("taskkill /f /im " + Utility.getFilename(Utility.unixPath(application.executables.first())), -1);
+          			}catch(Exception e) {e.printStackTrace();}
+          		}
           	}
           	
           	break;	//Try the entire task again!
@@ -373,7 +386,7 @@ public class SoftwareServer implements Runnable
 		  	}
 		  	
 		  	//Move the output if a temporary target was used
-		  	if(temp_target != null) Utility.copyFile(temp_target, target);
+		  	if(temp_target != null && Utility.exists(temp_target)) Utility.copyFile(temp_target, target);
 		  	
 		  	//If we got past the last subtask then the task is complete!
 		  	if(j == task.size()-1) TASK_COMPLETED = true;
@@ -422,6 +435,13 @@ public class SoftwareServer implements Runnable
   	
   	for(int i=0; i<applications.size(); i++){
   		System.out.println("  " + applications.get(i).name + " (" + applications.get(i).alias + ")");
+  		
+  		//Show associated executables
+  		if(SHOW_EXECUTABLES){
+  			for(String executable : applications.get(i).executables){
+  				System.out.println("    " + executable);
+  			}
+  		}
   	}
   	
   	//Notify a Polyglot steward

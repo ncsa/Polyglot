@@ -66,31 +66,53 @@ public class Utility
 	}
 
 	/**
-   * Get the specified line from the file indicated.
-   *  @param filename the file to load from
-   *  @param n the line number (starts at 1!)
-   *  @return the line retrieved
-   */
-  public static String getLine(String filename, int n)
-  {
-    String line = "";
-    
-    try{
-      BufferedReader ins = new BufferedReader(new FileReader(filename));
-      int count = 0;
-      
-      while((line=ins.readLine()) != null){
-        count++;
-        if(count == n) break;
-      }
-      
-      ins.close();
-    }catch(Exception e) {}
-    
-    return line;
-  }
-  
-  /**
+	 * Execute the given command.
+	 * @param command the command
+	 * @param max_runtime the maximum allowed time to run (in milli-seconds, -1 indicates forever)
+	 * @param HANDLE_OUTPUT true if the process output should be handled
+	 * @param SHOW_OUTPUT true if the process output should be shown
+	 * @return true if the operation completed within the given time frame
+	 */
+	public static boolean executeAndWait(String command, int max_runtime, boolean HANDLE_OUTPUT, boolean SHOW_OUTPUT)
+	{
+		Process process;
+		TimedProcess timed_process;
+		boolean COMPLETE = false;
+		
+  	if(!command.isEmpty()){
+	  	try{
+		  	process = Runtime.getRuntime().exec(command);
+		  	
+		  	if(max_runtime >= 0){
+				  timed_process = new TimedProcess(process, HANDLE_OUTPUT, SHOW_OUTPUT);    
+				  COMPLETE = timed_process.waitFor(max_runtime); System.out.println();
+		  	}else{
+		  		if(HANDLE_OUTPUT){
+		  			Utility.handleProcessOutput(process, SHOW_OUTPUT);
+		  		}else{
+		        process.waitFor();
+		  		}
+		  		
+		  		COMPLETE = true;
+		  	}
+	  	}catch(Exception e) {e.printStackTrace();}
+  	}
+  	
+  	return COMPLETE;
+	}
+	
+	/**
+	 * Execute the given command.
+	 * @param command the command
+	 * @param max_runtime the maximum allowed time to run (in milli-seconds, -1 indicates forever)
+	 * @return true if the operation completed within the given time frame
+	 */
+	public static boolean executeAndWait(String command, int max_runtime)
+	{
+		return executeAndWait(command, max_runtime, false, false);
+	}
+	
+	/**
    * Handle the output of a process.
    * @param process the process
    * @param SHOW_OUTPUT true if the output should be printed
@@ -108,6 +130,31 @@ public class Utility
   }
   
   /**
+	 * Get the specified line from the file indicated.
+	 *  @param filename the file to load from
+	 *  @param n the line number (starts at 1!)
+	 *  @return the line retrieved
+	 */
+	public static String getLine(String filename, int n)
+	{
+	  String line = "";
+	  
+	  try{
+	    BufferedReader ins = new BufferedReader(new FileReader(filename));
+	    int count = 0;
+	    
+	    while((line=ins.readLine()) != null){
+	      count++;
+	      if(count == n) break;
+	    }
+	    
+	    ins.close();
+	  }catch(Exception e) {}
+	  
+	  return line;
+	}
+
+	/**
 	 * Append a string to a file.
 	 *  @param filename the file to append to
 	 *  @param string the text to append to the file
