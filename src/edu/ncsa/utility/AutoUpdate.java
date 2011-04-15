@@ -17,7 +17,7 @@ public class AutoUpdate
 	
 	/**
 	 * Class constructor.
-	 * @param filename the name of the *.ini file containing the information needed for the update
+	 * @param filename the name of the configuration file containing the information needed for the update
 	 */
 	public AutoUpdate(String filename)
 	{			
@@ -26,7 +26,7 @@ public class AutoUpdate
 		Vector<String> files = new Vector<String>();
 		String string;
 		
-		//Read *.ini file
+		//Read configuration file
 		try{
 			scanner1 = new Scanner(new File(filename));
 			String line;
@@ -172,7 +172,7 @@ public class AutoUpdate
 	 */
 	public static void main(String[] args)
 	{
-		AutoUpdate au = new AutoUpdate("AutoUpdate.ini");
+		AutoUpdate au = new AutoUpdate("AutoUpdate.conf");
 		au.apply();
 	}
 }

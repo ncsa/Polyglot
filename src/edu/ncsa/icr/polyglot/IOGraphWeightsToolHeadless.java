@@ -45,22 +45,22 @@ public class IOGraphWeightsToolHeadless
   
   /**
    * Class constructor.
-   * @param filename the INI filename to use
+   * @param filename the configuration file to use
    */
   public IOGraphWeightsToolHeadless(String filename)
   {
     //Load data
-    loadINI(filename);
+    loadConfiguration(filename);
     if(steward_port >= 0) Utility.pause(5000);	//Wait a bit for software server connections
     iograph = polyglot.getIOGraph();
     loadFolder(data_path, extension);
   }
   
   /**
-	 * Load an initialization file.
-	 * @param filename the name of the *.ini file
+	 * Load a configuration file.
+	 * @param filename the name of the configuration file
 	 */
-	public void loadINI(String filename)
+	public void loadConfiguration(String filename)
 	{
 	  try{
 	    BufferedReader ins = new BufferedReader(new InputStreamReader(new FileInputStream(filename)));
@@ -981,11 +981,11 @@ public class IOGraphWeightsToolHeadless
    */
   public static void main(String args[])
   {
-    IOGraphWeightsToolHeadless iograph_wt = new IOGraphWeightsToolHeadless("IOGraphWeightsToolHeadless.ini");
+    IOGraphWeightsToolHeadless iograph_wt = new IOGraphWeightsToolHeadless("IOGraphWeightsToolHeadless.conf");
     
     // check params
     if ((iograph_wt.csr_script_url == null) || (iograph_wt.user == null)) {
-			System.err.println("Need to specify at least CSR and User in IOGraphWeightsToolHeadless.ini");
+			System.err.println("Need to specify at least CSR and User in IOGraphWeightsToolHeadless.conf");
 			System.exit(-1);
 		}
 
