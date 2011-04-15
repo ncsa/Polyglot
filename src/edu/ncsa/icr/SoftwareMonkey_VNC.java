@@ -52,13 +52,13 @@ public class SoftwareMonkey_VNC extends Component implements ActionListener, Mou
 	
 	/**
 	 * Class constructor.
-	 * @param filename the name of the *.ini file to load
+	 * @param filename the name of the configuration file to load
 	 */
 	public SoftwareMonkey_VNC(String filename)
 	{
 		int index = 0;
 		
-		loadINI(filename);
+		loadConfiguration(filename);
 				
 		if(servers.size() > 1){
 			index = serverSelector();
@@ -70,10 +70,10 @@ public class SoftwareMonkey_VNC extends Component implements ActionListener, Mou
 	}
 	
 	/**
-	 * Load an *.ini initialization file.
-	 * @param filename the name of the *.ini file
+	 * Load an configuration file.
+	 * @param filename the name of the configuration file
 	 */
-	private void loadINI(String filename)
+	private void loadConfiguration(String filename)
 	{
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader(filename));
@@ -506,6 +506,6 @@ public class SoftwareMonkey_VNC extends Component implements ActionListener, Mou
 	 */
 	public static void main(String[] args)
 	{
-		SoftwareMonkey_VNC monkey = new SoftwareMonkey_VNC("SoftwareMonkey_VNC.ini");
+		SoftwareMonkey_VNC monkey = new SoftwareMonkey_VNC("SoftwareMonkey_VNC.conf");
 	}
 }

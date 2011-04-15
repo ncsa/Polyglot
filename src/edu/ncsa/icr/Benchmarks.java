@@ -28,9 +28,9 @@ public class Benchmarks
 		int max_wait_time = 30000;
 		int count, successes, tmpi;
 		
-		//Load *.ini file
+		//Load configuration file
 	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader("Benchmarks.ini"));
+	    BufferedReader ins = new BufferedReader(new FileReader("Benchmarks.conf"));
 	    String line, key, value;
 	    
 	    while((line=ins.readLine()) != null){

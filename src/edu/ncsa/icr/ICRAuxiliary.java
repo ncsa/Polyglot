@@ -1684,24 +1684,24 @@ public class ICRAuxiliary
 		public String application_alias;
 		public String application_name;
 		public String task;
-		public String output;
 		public String input;
+		public String output;
 		public TreeSet<String> servers = new TreeSet<String>();
 		
 		/**
 		 * Class constructor.
 		 * @param alias the application alias
 		 * @param task the application task
-		 * @param output the task output
 		 * @param input the task input
+		 * @param output the task output
 		 */
-		public RemoteTaskInfo(String alias, String task, String output, String input)
+		public RemoteTaskInfo(String alias, String task, String input, String output)
 		{
 			this.application_alias = alias;
 			this.application_name = alias;
 			this.task = task;
-			this.output = output;
 			this.input = input;
+			this.output = output;
 		}
 		
   	/**

@@ -19,11 +19,11 @@ public class PolyglotWebInterface implements Runnable
   
   /**
    * Class constructor.
-   * @param filename the INI file to load
+   * @param filename the configuration file to load
    */
   public PolyglotWebInterface(String filename, boolean VERBOSE)
   {
-  	loadINI(filename);
+  	loadConfiguration(filename);
   	this.VERBOSE = VERBOSE;
   	
     writeOutputFormats();
@@ -31,10 +31,10 @@ public class PolyglotWebInterface implements Runnable
   }
   
   /**
-   * Load an initialization file.
-   * @param filename the INI file
+   * Load a configuration file.
+   * @param filename the configuration file
    */
-  public void loadINI(String filename)
+  public void loadConfiguration(String filename)
   {
     try{
       BufferedReader ins = new BufferedReader(new FileReader(filename));
@@ -290,6 +290,6 @@ public class PolyglotWebInterface implements Runnable
    */
   public static void main(String[] args)
   {
-    new PolyglotWebInterface("PolyglotWebInterface.ini", true);
+    new PolyglotWebInterface("PolyglotWebInterface.conf", true);
   }
 }

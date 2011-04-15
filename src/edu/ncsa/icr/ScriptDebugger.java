@@ -15,21 +15,21 @@ public class ScriptDebugger
 	
 	/**
 	 * Class constructor.
-	 * @param filename the *.ini file to load
+	 * @param filename the configuration file to load
 	 */
 	public ScriptDebugger(String filename)
 	{
-		loadINI(filename);
+		loadConfiguration(filename);
 	}
 	
 	/**
-	 * Load values from a *.ini file.
-	 * @param filename the *.ini file to load
+	 * Load values from a configuration file.
+	 * @param filename the configuration file to load
 	 */
-	public void loadINI(String filename)
+	public void loadConfiguration(String filename)
 	{
 	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader("ScriptDebugger.ini"));
+	    BufferedReader ins = new BufferedReader(new FileReader(filename));
 	    Scanner scanner;
 	    String line, key, value;
 	    
@@ -758,7 +758,7 @@ public class ScriptDebugger
 	 */
 	public static void main(String args[])
 	{
-		ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.ini");
+		ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.conf");
 		int max_operation_time = 30000;
 		
 		//Test arguments

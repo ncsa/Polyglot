@@ -83,7 +83,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   
   /**
    * Class constructor.
-   * @param filename the INI filename to use
+   * @param filename the configuration file to use
    */
   public IOGraphWeightsTool(String filename)
   {
@@ -193,7 +193,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
     };
     
     //Load data
-    loadINI(filename);
+    loadConfiguration(filename);
     if(steward_port >= 0) Utility.pause(5000);	//Wait a bit for software server connections
     iograph = polyglot.getIOGraph();
     loadFolder(data_path, extension);
@@ -202,10 +202,10 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   }
   
   /**
-	 * Load an initialization file.
-	 * @param filename the name of the *.ini file
+	 * Load a configuration file.
+	 * @param filename the name of the configuration file
 	 */
-	public void loadINI(String filename)
+	public void loadConfiguration(String filename)
 	{
 	  try{
 	    BufferedReader ins = new BufferedReader(new InputStreamReader(new FileInputStream(filename)));
@@ -1182,7 +1182,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
    */
   public static void main(String args[])
   {
-    IOGraphWeightsTool iograph_wt = new IOGraphWeightsTool("IOGraphWeightsTool.ini");
+    IOGraphWeightsTool iograph_wt = new IOGraphWeightsTool("IOGraphWeightsTool.conf");
     JFrame frame = iograph_wt.frame;
     frame.setJMenuBar(iograph_wt.menubar);
     frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

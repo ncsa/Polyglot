@@ -428,10 +428,10 @@ public class SoftwareServerClient implements Comparable
       }
     }
     
-    //Read in *.ini file
-		if(Utility.exists("SoftwareServerClient.ini")){	
+    //Read in a configuration file
+		if(Utility.exists("SoftwareServerClient.conf")){	
 		  try{
-		    BufferedReader ins = new BufferedReader(new FileReader("SoftwareServerClient.ini"));
+		    BufferedReader ins = new BufferedReader(new FileReader("SoftwareServerClient.conf"));
 		    String key, value;
 		    
 		    while((line=ins.readLine()) != null){

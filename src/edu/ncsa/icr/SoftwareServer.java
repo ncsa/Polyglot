@@ -45,11 +45,11 @@ public class SoftwareServer implements Runnable
 	
 	/**
 	 * Class constructor.
-	 * @param filename the file name of an initialization file
+	 * @param filename the file name of a configuration file
 	 */
 	public SoftwareServer(String filename)
 	{		
-		if(filename != null) loadINI(filename);
+		if(filename != null) loadConfiguration(filename);
 		WINDOWS = System.getProperty("os.name").contains("Windows");
 		
 		try{
@@ -60,10 +60,10 @@ public class SoftwareServer implements Runnable
 	}
 	
 	/**
-	 * Initialize based on parameters within the given *.ini file.
-	 * @param filename the file name of the *.ini file
+	 * Initialize based on parameters within the given configuration file.
+	 * @param filename the file name of the configuration file
 	 */
-	public void loadINI(String filename)
+	public void loadConfiguration(String filename)
 	{
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader(filename));
@@ -621,7 +621,7 @@ public class SoftwareServer implements Runnable
 	 */
 	public static void main(String args[])
 	{
-		SoftwareServer server = new SoftwareServer("SoftwareServer.ini");
+		SoftwareServer server = new SoftwareServer("SoftwareServer.conf");
 
 		//Test arguments
 		//args = new String[]{"-test", "../../Data/Temp/PolyglotDemo"};

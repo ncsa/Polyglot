@@ -48,13 +48,13 @@ public class SoftwareMonkey_DS extends JPanel implements ActionListener, MouseLi
 
 	/**
 	 * Class constructor.
-	 * @param filename the name of the *.ini file to load
+	 * @param filename the name of the configuration file to load
 	 */
 	public SoftwareMonkey_DS(String filename)
 	{
 		Dimension dimension = Toolkit.getDefaultToolkit().getScreenSize();
 
-		loadINI(filename);
+		loadConfiguration(filename);
 		
 		panel_width = (int)Math.round(panel_scale * dimension.getWidth());
 		panel_height = (int)Math.round(panel_scale * dimension.getHeight());
@@ -73,10 +73,10 @@ public class SoftwareMonkey_DS extends JPanel implements ActionListener, MouseLi
 	}
 	
 	/**
-	 * Load an *.ini initialization file.
-	 * @param filename the name of the *.ini file
+	 * Load a configuration file.
+	 * @param filename the name of the configuration file
 	 */
-	private void loadINI(String filename)
+	private void loadConfiguration(String filename)
 	{
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader(filename));
@@ -567,7 +567,7 @@ public class SoftwareMonkey_DS extends JPanel implements ActionListener, MouseLi
 		int screens = GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices().length;
 		
 		if(screens > 1){
-			SoftwareMonkey_DS monkey = new SoftwareMonkey_DS("SoftwareMonkey_DS.ini");
+			SoftwareMonkey_DS monkey = new SoftwareMonkey_DS("SoftwareMonkey_DS.conf");
 			Dimension screen_size = Toolkit.getDefaultToolkit().getScreenSize();
 
 	    JFrame frame = new JFrame("Monkey Script Session");

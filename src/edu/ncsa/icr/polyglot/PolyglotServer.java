@@ -21,11 +21,11 @@ public class PolyglotServer implements Runnable
 
 	/**
 	 * Class constructor.
-	 * @param filename the file name of an initialization file
+	 * @param filename the file name of a configuration file
 	 */
 	public PolyglotServer(String filename)
 	{		
-		if(filename != null) loadINI(filename);
+		if(filename != null) loadConfiguration(filename);
 		if(steward_port >= 0) polyglot.listen(steward_port);
 		
 		try{
@@ -36,7 +36,7 @@ public class PolyglotServer implements Runnable
 							
 		Utility.pause(5000);		//Wait a bit for software server connections
 		
-		if(POLYGLOT_WEB_INTERFACE) new PolyglotWebInterface("PolyglotWebInterface.ini", false);
+		if(POLYGLOT_WEB_INTERFACE) new PolyglotWebInterface("PolyglotWebInterface.conf", false);
 		
 		if(POLYGLOT_MONITOR){
 			JFrame frame = new PolyglotMonitor("localhost", port).createFrame();
@@ -45,10 +45,10 @@ public class PolyglotServer implements Runnable
 	}
 	
 	/**
-	 * Initialize based on parameters within the given *.ini file.
-	 * @param filename the file name of the *.ini file
+	 * Initialize based on parameters within the given configuration file.
+	 * @param filename the file name of the configuration file
 	 */
-	public void loadINI(String filename)
+	public void loadConfiguration(String filename)
 	{
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader(filename));
@@ -223,6 +223,6 @@ public class PolyglotServer implements Runnable
 	 */
 	public static void main(String args[])
 	{
-		PolyglotServer server = new PolyglotServer("PolyglotServer.ini");
+		PolyglotServer server = new PolyglotServer("PolyglotServer.conf");
 	}
 }

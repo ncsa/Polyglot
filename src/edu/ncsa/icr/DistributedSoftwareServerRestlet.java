@@ -1,11 +1,14 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
-import java.util.*;
 import java.io.*;
 import java.net.*;
+import java.util.*;
+import org.apache.commons.fileupload.*;
+import org.apache.commons.fileupload.disk.*;
 import org.restlet.*;
 import org.restlet.data.*;
+import org.restlet.ext.fileupload.*;
 import org.restlet.representation.*;
 import org.restlet.resource.*;
 import org.restlet.routing.*;
@@ -19,7 +22,6 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 	private static TreeMap<RemoteTaskInfo, TreeSet<String>> tasks = new TreeMap<RemoteTaskInfo, TreeSet<String>>();
 	private static TreeSet<String> servers = new TreeSet<String>();
 	
-	private static String[] servers_array = new String[0];
 	private static TreeSet<String> applications = new TreeSet<String>();
 	private static TreeMap<String,String> name_map = new TreeMap<String,String>();
 	private static TreeMap<String,String> server_map = new TreeMap<String,String>();
@@ -40,7 +42,6 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		if(SoftwareServerRestlet.queryEndpoint(server_url + "alive") != null){
 			System.out.print("Adding server: " + server + " ");
 			servers.add(server);
-			servers_array = servers.toArray(new String[0]);
 			server_applications = getEndpointValues(server_url + "software");
 			
 			for(String application : server_applications){
@@ -64,10 +65,10 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 					task_inputs_outputs = getEndpointCommaSeparatedValues(server_url + "software/" + application + "/" + task + "/*");
 					task_inputs = task_inputs_outputs.get(0);
 					task_outputs = task_inputs_outputs.get(1);
-					
-					for(String output : task_outputs){						
-						for(String input : task_inputs){
-							rti = new RemoteTaskInfo(application, task, output, input);
+											
+					for(String input : task_inputs){
+						for(String output : task_outputs){						
+							rti = new RemoteTaskInfo(application, task, input, output);
 							
 							if(tasks.containsKey(rti)){
 								rti.servers = tasks.get(rti);
@@ -110,10 +111,6 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 					if(rti.servers.isEmpty()) itr2.remove();
 				}
 			}
-		}
-		
-		if(servers_array.length != servers.size()){
-			servers_array = servers.toArray(new String[0]);
 		}
 		
 		if(SERVER_DROPPED){
@@ -292,11 +289,12 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 	
 	/**
 	 * Get a web form interface for this restful service.
+	 * @param POST_UPLOADS true if this form should use POST rather than GET for uploading files
 	 * @param selected_application the default application
 	 * @param HIDE_APPLICATIONS true if applications menu should be hidden
 	 * @return the form
 	 */
-	public String getForm(String selected_application, boolean HIDE_APPLICATIONS)
+	public String getForm(boolean POST_UPLOADS, String selected_application, boolean HIDE_APPLICATIONS)
 	{		
 		TreeSet<Pair<String,String>> applications = new TreeSet<Pair<String,String>>();
 		TreeSet<String> application_tasks = new TreeSet<String>();
@@ -428,8 +426,15 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		buffer += "  var file = document.getElementById('file').value;\n";
 		buffer += "  var select = document.getElementById('format');\n";
 		buffer += "  var format = select.options[select.selectedIndex].value;\n";
-		buffer += "  var api_url = \"http://\" + location.host + \"/software/\" + application + \"/\" + task + \"/\" + format + \"/\" + encodeURIComponent(file);\n";
-		buffer += "  var api_html = \"http://\" + location.host + \"/software/<font color=\\\"#ff7777\\\">\" + application + \"</font>/<font color=\\\"#77ff77\\\">\" + task + \"</font>/<font color=\\\"#7777ff\\\">\" + format + \"</font>/<font color=\\\"#777777\\\">\" + encodeURIComponent(file) + \"</font>\";\n";
+
+		if(!POST_UPLOADS){
+			buffer += "  var api_url = \"http://\" + location.host + \"/software/\" + application + \"/\" + task + \"/\" + format + \"/\" + encodeURIComponent(file);\n";
+			buffer += "  var api_html = \"http://\" + location.host + \"/software/<font color=\\\"#ff7777\\\">\" + application + \"</font>/<font color=\\\"#77ff77\\\">\" + task + \"</font>/<font color=\\\"#7777ff\\\">\" + format + \"</font>/<font color=\\\"#777777\\\">\" + encodeURIComponent(file) + \"</font>\";\n";
+		}else{
+			buffer += "  var api_url = \"http://\" + location.host + \"/software/\" + application + \"/\" + task + \"/\" + format + \"/\";\n";
+			buffer += "  var api_html = \"http://\" + location.host + \"/software/<font color=\\\"#ff7777\\\">\" + application + \"</font>/<font color=\\\"#77ff77\\\">\" + task + \"</font>/<font color=\\\"#7777ff\\\">\" + format + \"</font>/\";\n";
+		}
+		
 		buffer += "  \n";
 		buffer += "  api.innerHTML = \"<i><b><font color=\\\"#777777\\\">RESTful API call</font></b><br><br><a href=\\\"\" + api_url + \"\\\"style=\\\"text-decoration:none; color:#777777\\\">\" + api_html + \"</a></i>\";\n";
 		buffer += "  setTimeout('setAPICall()', 500);\n";
@@ -437,7 +442,13 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		buffer += "</script>\n\n";
 		
 		buffer += "<center>\n";
-		buffer += "<form name=\"converson\" action=\"form/\" method=\"get\">\n";
+		
+		if(!POST_UPLOADS){
+			buffer += "<form name=\"converson\" action=\"\" method=\"get\">\n";
+		}else{
+			buffer += "<form enctype=\"multipart/form-data\" name=\"converson\" action=\"\" method=\"post\">\n";
+		}
+		
 		buffer += "<table>\n";
 		
 		if(selected_application != null && HIDE_APPLICATIONS){			
@@ -511,7 +522,13 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		}
 		
 		buffer += "</div></font></i></td></tr>\n";
-		buffer += "<tr><td><b>File URL:</b></td><td><input type=\"text\" name=\"file\" id=\"file\" size=\"100\"></td></tr>\n";
+		
+		if(!POST_UPLOADS){
+			buffer += "<tr><td><b>File URL:</b></td><td><input type=\"text\" name=\"file\" id=\"file\" size=\"100\"></td></tr>\n";
+		}else{
+			buffer += "<tr><td><b>File:</b></td><td><input type=\"file\" name=\"file\" id=\"file\" size=\"100\"></td></tr>\n";
+		}
+		
 		buffer += "<tr><td><b>Format:</b></td>\n";
 		buffer += "<td><select name=\"format\" id=\"format\">\n";
 		
@@ -542,7 +559,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 	 */
 	public String getForm()
 	{
-		return getForm(null, false);
+		return getForm(false, null, false);
 	}
 	
 	/**
@@ -555,6 +572,42 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		return SoftwareServerRestlet.queryEndpoint("http://" + server + "/busy").equals("true");
 	}
 
+	/**
+	 * Find a non-busy server that can perform the given task.
+	 * @param application the application to use
+	 * @param task the task to perform
+	 * @param input the input format
+	 * @param output the output format
+	 * @return the available server
+	 */
+	public String getNonBusyServer(String application, String task, String input, String output)
+	{
+		String server = null;
+		String[] servers_array;
+		RemoteTaskInfo rti;
+		
+		rti = new RemoteTaskInfo(application, task, input, output);
+		rti.servers = tasks.get(rti);
+		
+		if(rti.servers != null && !rti.servers.isEmpty()){
+			servers_array = rti.servers.toArray(new String[0]);
+			
+			for(int i=0; i<servers_array.length; i++){
+				if(!isServerBusy(servers_array[i])){
+					server = servers_array[i];
+					break;
+				}
+			}
+			
+			//If all servers are busy then pick one randomly
+			if(server == null){
+				server = servers_array[new Random().nextInt()%servers_array.length];
+			}
+		}
+		
+		return server;
+	}
+	
 	@Get
 	/**
 	 * Handle HTTP GET requests.
@@ -567,10 +620,10 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
 		String part3 = (parts.size() > 3) ? parts.get(3) : "";
 		String part4 = (parts.size() > 4) ? parts.get(4) : "";
-		String application = null, task = null, file = null, format = null, file_format, server, url;
+		String application = null, task = null, file = null, format = null, server, url, result;
+		String buffer;
 		Form form;
 		Parameter p;
-		RemoteTaskInfo rti;
 		
 		if(part0.isEmpty()){
 			return new StringRepresentation(getApplicationStack(), MediaType.TEXT_HTML);
@@ -594,50 +647,52 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 							format = part3;
 							file = part4;
 							
-							file_format = Utility.getFilenameExtension(file);
-							rti = new RemoteTaskInfo(application, task, format, file_format);
-							rti.servers = tasks.get(rti);
-							
-							//Find a non-busy server
-							server = null;
-							
-							for(int i=0; i<servers_array.length; i++){
-								if(!isServerBusy(servers_array[i])){
-									server = servers_array[i];
-									break;
-								}
-							}
-							
-							if(server == null){		//If all servers are busy then pick one randomly
-								server = servers_array[new Random().nextInt()%servers_array.length];
-							}
-							
-							//Return the software server connection that will perform the task
-							System.out.println("[" + server + "]: " + application + "/" + task + " " + file_format + "->" + format);
+							server = getNonBusyServer(application, task, Utility.getFilenameExtension(file), format);
 							url = "http://" + server + "/software/" + application + "/" + task + "/" + format + "/" + file;
+
+							System.out.println("[" + server + "]: " + application + "/" + task + "/" + format + "/" + file);
+							result = Utility.readURL(url, "text/plain");
 							
-							return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
+							if(SoftwareServerRestlet.isTextOnly(Request.getCurrent())){
+								return new StringRepresentation(result, MediaType.TEXT_PLAIN);
+							}else{
+								return new StringRepresentation("<a href=" + result + ">" + result + "</a>", MediaType.TEXT_HTML);
+							}
 						}
 					}
 				}
 			}
 		}else if(part0.equals("form")){
-			form = getRequest().getResourceRef().getQueryAsForm();
-			p = form.getFirst("application"); if(p != null) application = p.getValue();
-			p = form.getFirst("task"); if(p != null) task = p.getValue();
-			p = form.getFirst("file"); if(p != null) file = p.getValue();
-			p = form.getFirst("format"); if(p != null) format = p.getValue();
-							
-			if(application != null && task != null && file != null && format != null){
-				url = getRootRef() + "software/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
-
-				return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
+			if(part1.isEmpty()){
+				buffer = "";
+				buffer += "get\n";
+				buffer += "post\n";
+				
+				return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
 			}else{
-				return new StringRepresentation(getForm(application, application!=null), MediaType.TEXT_HTML);
+				form = getRequest().getResourceRef().getQueryAsForm();
+				p = form.getFirst("application"); if(p != null) application = p.getValue();
+				p = form.getFirst("task"); if(p != null) task = p.getValue();
+				p = form.getFirst("file"); if(p != null) file = p.getValue();
+				p = form.getFirst("format"); if(p != null) format = p.getValue();
+								
+				if(application != null && task != null && file != null && format != null){
+					url = getRootRef() + "software/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
+	
+					return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
+				}else{
+					if(part1.startsWith("get")){
+						return new StringRepresentation(getForm(false, application, application!=null), MediaType.TEXT_HTML);
+					}else if(part1.startsWith("post")){
+						return new StringRepresentation(getForm(true, application, application!=null), MediaType.TEXT_HTML);
+					}else{
+						return new StringRepresentation("Error: invalid endpoint", MediaType.TEXT_PLAIN);
+					}
+				}
 			}
 		}else if(part0.equals("register")){
 			if(part1.isEmpty()){
-				return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
+				return new StringRepresentation("Error: invalid endpoint", MediaType.TEXT_PLAIN);
 			}else{
 				server = URLDecoder.decode(part1);
 
@@ -661,8 +716,82 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		}else if(part0.equals("alive")){
 			return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
 		}else{
-			return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
+			return new StringRepresentation("Error: invalid endpoint", MediaType.TEXT_PLAIN);
 		}
+	}
+	
+	@Post
+	/**
+	 * Handle HTTP POST requests.
+	 * @param entity the entity
+	 */
+	public Representation httpPostHandler(Representation entity)
+	{
+		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
+		String part0 = (parts.size() > 0) ? parts.get(0) : "";
+		String part1 = (parts.size() > 1) ? parts.get(1) : "";
+		String part2 = (parts.size() > 2) ? parts.get(2) : "";
+		String part3 = (parts.size() > 3) ? parts.get(3) : "";
+		TreeMap<String,String> parameters = new TreeMap<String,String>();
+		String application = null, task = null, format = null, server, url, result = null;
+		boolean FORM_POST = !part0.isEmpty() && part0.equals("form");
+		boolean TASK_POST = !part1.isEmpty() && !part2.isEmpty() && !part3.isEmpty();
+		FileItem file = null;
+		
+		if(FORM_POST || TASK_POST){
+			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
+				DiskFileItemFactory factory = new DiskFileItemFactory();
+				factory.setSizeThreshold(1000240);
+				RestletFileUpload upload = new RestletFileUpload(factory);
+				List<FileItem> items;
+				FileItem fi;
+				
+				try{
+					items = upload.parseRequest(getRequest());
+					
+					for(Iterator<FileItem> itr = items.iterator(); itr.hasNext();){
+						fi = itr.next();
+						
+						if(fi.getName() == null){
+							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
+						}else{
+							file = fi;
+						}
+					}
+				}catch(Exception e) {e.printStackTrace();}
+			}
+			
+			if(FORM_POST){
+				application = parameters.get("application");
+				task = parameters.get("task");
+				format = parameters.get("format");
+			}else if(TASK_POST){
+				application = part1;
+				task = part2;
+				format = part3;				
+			}
+			
+			if(application != null && task != null && file != null && format != null){	
+				server = getNonBusyServer(application, task, Utility.getFilenameExtension(Utility.unixPath(file.getName())), format);
+				url = "http://" + server + "/software/" + application + "/" + task + "/" + format + "/";
+				
+				System.out.println("[" + server + "]: " + application + "/" + task + "/" + format + "/[" + file.getName() + "]");
+
+				try{				
+					result = Utility.postFile(url, file.getName(), file.getInputStream(), "text/plain");
+				}catch(Exception e) {e.printStackTrace();}
+
+				if(result == null){
+					return new StringRepresentation("Error: could not POST file", MediaType.TEXT_PLAIN);
+				}else if(SoftwareServerRestlet.isTextOnly(Request.getCurrent())){
+					return new StringRepresentation(result, MediaType.TEXT_PLAIN);
+				}else{
+					return new StringRepresentation("<a href=" + result + ">" + result + "</a>", MediaType.TEXT_HTML);
+				}
+			}
+		}
+		
+		return httpGetHandler();
 	}
 	
 	/**
@@ -711,9 +840,9 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 	{		
 		int port = 8182;
 		
-		//Load *.ini file
+		//Load configuration file
 	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader("DistributedSoftwareServerRestlet.ini"));
+	    BufferedReader ins = new BufferedReader(new FileReader("DistributedSoftwareServerRestlet.conf"));
 	    String line, key, value;
 	    
 	    while((line=ins.readLine()) != null){

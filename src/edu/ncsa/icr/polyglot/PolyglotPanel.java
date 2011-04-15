@@ -15,20 +15,20 @@ public class PolyglotPanel extends FilePanel
   
   /**
    * Class constructor.
-   * @param filename the name of a *.ini file
+   * @param filename the name of a configuration file
    */
 	public PolyglotPanel(JFrame frame, String filename)
 	{   		
 		super(frame);
-		loadINI(filename);
+		loadConfiguration(filename);
     setPath(path);
 	}
 	
 	/**
-	 * Initialize based on parameters within the given *.ini file.
-	 * @param filename the name of the *.ini file
+	 * Initialize based on parameters within the given configuration file.
+	 * @param filename the name of the configuration file
 	 */
-	public void loadINI(String filename)
+	public void loadConfiguration(String filename)
 	{
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader(filename));
@@ -176,7 +176,7 @@ public class PolyglotPanel extends FilePanel
 	public static void main(String args[])
 	{    
 		JFrame frame = new JFrame();
-		final PolyglotPanel polyglot_panel = new PolyglotPanel(frame, "PolyglotPanel.ini");
+		final PolyglotPanel polyglot_panel = new PolyglotPanel(frame, "PolyglotPanel.conf");
 		    
 		frame.add(polyglot_panel.getScrollPane());
 		frame.addWindowListener(new WindowAdapter(){

@@ -198,28 +198,28 @@ public class PolyglotClient extends Polyglot
 		PolyglotClient polyglot = null;
 		String class_path = Utility.unixPath(System.getProperty("java.class.path"));
 		String[] paths = class_path.split(";");
-		String ini_filename = "PolyglotClient.ini";
+		String conf_filename = "PolyglotClient.conf";
 		String input_filename = "";
 		String output_path = "./";
 		String output_extension = "";
 		int count = 0;
 		
-		//Find class path for *.ini file
+		//Find class path for configuration file
 		for(int i=0; i<paths.length; i++){
 			if(!paths[i].endsWith(".jar")){
-				if(Utility.exists(paths[i] + "/" + ini_filename)){
-					ini_filename = paths[i] + "/" + ini_filename;
+				if(Utility.exists(paths[i] + "/" + conf_filename)){
+					conf_filename = paths[i] + "/" + conf_filename;
 					break;
-				}else if(Utility.exists(Utility.pathDotDot(paths[i]) + "/" + ini_filename)){
-					ini_filename = Utility.pathDotDot(paths[i]) + "/" + ini_filename;
+				}else if(Utility.exists(Utility.pathDotDot(paths[i]) + "/" + conf_filename)){
+					conf_filename = Utility.pathDotDot(paths[i]) + "/" + conf_filename;
 					break;
 				}
 			}
 		}
 			  
-		//Load parameters from a *.ini file
+		//Load parameters from a configuration file
 	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader(ini_filename));
+	    BufferedReader ins = new BufferedReader(new FileReader(conf_filename));
 	    String line, key, value;
 	    String server;
 	    int port, tmpi;

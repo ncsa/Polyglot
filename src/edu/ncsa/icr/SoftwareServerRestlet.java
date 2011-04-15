@@ -4,7 +4,7 @@ import edu.ncsa.icr.ICRAuxiliary.Application;
 import edu.ncsa.utility.*;
 import java.util.*;
 import java.io.*;
-import java.lang.management.ManagementFactory;
+import java.lang.management.*;
 import java.net.*;
 import javax.servlet.*;
 import org.restlet.*;
@@ -34,7 +34,7 @@ public class SoftwareServerRestlet extends ServerResource
 	 */
 	public static void initialize()
 	{		
-		server = new SoftwareServer("SoftwareServer.ini");
+		server = new SoftwareServer("SoftwareServer.conf");
 		applications = server.getApplications();
 		application_tasks = Task.getApplicationTasks(applications);
 		
@@ -708,7 +708,7 @@ public class SoftwareServerRestlet extends ServerResource
 					}else if(part1.equals("convert")){
 						return new StringRepresentation(getConvertForm(), MediaType.TEXT_HTML);
 					}else{
-						return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
+						return new StringRepresentation("Error: invalid endpoint", MediaType.TEXT_PLAIN);
 					}
 				}
 			}
@@ -723,7 +723,7 @@ public class SoftwareServerRestlet extends ServerResource
 					return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 				}
 			}else{
-				return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
+				return new StringRepresentation("Error: invalid endpoint", MediaType.TEXT_PLAIN);
 			}
 		}else if(part0.equals("image")){
 			if(!part1.isEmpty()){					
@@ -735,7 +735,7 @@ public class SoftwareServerRestlet extends ServerResource
 					return new StringRepresentation("Image doesn't exist", MediaType.TEXT_PLAIN);
 				}
 			}else{
-				return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
+				return new StringRepresentation("Error: invalid endpoint", MediaType.TEXT_PLAIN);
 			}
 		}else if(part0.equals("alive")){
 			return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
@@ -748,7 +748,7 @@ public class SoftwareServerRestlet extends ServerResource
 		}else if(part0.equals("load")){
 			return new StringRepresentation("" + ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage(), MediaType.TEXT_PLAIN);
 		}else{
-			return new StringRepresentation("invalid endpoint", MediaType.TEXT_PLAIN);
+			return new StringRepresentation("Error: invalid endpoint", MediaType.TEXT_PLAIN);
 		}
 	}
 	
@@ -881,9 +881,9 @@ public class SoftwareServerRestlet extends ServerResource
 		int port = 8182;
 		String distributed_server = null;
 		
-		//Load *.ini file
+		//Load configuration file
 	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader("SoftwareServerRestlet.ini"));
+	    BufferedReader ins = new BufferedReader(new FileReader("SoftwareServerRestlet.conf"));
 	    String line, key, value;
 	    int tmpi;
 	    

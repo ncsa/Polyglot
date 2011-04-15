@@ -443,7 +443,7 @@ public class ScriptInstaller
 		String executable_hint = null;
 		String software, filename, scriptname;
 		String buffer;
-		ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.ini"); debugger.setDataPath(data_download_path);
+		ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.conf"); debugger.setDataPath(data_download_path);
 		Script script;
 		int tests = 5;
 		int max_operation_time = 30000;

@@ -714,6 +714,82 @@ public class Utility
   }
   
   /**
+   * Post a file to a URL.
+   * @param url the URL to post to
+   * @param filename the name of the file 
+   * @param is the file input stream
+   * @param type the accepted content type
+   * @return a string the resulting URL contents
+   */
+  public static String postFile(String url, String filename, InputStream is, String type)
+  {
+    HttpURLConnection conn = null;
+    OutputStream os;
+    PrintWriter writer = null;
+    BufferedInputStream bis;
+    BufferedReader br;
+    StringBuilder sb = new StringBuilder();
+    String boundary = Long.toHexString(System.currentTimeMillis());
+    String response = "";
+    char[] char_buffer = new char[1024];
+    byte[] byte_buffer = new byte[1024];
+    int tmpi;
+    
+    try{
+      conn = (HttpURLConnection)new URL(url).openConnection();
+      conn.setDoInput(true);
+      conn.setDoOutput(true);
+      //conn.setRequestMethod("POST");
+      conn.setRequestProperty("Content-Type", "multipart/form-data; boundary=" + boundary);
+      if(type != null) conn.setRequestProperty("Accept", type);
+      conn.connect();
+            
+      //Upload file
+      os = conn.getOutputStream();
+      writer = new PrintWriter(new OutputStreamWriter(os), true);
+      writer.print("--" + boundary + "\r\n");
+      writer.print("Content-Disposition: form-data; name=\"file\"; filename=\"" + Utility.getFilename(filename) + "\";\r\n");
+      writer.print("Content-Type: " + URLConnection.guessContentTypeFromName(Utility.getFilename(filename)) + "\r\n");
+      writer.print("Content-Transfer-Encoding: binary\r\n");
+      writer.print("\r\n");
+      writer.flush();
+      
+      bis = new BufferedInputStream(is);
+
+      do{
+        tmpi = bis.read(byte_buffer, 0, byte_buffer.length);
+        if(tmpi>0) os.write(byte_buffer, 0, tmpi);
+      }while(tmpi>=0);
+      
+      os.flush();
+      bis.close(); 
+
+      writer.print("\r\n");
+      writer.print("--" + boundary + "--\r\n");
+      writer.flush();
+      
+      //Get response
+      br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+
+      do{
+        tmpi = br.read(char_buffer, 0, char_buffer.length);
+        if(tmpi>0) sb.append(char_buffer, 0, tmpi);
+      }while(tmpi>=0);
+      
+      response = sb.toString();
+ 
+      conn.disconnect();
+    }catch(Exception e){
+      e.printStackTrace();
+    }finally{
+      if(writer != null) writer.close();
+      if(conn != null) conn.disconnect();
+    }
+    
+    return response;
+  }
+  
+  /**
    * Convert a string to an URL safe version (e.g. spaces -> %20).
    *  @param str the string to convert
    *  @return the URL safe version
