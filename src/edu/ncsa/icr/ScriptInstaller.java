@@ -69,9 +69,10 @@ public class ScriptInstaller
 	 * @param methods the methods to use for searching for local software
 	 * @param csr_script_url the URL to the needed CSR query scripts
 	 * @param local_software a list to hold the names of locally installed software (possibly pre-filled)
+	 * @param SOFTWARE_KEYS set to true if software keys have been appended to the given script name
 	 * @return a list of URL's to scripts for locally installed software
 	 */
-	public static Vector<String> getSystemScripts(TreeSet<String> methods, String csr_script_url, TreeSet<String> local_software)
+	public static Vector<String> getSystemScripts(TreeSet<String> methods, String csr_script_url, TreeSet<String> local_software, boolean SOFTWARE_KEYS)
 	{
 		String os = System.getProperty("os.name");
 		String arch = System.getProperty("os.arch");
@@ -272,13 +273,13 @@ public class ScriptInstaller
 			software = "";
 			
 			for(int i=0; i<local_scripted_software.size(); i++){
-				if(!software.isEmpty()) software += ", ";
+				if(!software.isEmpty()) software += ",";
 				software += local_scripted_software.get(i);
 				if(local_scripted_software_version.get(i) != null) software += "(" + local_scripted_software_version.get(i) + ")";
 			}
-				
-			result = Utility.readURL(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software));
-			//result = Utility.readURL(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software) + "&software_keys=true");
+			
+			System.out.println(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software) + "&software_keys=" + SOFTWARE_KEYS);
+			result = Utility.readURL(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software) + "&software_keys=" + SOFTWARE_KEYS);
 			scanner = new Scanner(result);
 			
 			while(scanner.hasNextLine()){
@@ -338,11 +339,12 @@ public class ScriptInstaller
 	 * Search the CSR for scripts for applications on the local system.
 	 * @param methods the methods to use for searching for local software
 	 * @param csr_script_url the URL to the needed CSR query scripts
+	 * @param SOFTWARE_KEYS set to true if software keys have been appended to the given script name
 	 * @return a list of URL's to scripts for locally installed software
 	 */
-	public static Vector<String> getSystemScripts(TreeSet<String> methods, String csr_script_url)
+	public static Vector<String> getSystemScripts(TreeSet<String> methods, String csr_script_url, boolean SOFTWARE_KEYS)
 	{
-		return getSystemScripts(methods, csr_script_url, new TreeSet<String>());
+		return getSystemScripts(methods, csr_script_url, new TreeSet<String>(), SOFTWARE_KEYS);
 	}
 	
 	/**
@@ -519,7 +521,7 @@ public class ScriptInstaller
 		
 		//Download scripts for this system
 		if(!methods.isEmpty() || !local_software.isEmpty()){
-			scripts = getSystemScripts(methods, csr_script_url, local_software);
+			scripts = getSystemScripts(methods, csr_script_url, local_software, SOFTWARE_KEYS);
 			
 			if(!Utility.exists(script_download_path)){
 				new File(script_download_path).mkdir();
@@ -534,7 +536,7 @@ public class ScriptInstaller
 				
 				if(SOFTWARE_KEYS){
 					tmpi = scriptname.indexOf('/');
-					if(tmpi != -1) scriptname = scriptname.substring(tmpi);
+					if(tmpi != -1) scriptname = scriptname.substring(tmpi +1);
 				}
 				
 				downloaded = Utility.downloadFile(script_download_path, Utility.getFilenameName(filename), csr_script_url + "download.php?file=" + scriptname);
