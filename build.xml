@@ -29,7 +29,7 @@
 		<jar basedir="${classes}" destfile="build/Polyglot2.jar"/>
 	</target>	
 	
-	<target name="zip" depends="archive,javadocs" description="Build a zip file containing the installation">
+	<target name="zip" depends="clean,archive,javadocs" description="Build a zip file containing the installation">
 		<mkdir dir="${tmp_zip}"/>
 		<mkdir dir="${tmp_zip}/scripts"/>
 		<mkdir dir="${tmp_zip}/scripts/applescript"/>
