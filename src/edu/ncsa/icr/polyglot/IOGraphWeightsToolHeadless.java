@@ -1,10 +1,4 @@
 package edu.ncsa.icr.polyglot;
-import edu.illinois.ncsa.versus.adapter.Adapter;
-import edu.illinois.ncsa.versus.adapter.FileLoader;
-import edu.illinois.ncsa.versus.descriptor.Descriptor;
-import edu.illinois.ncsa.versus.extract.Extractor;
-import edu.illinois.ncsa.versus.measure.Measure;
-import edu.illinois.ncsa.versus.measure.Similarity;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
@@ -13,7 +7,6 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import sun.util.logging.resources.logging;
 
 /**
  * A program to facilitate in the running of polyglot tests to fill in I/O-Graph edge weights.
@@ -40,8 +33,10 @@ public class IOGraphWeightsToolHeadless
 
   private String data_path = "./";
   private String extension = "";
-  private String csr_script_url = null;
-  private String user=null;
+  
+  private String user=null;  
+  private String csr_url = null;
+  private String versus_url = null;
   
   /**
    * Class constructor.
@@ -100,9 +95,14 @@ public class IOGraphWeightsToolHeadless
 	          }else if(key.equals("RetryLevel")){
 	          	retry_level = Integer.valueOf(value);
 	          }else if(key.equals("CSR")){
-	          	csr_script_url = value;
-	        		if (!csr_script_url.endsWith("/")) {
-	        			csr_script_url += "/";
+	          	csr_url = value;
+	        		if (!csr_url.endsWith("/")) {
+	        			csr_url += "/";
+	        		}
+	          }else if(key.equals("Versus")){
+	          	versus_url = value;
+	        		if (!versus_url.endsWith("/")) {
+	        			versus_url += "/";
 	        		}
 	          }else if (key.equals("User")) {
 	          	user = value;
@@ -210,8 +210,6 @@ public class IOGraphWeightsToolHeadless
 	  for(Iterator<String> itr=range.iterator(); itr.hasNext();){
 	  	output_format = itr.next();
 	  	
-
-		  
 	    paths_a2b = iograph.getShortestConversionPaths(extension, output_format);
 	    paths_b2a = iograph.getShortestConversionPaths(output_format, extension);
 	    
@@ -221,7 +219,7 @@ public class IOGraphWeightsToolHeadless
 	      }
 	    }
 	  }
-	  
+
 	  // FIXME
 	  jobs.setSize(1);
 	  
@@ -229,9 +227,19 @@ public class IOGraphWeightsToolHeadless
 	  job_status.clear();
 	  
 	  for(int i=0; i<jobs.size(); i++){
-	    job_status.add(-1);  
+	  	// FIXME
+	    //job_status.add(-1);
+	  	job_status.add(1);
 	  }
 	    
+	  if(test != null){
+	    for(int i=0; i<job_status.size(); i++){
+	      if(Utility.exists(test_path + test + "/" + (i+1))){
+	        job_status.set(i, jobFolderStatus(i+1));
+	      }
+	    }
+	  }
+
 	  for(int i=0; i<jobs.size(); i++){
 	  	displayJob(i);
 	  }
@@ -510,20 +518,22 @@ public class IOGraphWeightsToolHeadless
 	
   public void createTests()
   {
-    test = test_root;
-    test += "." + new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
-    
-    new File(test_path + test).mkdir();
-    new File(test_path + test + "/0").mkdir();
-    
-    //Reset the jobs status
-    job_status.clear();
-    
-    for(int i=0; i<jobs.size(); i++){
-      job_status.add(-1);  
-    }
-    
-    loadJobs();
+  	// FIXME
+  	test = test_root + ".20110414041009";
+//    test = test_root;
+//    test += "." + new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
+//    
+//    new File(test_path + test).mkdir();
+//    new File(test_path + test + "/0").mkdir();
+//    
+//    //Reset the jobs status
+//    job_status.clear();
+//    
+//    for(int i=0; i<jobs.size(); i++){
+//      job_status.add(-1);  
+//    }
+//    
+//    loadJobs();
 
     System.out.println("--------------------------------------------------");
     System.out.println("New test created: " + test);
@@ -745,7 +755,7 @@ public class IOGraphWeightsToolHeadless
     // load measures
   	List<MeasureInfo> measures = new ArrayList<MeasureInfo>();
   	try{
-	  	URL m_url = new URL(csr_script_url + "php/search/get_measures.php");
+	  	URL m_url = new URL(csr_url + "php/search/get_measures.php");
 	  	BufferedReader br = new BufferedReader(new InputStreamReader(m_url.openStream()));
 	  	String line;
 	  	while((line = br.readLine()) != null) {
@@ -841,11 +851,7 @@ public class IOGraphWeightsToolHeadless
 			} else {
 				software = s[0];
 			}
-			if (cr.result >= 0) {
-				System.out.println(software + "\t" + cr.input_format + "\t" + cr.output_format + "\t" + cr.result);
-			} else {
-				System.out.println(software + "\t" + cr.input_format + "\t" + cr.output_format + "\t0");
-			}
+			System.out.println(software + "\t" + cr.input_format + "\t" + cr.output_format + "\t" + cr.result);
 		}
 	}
 	
@@ -869,7 +875,7 @@ public class IOGraphWeightsToolHeadless
 	public void uploadResults() {			
 		for(ConversionResult cr : results) {
 			try {
-				String url = csr_script_url + "php/add/add_conversion_measure.php";
+				String url = csr_url + "php/add/add_conversion_measure.php";
 				url += "?software=" + cr.software.split("-")[0];
 				url += "&measure=" + cr.measure_id;
 				url += "&input=" + cr.input_format;
@@ -908,38 +914,28 @@ public class IOGraphWeightsToolHeadless
 		public double compare(String file1, String file2) throws Exception {
 			return compare(new File(file1), new File(file2));
 		}
-			/**
+		
+		/**
 		 * Returns a value between 0 and 1, where 0 means files are the same, and 1 means they are totally different.
 		 * @param file1
 		 * @param file2
 		 * @return
 		 * @throws Exception throws an exception if the comparison fails.
 		 */
-		public double compare(File file1, File file2) throws Exception {		
-			// create adapters, extractor and measure
-			Adapter adapter_file1 = (Adapter)Class.forName(versus_adapter).newInstance();
-			if (!(adapter_file1 instanceof FileLoader)) {
-				throw(new ClassNotFoundException("Adapter is not FileLoader"));				
-			}
-			Adapter adapter_file2 = (Adapter)Class.forName(versus_adapter).newInstance();
-			if (!(adapter_file2 instanceof FileLoader)) {
-				throw(new ClassNotFoundException("Adapter is not FileLoader"));				
-			}
-			Extractor extractor = (Extractor)Class.forName(versus_extractor).newInstance();
-			Measure measure = (Measure)Class.forName(versus_measure).newInstance();
-
-			// extract information from files
-			((FileLoader)adapter_file1).load(file1);
-			Descriptor descriptor_file1 = extractor.extract(adapter_file1);
-
-			((FileLoader)adapter_file2).load(file2);
-			Descriptor descriptor_file2 = extractor.extract(adapter_file2);
+		public double compare(File file1, File file2) throws Exception {
+			// upload the files
+			String upload1 = VersusServiceCompare.uploadFile(versus_url, file1);
+			String upload2 = VersusServiceCompare.uploadFile(versus_url, file2);
 			
-			// compare
-			Similarity similarity = measure.compare(descriptor_file1, descriptor_file2);
+			// compare files
+			String url = VersusServiceCompare.compare(versus_url, upload1, upload2, versus_adapter, versus_extractor, versus_measure);
 			
-			// compute normalized value
-			return similarity.getValue();
+			// get result
+			Double val = Double.valueOf(VersusServiceCompare.checkComparisonSync(url));
+			if (val.isNaN()) {
+				throw(new Exception("comparison failed, check server."));
+			}
+			return val;
 		}
 	}
 
@@ -984,8 +980,8 @@ public class IOGraphWeightsToolHeadless
     IOGraphWeightsToolHeadless iograph_wt = new IOGraphWeightsToolHeadless("IOGraphWeightsToolHeadless.conf");
     
     // check params
-    if ((iograph_wt.csr_script_url == null) || (iograph_wt.user == null)) {
-			System.err.println("Need to specify at least CSR and User in IOGraphWeightsToolHeadless.conf");
+    if ((iograph_wt.csr_url == null) || (iograph_wt.user == null) || (iograph_wt.versus_url == null)) {
+  		System.err.println("Need to specify at least CSR, User and Versus in IOGraphWeightsToolHeadless.conf");
 			System.exit(-1);
 		}
 
