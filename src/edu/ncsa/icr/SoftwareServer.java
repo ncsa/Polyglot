@@ -23,6 +23,8 @@ public class SoftwareServer implements Runnable
 	private int max_operation_attempts = 1;
 	private String steward_server = null;
 	private int steward_port;
+	private String broadcast_group = null;
+	private int broadcast_port;
 	private String status = "idle";
 	
 	private boolean SHOW_EXECUTABLES = true;
@@ -133,6 +135,13 @@ public class SoftwareServer implements Runnable
 	        		if(tmpi != -1){
 	        			steward_server = value.substring(0, tmpi);
 	        			steward_port = Integer.valueOf(value.substring(tmpi+1));
+	        		}
+	          }else if(key.equals("Broadcast")){
+	        		tmpi = value.lastIndexOf(':');
+	        		
+	        		if(tmpi != -1){
+	        			broadcast_group = value.substring(0, tmpi);
+	        			broadcast_port = Integer.valueOf(value.substring(tmpi+1));
 	        		}
 	          }
 	        }
@@ -461,6 +470,28 @@ public class SoftwareServer implements Runnable
 		  			
 		  			Utility.pause(500);
 	  			}
+	  		}
+	  	}.start();
+  	}else if(broadcast_group != null){
+   		System.out.println("\nStarting UDP broadcast thread...\n");
+
+	  	new Thread(){
+	  		public void run(){
+		  		try{
+		  			MulticastSocket multicast_socket = new MulticastSocket();
+		  			DatagramPacket packet;
+		  			byte[] buffer = new byte[10];
+		  			
+		  			packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(broadcast_group), broadcast_port);
+		  			multicast_socket.setTimeToLive(10);
+		  			
+		  			while(true){
+		  				multicast_socket.send(packet);
+		  				Utility.pause(2000);
+		  			}
+		  			
+		  			//socket.close();
+		  		}catch(Exception e) {e.printStackTrace();}
 	  		}
 	  	}.start();
   	}

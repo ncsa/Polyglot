@@ -12,6 +12,7 @@ import org.restlet.resource.*;
 import org.restlet.data.*;
 import org.restlet.representation.*;
 import org.restlet.routing.*;
+import org.restlet.security.*;
 import org.restlet.ext.fileupload.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
@@ -33,7 +34,7 @@ public class SoftwareServerRestlet extends ServerResource
 	 * Initialize.
 	 */
 	public static void initialize()
-	{		
+	{
 		server = new SoftwareServer("SoftwareServer.conf");
 		applications = server.getApplications();
 		application_tasks = Task.getApplicationTasks(applications);
@@ -638,7 +639,7 @@ public class SoftwareServerRestlet extends ServerResource
 		Form form;
 		Parameter p;
 		int session;
-				
+		
 		if(part0.isEmpty()){
 			return new StringRepresentation(getApplicationStack(), MediaType.TEXT_HTML);
 		}else if(part0.equals("software")){
@@ -879,22 +880,25 @@ public class SoftwareServerRestlet extends ServerResource
 	public static void main(String[] args)
 	{		
 		int port = 8182;
+		String username = null, password = null;
 		String distributed_server = null;
 		
 		//Load configuration file
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader("SoftwareServerRestlet.conf"));
 	    String line, key, value;
-	    int tmpi;
 	    
 	    while((line=ins.readLine()) != null){
 	      if(line.contains("=")){
-	        key = line.substring(0, line.indexOf('='));
-	        value = line.substring(line.indexOf('=')+1);
+	        key = line.substring(0, line.indexOf('=')).trim();
+	        value = line.substring(line.indexOf('=')+1).trim();
 	        
 	        if(key.charAt(0) != '#'){
 	        	if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
+	          }else if(key.equals("Authentication")){
+	  	        username = value.substring(0, value.indexOf(':')).trim();
+	  	        password = value.substring(value.indexOf(':')+1).trim();
 	          }else if(key.equals("DistributedServer")){
 	          	distributed_server = value;
 	          }
@@ -929,11 +933,22 @@ public class SoftwareServerRestlet extends ServerResource
 				}
 			};
 			
-			component.getDefaultHost().attach("/", application);
+			if(username != null && password != null){
+				ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
+				MapVerifier verifier = new MapVerifier();
+
+				verifier.getLocalSecrets().put(username, password.toCharArray());
+				guard.setVerifier(verifier);
+				guard.setNext(application);
+				component.getDefaultHost().attachDefault(guard);
+			}else{
+				component.getDefaultHost().attach("/", application);
+			}
+			
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
 		
-  	//Notify a distributed software restlet
+  	//Notify other services of our existence
   	if(distributed_server != null){
   		final int port_final = port;
   		final String distributed_server_final = distributed_server;

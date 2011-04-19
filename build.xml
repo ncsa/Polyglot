@@ -35,8 +35,11 @@
 		<mkdir dir="${tmp_zip}/scripts/applescript"/>
 		<mkdir dir="${tmp_zip}/scripts/monkey"/>
 		<mkdir dir="${tmp_zip}/data"/>
+		<mkdir dir="${tmp_zip}/misc"/>
 		<mkdir dir="${tmp_zip}/tmp"/>
 		<mkdir dir="${tmp_zip}/tmp/SoftwareServer"/>
+		<mkdir dir="${tmp_zip}/tmp/SoftwareServerBenchmarks"/>
+		<mkdir dir="${tmp_zip}/tmp/SoftwareServerBenchmarks/Results"/>
 		<mkdir dir="${tmp_zip}/tmp/IOGraphWeightsTool"/>
 		<mkdir dir="${tmp_zip}/tmp/PolyglotWebInterface"/>
 		<mkdir dir="${tmp_zip}/tmp/MonkeyScript"/>
@@ -63,7 +66,9 @@
 			<fileset dir="${javadocs}"/>
 		</copy>
 		<copy file="build/Polyglot2.jar" todir="${tmp_zip}"/>
-		
+		<copy file="misc/polyglot2.sh" todir="${tmp_zip}/misc"/>
+		<copy file="misc/dssr.sh" todir="${tmp_zip}/misc"/>
+
 		<property name="icr_port" value="50000"/>
 		<property name="steward_port" value="50001"/>
 		<property name="polyglot_port" value="50002"/>
@@ -82,42 +87,55 @@
 		<echo file="${tmp_zip}/Share.bat" append="true">call ScriptInstaller -shortcut \"%1\"${line.separator}</echo>
 		<echo file="${tmp_zip}/Share.bat" append="true">SoftwareServerRestlet</echo>
 				
-		<echo file="${tmp_zip}/Windows7AddShare.reg" append="false">Windows Registry Editor Version 5.00${line.separator}${line.separator}</echo>
-		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell]${line.separator}${line.separator}</echo>
-		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share]${line.separator}</echo>
-		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">@="Share Software"${line.separator}${line.separator}</echo>
-		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share\command]${line.separator}</echo>
-		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">@="C:\\Users\\polyglot\\Desktop\\Polyglot2\\Share.bat \"%1\""</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="false">Windows Registry Editor Version 5.00${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell]${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share]${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">@="Enable RESTful Interface"${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share\command]${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">@="C:\\Users\\polyglot\\Desktop\\Polyglot2\\Share.bat \"%1\""</echo>
 		
 		<echo file="${tmp_zip}/SoftwareServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServer %*</echo>
 		<echo file="${tmp_zip}/SoftwareServer.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServer $1 $2</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="false">RootPath=tmp/SoftwareServer${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">Port=${icr_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">MaxOperationTime=30000${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">MaxOperationAttempts=2${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">ShowExecutables=false${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">HandleOperationOutput=false${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">ShowOperationOutput=false${line.separator}</echo>
-		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">MaxOperationAttempts=2${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">EnableMonitors=true${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">AttemptAutoKill=false${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">AHKScripts=scripts/csr-configured${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#AppleScripts=scripts/applescript${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#SikuliScripts=scripts/sikuli${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#PythonScripts=scripts/py${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#ShellScripts=scripts/sh${line.separator}</echo>
-		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#PolyglotSteward=localhost:${steward_port}</echo>
-		
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#PolyglotSteward=localhost:${steward_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">Broadcast=225.4.5.6:${steward_port}</echo>
+
 		<echo file="${tmp_zip}/SoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.restlet.ext.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.io.jar;%~dp0lib/restlet-2.0.4/javax.servlet.jar" -Xmx1g edu.ncsa.icr.SoftwareServerRestlet %*</echo>
 		<echo file="${tmp_zip}/SoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.restlet.ext.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.io.jar:lib/restlet-2.0.4/javax.servlet.jar -Xmx1g edu.ncsa.icr.SoftwareServerRestlet</echo>
 		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="false">Port=8182${line.separator}</echo>
-		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#DistributedServer=localhost:8183</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#DistributedServer=localhost:8183${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=username:password</echo>
 
 		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet %*</echo>
 		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet</echo>
 		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.conf" append="false">Port=8183</echo>
 
 		<echo file="${tmp_zip}/SoftwareServerClient.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServerClient %*</echo>
-		<echo file="${tmp_zip}/SoftwareServerClient.sh">cmd /c java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServerClient $1</echo>
+		<echo file="${tmp_zip}/SoftwareServerClient.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServerClient $1</echo>
 		<echo file="${tmp_zip}/SoftwareServerClient.conf" append="false">SoftwareServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServerClient.conf" append="true">#DefaultPath=data</echo>
+
+		<echo file="${tmp_zip}/Benchmarks.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar" -Xmx1g edu.ncsa.icr.Benchmarks %*</echo>
+		<echo file="${tmp_zip}/Benchmarks.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar -Xmx1g edu.ncsa.icr.Benchmarks</echo>
+		<echo file="${tmp_zip}/Benchmarks.conf" append="false">SoftwareServer=http://141.142.224.231:8182${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmarks.conf" append="true">Application=A3DReviewer${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmarks.conf" append="true">Task=convert${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmarks.conf" append="true">DataPath=tmp/SoftwareServerBenchmarks/A3DReviewer4_valid${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmarks.conf" append="true">TempPath=tmp/SoftwareServerBenchmarks/Results${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmarks.conf" append="true">MaxWaitTime=30000</echo>
 
 		<echo file="${tmp_zip}/PolyglotServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
 		<echo file="${tmp_zip}/PolyglotServer.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
@@ -178,7 +196,9 @@
 		<echo file="${tmp_zip}/AutoUpdate.bat">java -cp "%~dp0lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp_zip}/AutoUpdate.sh">java -cp lib/ncsa/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp_zip}/AutoUpdate.conf" append="false">!conf, scripts/${line.separator}</echo>
-		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">http://isda.ncsa.uiuc.edu/~kooper/Polyglot2.zip</echo>
+		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">!win: sh${line.separator}</echo>
+		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">!unix: bat, reg${line.separator}</echo>
+		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">http://isda.ncsa.uiuc.edu/kmchenry/tmp/Polyglot2/Polyglot2.zip</echo>
 		
 		<!--
 		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.bat">java -cp "%~dp0../../lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
@@ -187,7 +207,8 @@
 		-->
 		
 		<echo file="${tmp_zip}/InstallWeb.bat">xcopy web\polyglot "C:\Program Files\Apache Software Foundation\Apache2.2\htdocs\polyglot" /e /i /y</echo>
-		<echo file="${tmp_zip}/AUTOEXEC.BAT">start cmd /c "cd C:\Docume~1\polyglot\Desktop\Polyglot2 &amp;&amp; SoftwareServer.bat"</echo>
+		<echo file="${tmp_zip}/InstallWeb.sh">cp -r web/polyglot /var/www</echo>
+		<echo file="${tmp_zip}/misc/AUTOEXEC.BAT">start cmd /c "cd C:\Docume~1\polyglot\Desktop\Polyglot2 &amp;&amp; SoftwareServer.bat"</echo>
 		
 		<fixcrlf srcdir="${tmp_zip}" includes="**/*.sh" eol="unix" eof="remove" />
 		<fixcrlf srcdir="${tmp_zip}" includes="**/*.bat, **/*.conf" eol="dos" eof="asis" />
@@ -230,6 +251,7 @@
 		<mkdir dir="${tmp_srs}/scripts/applescript"/>
 		<mkdir dir="${tmp_srs}/scripts/monkey"/>
 		<mkdir dir="${tmp_srs}/data"/>
+		<mkdir dir="${tmp_srs}/misc"/>
 		<mkdir dir="${tmp_srs}/tmp"/>
 		<mkdir dir="${tmp_srs}/tmp/SoftwareServer"/>
 		<mkdir dir="${tmp_srs}/tmp/MonkeyScript"/>
@@ -270,12 +292,12 @@
 		<echo file="${tmp_zip}/Share.bat" append="true">call ScriptInstaller -shortcut \"%1\"${line.separator}</echo>
 		<echo file="${tmp_zip}/Share.bat" append="true">SoftwareServerRestlet</echo>
 		
-		<echo file="${tmp_zip}/Windows7AddShare.reg" append="false">Windows Registry Editor Version 5.00${line.separator}${line.separator}</echo>
-		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell]${line.separator}${line.separator}</echo>
-		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share]${line.separator}</echo>
-		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">@="Share Software"${line.separator}${line.separator}</echo>
-		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share\command]${line.separator}</echo>
-		<echo file="${tmp_zip}/Windows7AddShare.reg" append="true">@="C:\\Users\\polyglot\\Desktop\\Polyglot2\\Share.bat \"%1\""</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="false">Windows Registry Editor Version 5.00${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell]${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share]${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">@="Share Software"${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share\command]${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">@="C:\\Users\\polyglot\\Desktop\\Polyglot2\\Share.bat \"%1\""</echo>
 		
 		<echo file="${tmp_srs}/SoftwareServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServer %*</echo>
 		<echo file="${tmp_srs}/SoftwareServer.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServer $1 $2</echo>
@@ -291,12 +313,14 @@
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#SikuliScripts=scripts/sikuli${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#PythonScripts=scripts/py${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#ShellScripts=scripts/sh${line.separator}</echo>
-		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#PolyglotSteward=localhost:${steward_port}</echo>
-		
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#PolyglotSteward=localhost:${steward_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">Broadcast=225.4.5.6:${steward_port}</echo>
+
 		<echo file="${tmp_srs}/SoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.SoftwareServerRestlet %*</echo>
 		<echo file="${tmp_srs}/SoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.SoftwareServerRestlet</echo>
 		<echo file="${tmp_srs}/SoftwareServerRestlet.conf" append="false">Port=8182${line.separator}</echo>
-		<echo file="${tmp_srs}/SoftwareServerRestlet.conf" append="true">#DistributedServer=localhost:8183</echo>
+		<echo file="${tmp_srs}/SoftwareServerRestlet.conf" append="true">#DistributedServer=localhost:8183${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=username:password</echo>
 
 		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet %*</echo>
 		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet</echo>
@@ -320,7 +344,7 @@
 		<echo file="${tmp_srs}/AutoUpdate.conf" append="false">!conf, scripts/${line.separator}</echo>
 		<echo file="${tmp_srs}/AutoUpdate.conf" append="true">http://isda.ncsa.uiuc.edu/~kmchenry/tmp/Polyglot2/SoftwareServer.zip</echo>
 
-		<echo file="${tmp_srs}/AUTOEXEC.BAT">start cmd /c "cd C:\Docume~1\polyglot\Desktop\Polyglot2 &amp;&amp; SoftwareServer.bat"</echo>
+		<echo file="${tmp_srs}/misc/AUTOEXEC.BAT">start cmd /c "cd C:\Docume~1\polyglot\Desktop\Polyglot2 &amp;&amp; SoftwareServer.bat"</echo>
 
 		<zip basedir="${tmp_srs}" destfile="build/SoftwareServer.zip"/>
 	</target>

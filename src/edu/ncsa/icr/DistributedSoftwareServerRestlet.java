@@ -880,7 +880,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 			component.getDefaultHost().attach("/", application);
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
-		
+  	
 		System.out.println("\nDistributed software reuse restlet is running...\n");
 	}
 }

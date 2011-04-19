@@ -6,9 +6,9 @@ import edu.ncsa.icr.ICRAuxiliary.Data;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.utility.*;
 import java.io.*;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.*;
 import java.util.*;
+import sun.net.*;
 
 /**
  * A class that coordinates the use of several software reuse clients via I/O-graphs
@@ -80,7 +80,11 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	 */
 	public boolean add(String server, int port)
 	{
-		return add(new SoftwareServerClient(server, port));
+		if(!sr_client_strings.contains(server + ":" + port)){		//Avoid creating a SoftwareServerClient which would initiate a connection!
+			return add(new SoftwareServerClient(server, port));
+		}else{
+			return false;
+		}
 	}
 	
 	/**
@@ -358,36 +362,70 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	{
 		final int port_final = port;
 		
-		new Thread(){
-			public void run(){
-				ServerSocket server_socket = null;
-				Socket client_socket = null;
-				String sr_server;
-				int sr_port;
-				
-				try{
-					server_socket = new ServerSocket(port_final);
-				}catch(Exception e) {e.printStackTrace();}
-				
-		  	//Begin accepting connections
-		  	System.out.println("[Steward]: Listening for Software Servers...");
-				
-				while(true){
+		//Listen over TCP
+		if(true){
+			new Thread(){
+				public void run(){
+					ServerSocket server_socket = null;
+					Socket client_socket = null;
+					String sr_server;
+					int sr_port;
+					
 					try{
-						//Wait for a connection
-						client_socket = server_socket.accept();
+						server_socket = new ServerSocket(port_final);
+					}catch(Exception e) {e.printStackTrace();}
+					
+			  	//Begin accepting connections
+			  	System.out.println("[Steward]: Listening for Software Servers...");
+					
+					while(true){
+						try{
+							//Wait for a connection
+							client_socket = server_socket.accept();
+							
+							//Handle this connection
+							sr_server = client_socket.getInetAddress().getHostName();
+							sr_port = (Integer)Utility.readObject(client_socket.getInputStream());
+							
+							if(add(sr_server, sr_port)){
+								System.out.println("[Steward]: Found Software Server - " + sr_server + ":" + sr_port);
+							}
+						}catch(Exception e) {e.printStackTrace();}
+					}
+				}
+			}.start();
+		}
+		
+		//Listen over UDP
+		if(true){
+			new Thread(){
+				public void run(){
+					String sr_server;
+					int sr_port = 50000;
+					byte[] buffer = new byte[10];
+					DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
+
+					try{
+						MulticastSocket multicast_socket = new MulticastSocket(port_final);
+						multicast_socket.joinGroup(InetAddress.getByName("225.4.5.6"));
 						
-						//Handle this connection
-						sr_server = client_socket.getInetAddress().getHostName();
-						sr_port = (Integer)Utility.readObject(client_socket.getInputStream());
-						
-						if(add(sr_server, sr_port)){
-							System.out.println("[Steward]: Found Software Server - " + sr_server + ":" + sr_port);
+						while(true){
+							multicast_socket.receive(packet);
+							sr_server = packet.getAddress().toString().substring(1);
+							
+							if(add(sr_server, sr_port)){
+								System.out.println("[Steward]: Found Software Server - " + sr_server + ":" + sr_port);
+							}
+							
+							Utility.pause(100);
 						}
+						
+						//socket.leaveGroup(InetAddress.getByName("225.4.5.6"));
+						//socket.close();
 					}catch(Exception e) {e.printStackTrace();}
 				}
-			}
-		}.start();
+			}.start();
+		}
 	}
 	
 	/**
