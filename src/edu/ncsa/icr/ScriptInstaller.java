@@ -278,7 +278,7 @@ public class ScriptInstaller
 				if(local_scripted_software_version.get(i) != null) software += "(" + local_scripted_software_version.get(i) + ")";
 			}
 			
-			System.out.println(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software) + "&software_keys=" + SOFTWARE_KEYS);
+			//System.out.println(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software) + "&software_keys=" + SOFTWARE_KEYS);
 			result = Utility.readURL(csr_script_url + "get_scripts.php?software=" + Utility.urlEncode(software) + "&software_keys=" + SOFTWARE_KEYS);
 			scanner = new Scanner(result);
 			

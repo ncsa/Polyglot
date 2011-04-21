@@ -324,6 +324,21 @@ public class Utility
   }
   
   /**
+   * Trim, remove quotes, convert all '\' to '/' so as to be consistent with Unix/Java paths, and add an end slash.
+   * @param path the path to convert
+   * @return the converted path
+   */
+  public static String cleanUnixPath(String path)
+  {
+  	path = path.trim();
+		if(path.charAt(0) == '"') path = path.substring(0, path.length()-2);
+		path = Utility.unixPath(path);
+		if(path.charAt(path.length()-1) != '/') path += '/';
+		
+		return path;
+  }
+  
+  /**
    * Convert all '/' to '\' so as to be consistent with Windows paths.
    *  @param input the path to convert
    *  @return the converted path

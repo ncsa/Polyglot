@@ -1,6 +1,7 @@
 package edu.ncsa.icr;
 import edu.ncsa.utility.*;
 import java.io.*;
+import java.text.*;
 import java.util.*;
 
 /**
@@ -18,6 +19,9 @@ public class Benchmarks
 		String software_server = "http://localhost:8182/";
 		String data_path = "./";
 		String temp_path = "./";
+		String download_path = "./";
+		String benchmark_name;
+		String message;
 		Vector<String> outputs;
 		Vector<String> inputs = new Vector<String>();
 		Vector<Double> times = new Vector<Double>();
@@ -26,6 +30,9 @@ public class Benchmarks
 		long benchmark_start, wait_start;
 		long t0, t1;
 		int max_wait_time = 30000;
+		double max_time = Double.MAX_VALUE;
+  	double hours, operations_per_hour, success_rate, wait_mean, wait_std;
+  	int whole_hours, whole_minutes, seconds;
 		int count, successes, tmpi;
 		
 		//Load configuration file
@@ -51,6 +58,8 @@ public class Benchmarks
 	        		temp_path = value + "/";
 	          }else if(key.equals("MaxWaitTime")){
 	        		max_wait_time = Integer.valueOf(value);
+	          }else if(key.equals("MaxTime")){
+	        		max_time = Double.valueOf(value);
 	          }
 	        }
 	      }
@@ -59,6 +68,26 @@ public class Benchmarks
 	    ins.close();
 	  }catch(Exception e) {e.printStackTrace();}
 	  
+	  //Parse command line arguments
+		for(int i=0; i<args.length; i++){
+			if(args[i].equals("-?")){
+				System.out.println("Usage: Benchmarks [options] [data]");
+				System.out.println();
+				System.out.println("Options: ");
+				System.out.println("  -?: display this help");
+				System.out.println("  -a: the application to use");
+				System.out.println();
+				System.exit(0);
+			}else if(args[i].equals("-a")){
+				application = args[++i];
+			}else{
+				data_path = Utility.cleanUnixPath(args[++i]);
+			}
+		}
+		
+		//Set benchmark name
+		benchmark_name = application + "-" + Utility.split(data_path, '/', true, true).lastElement();
+		
 	  //Get list of output formats
 		outputs = DistributedSoftwareServerRestlet.getEndpointValues(software_server + "software/" + application + "/" + task + "/");
 	  
@@ -71,13 +100,14 @@ public class Benchmarks
 	  	}
 	  }
 	  
-	  //Create a "tmp" folder
-		if(!Utility.exists(temp_path + "tmp/")) new File(temp_path + "tmp/").mkdir();
+	  //Create a download folder
+	  download_path = temp_path + "downloads." + benchmark_name + "/";
+		if(!Utility.exists(download_path)) new File(download_path).mkdir();
 
-	  //Hit the software server
+	  //Hit the software server		
 		benchmark_start = System.currentTimeMillis();
-	  count = 0;
-	  successes = 0;
+		count = 0;
+		successes = 0;
 	  
 	  while(true){
 	  	count++;
@@ -104,32 +134,46 @@ public class Benchmarks
 	  	times.add((t1-t0)/1000.0);
 	  	
 	  	//Check result
-	  	if(Utility.existsURL(output_url)) Utility.downloadFile(temp_path + "tmp/", output_url);
+	  	if(Utility.existsURL(output_url)) Utility.downloadFile(download_path, output_url);
 	  	
-	  	if(ScriptDebugger.exists(temp_path + "tmp/" + Utility.getFilename(output_url))){
+	  	if(ScriptDebugger.exists(download_path + Utility.getFilename(output_url))){
 	  		successes++;
 	  	}
 	  	
 	  	//Display statistics
-	  	double hours = (System.currentTimeMillis()-benchmark_start)/3600000.0;
-	  	double operations_per_hour = count / hours;
-	  	double success_rate = 100.0 * successes/(double)count;
-	  	double wait_mean = Utility.mean(times);
-	  	double wait_std = Utility.std(times, wait_mean);
+	  	hours = (System.currentTimeMillis()-benchmark_start)/3600000.0;
+	  	operations_per_hour = count / hours;
+	  	success_rate = 100.0 * successes/(double)count;
+	  	wait_mean = Utility.mean(times);
+	  	wait_std = Utility.std(times, wait_mean);
 	  	
-	  	int whole_hours = (int)Math.floor(hours);
-	  	int whole_minutes = (int)Math.floor(60.0*(hours-whole_hours));
-	  	int seconds = (int)Math.round(3600.0*(hours-whole_hours-(whole_minutes/60.0)));
+	  	whole_hours = (int)Math.floor(hours);
+	  	whole_minutes = (int)Math.floor(60.0*(hours-whole_hours));
+	  	seconds = (int)Math.round(3600.0*(hours-whole_hours-(whole_minutes/60.0)));
 	  	
-	  	String message = "";
+	  	message = "";
 	  	message += "[time: " + Utility.toString(whole_hours, 2) + ":" + Utility.toString(whole_minutes, 2) + ":" + Utility.toString(seconds, 2);
 	  	message += ", tasks/hour: " + Utility.round(operations_per_hour, 2);
 	  	message += ", success rate: " + Utility.round(success_rate, 2) + "%";
 	  	message += ", average wait: " + Utility.round(wait_mean, 2) + " s (" + Utility.round(wait_std, 2) + " s)";
 	  	message += "]";
 	  	
-	  	Utility.println(temp_path + "log.txt", message);
+	  	Utility.println(temp_path + benchmark_name + ".txt", message);
 	  	System.out.println("\n" + message + "\n");
+	  	
+	  	if(hours > max_time) break;
 	  }
+	  
+	  //Add final result to shared log file
+	  message = "";
+	  message += new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()) + " - ";
+	  message += application + " (" + data_path + "):\n";
+  	message += "[time: " + Utility.toString(whole_hours, 2) + ":" + Utility.toString(whole_minutes, 2) + ":" + Utility.toString(seconds, 2);
+  	message += ", tasks/hour: " + Utility.round(operations_per_hour, 2);
+  	message += ", success rate: " + Utility.round(success_rate, 2) + "%";
+  	message += ", average wait: " + Utility.round(wait_mean, 2) + " s (" + Utility.round(wait_std, 2) + " s)";
+  	message += "]\n";
+  	
+  	Utility.println(temp_path + "log.txt", message);
 	}
 }

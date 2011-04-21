@@ -1,6 +1,7 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.icr.ICRAuxiliary.Application;
+import edu.ncsa.image.ImageUtility;
 import edu.ncsa.utility.*;
 import java.util.*;
 import java.io.*;
@@ -29,6 +30,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static Vector<TreeSet<TaskInfo>> application_tasks;
 	private static TreeMap<String,Application> alias_map = new TreeMap<String,Application>();
 	private static String public_path = "./";
+	private static boolean ADMINISTRATORS_ENABLED = false;
 	
 	/**
 	 * Initialize.
@@ -231,7 +233,8 @@ public class SoftwareServerRestlet extends ServerResource
 			buffer += "    \n";
 			buffer += "    success: function(){\n";
 			buffer += "      window.endTime = new Date();\n";
-			buffer += "      document.getElementById('ping').innerHTML = window.endTime - window.startTime + \" ms\";\n";
+			//buffer += "      document.getElementById('ping').innerHTML = window.endTime - window.startTime + \" ms\";\n";
+			buffer += "      document.getElementById('ping').innerHTML = \"" + Runtime.getRuntime().availableProcessors() + " cores, \" + (window.endTime - window.startTime) + \" ms\";\n";
 			buffer += "    }\n";
 			buffer += "  });\n";
 			buffer += "  \n";
@@ -622,6 +625,24 @@ public class SoftwareServerRestlet extends ServerResource
 		}.start();
 	}
 	
+	/**
+	 * Check if the given request is authenticated by an administrator.
+	 * @param request the request
+	 * @return true if authenticated as an administrator
+	 */
+	private boolean isAdministrator(Request request)
+	{		
+		if(request.getChallengeResponse() != null){
+			String identifier = request.getChallengeResponse().getIdentifier();
+			
+			if(identifier != null && identifier.toLowerCase().startsWith("admin")){
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
 	@Get
 	/**
 	 * Handle HTTP GET requests.
@@ -639,7 +660,7 @@ public class SoftwareServerRestlet extends ServerResource
 		Form form;
 		Parameter p;
 		int session;
-		
+				
 		if(part0.isEmpty()){
 			return new StringRepresentation(getApplicationStack(), MediaType.TEXT_HTML);
 		}else if(part0.equals("software")){
@@ -709,7 +730,7 @@ public class SoftwareServerRestlet extends ServerResource
 					}else if(part1.equals("convert")){
 						return new StringRepresentation(getConvertForm(), MediaType.TEXT_HTML);
 					}else{
-						return new StringRepresentation("Error: invalid endpoint", MediaType.TEXT_PLAIN);
+						return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
 					}
 				}
 			}
@@ -724,7 +745,7 @@ public class SoftwareServerRestlet extends ServerResource
 					return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 				}
 			}else{
-				return new StringRepresentation("Error: invalid endpoint", MediaType.TEXT_PLAIN);
+				return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
 			}
 		}else if(part0.equals("image")){
 			if(!part1.isEmpty()){					
@@ -736,7 +757,7 @@ public class SoftwareServerRestlet extends ServerResource
 					return new StringRepresentation("Image doesn't exist", MediaType.TEXT_PLAIN);
 				}
 			}else{
-				return new StringRepresentation("Error: invalid endpoint", MediaType.TEXT_PLAIN);
+				return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
 			}
 		}else if(part0.equals("alive")){
 			return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
@@ -748,8 +769,24 @@ public class SoftwareServerRestlet extends ServerResource
 			return new StringRepresentation("" + Runtime.getRuntime().maxMemory(), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("load")){
 			return new StringRepresentation("" + ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage(), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("screen")){
+			if(ADMINISTRATORS_ENABLED && isAdministrator(getRequest())){
+				ImageUtility.save(public_path + "screen.jpg", ImageUtility.getScreen());
+				
+				return new FileRepresentation(new File(public_path + "screen.jpg"), MediaType.IMAGE_JPEG);
+			}else{
+				return new StringRepresentation("error: you don't have permission to do this", MediaType.TEXT_PLAIN);
+			}
+		}else if(part0.equals("reboot")){
+			if(ADMINISTRATORS_ENABLED && isAdministrator(getRequest())){
+				server.rebootMachine();
+				
+				return new StringRepresentation("ok", MediaType.TEXT_PLAIN);
+			}else{
+				return new StringRepresentation("error: you don't have permission to do this", MediaType.TEXT_PLAIN);
+			}
 		}else{
-			return new StringRepresentation("Error: invalid endpoint", MediaType.TEXT_PLAIN);
+			return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
 		}
 	}
 	
@@ -879,15 +916,16 @@ public class SoftwareServerRestlet extends ServerResource
 	 */
 	public static void main(String[] args)
 	{		
-		int port = 8182;
-		String username = null, password = null;
+		int port = 8182;		
 		String distributed_server = null;
+		TreeMap<String,String> accounts = new TreeMap<String,String>();
 		
 		//Load configuration file
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader("SoftwareServerRestlet.conf"));
 	    String line, key, value;
-	    
+	    String username, password;
+
 	    while((line=ins.readLine()) != null){
 	      if(line.contains("=")){
 	        key = line.substring(0, line.indexOf('=')).trim();
@@ -896,11 +934,14 @@ public class SoftwareServerRestlet extends ServerResource
 	        if(key.charAt(0) != '#'){
 	        	if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
+	          }else if(key.equals("DistributedServer")){
+	          	distributed_server = value;
 	          }else if(key.equals("Authentication")){
 	  	        username = value.substring(0, value.indexOf(':')).trim();
 	  	        password = value.substring(value.indexOf(':')+1).trim();
-	          }else if(key.equals("DistributedServer")){
-	          	distributed_server = value;
+	  	        accounts.put(username, password);
+	          }else if(key.equals("EnableAdministrators")){
+	          	ADMINISTRATORS_ENABLED = Boolean.valueOf(value);
 	          }
 	        }
 	      }
@@ -933,11 +974,24 @@ public class SoftwareServerRestlet extends ServerResource
 				}
 			};
 			
-			if(username != null && password != null){
+			if(!accounts.isEmpty()){
 				ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
 				MapVerifier verifier = new MapVerifier();
-
-				verifier.getLocalSecrets().put(username, password.toCharArray());
+				boolean FOUND_ADMIN = false;
+				boolean FOUND_USER = false;
+				
+				for(String username : accounts.keySet()){
+					if(username.toLowerCase().startsWith("admin")){
+						FOUND_ADMIN = true;
+					}else{
+						FOUND_USER = true;
+					}
+					
+					verifier.getLocalSecrets().put(username, accounts.get(username).toCharArray());
+				}
+				
+				if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
+				
 				guard.setVerifier(verifier);
 				guard.setNext(application);
 				component.getDefaultHost().attachDefault(guard);

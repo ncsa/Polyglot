@@ -1,4 +1,5 @@
 package edu.ncsa.utility;
+import java.io.FileWriter;
 import java.util.*;
 
 /**
@@ -12,6 +13,7 @@ public class Histogram<T extends Comparable>
 	private Vector<T> bins;
 	private Vector<T> values = new Vector<T>();
 	private TreeMap<T,Vector<T>> bin_values = new TreeMap<T,Vector<T>>();
+	
 	/**
 	 * Class constructor.
 	 * @param bins the bins to use
@@ -118,6 +120,60 @@ public class Histogram<T extends Comparable>
 	}
 
 	/**
+	 * Get an image of the histogram.
+	 * @param forground_color the foreground color
+	 * @param background_color the background color
+	 * @return a color image of the histogram
+	 */
+	public int[][] getImage(int foreground_color, int background_color)
+	{
+		int w = bins.size();
+		int h = histogram.get(getMax());
+		int[][] image = new int[h][w];
+		int tmpi;
+		
+		for(int x=0; x<bins.size(); x++){
+			tmpi = h-histogram.get(bins.get(x));
+			
+			for(int y=h-1; y>=0; y--){
+				if(y > tmpi){
+					image[y][x] = foreground_color;
+				}else{
+					image[y][x] = background_color;
+				}
+			}
+		}
+		
+		return image;
+	}
+	
+	/**
+	 * Get an image of the histogram.
+	 * @return a color image of the histogram
+	 */
+	public int[][] getImage()
+	{
+		return getImage(0x000000ff, 0x00ffffff);
+	}
+	
+	/**
+	 * Save the histogram to the given filename.
+	 * @param filename the filename to save to
+	 */
+	public void save(String filename)
+	{	    
+		try{
+	    FileWriter outs = new FileWriter(filename);
+	
+	    for(int i=0; i<bins.size(); i++){
+	      outs.write(bins.get(i) + " " + histogram.get(bins.get(i)) + "\n");
+	    }
+	    
+	    outs.close();
+	  }catch(Exception e) {e.printStackTrace();}
+	}
+
+	/**
 	 * Create bins for double values.
 	 * @param min the minimum value
 	 * @param increment the increment between values
@@ -129,6 +185,24 @@ public class Histogram<T extends Comparable>
 		Vector<Double> bins = new Vector<Double>();
 		
 		for(double b=min; b<=max; b+=increment){
+			bins.add(b);
+		}
+		
+		return bins;
+	}
+	
+	/**
+	 * Create bins for integer values.
+	 * @param min the minimum value
+	 * @param increment the increment between values
+	 * @param max the maximum value
+	 * @return the created bins
+	 */
+	public static Vector<Integer> createIntegerBins(int min, int increment, int max)
+	{
+		Vector<Integer> bins = new Vector<Integer>();
+		
+		for(int b=min; b<=max; b+=increment){
 			bins.add(b);
 		}
 		

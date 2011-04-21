@@ -1,5 +1,6 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
+import edu.ncsa.image.ImageUtility;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
@@ -605,6 +606,18 @@ public class SoftwareServer implements Runnable
 			}
 		}catch(Exception e){
 			System.out.println("[" + host + "](" + session + "): connection lost!");
+		}
+	}
+	
+	/**
+	 * Reboot the machine the software server is running on.
+	 */
+	public void rebootMachine()
+	{
+		if(WINDOWS){
+			try{
+				Runtime.getRuntime().exec("shutdown -r");
+			}catch(Exception e) {e.printStackTrace();}
 		}
 	}
 
