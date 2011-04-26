@@ -339,6 +339,20 @@ public class Utility
   }
   
   /**
+   * Add a slash to the end of the string if it doesn't already have one.
+   * @param string a string
+   * @return a string with a guaranteed slash at the end
+   */
+  public static String endSlash(String string)
+  {
+  	if(string != null && !string.isEmpty() && string.charAt(string.length()-1) != '/'){
+  		string += "/";
+  	}
+  	
+  	return string;
+  }
+  
+  /**
    * Convert all '/' to '\' so as to be consistent with Windows paths.
    *  @param input the path to convert
    *  @return the converted path

@@ -24,12 +24,13 @@ index += 2
 out := SubStr(arg2, index)
 
 ;Run program
-Run, C:\Program Files\Microsoft Office\Office12\WINWORD.EXE "%1%"
+Run, "C:\Program Files (x86)\Microsoft Office\Office12\WINWORD.EXE" "%1%"
 
 ;Make sure image is loaded before continuing
 Loop
 {
-  IfWinExist, %input_filename% - Microsoft Word
+  ;IfWinExist, %input_filename% - Microsoft Word
+  IfWinExist, %input_filename%
   {
     break
   }
@@ -54,13 +55,15 @@ if(out = "docx"){
 
 WinWait, Save As
 ControlSetText, Edit1, %2%
-ControlSend, Edit1, {Enter}
+;ControlSend, Edit1, {Enter}
+Send, !s
 
 ;Return to main window before exiting
 Loop
 {
   ;Continue on if main window is active
-  IfWinActive, %output_filename% - Microsoft Word
+  ;IfWinActive, %output_filename% - Microsoft Word
+  IfWinActive, %output_filename%
   { 
     break
   }

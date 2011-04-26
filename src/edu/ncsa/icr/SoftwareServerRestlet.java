@@ -579,7 +579,7 @@ public class SoftwareServerRestlet extends ServerResource
 		String result;
 		
 		if(session >= 0){
-			if(file.startsWith(getReference().getBaseRef() + "file/")){	//Remove session id from filenames of locally cached files
+			if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "file/")){	//Remove session id from filenames of locally cached files
 				file = SoftwareServer.getFilename(Utility.getFilename(file));
 			}else{																											//Download remote files
 				Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file), file);
@@ -684,12 +684,12 @@ public class SoftwareServerRestlet extends ServerResource
 							file = URLDecoder.decode(part4);
 							session = -1;
 							
-							if(file.startsWith(getReference().getBaseRef() + "/file/")){		//Locally cached files already have session ids
+							if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "/file/")){		//Locally cached files already have session ids
 								session = SoftwareServer.getSession(file);
-								result = getReference().getBaseRef() + "file/" + Utility.getFilenameName(file) + "." + format;
+								result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + Utility.getFilenameName(file) + "." + format;
 							}else{																													//Remote files must be assigned a session id
 								session = server.getSession();
-								result = getReference().getBaseRef() + "file/" + session + "_" + Utility.getFilenameName(file) + "." + format;
+								result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + session + "_" + Utility.getFilenameName(file) + "." + format;
 							}
 														
 							executeTaskLater(session, application, task, file, format);
@@ -719,9 +719,9 @@ public class SoftwareServerRestlet extends ServerResource
 				p = form.getFirst("format"); if(p != null) format = p.getValue();
 								
 				if(application != null && task != null && file != null && format != null){
-					url = getRootRef() + "software/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
+					url = Utility.endSlash(getRootRef().toString()) + "software/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
 
-					return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
+					return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head></html>", MediaType.TEXT_HTML);
 				}else{
 					if(part1.startsWith("get")){
 						return new StringRepresentation(getForm(false, application, application!=null), MediaType.TEXT_HTML);
@@ -769,21 +769,24 @@ public class SoftwareServerRestlet extends ServerResource
 			return new StringRepresentation("" + Runtime.getRuntime().maxMemory(), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("load")){
 			return new StringRepresentation("" + ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage(), MediaType.TEXT_PLAIN);
-		}else if(part0.equals("screen")){
-			if(ADMINISTRATORS_ENABLED && isAdministrator(getRequest())){
+		}else if(part0.equals("tasks")){
+			return new StringRepresentation("" + server.getTaskCount(), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("kills")){
+			return new StringRepresentation("" + server.getKillCount(), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("completed_tasks")){
+			return new StringRepresentation("" + server.getCompletedTaskCount(), MediaType.TEXT_PLAIN);
+		}else if(ADMINISTRATORS_ENABLED && isAdministrator(getRequest())){
+			if(part0.equals("screen")){
 				ImageUtility.save(public_path + "screen.jpg", ImageUtility.getScreen());
-				
 				return new FileRepresentation(new File(public_path + "screen.jpg"), MediaType.IMAGE_JPEG);
-			}else{
-				return new StringRepresentation("error: you don't have permission to do this", MediaType.TEXT_PLAIN);
-			}
-		}else if(part0.equals("reboot")){
-			if(ADMINISTRATORS_ENABLED && isAdministrator(getRequest())){
+			}else if(part0.equals("reset")){
+				server.resetCounts();
+				return new StringRepresentation("ok", MediaType.TEXT_PLAIN);
+			}else if(part0.equals("reboot")){
 				server.rebootMachine();
-				
 				return new StringRepresentation("ok", MediaType.TEXT_PLAIN);
 			}else{
-				return new StringRepresentation("error: you don't have permission to do this", MediaType.TEXT_PLAIN);
+				return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
 			}
 		}else{
 			return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
@@ -807,7 +810,7 @@ public class SoftwareServerRestlet extends ServerResource
 		int session = server.getSession();
 		boolean FORM_POST = !part0.isEmpty() && part0.equals("form");
 		boolean TASK_POST = !part1.isEmpty() && !part2.isEmpty() && !part3.isEmpty();
-		
+				
 		if(FORM_POST || TASK_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
 				DiskFileItemFactory factory = new DiskFileItemFactory();
@@ -826,7 +829,7 @@ public class SoftwareServerRestlet extends ServerResource
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
 						}else{
 							fi.write(new File(server.getCachePath() + session + "_" + fi.getName()));
-							file = getReference().getBaseRef() + "file/" + session + "_" + fi.getName();
+							file = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + session + "_" + fi.getName();
 						}
 					}
 				}catch(Exception e) {e.printStackTrace();}
@@ -845,7 +848,7 @@ public class SoftwareServerRestlet extends ServerResource
 			if(application != null && task != null && file != null && format != null){		
 				executeTaskLater(session, application, task, file, format);
 				
-				result = getReference().getBaseRef() + "file/" + Utility.getFilenameName(file) + "." + format;
+				result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + Utility.getFilenameName(file) + "." + format;
 
 				if(isTextOnly(Request.getCurrent())){
 					return new StringRepresentation(result, MediaType.TEXT_PLAIN);

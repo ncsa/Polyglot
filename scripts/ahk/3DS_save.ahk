@@ -1,4 +1,4 @@
-;3Ds Max (v11.0, 2009 Educational)
+;3Ds Max (v11.0 2009 Educational)
 ;model
 ;max
 

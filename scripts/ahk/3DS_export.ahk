@@ -1,6 +1,6 @@
-;3Ds Max (v11.0, 2009 Educational)
+;3Ds Max (v11.0 2009 Educational)
 ;model
-;3ds, ai, dae, dwf, dwg, dxf, fbx, flt, igs, lay, lp, m3g, obj, stl, vw, w3d, wrl
+;3ds, ai, dwg, dxf, fbx, igs, obj, stl, wrl
 
 ;check for the opened window
 SetTitleMatchMode, 2
@@ -32,14 +32,6 @@ Loop
     Send, {Enter}
   }
 
-  ;Click "Export" if asked to merge files
-  ControlGetText, tmp, Button1, Export
-
-  if(tmp = "Export")
-  {
-    ControlClick, Button1, Export
-  }
-
   ;Click "-=DONE=-" when exporting
   ifWinExist, Exporting
   {
@@ -50,6 +42,56 @@ Loop
   ifWinExist, Export Scene
   {
     ControlClick, Button1, Export Scene
+  }
+  
+	;Click "OK" when asked to Export to AutoCAD file
+  ifWinExist, Export to AutoCAD File
+  {
+    ControlClick, Button7, Export to AutoCAD File
+  }
+	
+	;Click "OK" when told nothing to convert
+  ifWinExist, DWG/DXF Export Warning
+  {
+    ControlClick, Button1, DWG/DXF Export Warning
+  }
+	
+	;Click "OK" for FBX Export
+  ifWinExist, FBX Export
+  {
+    ControlClick, Button1, FBX Export
+  }
+	
+	;Click "OK" for STL Export
+  ifWinExist, Export STL File
+  {
+    ControlClick, Button4, Export STL File
+  }
+	
+	;Click "OK" for VRML97 Exporter 
+  ifWinExist, VRML97 Exporter
+  {
+    ControlClick, Button1, VRML97 Exporter
+  }
+	
+	;Click "OK" for AIEXP no data warning
+  ifWinExist, AIEXP
+  {
+    ControlClick, Button1, AIEXP
+  }
+	
+	;Click "OK" for IGES Export
+  ifWinExist, IGES Export
+  {
+    ControlClick, Button2, IGES Export
+  }
+  
+	;Click "Export" if asked to merge files
+  ControlGetText, tmp, Button1, Export
+
+  if(tmp = "Export")
+  {
+    ControlClick, Button1, Export
   }
 
   Sleep, 500

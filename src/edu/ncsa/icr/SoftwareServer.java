@@ -1,11 +1,10 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
-import edu.ncsa.image.ImageUtility;
 import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.*;
 
 /**
  * An Imposed Code Reuse server.
@@ -21,12 +20,15 @@ public class SoftwareServer implements Runnable
 	private String cache_path = root_path + "Cache";
 	private String temp_path = root_path + "Temp";
 	private int max_operation_time = 10000; 	//In milliseconds
-	private int max_operation_attempts = 1;
+	private int task_attempts = 1;
 	private String steward_server = null;
 	private int steward_port;
 	private String broadcast_group = null;
 	private int broadcast_port;
 	private String status = "idle";
+	private int task_count = 0;
+	private int completed_task_count = 0;
+	private int kill_count = 0;
 	
 	private boolean SHOW_EXECUTABLES = true;
 	private boolean HANDLE_OPERATION_OUTPUT = false;
@@ -118,8 +120,8 @@ public class SoftwareServer implements Runnable
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("MaxOperationTime")){
 	            max_operation_time = Integer.valueOf(value);
-	          }else if(key.equals("MaxOperationAttempts")){
-	            max_operation_attempts = Integer.valueOf(value);
+	          }else if(key.equals("TaskAttempts")){
+	            task_attempts = Integer.valueOf(value);
 	          }else if(key.equals("ShowExecutables")){
 	            SHOW_EXECUTABLES = Boolean.valueOf(value);
 	          }else if(key.equals("HandleOperationOutput")){
@@ -299,6 +301,33 @@ public class SoftwareServer implements Runnable
   }
   
   /**
+   * Get the number of tasks received since starting up.
+   * @return the number of tasks recevied
+   */
+  public int getTaskCount()
+  {
+  	return task_count;
+  }
+  
+  /**
+   * Get the number of times the kill operation has been used.
+   * @return the number of times the kill operation has been used
+   */
+  public int getKillCount()
+  {
+  	return kill_count;
+  }
+  
+  /**
+   * Get the number of completed tasks.
+   * @return the number of completed tasks
+   */
+  public int getCompletedTaskCount()
+  {
+  	return completed_task_count;
+  }
+  
+  /**
    * Execute the given task.
    * @param host the host requesting this task execution
    * @param session the session id
@@ -322,9 +351,10 @@ public class SoftwareServer implements Runnable
   	boolean TASK_COMPLETED = false;
   	
   	BUSY = true;  
+  	task_count++;
   	
   	//Execute each subtask in the task
-		for(int i=0; i<max_operation_attempts; i++){
+		for(int i=0; i<task_attempts; i++){
 	  	for(int j=0; j<task.size(); j++){
 	  		subtask = task.get(j);
 	  		application = applications.get(subtask.application); application_set.add(subtask.application);
@@ -375,16 +405,19 @@ public class SoftwareServer implements Runnable
 		  		COMMAND_COMPLETED = Utility.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
 			  	
           if(!COMMAND_COMPLETED){
-            if(i < (max_operation_attempts-1)){
+            if(i < (task_attempts-1)){
               System.out.println("retrying...");
             }else{
               System.out.println("killing...");
             }  
             
           	if(application.kill_operation != null){
+          		kill_count++;
 	            Script.executeAndWait(application.kill_operation.script);
           	}else if(ATTEMPT_AUTO_KILL && !application.executables.isEmpty()){
           		if(WINDOWS){
+          			kill_count++;
+          			
           			try{
           				Utility.executeAndWait("taskkill /f /im " + Utility.getFilename(Utility.unixPath(application.executables.first())), -1);
           			}catch(Exception e) {e.printStackTrace();}
@@ -402,7 +435,10 @@ public class SoftwareServer implements Runnable
 		  	if(j == task.size()-1) TASK_COMPLETED = true;
 	  	}
 	  	
-	  	if(TASK_COMPLETED) break;
+	  	if(TASK_COMPLETED){
+	  		completed_task_count++;
+	  		break;
+	  	}
 		}
 		
 		//Guarantee output by creating an empty file if need be
@@ -610,13 +646,23 @@ public class SoftwareServer implements Runnable
 	}
 	
 	/**
+	 * Reset task counters to zero.
+	 */
+	public void resetCounts()
+	{
+		task_count = 0;
+		kill_count = 0;
+		completed_task_count = 0;
+	}
+
+	/**
 	 * Reboot the machine the software server is running on.
 	 */
 	public void rebootMachine()
 	{
 		if(WINDOWS){
 			try{
-				Runtime.getRuntime().exec("shutdown -r");
+				Runtime.getRuntime().exec("shutdown -r -t 5");
 			}catch(Exception e) {e.printStackTrace();}
 		}
 	}

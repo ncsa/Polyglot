@@ -1,4 +1,4 @@
-;3Ds Max (v11.0, 2009 Educational)
+;3Ds Max (v11.0 2009 Educational)
 ;model
 ;3ds, ai, ddf, dem, dwg, dxf, fbx, flt, iam, ige, iges, igs, ipt, lp, ls, obj, shp, stl, vw, wrl, wrz
 
@@ -29,6 +29,30 @@ Loop
   IfWinActive, Autodesk 3ds Max Design 2009
   { 
     break
+  }
+
+	;Click "OK" for STL Import
+  ifWinExist, Import STL File
+  {
+    ControlClick, Button11, Import STL File
+  }
+	
+	;Click "OK" for OBJ Import Summary
+  ifWinExist, OBJ Import Summarys
+  {
+    ControlClick, gwButton1, OBJ Import Summarys
+  }
+	
+	;Click "OK" for 3DS File Import
+  ifWinExist, 3DS File Import
+  {
+    ControlClick, Button1, 3DS File Import
+  }
+	
+	;Click "OK" for Error
+  ifWinExist, Error
+  {
+    ControlClick, Button1, Error
   }
 
   ;Click "OK" if asked to merge files

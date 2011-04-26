@@ -38,8 +38,9 @@
 		<mkdir dir="${tmp_zip}/misc"/>
 		<mkdir dir="${tmp_zip}/tmp"/>
 		<mkdir dir="${tmp_zip}/tmp/SoftwareServer"/>
-		<mkdir dir="${tmp_zip}/tmp/SoftwareServerBenchmarks"/>
-		<mkdir dir="${tmp_zip}/tmp/SoftwareServerBenchmarks/Results"/>
+		<mkdir dir="${tmp_zip}/tmp/Benchmark"/>
+		<mkdir dir="${tmp_zip}/tmp/Benchmark/Data"/>
+		<mkdir dir="${tmp_zip}/tmp/Benchmark/Results"/>
 		<mkdir dir="${tmp_zip}/tmp/IOGraphWeightsTool"/>
 		<mkdir dir="${tmp_zip}/tmp/PolyglotWebInterface"/>
 		<mkdir dir="${tmp_zip}/tmp/MonkeyScript"/>
@@ -99,7 +100,7 @@
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="false">RootPath=tmp/SoftwareServer${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">Port=${icr_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">MaxOperationTime=30000${line.separator}</echo>
-		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">MaxOperationAttempts=2${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">TaskAttempts=1${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">ShowExecutables=false${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">HandleOperationOutput=false${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">ShowOperationOutput=false${line.separator}</echo>
@@ -113,11 +114,13 @@
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#PolyglotSteward=localhost:${steward_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">Broadcast=225.4.5.6:${steward_port}</echo>
 
-		<echo file="${tmp_zip}/SoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.restlet.ext.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.io.jar;%~dp0lib/restlet-2.0.4/javax.servlet.jar" -Xmx1g edu.ncsa.icr.SoftwareServerRestlet %*</echo>
-		<echo file="${tmp_zip}/SoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.restlet.ext.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.io.jar:lib/restlet-2.0.4/javax.servlet.jar -Xmx1g edu.ncsa.icr.SoftwareServerRestlet</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.restlet.ext.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.io.jar;%~dp0lib/restlet-2.0.4/javax.servlet.jar" -Xmx1g edu.ncsa.icr.SoftwareServerRestlet %*</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.restlet.ext.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.io.jar:lib/restlet-2.0.4/javax.servlet.jar -Xmx1g edu.ncsa.icr.SoftwareServerRestlet</echo>
 		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="false">Port=8182${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#DistributedServer=localhost:8183${line.separator}</echo>
-		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=username:password</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=user1:password${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=admin:password${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#EnableAdministrators=false</echo>
 
 		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet %*</echo>
 		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet</echo>
@@ -128,14 +131,15 @@
 		<echo file="${tmp_zip}/SoftwareServerClient.conf" append="false">SoftwareServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServerClient.conf" append="true">#DefaultPath=data</echo>
 
-		<echo file="${tmp_zip}/Benchmarks.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar" -Xmx1g edu.ncsa.icr.Benchmarks %*</echo>
-		<echo file="${tmp_zip}/Benchmarks.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar -Xmx1g edu.ncsa.icr.Benchmarks</echo>
-		<echo file="${tmp_zip}/Benchmarks.conf" append="false">SoftwareServer=http://141.142.224.231:8182${line.separator}</echo>
-		<echo file="${tmp_zip}/Benchmarks.conf" append="true">Application=A3DReviewer${line.separator}</echo>
-		<echo file="${tmp_zip}/Benchmarks.conf" append="true">Task=convert${line.separator}</echo>
-		<echo file="${tmp_zip}/Benchmarks.conf" append="true">DataPath=tmp/SoftwareServerBenchmarks/A3DReviewer4_valid${line.separator}</echo>
-		<echo file="${tmp_zip}/Benchmarks.conf" append="true">TempPath=tmp/SoftwareServerBenchmarks/Results${line.separator}</echo>
-		<echo file="${tmp_zip}/Benchmarks.conf" append="true">MaxWaitTime=30000</echo>
+		<echo file="${tmp_zip}/Benchmark.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar" -Xmx1g edu.ncsa.icr.Benchmark %*</echo>
+		<echo file="${tmp_zip}/Benchmark.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar -Xmx1g edu.ncsa.icr.Benchmark $@</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="false">SoftwareServer=http://141.142.224.231:8182${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="true">Application=A3DReviewer${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="true">Task=convert${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="true">DataPath=tmp/Benchmark/Data/A3DReviewer4_valid${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="true">TempPath=tmp/Benchmark/Results${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="true">MaxWaitTime=30000${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="true">MaxTime=1.01</echo>
 
 		<echo file="${tmp_zip}/PolyglotServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
 		<echo file="${tmp_zip}/PolyglotServer.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
@@ -306,7 +310,7 @@
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">MaxOperationTime=30000${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">HandleOperationOutput=false${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">ShowOperationOutput=false${line.separator}</echo>
-		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">MaxOperationAttempts=2${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">TaskAttempts=1${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">EnableMonitors=true${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">AHKScripts=scripts/ahk${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#AppleScripts=scripts/applescript${line.separator}</echo>
@@ -316,12 +320,14 @@
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#PolyglotSteward=localhost:${steward_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">Broadcast=225.4.5.6:${steward_port}</echo>
 
-		<echo file="${tmp_srs}/SoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.SoftwareServerRestlet %*</echo>
-		<echo file="${tmp_srs}/SoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.SoftwareServerRestlet</echo>
+		<echo file="${tmp_srs}/SoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.SoftwareServerRestlet %*</echo>
+		<echo file="${tmp_srs}/SoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.SoftwareServerRestlet</echo>
 		<echo file="${tmp_srs}/SoftwareServerRestlet.conf" append="false">Port=8182${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareServerRestlet.conf" append="true">#DistributedServer=localhost:8183${line.separator}</echo>
-		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=username:password</echo>
-
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=user1:password{line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=admin:password${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#EnableAdministrators=false</echo>
+		
 		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet %*</echo>
 		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet</echo>
 		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.conf" append="false">Port=8183</echo>

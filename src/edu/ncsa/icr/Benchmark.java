@@ -5,10 +5,10 @@ import java.text.*;
 import java.util.*;
 
 /**
- * Benchmarks for software servers.
+ * Benchmark for software servers.
  * @author Kenton McHenry
  */
-public class Benchmarks
+public class Benchmark
 {
 	/**
 	 * Run a benchmark.
@@ -33,11 +33,12 @@ public class Benchmarks
 		double max_time = Double.MAX_VALUE;
   	double hours, operations_per_hour, success_rate, wait_mean, wait_std;
   	int whole_hours, whole_minutes, seconds;
+  	int task_count, kill_count, completed_task_count;
 		int count, successes, tmpi;
 		
 		//Load configuration file
 	  try{
-	    BufferedReader ins = new BufferedReader(new FileReader("Benchmarks.conf"));
+	    BufferedReader ins = new BufferedReader(new FileReader("Benchmark.conf"));
 	    String line, key, value;
 	    
 	    while((line=ins.readLine()) != null){
@@ -71,7 +72,7 @@ public class Benchmarks
 	  //Parse command line arguments
 		for(int i=0; i<args.length; i++){
 			if(args[i].equals("-?")){
-				System.out.println("Usage: Benchmarks [options] [data]");
+				System.out.println("Usage: Benchmark [options] [data]");
 				System.out.println();
 				System.out.println("Options: ");
 				System.out.println("  -?: display this help");
@@ -81,7 +82,7 @@ public class Benchmarks
 			}else if(args[i].equals("-a")){
 				application = args[++i];
 			}else{
-				data_path = Utility.cleanUnixPath(args[++i]);
+				data_path = Utility.cleanUnixPath(args[i]);
 			}
 		}
 		
@@ -165,6 +166,10 @@ public class Benchmarks
 	  }
 	  
 	  //Add final result to shared log file
+	  task_count = Integer.valueOf(Utility.readURL(software_server + "tasks"));
+	  kill_count = Integer.valueOf(Utility.readURL(software_server + "kills"));
+	  completed_task_count = Integer.valueOf(Utility.readURL(software_server + "completed_tasks"));
+
 	  message = "";
 	  message += new SimpleDateFormat("yyyy/MM/dd HH:mm:ss").format(new Date()) + " - ";
 	  message += application + " (" + data_path + "):\n";
@@ -173,6 +178,7 @@ public class Benchmarks
   	message += ", success rate: " + Utility.round(success_rate, 2) + "%";
   	message += ", average wait: " + Utility.round(wait_mean, 2) + " s (" + Utility.round(wait_std, 2) + " s)";
   	message += "]\n";
+  	message += "tasks: " + task_count + ", kills: " + kill_count + ", completed tasks: " + completed_task_count + "\n";
   	
   	Utility.println(temp_path + "log.txt", message);
 	}
