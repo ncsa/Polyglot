@@ -1,1 +1,1 @@
-java -cp "%~dp0bin;%~dp0lib/ncsa/Utilities.jar" edu.ncsa.icr.polyglot.PolyglotClient %1 %2
+java -cp "%~dp0bin" edu.ncsa.icr.polyglot.PolyglotClient %1 %2

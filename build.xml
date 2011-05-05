@@ -74,14 +74,14 @@
 		<property name="steward_port" value="50001"/>
 		<property name="polyglot_port" value="50002"/>
 		
-		<echo file="${tmp_zip}/ScriptDebugger.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptDebugger %*</echo>
-		<echo file="${tmp_zip}/ScriptDebugger.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptDebugger $1 $2</echo>
+		<echo file="${tmp_zip}/ScriptDebugger.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptDebugger %*</echo>
+		<echo file="${tmp_zip}/ScriptDebugger.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptDebugger $1 $2</echo>
 		<echo file="${tmp_zip}/ScriptDebugger.conf" append="false">DataPath=data${line.separator}</echo>
 		<echo file="${tmp_zip}/ScriptDebugger.conf" append="true">SearchPath=C:/Program Files;C:/Program Files (x86)</echo>
 		
-		<echo file="${tmp_zip}/ScriptInstaller.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller %*</echo>
-		<echo file="${tmp_zip}/ScriptInstaller.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptInstaller $1 $2 $3 $4</echo>
-		<echo file="${tmp_zip}/TestScripts.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller -test 5 %*</echo>
+		<echo file="${tmp_zip}/ScriptInstaller.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller %*</echo>
+		<echo file="${tmp_zip}/ScriptInstaller.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptInstaller $1 $2 $3 $4</echo>
+		<echo file="${tmp_zip}/TestScripts.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller -test 5 %*</echo>
 
 		<echo file="${tmp_zip}/Share.bat" append="false">taskkill /f /im java.exe${line.separator}</echo>
 		<echo file="${tmp_zip}/Share.bat" append="true">cd "%~dp0"${line.separator}</echo>
@@ -95,8 +95,8 @@
 		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share\command]${line.separator}</echo>
 		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">@="C:\\Users\\polyglot\\Desktop\\Polyglot2\\Share.bat \"%1\""</echo>
 		
-		<echo file="${tmp_zip}/SoftwareServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServer %*</echo>
-		<echo file="${tmp_zip}/SoftwareServer.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServer $1 $2</echo>
+		<echo file="${tmp_zip}/SoftwareServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServer %*</echo>
+		<echo file="${tmp_zip}/SoftwareServer.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServer $1 $2</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="false">RootPath=tmp/SoftwareServer${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">Port=${icr_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">MaxOperationTime=30000${line.separator}</echo>
@@ -114,25 +114,25 @@
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#PolyglotSteward=localhost:${steward_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">Broadcast=225.4.5.6:${steward_port}</echo>
 
-		<echo file="${tmp_zip}/SoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.restlet.ext.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.io.jar;%~dp0lib/restlet-2.0.4/javax.servlet.jar" -Xmx1g edu.ncsa.icr.SoftwareServerRestlet %*</echo>
-		<echo file="${tmp_zip}/SoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.restlet.ext.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.io.jar:lib/restlet-2.0.4/javax.servlet.jar -Xmx1g edu.ncsa.icr.SoftwareServerRestlet</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.restlet.ext.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.io.jar;%~dp0lib/restlet-2.0.4/javax.servlet.jar" -Xmx1g edu.ncsa.icr.SoftwareServerRestlet %*</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/kgm/ImageUtilities.jar:lib/kgm/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.restlet.ext.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.io.jar:lib/restlet-2.0.4/javax.servlet.jar -Xmx1g edu.ncsa.icr.SoftwareServerRestlet</echo>
 		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="false">Port=8182${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#DistributedServer=localhost:8183${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=user1:password${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=admin:password${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#EnableAdministrators=false</echo>
 
-		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet %*</echo>
-		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet</echo>
+		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet %*</echo>
+		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet</echo>
 		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.conf" append="false">Port=8183</echo>
 
-		<echo file="${tmp_zip}/SoftwareServerClient.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServerClient %*</echo>
-		<echo file="${tmp_zip}/SoftwareServerClient.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServerClient $1</echo>
+		<echo file="${tmp_zip}/SoftwareServerClient.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServerClient %*</echo>
+		<echo file="${tmp_zip}/SoftwareServerClient.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServerClient $1</echo>
 		<echo file="${tmp_zip}/SoftwareServerClient.conf" append="false">SoftwareServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServerClient.conf" append="true">#DefaultPath=data</echo>
 
-		<echo file="${tmp_zip}/Benchmark.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar" -Xmx1g edu.ncsa.icr.Benchmark %*</echo>
-		<echo file="${tmp_zip}/Benchmark.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar -Xmx1g edu.ncsa.icr.Benchmark $@</echo>
+		<echo file="${tmp_zip}/Benchmark.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar" -Xmx1g edu.ncsa.icr.Benchmark %*</echo>
+		<echo file="${tmp_zip}/Benchmark.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar -Xmx1g edu.ncsa.icr.Benchmark $@</echo>
 		<echo file="${tmp_zip}/Benchmark.conf" append="false">SoftwareServer=http://141.142.224.231:8182${line.separator}</echo>
 		<echo file="${tmp_zip}/Benchmark.conf" append="true">Application=A3DReviewer${line.separator}</echo>
 		<echo file="${tmp_zip}/Benchmark.conf" append="true">Task=convert${line.separator}</echo>
@@ -141,40 +141,40 @@
 		<echo file="${tmp_zip}/Benchmark.conf" append="true">MaxWaitTime=30000${line.separator}</echo>
 		<echo file="${tmp_zip}/Benchmark.conf" append="true">MaxTime=1.01</echo>
 
-		<echo file="${tmp_zip}/PolyglotServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
-		<echo file="${tmp_zip}/PolyglotServer.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
+		<echo file="${tmp_zip}/PolyglotServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
+		<echo file="${tmp_zip}/PolyglotServer.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
 		<echo file="${tmp_zip}/PolyglotServer.conf" append="false">Port=${polyglot_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/PolyglotServer.conf" append="true">StewardPort=${steward_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/PolyglotServer.conf" append="true">#SoftwareServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/PolyglotServer.conf" append="true">PolyglotWebInterface=true${line.separator}</echo>
 		<echo file="${tmp_zip}/PolyglotServer.conf" append="true">PolyglotMonitor=true</echo>
 
-		<echo file="${tmp_zip}/PolyglotMonitor.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotMonitor %*</echo>
-		<echo file="${tmp_zip}/PolyglotMonitor.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotMonitor $1</echo>
+		<echo file="${tmp_zip}/PolyglotMonitor.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotMonitor %*</echo>
+		<echo file="${tmp_zip}/PolyglotMonitor.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotMonitor $1</echo>
 		
-		<echo file="${tmp_zip}/PolyglotClient.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotClient %*</echo>
-		<echo file="${tmp_zip}/PolyglotClient.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotClient $1 $2</echo>
+		<echo file="${tmp_zip}/PolyglotClient.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotClient %*</echo>
+		<echo file="${tmp_zip}/PolyglotClient.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotClient $1 $2</echo>
 		<echo file="${tmp_zip}/PolyglotClient.conf">PolyglotServer=localhost:${polyglot_port}</echo>
 	
-		<echo file="${tmp_zip}/PolyglotPanel.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotPanel</echo>
-		<echo file="${tmp_zip}/PolyglotPanel.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotPanel</echo>
+		<echo file="${tmp_zip}/PolyglotPanel.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotPanel</echo>
+		<echo file="${tmp_zip}/PolyglotPanel.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotPanel</echo>
 		<echo file="${tmp_zip}/PolyglotPanel.conf" append="false">DefaultPath=data${line.separator}</echo>
 		<echo file="${tmp_zip}/PolyglotPanel.conf" append="true">#SoftwareServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/PolyglotPanel.conf" append="true">PolyglotServer=localhost:${polyglot_port}</echo>
 	
-		<echo file="${tmp_zip}/PolyglotWebInterface.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebInterface</echo>
-		<echo file="${tmp_zip}/PolyglotWebInterface.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebInterface</echo>
+		<echo file="${tmp_zip}/PolyglotWebInterface.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebInterface</echo>
+		<echo file="${tmp_zip}/PolyglotWebInterface.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebInterface</echo>
 		<echo file="${tmp_zip}/PolyglotWebInterface.conf" append="false">PolyglotPath=tmp/PolyglotWebInterface${line.separator}</echo>
 		<echo file="${tmp_zip}/PolyglotWebInterface.conf" append="true">#SoftwareServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/PolyglotWebInterface.conf" append="true">PolyglotServer=localhost:${polyglot_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/PolyglotWebInterface.conf" append="true">SleepLength=1000</echo>
 
-		<echo file="${tmp_zip}/IOGraphPanel.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel %*</echo>
-		<echo file="${tmp_zip}/IOGraphPanel.sh">java -cp Polyglot2.jar:lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel $1 $2</echo>
-		<echo file="${tmp_zip}/DistributedSoftwareIOGraphPanel.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel %1</echo>
-		<echo file="${tmp_zip}/DistributedSoftwareIOGraphPanel.sh">java -cp Polyglot2.jar:lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel $1</echo>
+		<echo file="${tmp_zip}/IOGraphPanel.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel %*</echo>
+		<echo file="${tmp_zip}/IOGraphPanel.sh">java -cp Polyglot2.jar:lib/kgm/ImageUtilities.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel $1 $2</echo>
+		<echo file="${tmp_zip}/DistributedSoftwareIOGraphPanel.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel %1</echo>
+		<echo file="${tmp_zip}/DistributedSoftwareIOGraphPanel.sh">java -cp Polyglot2.jar:lib/kgm/ImageUtilities.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel $1</echo>
 
-		<echo file="${tmp_zip}/IOGraphWeightsTool.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/3DUtilities.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/MatrixUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/ncsa/versus-api-0.5.jar;%~dp0lib/ncsa/versus-impl-0.5.jar;%~dp0lib/misc/commons-logging-1.1.1.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphWeightsTool</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/3DUtilities.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/MatrixUtilities.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/ncsa/versus-api-0.5.jar;%~dp0lib/ncsa/versus-impl-0.5.jar;%~dp0lib/misc/commons-logging-1.1.1.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphWeightsTool</echo>
 		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="false">SoftwareServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">TestPath=tmp/IOGraphWeightsTool${line.separator}</echo>
 		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">RetryLevel=3${line.separator}</echo>
@@ -189,23 +189,23 @@
 		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">InvalidValue=0${line.separator}</echo>
 		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">Extension=jpg</echo>
 		
-		<echo file="${tmp_zip}/SoftwareMonekey_VNC.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/misc/VncViewer.jar" -Xmx1g edu.ncsa.icr.SoftwareMonkey_VNC</echo>
-		<echo file="${tmp_zip}/SoftwareMonekey_VNC.sh">java -cp Polyglot2.jar:lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:lib/misc/VncViewer.jar -Xmx1g edu.ncsa.icr.SoftwareMonkey_VNC</echo>
+		<echo file="${tmp_zip}/SoftwareMonekey_VNC.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/misc/VncViewer.jar" -Xmx1g edu.ncsa.icr.SoftwareMonkey_VNC</echo>
+		<echo file="${tmp_zip}/SoftwareMonekey_VNC.sh">java -cp Polyglot2.jar:lib/kgm/ImageUtilities.jar:lib/kgm/Utilities.jar:lib/misc/VncViewer.jar -Xmx1g edu.ncsa.icr.SoftwareMonkey_VNC</echo>
 		<echo file="${tmp_zip}/SoftwareMonekey_VNC.conf" append="false">Server=localhost:5900${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareMonekey_VNC.conf" append="true">OutputPath=tmp/MonkeyScript${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareMonekey_VNC.conf" append="true">IgnoredBottom=32</echo>
 
-		<echo file="${tmp_zip}/MonkeyScript.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.MonkeyScript %*</echo>
+		<echo file="${tmp_zip}/MonkeyScript.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.MonkeyScript %*</echo>
 
-		<echo file="${tmp_zip}/AutoUpdate.bat">java -cp "%~dp0lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
-		<echo file="${tmp_zip}/AutoUpdate.sh">java -cp lib/ncsa/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>
+		<echo file="${tmp_zip}/AutoUpdate.bat">java -cp "%~dp0lib/kgm/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
+		<echo file="${tmp_zip}/AutoUpdate.sh">java -cp lib/kgm/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp_zip}/AutoUpdate.conf" append="false">!conf, scripts/${line.separator}</echo>
 		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">!win: sh${line.separator}</echo>
 		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">!unix: bat, reg${line.separator}</echo>
 		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">http://isda.ncsa.uiuc.edu/kmchenry/tmp/Polyglot2/Polyglot2.zip</echo>
 		
 		<!--
-		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.bat">java -cp "%~dp0../../lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
+		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.bat">java -cp "%~dp0../../lib/kgm/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.conf" append="false">http://isda.ncsa.uiuc.edu/~kmchenry/tmp/Polyglot2/MonkeyScript/${line.separator}</echo>
 		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.conf" append="true">000_open.zip</echo>
 		-->
@@ -282,14 +282,14 @@
 		
 		<property name="icr_port" value="50000"/>
 		
-		<echo file="${tmp_srs}/ScriptDebugger.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptDebugger %*</echo>
-		<echo file="${tmp_srs}/ScriptDebugger.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptDebugger $1 $2</echo>
+		<echo file="${tmp_srs}/ScriptDebugger.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptDebugger %*</echo>
+		<echo file="${tmp_srs}/ScriptDebugger.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptDebugger $1 $2</echo>
 		<echo file="${tmp_srs}/ScriptDebugger.conf" append="false">DataPath=data${line.separator}</echo>
 		<echo file="${tmp_srs}/ScriptDebugger.conf" append="true">SearchPath=C:/Program Files;C:/Program Files (x86)</echo>
 		
-		<echo file="${tmp_srs}/ScriptInstaller.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller %*</echo>
-		<echo file="${tmp_srs}/ScriptInstaller.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptInstaller $1 $2 $3 $4</echo>
-		<echo file="${tmp_zip}/TestScripts.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller -test 5 %*</echo>
+		<echo file="${tmp_srs}/ScriptInstaller.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller %*</echo>
+		<echo file="${tmp_srs}/ScriptInstaller.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptInstaller $1 $2 $3 $4</echo>
+		<echo file="${tmp_zip}/TestScripts.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller -test 5 %*</echo>
 
 		<echo file="${tmp_zip}/Share.bat" append="false">taskkill /f /im java.exe${line.separator}</echo>
 		<echo file="${tmp_zip}/Share.bat" append="true">cd "%~dp0"${line.separator}</echo>
@@ -303,8 +303,8 @@
 		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share\command]${line.separator}</echo>
 		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">@="C:\\Users\\polyglot\\Desktop\\Polyglot2\\Share.bat \"%1\""</echo>
 		
-		<echo file="${tmp_srs}/SoftwareServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServer %*</echo>
-		<echo file="${tmp_srs}/SoftwareServer.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServer $1 $2</echo>
+		<echo file="${tmp_srs}/SoftwareServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServer %*</echo>
+		<echo file="${tmp_srs}/SoftwareServer.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServer $1 $2</echo>
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="false">RootPath=tmp/SoftwareServer${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">Port=${icr_port}${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">MaxOperationTime=30000${line.separator}</echo>
@@ -320,33 +320,33 @@
 		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#PolyglotSteward=localhost:${steward_port}${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">Broadcast=225.4.5.6:${steward_port}</echo>
 
-		<echo file="${tmp_srs}/SoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.SoftwareServerRestlet %*</echo>
-		<echo file="${tmp_srs}/SoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.SoftwareServerRestlet</echo>
+		<echo file="${tmp_srs}/SoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.SoftwareServerRestlet %*</echo>
+		<echo file="${tmp_srs}/SoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/kgm/ImageUtilities.jar:lib/kgm/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.SoftwareServerRestlet</echo>
 		<echo file="${tmp_srs}/SoftwareServerRestlet.conf" append="false">Port=8182${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareServerRestlet.conf" append="true">#DistributedServer=localhost:8183${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=user1:password{line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=admin:password${line.separator}</echo>
 		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#EnableAdministrators=false</echo>
 		
-		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet %*</echo>
-		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/ncsa/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet</echo>
+		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet %*</echo>
+		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet</echo>
 		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.conf" append="false">Port=8183</echo>
 
-		<echo file="${tmp_srs}/SoftwareServerClient.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServerClient %*</echo>
-		<echo file="${tmp_srs}/SoftwareServerClient.sh">cmd /c java -cp Polyglot2.jar:lib/ncsa/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServerClient $1</echo>
+		<echo file="${tmp_srs}/SoftwareServerClient.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServerClient %*</echo>
+		<echo file="${tmp_srs}/SoftwareServerClient.sh">cmd /c java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServerClient $1</echo>
 		<echo file="${tmp_srs}/SoftwareServerClient.conf" append="false">SoftwareServer=localhost:${icr_port}${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareServerClient.conf" append="true">#DefaultPath=data</echo>
 
-		<echo file="${tmp_srs}/SoftwareMonekey_VNC.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar;%~dp0lib/misc/VncViewer.jar" -Xmx1g edu.ncsa.icr.SoftwareMonkey_VNC</echo>
-		<echo file="${tmp_srs}/SoftwareMonekey_VNC.sh">java -cp Polyglot2.jar:lib/ncsa/ImageUtilities.jar:lib/ncsa/Utilities.jar:lib/misc/VncViewer.jar -Xmx1g edu.ncsa.icr.SoftwareMonkey_VNC</echo>
+		<echo file="${tmp_srs}/SoftwareMonekey_VNC.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/misc/VncViewer.jar" -Xmx1g edu.ncsa.icr.SoftwareMonkey_VNC</echo>
+		<echo file="${tmp_srs}/SoftwareMonekey_VNC.sh">java -cp Polyglot2.jar:lib/kgm/ImageUtilities.jar:lib/kgm/Utilities.jar:lib/misc/VncViewer.jar -Xmx1g edu.ncsa.icr.SoftwareMonkey_VNC</echo>
 		<echo file="${tmp_srs}/SoftwareMonekey_VNC.conf" append="false">Server=localhost:5900${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareMonekey_VNC.conf" append="true">OutputPath=tmp/MonkeyScript${line.separator}</echo>
 		<echo file="${tmp_srs}/SoftwareMonekey_VNC.conf" append="true">IgnoredBottom=32</echo>
 
-		<echo file="${tmp_srs}/MonkeyScript.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.MonkeyScript %*</echo>
+		<echo file="${tmp_srs}/MonkeyScript.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.MonkeyScript %*</echo>
 
-		<echo file="${tmp_srs}/AutoUpdate.bat">java -cp "%~dp0lib/ncsa/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
-		<echo file="${tmp_srs}/AutoUpdate.sh">java -cp lib/ncsa/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>
+		<echo file="${tmp_srs}/AutoUpdate.bat">java -cp "%~dp0lib/kgm/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
+		<echo file="${tmp_srs}/AutoUpdate.sh">java -cp lib/kgm/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>
 		<echo file="${tmp_srs}/AutoUpdate.conf" append="false">!conf, scripts/${line.separator}</echo>
 		<echo file="${tmp_srs}/AutoUpdate.conf" append="true">http://isda.ncsa.uiuc.edu/~kmchenry/tmp/Polyglot2/SoftwareServer.zip</echo>
 
@@ -363,7 +363,7 @@
 				<include name="**/SoftwareServerClient*.class"/>
 				<include name="**/polyglot/IOGraph*.class"/>
 				<include name="**/polyglot/Polyglot*.class"/>
-				<include name="edu/ncsa/utility/**/*.class"/>
+				<include name="kgm/utility/**/*.class"/>
 			</fileset>
 		</copy>
 		<unjar src="web/utils/UploadApplet.jar" dest="${tmp_utils}"/>
@@ -379,8 +379,8 @@
 			<fileset dir="${classes}">
 				<include name="**/IOGraph*.class"/>
 				<include name="**/Polyglot*.class"/>
-				<include name="edu/ncsa/utility/**/*.class"/>
-				<include name="edu/ncsa/image/**/*.class"/>
+				<include name="kgm/utility/**/*.class"/>
+				<include name="kgm/image/**/*.class"/>
 			</fileset>
 		</copy>
 		<unjar src="lib/misc/commons-logging-1.1.1.jar" dest="${tmp_iograph}"/>

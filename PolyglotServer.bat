@@ -1,1 +1,1 @@
-java -cp "%~dp0bin;%~dp0lib/ncsa/Utilities.jar" -Xmx1024m edu.ncsa.icr.polyglot.PolyglotServer
+java -cp "%~dp0bin" -Xmx1024m edu.ncsa.icr.polyglot.PolyglotServer

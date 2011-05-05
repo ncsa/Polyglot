@@ -1,1 +1,1 @@
-cmd /c java -cp "%~dp0bin;%~dp0lib/ncsa/ImageUtilities.jar;%~dp0lib/ncsa/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareMonkey_DS
+cmd /c java -cp "%~dp0bin" -Xmx1g edu.ncsa.icr.SoftwareMonkey_DS
