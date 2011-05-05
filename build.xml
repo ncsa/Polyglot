@@ -197,15 +197,15 @@
 
 		<echo file="${tmp_zip}/MonkeyScript.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.MonkeyScript %*</echo>
 
-		<echo file="${tmp_zip}/AutoUpdate.bat">java -cp "%~dp0lib/kgm/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
-		<echo file="${tmp_zip}/AutoUpdate.sh">java -cp lib/kgm/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>
+		<echo file="${tmp_zip}/AutoUpdate.bat">java -cp "%~dp0lib/kgm/Utilities.jar" kgm.utility.AutoUpdate</echo>
+		<echo file="${tmp_zip}/AutoUpdate.sh">java -cp lib/kgm/Utilities.jar kgm.utility.AutoUpdate</echo>
 		<echo file="${tmp_zip}/AutoUpdate.conf" append="false">!conf, scripts/${line.separator}</echo>
 		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">!win: sh${line.separator}</echo>
 		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">!unix: bat, reg${line.separator}</echo>
 		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">http://isda.ncsa.uiuc.edu/kmchenry/tmp/Polyglot2/Polyglot2.zip</echo>
 		
 		<!--
-		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.bat">java -cp "%~dp0../../lib/kgm/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
+		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.bat">java -cp "%~dp0../../lib/kgm/Utilities.jar" kgm.utility.AutoUpdate</echo>
 		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.conf" append="false">http://isda.ncsa.uiuc.edu/~kmchenry/tmp/Polyglot2/MonkeyScript/${line.separator}</echo>
 		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.conf" append="true">000_open.zip</echo>
 		-->
@@ -345,8 +345,8 @@
 
 		<echo file="${tmp_srs}/MonkeyScript.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.MonkeyScript %*</echo>
 
-		<echo file="${tmp_srs}/AutoUpdate.bat">java -cp "%~dp0lib/kgm/Utilities.jar" edu.ncsa.utility.AutoUpdate</echo>
-		<echo file="${tmp_srs}/AutoUpdate.sh">java -cp lib/kgm/Utilities.jar edu.ncsa.utility.AutoUpdate</echo>
+		<echo file="${tmp_srs}/AutoUpdate.bat">java -cp "%~dp0lib/kgm/Utilities.jar" kgm.utility.AutoUpdate</echo>
+		<echo file="${tmp_srs}/AutoUpdate.sh">java -cp lib/kgm/Utilities.jar kgm.utility.AutoUpdate</echo>
 		<echo file="${tmp_srs}/AutoUpdate.conf" append="false">!conf, scripts/${line.separator}</echo>
 		<echo file="${tmp_srs}/AutoUpdate.conf" append="true">http://isda.ncsa.uiuc.edu/~kmchenry/tmp/Polyglot2/SoftwareServer.zip</echo>
 
