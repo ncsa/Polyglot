@@ -1,8 +1,8 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
-import edu.ncsa.utility.*;
 import java.io.*;
 import java.util.*;
+import kgm.utility.*;
 
 /**
  * A tool for debugging ICR scripts.

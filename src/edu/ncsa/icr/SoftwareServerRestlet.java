@@ -1,13 +1,13 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.icr.ICRAuxiliary.Application;
-import edu.ncsa.image.ImageUtility;
-import edu.ncsa.utility.*;
 import java.util.*;
 import java.io.*;
 import java.lang.management.*;
 import java.net.*;
 import javax.servlet.*;
+import kgm.image.ImageUtility;
+import kgm.utility.*;
 import org.restlet.*;
 import org.restlet.resource.*;
 import org.restlet.data.*;

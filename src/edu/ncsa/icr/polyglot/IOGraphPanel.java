@@ -2,8 +2,6 @@ package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.*;
 import edu.ncsa.icr.ICRAuxiliary.*;
-import edu.ncsa.image.*;
-import edu.ncsa.utility.*;
 import javax.swing.*;
 import javax.swing.tree.*;
 import javax.swing.event.*;
@@ -12,6 +10,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.util.*;
+import kgm.image.*;
+import kgm.utility.*;
 
 /**
  * A panel/program that displays a graph of input/output operations and allows for the exploration of paths

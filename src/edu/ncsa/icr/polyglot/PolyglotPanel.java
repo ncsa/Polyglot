@@ -1,9 +1,9 @@
 package edu.ncsa.icr.polyglot;
-import edu.ncsa.utility.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.io.*;
 import java.util.*;
+import kgm.utility.*;
 
 /**
  * A panel with a file manager look and feel designed for convenient file format conversions.

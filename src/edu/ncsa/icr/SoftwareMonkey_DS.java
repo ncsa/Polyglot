@@ -1,12 +1,12 @@
 package edu.ncsa.icr;
-import edu.ncsa.image.*;
-import edu.ncsa.utility.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
 import javax.swing.*;
 import java.io.*;
 import java.util.*;
+import kgm.image.*;
+import kgm.utility.*;
 
 /**
  * A program for creating monkey scripts (monkey see, monkey do)

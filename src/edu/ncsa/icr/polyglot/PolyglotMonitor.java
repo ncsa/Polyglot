@@ -1,10 +1,10 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.*;
-import edu.ncsa.utility.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.util.*;
+import kgm.utility.*;
 
 /**
  * A tool to monitor the status of a Polyglot server.

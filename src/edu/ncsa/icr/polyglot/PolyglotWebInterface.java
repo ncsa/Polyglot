@@ -1,7 +1,7 @@
 package edu.ncsa.icr.polyglot;
-import edu.ncsa.utility.*;
 import java.io.*;
 import java.util.*;
+import kgm.utility.*;
 
 /**
  * A background process that monitors a folder for conversion tasks.  When a folder

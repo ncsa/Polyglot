@@ -2,12 +2,12 @@ package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.*;
 import edu.ncsa.icr.ICRAuxiliary.*;
-import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
 import java.sql.*;
 import java.util.*;
 import java.util.zip.*;
+import kgm.utility.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

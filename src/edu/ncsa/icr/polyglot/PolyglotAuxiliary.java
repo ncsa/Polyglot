@@ -1,7 +1,7 @@
 package edu.ncsa.icr.polyglot;
-import edu.ncsa.utility.*;
 import java.io.*;
 import java.util.*;
+import kgm.utility.*;
 
 /**
  * Helper classes for the polyglot package.

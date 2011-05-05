@@ -1,10 +1,10 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
-import edu.ncsa.utility.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import kgm.utility.*;
 
 /**
  * An Imposed Code Reuse client interface.
