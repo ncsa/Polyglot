@@ -1450,6 +1450,28 @@ public class ICRAuxiliary
 			
 			return file_data;
 		}
+		
+		@Override
+		public String toString()
+		{
+			StringBuilder sb = new StringBuilder();
+			sb.append("SERVER : ");
+			sb.append(icr.toString());
+			sb.append("\n");
+			
+			
+			for(int i=0; i<task.size(); i++){
+				sb.append("  TASK ");
+				sb.append(i);
+				sb.append(" : ");				
+				sb.append(task.get(i).application + " ");
+				sb.append(task.get(i).operation + " ");
+				sb.append(task.get(i).input_data + " ");
+				sb.append(task.get(i).output_data + "\n");
+			}
+			
+			return sb.toString();
+		}
 
 		/**
 		 * Print the given tasks.
