@@ -152,23 +152,7 @@ public class VersusServiceCompare
 		return result.getText();
 	}
 
-	public static String checkComparisonSync(String comparisonurl) throws IOException
-	{
-		return checkComparisonSync(comparisonurl, Integer.MAX_VALUE);
-	}
-	
-	public static String checkComparisonSync(String comparisonurl, int tries) throws IOException
-	{
-		for(int i=0; i<tries; i++) {
-			String line = checkComparisonASync(comparisonurl);
-			if (!"N/A".equals(line)) {
-				return line;
-			}
-		}
-		throw(new IOException("Took too long."));
-	}
-	
-	private static String checkComparisonASync(String comparisonurl) throws IOException {
+	public static String checkComparisonASync(String comparisonurl) throws IOException {		
  	  // Make a connect to the server
   	URL url = new URL(comparisonurl);
   	HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -188,9 +172,17 @@ public class VersusServiceCompare
     // Read the response
     try {
 	    Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(conn.getInputStream());
-	    NodeList nl = doc.getElementsByTagName("value");
+	    NodeList nl = doc.getElementsByTagName("status");
 	    if (nl.getLength() != 1) {
 	    	return "N/A";
+	    }
+	    String status = nl.item(0).getTextContent();
+	    if (!"DONE".equals(status)) {
+	    	return status;
+	    }
+	    nl = doc.getElementsByTagName("value");
+	    if (nl.getLength() != 1) {
+	    	return "UNKNOWN";
 	    }
 	    return nl.item(0).getTextContent();
     } catch (SAXException e) {
