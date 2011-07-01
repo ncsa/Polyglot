@@ -2,12 +2,14 @@ package edu.ncsa.icr.polyglot;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,8 +21,11 @@ import java.util.Vector;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.log4j.BasicConfigurator;
 import edu.ncsa.icr.ICRAuxiliary.Application;
 import edu.ncsa.icr.ICRAuxiliary.Data;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.Conversion;
@@ -39,21 +44,23 @@ public class IOGraphWeightsToolHeadless
 	
 	private PolyglotStewardThreaded polyglot = new PolyglotStewardThreaded();
 	private IOGraph<Data,Application> iograph;
+	List<MeasureInfo> measures = new ArrayList<MeasureInfo>();
 
 	private Map<String, List<FileInfo>> working_set = new HashMap<String, List<FileInfo>>();
 	private Map<String, Vector<Pair<Vector<Conversion<Data,Application>>,Vector<Conversion<Data,Application>>>>> jobs = new HashMap<String,Vector<Pair<Vector<Conversion<Data,Application>>,Vector<Conversion<Data,Application>>>>>();
 	private Map<String, Vector<Integer>> job_status = new HashMap<String,Vector<Integer>>();
-	private Vector<ConversionResult> results = new Vector<ConversionResult>();
 	private String test = null;
 
 	private String test_path = "./";
-	private int retry_level = 0; // 0=none, 1=all, 2=partials, 3=failures
 
 	private String csr_url = null;
 	private String user = null;
 	private String password = null;
 
-	private int software_threads = 0;
+	private int softwareThreads = 0;
+	private int compareThreads = 1;
+	
+	private Integer comparisonID = 0;
 
 	private String versus_url = null;
 
@@ -71,6 +78,44 @@ public class IOGraphWeightsToolHeadless
 		// initialize iograph
 		polyglot.setApplicationFlexibility(1);
 		iograph = polyglot.getIOGraph();
+		
+		// initialize measures
+		try{
+			URL m_url = new URL(csr_url + "php/search/get_measures.php");
+			BufferedReader br = new BufferedReader(new InputStreamReader(m_url.openStream()));
+			String line;
+			while((line = br.readLine()) != null){
+				if(line.endsWith("<br>")){
+					line = line.substring(0, line.length() - 4);
+				}
+				String[] pieces = line.split("\t");
+				if(pieces.length != 5){
+					continue;
+				}
+				if(pieces[2].equals("")){
+					System.err.println("Ignoring : " + pieces[1] + " could not be used with versus, missing adapter.");
+					continue;
+				}
+				if(pieces[3].equals("")){
+					System.err.println("Ignoring : " + pieces[1] + " could not be used with versus, missing extractor.");
+					continue;
+				}
+				if(pieces[4].equals("")){
+					System.err.println("Ignoring : " + pieces[1] + " could not be used with versus, missing measure.");
+					continue;
+				}
+				MeasureInfo mi = new MeasureInfo();
+				mi.measure_id = pieces[0];
+				mi.measure = pieces[1];
+				mi.versus_adapter = pieces[2];
+				mi.versus_extractor = pieces[3];
+				mi.versus_measure = pieces[4];
+				measures.add(mi);
+			}
+			br.close();
+		}catch(Exception e1){
+			e1.printStackTrace();
+		}
 	}
 
 	/**
@@ -106,12 +151,10 @@ public class IOGraphWeightsToolHeadless
 								servers++;
 							}
 						}else if(key.equals("SoftwareThreads")){
-							software_threads = Integer.parseInt(value);
+							softwareThreads = Integer.parseInt(value);
 						}else if(key.equals("TestPath")){
 							test_path = Utility.unixPath(value) + "/";
 							new File(test_path).mkdirs();
-						}else if(key.equals("RetryLevel")){
-							retry_level = Integer.valueOf(value);
 						}else if(key.equals("CSR")){
 							csr_url = value;
 							if(!csr_url.endsWith("/")){
@@ -131,8 +174,8 @@ public class IOGraphWeightsToolHeadless
 				}
 			}
 			
-			if (software_threads == 0) {
-				software_threads = servers;
+			if (softwareThreads == 0) {
+				softwareThreads = servers;
 			}
 
 			ins.close();
@@ -196,12 +239,26 @@ public class IOGraphWeightsToolHeadless
 				}
 			}
 		}
+		
+		int conversion = 0;
+		TreeSet<String> range = iograph.getRangeStrings(extension);
+		Vector<Vector<Conversion<Data,Application>>> paths_a2b;
+		Vector<Vector<Conversion<Data,Application>>> paths_b2a;
+		String output_format;
+	
+		for(Iterator<String> itr = range.iterator(); itr.hasNext();){
+			output_format = itr.next();
+			paths_a2b = iograph.getShortestConversionPaths(extension, output_format);
+			paths_b2a = iograph.getShortestConversionPaths(output_format, extension);
+			conversion += (paths_a2b.size() * paths_b2a.size());
+		}
 
 		// Display information
 		System.out.println("--------------------------------------------------");
-		System.out.println("Data path : " + path);
-		System.out.println("Extension : " + extension);
-		System.out.println("Files     : " + count);
+		System.out.println("Data path   : " + path);
+		System.out.println("Extension   : " + extension);
+		System.out.println("Files       : " + count);
+		System.out.println("Conversions : " + conversion);
 	}
 
 	/**
@@ -244,7 +301,7 @@ public class IOGraphWeightsToolHeadless
 			}
 			
 			for(int i = 0; i < extJob.size(); i++){
-				displayJob(ext, i);
+				displayConversionJob(ext, i);
 			}
 		}
 
@@ -260,25 +317,25 @@ public class IOGraphWeightsToolHeadless
 	/**
 	 * Display information about a specific job.
 	 */
-	public void displayJob(String ext, int idx)
+	public void displayConversionJob(String ext, int idx)
 	{
 		String path = getConversionString(jobs.get(ext).get(idx).first) + " => " + getConversionString(jobs.get(ext).get(idx).second);
 		System.out.print("Job " + ext + "." + (idx + 1) + " : ");
 		switch(job_status.get(ext).get(idx)){
 		case -1:
-			System.out.println("Status   : No status " + path);
+			System.out.println("Conversion   : No status " + path);
 			break;
 		case 0:
-			System.out.println("Status   : Running   " + path);
+			System.out.println("Conversion   : Running   " + path);
 			break;
 		case 1:
-			System.out.println("Status   : Complete  " + path);
+			System.out.println("Conversion   : Complete  " + path);
 			break;
 		case 2:
-			System.out.println("Status   : Partial   " + path);
+			System.out.println("Conversion   : Partial   " + path);
 			break;
 		case 3:
-			System.out.println("Status   : Failed    " + path);
+			System.out.println("Conversion   : Failed    " + path);
 			break;
 		}
 	}
@@ -336,41 +393,6 @@ public class IOGraphWeightsToolHeadless
 		}
 	}
 
-	/**
-	 * Given the comparison result from a job create entries in the result list
-	 * 
-	 * @param job
-	 *          the job
-	 * @param result
-	 *          the result of the comparison
-	 * @return the entries for the output file
-	 */
-	public void addResult(
-			Pair<Vector<Conversion<Data,Application>>,Vector<Conversion<Data,Application>>> job,
-			double result, MeasureInfo measure)
-	{
-		for(Conversion<Data,Application> conversion:job.first){
-			ConversionResult cr = new ConversionResult();
-			cr.software = conversion.edge.alias;
-			cr.input_format = conversion.input.toString();
-			cr.output_format = conversion.output.toString();
-			cr.measure_id = measure.measure_id;
-			cr.result = result;
-			results.add(cr);
-		}
-
-		for(Conversion<Data,Application> conversion:job.second){
-			ConversionResult cr = new ConversionResult();
-			cr.software = conversion.edge.alias;
-			cr.input_format = conversion.input.toString();
-			cr.output_format = conversion.output.toString();
-			;
-			cr.measure_id = measure.measure_id;
-			cr.result = result;
-			results.add(cr);
-		}
-	}
-
 	public void createTests()
 	{
 		test = new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
@@ -386,15 +408,17 @@ public class IOGraphWeightsToolHeadless
 	/**
 	 * Run the current test.
 	 */
-	public void runConversions()
+	public void runTests()
 	{
-		long t0, t1;
-		double dt = 0;
-
+		double t0 = System.currentTimeMillis();
+		
 		System.out.println();
 		System.out.println("--------------------------------------------------");
-		System.out.println("Executing conversions...");
+		System.out.println("Executing conversions and comparisons...");
 		
+		ExecutorService conv = Executors.newFixedThreadPool(softwareThreads);
+		ExecutorService comp = Executors.newFixedThreadPool(compareThreads);
+
 		for(String ext : jobs.keySet()) {
 			// Update ground truth directory
 			String basefolder = test_path + test + "/" + ext + "/";
@@ -433,216 +457,52 @@ public class IOGraphWeightsToolHeadless
 				}
 			}
 	
-			// Set starting time
-			t0 = (new Date()).getTime();
-	
-			// push all jobs on a thread
-			ExecutorService exec = Executors.newFixedThreadPool(software_threads);
+			// push all jobs on a thread		
+			//ExecutorService conv = Executors.newFixedThreadPool(softwareThreads);
 			for(int i = 0; i < jobs.get(ext).size(); i++){
 				// -1=No status, 0=Running, 1=Complete, 2=Partially completed, 3=Failed
-				if(job_status.get(ext).get(i) == -1 || retry_level == 1 || (job_status.get(ext).get(i) == 2 && retry_level == 2) || (job_status.get(ext).get(i) == 3 && retry_level == 3)){
+				if(job_status.get(ext).get(i) != 1) {
 					job_status.get(ext).set(i, 0);
-
-					exec.execute(new ConversionJob(ext, i, basefolder + (i + 1) + "/tmp/", basefolder + (i + 1) + "/"));
-					try{
-						Thread.sleep(100);
-					}catch(InterruptedException e){
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+					conv.execute(new ConversionJob(ext, i, basefolder + (i + 1) + "/tmp/", basefolder + (i + 1) + "/", comp));
 				}
 			}
-
-			// wait for everything to finish
-			exec.shutdown();
-			try{
-				exec.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS);
-			}catch(InterruptedException e){
-				e.printStackTrace();
-			}
-			
-			// Set end time
-			t1 = (new Date()).getTime();
-			dt = (t1 - t0) / 1000.0;
 		}
-		
-		// displayJobs();
-		System.out.println("--------------------------------------------------");
-		System.out.println("Conversions completed in " + dt + " seconds.");
-	}
-	
-	public void runMeasurements()
-	{
-		System.out.println();
-		System.out.println("--------------------------------------------------");
-		System.out.println("Beginning measurments...");
 
-		// load measures
-		List<MeasureInfo> measures = new ArrayList<MeasureInfo>();
+		// wait for everything to finish
+		conv.shutdown();
 		try{
-			URL m_url = new URL(csr_url + "php/search/get_measures.php");
-			BufferedReader br = new BufferedReader(new InputStreamReader(m_url.openStream()));
-			String line;
-			while((line = br.readLine()) != null){
-				if(line.endsWith("<br>")){
-					line = line.substring(0, line.length() - 4);
-				}
-				String[] pieces = line.split("\t");
-				if(pieces.length != 5){
-					continue;
-				}
-				if(pieces[2].equals("")){
-					System.err.println("Ignoring : " + pieces[1] + " could not be used with versus, missing adapter.");
-					continue;
-				}
-				if(pieces[3].equals("")){
-					System.err.println("Ignoring : " + pieces[1] + " could not be used with versus, missing extractor.");
-					continue;
-				}
-				if(pieces[4].equals("")){
-					System.err.println("Ignoring : " + pieces[1] + " could not be used with versus, missing measure.");
-					continue;
-				}
-				MeasureInfo mi = new MeasureInfo();
-				mi.measure_id = pieces[0];
-				mi.measure = pieces[1];
-				mi.versus_adapter = pieces[2];
-				mi.versus_extractor = pieces[3];
-				mi.versus_measure = pieces[4];
-				measures.add(mi);
-			}
-			br.close();
-		}catch(Exception e1){
-			e1.printStackTrace();
+			conv.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS);
+		}catch(InterruptedException e){
+			e.printStackTrace();
 		}
-		
-		// clear results
-		results.clear();
+		comp.shutdown();
+		try{
+			comp.awaitTermination(Integer.MAX_VALUE, TimeUnit.DAYS);
+		}catch(InterruptedException e){
+			e.printStackTrace();
+		}
 
-		// Set starting time
-		long l = System.currentTimeMillis();
-
-		// compare all jobs
-		List<ComparisonJob> comparisonJobs = new ArrayList<ComparisonJob>();
-		
-		for(String ext : jobs.keySet()) {
-			String base = test_path + test + "/" + ext + "/";
-			String path0 = base + "0/";
-			File folder;
-			File[] folder_files;
+		// displayJobs();
+		t0 = (System.currentTimeMillis() - t0) / 1000.0;
+		System.out.println("--------------------------------------------------");
+		System.out.println("Completed in " + t0  + " seconds.");
+	}
 	
-			// Compare files
-			folder = new File(path0);
-			folder_files = folder.listFiles();
-	
-			if(folder_files != null){
-				for(int i = 0; i < folder_files.length; i++){
-					// System.out.println("<b>" + (i+1) + ") </b><i>" +
-					// folder_files[i].getName() + "</i>: <b>");
-					File file1 = new File(path0 + folder_files[i].getName());
-					
-					for(int j = 0; j < jobs.get(ext).size(); j++) {
-						File file2 = new File(base + (j + 1) + "/"	+ folder_files[i].getName());
-						for(MeasureInfo mi:measures){
-							ComparisonJob cj = new ComparisonJob(ext, j, file1, file2, mi);
-							cj.submitJob();
-							comparisonJobs.add(cj);
-						}
-					}
-				}
-			}
-		}
-		
-		while(comparisonJobs.size() > 0) {
-			ComparisonJob cj = comparisonJobs.get(0);
-			if (cj.jobFinished()) {
-				cj.storeResult();
-			} else {
-				comparisonJobs.add(cj);
-				if (comparisonJobs.size() == 1) {
-					try{
-						Thread.sleep(100);
-					}catch(InterruptedException e){
-						e.printStackTrace();
-					}
-				}
-			}
-		}
-
-		System.out.println("--------------------------------------------------");
-		System.out.println("Measurments completed in " + ((System.currentTimeMillis() -l ) / 1000) + " seconds.");
-	}
-
-	public void printResults()
-	{
-		Collections.sort(results);
-
-		System.out.println();
-		System.out.println("--------------------------------------------------");
-		System.out.println("Results");
-		for(ConversionResult cr:results){
-			String s[] = cr.software.split("-");
-			String software;
-			if(s.length > 1){
-				software = s[1];
-			}else{
-				software = s[0];
-			}
-			System.out.println(software + "\t" + cr.input_format + "\t" + cr.output_format + "\t" + cr.result);
-		}
-	}
-
-	public void saveResults()
-	{
-		String output_data = "";
-		for(ConversionResult cr:results){
-			output_data += cr.toString() + "\n";
-		}
-
-		// Set the filename and save results
-		String output_filename = new SimpleDateFormat("yyyyMMddhhmmss").format(new Date());
-		output_filename += ".txt";
-
-		Utility.save(test_path + test + "/" + output_filename, output_data);
-		System.out.println();
-		System.out.println("--------------------------------------------------");
-		System.out.println("Saved as " + output_filename);
-	}
-
-	public void uploadResults()
-	{
-		for(ConversionResult cr:results){
-			try{
-				String url = csr_url + "php/add/add_conversion_measure.php";
-				url += "?software=" + cr.software.split("-")[0];
-				url += "&measure=" + cr.measure_id;
-				url += "&input=" + cr.input_format;
-				url += "&output=" + cr.output_format;
-				url += "&result=" + cr.result;
-				url += "&email=" + URLEncoder.encode(user, "UTF8");
-
-				BufferedReader br = new BufferedReader(new InputStreamReader(new URL(
-						url).openStream()));
-				if(!br.readLine().equals("1")){
-					System.out.println("Error submitting : " + url);
-				}
-				br.close();
-			}catch(Exception e){
-				e.printStackTrace();
-			}
-		}
-	}
-
 	class MeasureInfo
 	{
 		public String measure_id;
 		public String measure;
 		public String versus_adapter;
 		public String versus_extractor;
+
 		public String versus_measure;
+		
+		public String toString() {
+			return measure;
+		}
 	}
 	
-	class ComparisonJob {
+	class ComparisonJob implements Runnable {
 		private int idx;
 		private String ext;
 		private File file1;
@@ -651,13 +511,61 @@ public class IOGraphWeightsToolHeadless
 		private String id;
 		private boolean finished = false;
 		private double value;
+		private int compid;
 
-		public ComparisonJob(String ext, int idx, File file1, File file2, MeasureInfo mi) {
+		public ComparisonJob(String ext, int idx, File file1, File file2, MeasureInfo mi, int compid) {
 			this.ext = ext;
 			this.idx = idx;			
 			this.file1 = file1;
 			this.file2 = file2;
 			this.mi = mi;
+			this.compid = compid;
+		}
+		
+		public void run() {			
+			logVersus(compid, "Start " + mi.measure);
+			submitJob();
+
+			while(!jobFinished()) {
+				try{
+					Thread.sleep(100);
+				}catch(InterruptedException e){
+					e.printStackTrace();
+				}
+  		}
+  		
+			logVersus(compid, "Finished");
+			System.out.print("Job " + ext + "." + (idx + 1) + " : ");
+			System.out.println("Comparison   : Complete  " + mi + " " + getResult());
+
+			for(Conversion<Data,Application> conversion : jobs.get(ext).get(idx).first){
+				uploadResult(conversion, mi, getResult());
+			}
+
+			for(Conversion<Data,Application> conversion : jobs.get(ext).get(idx).second){
+				uploadResult(conversion, mi, getResult());
+			}
+		}
+	
+		private void uploadResult(Conversion<Data,Application> conversion, MeasureInfo mi, double value) {
+			String url = csr_url + "php/add/add_conversion_measure.php";
+			try{
+				url += "?software=" + conversion.edge.alias.split("-")[0];
+				url += "&measure=" + mi.measure_id;
+				url += "&input=" + conversion.input.toString();
+				url += "&output=" + conversion.output.toString();
+				url += "&result=" + value;
+				url += "&email=" + URLEncoder.encode(user, "UTF8");
+	
+				BufferedReader br = new BufferedReader(new InputStreamReader(new URL(url).openStream()));
+				if(!br.readLine().equals("1")){
+					System.out.println("Error submitting : " + url);
+				}
+				br.close();
+			}catch(Exception e){
+				System.out.println(url);
+				e.printStackTrace();
+			}
 		}
 		
 		public void submitJob() {
@@ -666,11 +574,15 @@ public class IOGraphWeightsToolHeadless
 					try{
 						// upload the files
 						String upload1 = VersusServiceCompare.uploadFile(versus_url, file1);
+	  				logVersus(compid, "Upload File 1");
+						
 						String upload2 = VersusServiceCompare.uploadFile(versus_url, file2);
+	  				logVersus(compid, "Upload File 2");
 
 						// compare files
 						id = VersusServiceCompare.compare(versus_url, upload1, upload2, mi.versus_adapter, mi.versus_extractor, mi.versus_measure);
-						
+	  				logVersus(compid, "Compare Submitted [" + id + "]");
+
 					}catch(Exception e){
 						value = 10000;
 						finished = true;
@@ -690,12 +602,16 @@ public class IOGraphWeightsToolHeadless
 			if (!finished) {
 				try {
 					String result = VersusServiceCompare.checkComparisonASync(id);
-					if (!"N/A".equals(result)) {
+					if ("FAILED".equals(result)) {
+						finished = true;
+						value = 1000;						
+					} else if (!"N/A".equals(result)) {
 						finished = true;
 						try {
 							value = Double.parseDouble(result);							
 						} catch (NumberFormatException e) {
-							value = Double.NaN;
+							System.out.println(result + " is not a valid number.");
+							value = 1000;
 						}
 					}
 				} catch (Exception e) {
@@ -711,57 +627,106 @@ public class IOGraphWeightsToolHeadless
 			}
 			return value;
 		}
-		
-		public void storeResult() {
-			if (!jobFinished()) {
-				log.error("Job is not finished.");
-				return;
-			}
-			addResult(jobs.get(ext).get(idx), getResult(), mi);
-		}		
 	}
+	
+	private static Map<Integer, Date> timestamps = new HashMap<Integer,Date>();
+	private static PrintStream ps = null;
+	private static DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+	
+	private static void logVersus(int id, String msg) {
+		synchronized(timestamps) {
+			Date d = new Date();
+			Date p = timestamps.get(id);
+			long elapsed = 0;
+			if (p != null) {
+				elapsed = d.getTime() - p.getTime();
+			}
+			timestamps.put(id, d);
+			if (ps == null) {
+				try{
+					ps = new PrintStream("versus.log");
+				}catch(FileNotFoundException e){
+					ps = System.err;
+				}
+			}
+			ps.println(String.format("%d\t%s\t%d\t%s", id, df.format(d), elapsed, msg));
+			ps.flush();
+		}
+	}
+
 
 	class ConversionJob implements Runnable {
 		private int idx;
 		private String ext;
 		private String tmp_path;
 		private String job_path;
+		private ExecutorService exec;
 
-		public ConversionJob(String ext, int idx, String tmp_path, String job_path) {
+		public ConversionJob(String ext, int idx, String tmp_path, String job_path, ExecutorService exec) {
 			this.ext = ext;
 			this.idx = idx;			
 			this.tmp_path = tmp_path;
 			this.job_path = job_path;
+			this.exec = exec;
 			
 			new File(tmp_path).mkdirs();
 			new File(job_path).mkdirs();
 		}
 		
 		public void run() {
-			try {
-				// convert one way
-				for(Iterator<FileInfo> itr = working_set.get(ext).iterator(); itr.hasNext();){
-				  polyglot.convert(test_path + test + "/" + ext + "/0/" + itr.next().filename, tmp_path, jobs.get(ext).get(idx).first);
-				}
-	
-				// Convert files back to source format
-				File folder = new File(tmp_path);
-				File[] folder_files = folder.listFiles();
-	
-				if(folder_files != null){
-					for(int j = 0; j < folder_files.length; j++){
-					  polyglot.convert(folder_files[j].getAbsolutePath(), job_path, jobs.get(ext).get(idx).second);
-					}
-				}
+			String base = test_path + test + "/" + ext + "/";
+			String path0 = base + "0/";
+
+			String path = getConversionString(jobs.get(ext).get(idx).first) + " => " + getConversionString(jobs.get(ext).get(idx).second);
+			System.out.print("Job " + ext + "." + (idx + 1) + " : ");
+			System.out.println("Conversion   : Running   " + path);
 				
+			try {				
+				for(Iterator<FileInfo> itr = working_set.get(ext).iterator(); itr.hasNext();){
+					Vector<Conversion<Data,Application>> conversion = new Vector<PolyglotAuxiliary.Conversion<Data,Application>>();
+					conversion.addAll(jobs.get(ext).get(idx).first);
+					conversion.addAll(jobs.get(ext).get(idx).second);
+					polyglot.convert(path0 + itr.next().filename, job_path, conversion);
+				}
+//				
+//				// convert one way
+//				for(Iterator<FileInfo> itr = working_set.get(ext).iterator(); itr.hasNext();){
+//				  polyglot.convert(path0 + itr.next().filename, tmp_path, jobs.get(ext).get(idx).first);
+//				}
+//	
+//				// Convert files back to source format
+//				File folder = new File(tmp_path);
+//				File[] folder_files = folder.listFiles();
+//	
+//				if(folder_files != null){
+//					for(int j = 0; j < folder_files.length; j++){
+//					  polyglot.convert(folder_files[j].getAbsolutePath(), job_path, jobs.get(ext).get(idx).second);
+//					}
+//				}			
 			} catch (Throwable thr) {
 				thr.printStackTrace();
 			}
 			
 			// done with conversion
       job_status.get(ext).set(idx, jobFolderStatus(idx+1));
-      displayJob(ext, idx);
-		}		
+      displayConversionJob(ext, idx);
+           
+      
+			// compare all conversions 		
+			for(Iterator<FileInfo> itr = working_set.get(ext).iterator(); itr.hasNext();){
+				String filename = itr.next().filename;
+				for(MeasureInfo mi : measures) {
+					File file1 = new File(path0 + filename);
+					File file2 = new File(job_path + filename);
+					int id;
+					synchronized(comparisonID){
+						id = comparisonID;
+						comparisonID++;
+					}
+		      exec.execute(new ComparisonJob(ext, idx, file1, file2, mi, id));
+				}				
+			}
+		}
 	}
 
 
@@ -791,7 +756,7 @@ public class IOGraphWeightsToolHeadless
 			}
 		}
 	}
-
+	
 	/**
 	 * Start the I/O-Graph weights tool.
 	 * 
@@ -800,15 +765,18 @@ public class IOGraphWeightsToolHeadless
 	 */
 	public static void main(String args[])
 	{
-		IOGraphWeightsToolHeadless iograph_wt = new IOGraphWeightsToolHeadless(
-				"IOGraphWeightsToolHeadless.conf");
+		IOGraphWeightsToolHeadless iograph_wt = new IOGraphWeightsToolHeadless("IOGraphWeightsToolHeadless.conf");
 
 		// check params
 		if((iograph_wt.csr_url == null) || (iograph_wt.user == null) || (iograph_wt.versus_url == null)){
 			System.err.println("Need to specify at least CSR, User and Versus in IOGraphWeightsToolHeadless.conf");
 			System.exit(-1);
 		}
-
+		
+		BasicConfigurator.configure();
+		org.apache.log4j.Logger.getLogger("org.restlet").setLevel(org.apache.log4j.Level.WARN);
+		Logger.getLogger("org.restlet").setLevel(Level.WARNING);
+		
 		// load all test folders
 		for(int i=0; i<args.length; i+=2) {
 			iograph_wt.loadFolder(args[i], args[i+1]);
@@ -821,16 +789,7 @@ public class IOGraphWeightsToolHeadless
 		iograph_wt.createTests();
 
 		// run conversions
-		iograph_wt.runConversions();
-
-		// compute measurements
-		iograph_wt.runMeasurements();
-
-		// normalize weights
-
-		// print/upload results
-		iograph_wt.printResults();
-		iograph_wt.uploadResults();
+		iograph_wt.runTests();
 
 		// all done
 		System.exit(0);
