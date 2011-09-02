@@ -52,7 +52,7 @@ public class VersusServiceCompare
 
     // write data
     dataOS.writeBytes("--" + BOUNDRY + "\r\n");
-    dataOS.writeBytes("Content-Disposition: form-data; name=\"fileToUpload\";\r\n");
+    dataOS.writeBytes("Content-Disposition: form-data; name=\"fileToUpload\"; filename=\"" + file.getName() + "\"\r\n");
     dataOS.writeBytes("\r\n");
 
     // actual data to be written

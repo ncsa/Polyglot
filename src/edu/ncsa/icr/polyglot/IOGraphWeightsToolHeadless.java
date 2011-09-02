@@ -604,14 +604,21 @@ public class IOGraphWeightsToolHeadless
 					String result = VersusServiceCompare.checkComparisonASync(id);
 					if ("FAILED".equals(result)) {
 						finished = true;
-						value = 1000;						
+						value = 10000;						
 					} else if (!"N/A".equals(result)) {
 						finished = true;
 						try {
-							value = Double.parseDouble(result);							
+							value = Double.parseDouble(result);
+							// FIXME this should never happen if values are normalized
+							if (value < 0) {
+								value = Math.abs(value);
+							}
+							if (value >= 10000) {
+								value = 9999;
+							}
 						} catch (NumberFormatException e) {
 							System.out.println(result + " is not a valid number.");
-							value = 1000;
+							value = 10000;
 						}
 					}
 				} catch (Exception e) {
