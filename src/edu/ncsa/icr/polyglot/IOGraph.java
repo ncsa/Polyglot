@@ -569,6 +569,28 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	}
 	
 	/**
+	 * Return the weight associated with this conversion.
+	 * 
+	 * @param input
+	 * @param output
+	 * @param edge
+	 * @return
+	 */
+	public double getEdgeWeight(V input, V output, E edge) {
+		int v0 = vertex_map.get(input);
+		int v1 = vertex_map.get(input);
+		
+		for(int i=0; i<adjacency_list.get(v0).size(); i++){
+			if(adjacency_list.get(v0).get(i) == v1){
+				if(edges.get(v0).get(i).equals(edge)){
+					return weights.get(v0).get(i);
+				}
+			}
+		}
+		return Double.NaN;
+	}
+	
+	/**
 	 * Load graph from the given file.
 	 * @param filename a file containing the graph as lines of: edge source target weight
 	 */
@@ -852,7 +874,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 			Vector<Integer> neighbors = adjacency_list.get(u);
 			for(int i = 0; i<neighbors.size(); i++) {
 				int v = neighbors.get(i);
-				if (dist[u] + weights.get(u).get(i) < dist[v]) {
+				if ( (weights.get(u).get(i) > minimum_weight) && (dist[u] + weights.get(u).get(i) < dist[v])) {
 					List<V> seen = new ArrayList<V>();
 					do {
 						seen.add(getVertices().get(u));
@@ -890,7 +912,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 						double x = Double.MAX_VALUE;
 						for(int j = 0; j<neighbors.size(); j++) {
 							if (neighbors.get(j) == v) {
-								if (weights.get(u).get(j) < x) {
+								if ((weights.get(u).get(j) > minimum_weight) && (weights.get(u).get(j) < x)) {
 									x = weights.get(u).get(j);
 								}
 							}
