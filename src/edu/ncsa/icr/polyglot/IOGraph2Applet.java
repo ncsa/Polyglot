@@ -42,14 +42,14 @@ public class IOGraph2Applet extends JApplet {
                 e.printStackTrace();
                 add(new JLabel("Invalid url."));
                 return;
-            }            
+            }
         }
 
         iograph = new IOGraph2();
         iographPanel = new IOGraph2Panel(iograph);
 
         iographPanel.getPopupMenu().addSeparator();
-        iographPanel.getPopupMenu().add(new JMenuItem(new AbstractAction("Refresh") {            
+        iographPanel.getPopupMenu().add(new JMenuItem(new AbstractAction("Refresh") {
             public void actionPerformed(ActionEvent e) {
                 refresh();
             }
@@ -58,7 +58,7 @@ public class IOGraph2Applet extends JApplet {
         menu = new JMenu("Weights");
         iographPanel.getPopupMenu().add(menu);
         refresh();
-        
+
         add(iographPanel);
     }
 
@@ -87,7 +87,7 @@ public class IOGraph2Applet extends JApplet {
             iograph.addConversion(input, output, application);
         }
         br.close();
-        
+
         iograph.complexity();
     }
 
