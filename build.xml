@@ -361,11 +361,13 @@
 			<fileset dir="${classes}">
 				<include name="**/ICRAuxiliary*.class"/>
 				<include name="**/SoftwareServerClient*.class"/>
+				<include name="**/polyglot/*.class"/>
 				<include name="**/polyglot/IOGraph*.class"/>
 				<include name="**/polyglot/Polyglot*.class"/>
 				<include name="kgm/utility/**/*.class"/>
 			</fileset>
 		</copy>
+		<unjar src="lib/misc/commons-logging-1.1.1.jar" dest="${tmp_utils}"/>
 		<unjar src="web/utils/UploadApplet.jar" dest="${tmp_utils}"/>
 		<unjar src="web/utils/ModelViewer_Lite.jar" dest="${tmp_utils}"/>
 		<jar basedir="${tmp_utils}" destfile="build/PolyglotUtils.jar"/>

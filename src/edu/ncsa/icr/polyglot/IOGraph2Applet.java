@@ -36,13 +36,7 @@ public class IOGraph2Applet extends JApplet {
                 return;
             }
         } else {
-            try {
-                url = new URL("http://isda.ncsa.illinois.edu/NARA/CSR/php/search/");
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
-                add(new JLabel("Invalid url."));
-                return;
-            }
+      		  url = getDocumentBase();
         }
 
         iograph = new IOGraph2();
