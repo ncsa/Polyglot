@@ -3,6 +3,7 @@ package edu.ncsa.icr.polyglot;
 import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -30,6 +31,7 @@ import java.util.TreeSet;
 
 import javax.swing.AbstractAction;
 import javax.swing.AbstractListModel;
+import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
@@ -74,7 +76,7 @@ public class IOGraph2Panel extends JPanel {
 
     private JPopupMenu               popupMenu        = null;
     private Point                    clicked          = new Point(0, 0);
-    private JLabel                   lblPath;
+    private JLabel                   lblPath          = null;
 
     @SuppressWarnings("serial")
     public IOGraph2Panel(IOGraph2 iograph) {
@@ -104,12 +106,18 @@ public class IOGraph2Panel extends JPanel {
                 compute();
             }
         });
+        JScrollPane scrollpane = new JScrollPane(lstApplications);
+        scrollpane.setBorder(BorderFactory.createEmptyBorder());
 
         lblPath = new JLabel("No path selected.", JLabel.CENTER);
+        lblPath.setOpaque(true);
+        lblPath.setBackground(Color.white);
 
         JPanel pnl = new JPanel(new BorderLayout());
         pnl.add(new IOGraph2Component(), BorderLayout.CENTER);
         pnl.add(lblPath, BorderLayout.SOUTH);
+        pnl.setBorder(BorderFactory.createEmptyBorder());
+        
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(lstApplications), pnl);
         splitPane.setDividerLocation(200);
         add(splitPane, BorderLayout.CENTER);
@@ -252,6 +260,8 @@ public class IOGraph2Panel extends JPanel {
 
         @Override
         public void paint(Graphics g) {
+            setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+            
             long t = System.currentTimeMillis();
             Graphics2D g2d = (Graphics2D) g;
 
@@ -372,6 +382,8 @@ public class IOGraph2Panel extends JPanel {
             }
             log.debug("VERTICES  : " + (System.currentTimeMillis() - l));
             log.debug("TOTAL     : " + (System.currentTimeMillis() - t));
+            
+            setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
 
         /**
