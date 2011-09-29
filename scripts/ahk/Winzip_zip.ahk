@@ -1,5 +1,7 @@
 ﻿;Winzip (v8.1)
 ;takes any single file and zips it
+;*, ^xps
+;zip
 
 ;parse input file extension
 inputfile=%1%
