@@ -14,11 +14,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.awt.geom.Line2D;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -32,24 +29,25 @@ import java.util.TreeSet;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractListModel;
 import javax.swing.BorderFactory;
-import javax.swing.ButtonGroup;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
-import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
+import javax.swing.JTable;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.AbstractTableModel;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import edu.ncsa.icr.polyglot.Conversion2.Parameter;
 
 /**
  * Draw the IOGraph in a panel as well as the list of applications and the path
@@ -68,15 +66,18 @@ public class IOGraph2Panel extends JPanel {
 
     private String                   source           = null;
     private String                   target           = null;
+    private Conversion2              parameter        = null;
     private List<Conversion2>        path             = new ArrayList<Conversion2>();
     private boolean                  showRange        = false;
     private boolean                  showDomain       = false;
     private boolean                  showEdgeQuality  = false;
     private boolean                  useWeights       = false;
+    private boolean                  onlyParameters   = false;
 
     private JPopupMenu               popupMenu        = null;
     private Point                    clicked          = new Point(0, 0);
     private JLabel                   lblPath          = null;
+    private ParameterModel           model;
 
     @SuppressWarnings("serial")
     public IOGraph2Panel(IOGraph2 iograph) {
@@ -98,7 +99,7 @@ public class IOGraph2Panel extends JPanel {
         lstApplications.addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 Set<String> apps = new HashSet<String>();
-                for (Object o : lstApplications.getSelectedValues()) {
+                for (Object o : lstApplications.getSelectedValues() ) {
                     apps.add(o.toString());
                 }
                 IOGraph2Panel.this.iograph.setValidApplications(apps);
@@ -117,10 +118,17 @@ public class IOGraph2Panel extends JPanel {
         pnl.add(new IOGraph2Component(), BorderLayout.CENTER);
         pnl.add(lblPath, BorderLayout.SOUTH);
         pnl.setBorder(BorderFactory.createEmptyBorder());
-        
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(lstApplications), pnl);
-        splitPane.setDividerLocation(200);
-        add(splitPane, BorderLayout.CENTER);
+
+        JSplitPane splitPane1 = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(lstApplications), pnl);
+        splitPane1.setDividerLocation(200);
+
+        model = new ParameterModel();
+        JTable tblParams = new JTable(model);
+
+        JSplitPane splitPane2 = new JSplitPane(JSplitPane.VERTICAL_SPLIT, splitPane1, new JScrollPane(tblParams));
+        splitPane2.setDividerLocation(splitPane2.getSize().height - 200);
+
+        add(splitPane2, BorderLayout.CENTER);
     }
 
     public JPopupMenu getPopupMenu() {
@@ -148,7 +156,7 @@ public class IOGraph2Panel extends JPanel {
             try {
                 path = iograph.getShortestPath(source, target, useWeights);
                 String str = source;
-                for (Conversion2 c : path) {
+                for (Conversion2 c : path ) {
                     str += " -(" + c.getApplication() + ")-> " + c.getOutput();
                 }
                 lblPath.setText(str);
@@ -159,6 +167,68 @@ public class IOGraph2Panel extends JPanel {
             }
         }
         repaint();
+    }
+
+    private Set<Conversion2> getValidConversions() {
+        // compute valid conversions
+        Set<Conversion2> valid = new HashSet<Conversion2>();
+        for (Conversion2 c : iograph.getConversions() ) {
+            if (iograph.getValidApplications().contains(c.getApplication()) && (!onlyParameters || !c.getParameters().isEmpty()) && (!useWeights || (c.getWeight() != Conversion2.UNKNOWN_WEIGHT))) {
+                valid.add(c);
+            }
+        }
+        return valid;
+    }
+
+    public void showParameters(Conversion2 c) {
+        parameter = c;
+        model.fireTableDataChanged();
+        repaint();
+    }
+
+    @SuppressWarnings("serial")
+    class ParameterModel extends AbstractTableModel {
+        private String[] columns = new String[] { "Name", "Values", "Default Value" };
+
+        public int getColumnCount() {
+            return columns.length;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            return columns[column];
+        }
+
+        public int getRowCount() {
+            if (parameter == null) {
+                return 0;
+            } else {
+                return parameter.getParameters().size();
+            }
+        }
+
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            if (parameter == null) {
+                return "?";
+            }
+
+            List<Parameter> lst = new ArrayList<Parameter>(parameter.getParameters().values());
+            if (lst.size() < rowIndex) {
+                return "?";
+            }
+
+            switch (columnIndex) {
+                case 0:
+                    return lst.get(rowIndex).name;
+                case 1:
+                    return lst.get(rowIndex).values;
+                case 2:
+                    return lst.get(rowIndex).defaultValue;
+                default:
+                    return "?";
+            }
+        }
+
     }
 
     /**
@@ -211,7 +281,7 @@ public class IOGraph2Panel extends JPanel {
                 public void actionPerformed(ActionEvent e) {
                     double d = Double.MAX_VALUE;
                     String v = null;
-                    for (Entry<String, Point> entry : vertexMap.entrySet()) {
+                    for (Entry<String, Point> entry : vertexMap.entrySet() ) {
                         double x = clicked.distance(entry.getValue());
                         if (x < d) {
                             d = x;
@@ -229,7 +299,7 @@ public class IOGraph2Panel extends JPanel {
                 public void actionPerformed(ActionEvent e) {
                     double d = Double.MAX_VALUE;
                     String v = null;
-                    for (Entry<String, Point> entry : vertexMap.entrySet()) {
+                    for (Entry<String, Point> entry : vertexMap.entrySet() ) {
                         double x = clicked.distance(entry.getValue());
                         if (x < d) {
                             d = x;
@@ -241,6 +311,23 @@ public class IOGraph2Panel extends JPanel {
                     }
                     target = v;
                     compute();
+                }
+            }));
+            popupMenu.add(new JMenuItem(new AbstractAction("Parameters") {
+                public void actionPerformed(ActionEvent e) {
+                    double d = Double.MAX_VALUE;
+                    Conversion2 v = null;
+                    for (Conversion2 c : getValidConversions() ) {
+                        Point p1 = vertexMap.get(c.getInput());
+                        Point p2 = vertexMap.get(c.getOutput());
+                        Line2D l = new Line2D.Double(p1, p2);
+                        double x = l.ptLineDist(clicked);
+                        if (x < d) {
+                            d = x;
+                            v = c;
+                        }
+                    }
+                    showParameters(v);
                 }
             }));
             popupMenu.addSeparator();
@@ -256,12 +343,19 @@ public class IOGraph2Panel extends JPanel {
                     repaint();
                 }
             }));
+            popupMenu.add(new JCheckBoxMenuItem(new AbstractAction("Only Parameterized") {
+                public void actionPerformed(ActionEvent e) {
+                    onlyParameters = ((JCheckBoxMenuItem) e.getSource()).getState();
+                    vertexMap.clear();
+                    repaint();
+                }
+            }));
         }
 
         @Override
         public void paint(Graphics g) {
             setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            
+
             long t = System.currentTimeMillis();
             Graphics2D g2d = (Graphics2D) g;
 
@@ -272,24 +366,27 @@ public class IOGraph2Panel extends JPanel {
             g2d.setColor(Color.white);
             g2d.fillRect(0, 0, width, height);
 
-            // compute vertex locations if needed
+            // get valid conversions
             long l = System.currentTimeMillis();
+            Set<Conversion2> valid = getValidConversions();
+            log.debug("CONVERSIONS : " + (System.currentTimeMillis() - l));
+
+            // compute vertex locations if needed
+            l = System.currentTimeMillis();
             if (vertexMap.isEmpty()) {
                 int half_width = width / 2;
                 int half_height = height / 2;
                 Set<String> vertices = new TreeSet<String>();
-                for (Conversion2 c : iograph.getConversions()) {
-                    if (iograph.getValidApplications().contains(c.getApplication()) && (!useWeights || (c.getWeight() != Conversion2.UNKNOWN_WEIGHT))) {
-                        vertices.add(c.getInput());
-                        vertices.add(c.getOutput());
-                    }
+                for (Conversion2 c : valid ) {
+                    vertices.add(c.getInput());
+                    vertices.add(c.getOutput());
                 }
                 log.debug("Compute vertexmap for " + vertices.size() + " vertices.");
                 double theta0 = 0;
                 int rings = 1;
                 int size = vertices.size();
                 int i = 0;
-                for (String v : vertices) {
+                for (String v : vertices ) {
                     double radius = Math.pow(0.9, (i % rings) + 1);
                     Point p = new Point();
                     p.x = (int) Math.round(Math.cos((2.0 * Math.PI * i) / size + theta0) * radius * half_width + half_width);
@@ -298,22 +395,28 @@ public class IOGraph2Panel extends JPanel {
                     i++;
                 }
             }
-            log.debug("VERTEXMAP : " + (System.currentTimeMillis() - l));
+            log.debug("VERTEXMAP   : " + (System.currentTimeMillis() - l));
 
             // draw edges
             l = System.currentTimeMillis();
             g2d.setStroke(new BasicStroke(2));
             g2d.setColor(new Color(0xcccccc));
-            for (Conversion2 c : iograph.getConversions()) {
-                if (iograph.getValidApplications().contains(c.getApplication()) && (!useWeights || (c.getWeight() != Conversion2.UNKNOWN_WEIGHT))) {
-                    Point p1 = vertexMap.get(c.getInput());
-                    Point p2 = vertexMap.get(c.getOutput());
-                    if ((p1 != null) && (p2 != null)) {
-                        drawArrow(g2d, p1.x, p1.y, p2.x, p2.y, true, null);
-                    }
+            for (Conversion2 c : valid ) {
+                Point p1 = vertexMap.get(c.getInput());
+                Point p2 = vertexMap.get(c.getOutput());
+                if ((p1 != null) && (p2 != null)) {
+                    drawArrow(g2d, p1.x, p1.y, p2.x, p2.y, true, null);
                 }
             }
-            log.debug("EDGES     : " + (System.currentTimeMillis() - l));
+            if (parameter != null) {
+                Point p1 = vertexMap.get(parameter.getInput());
+                Point p2 = vertexMap.get(parameter.getOutput());
+                g2d.setColor(Color.red);
+                if ((p1 != null) && (p2 != null)) {
+                    drawArrow(g2d, p1.x, p1.y, p2.x, p2.y, true, null);
+                }
+            }
+            log.debug("EDGES       : " + (System.currentTimeMillis() - l));
 
             g2d.setStroke(new BasicStroke(4));
 
@@ -321,7 +424,7 @@ public class IOGraph2Panel extends JPanel {
             l = System.currentTimeMillis();
             if (showRange) {
                 g2d.setColor(new Color(0x00c0c0c0));
-                for (Conversion2 c : iograph.getRange(source)) {
+                for (Conversion2 c : iograph.getRange(source) ) {
                     if (!useWeights || (c.getWeight() != Conversion2.UNKNOWN_WEIGHT)) {
                         Point p1 = vertexMap.get(c.getInput());
                         Point p2 = vertexMap.get(c.getOutput());
@@ -331,13 +434,13 @@ public class IOGraph2Panel extends JPanel {
                     }
                 }
             }
-            log.debug("RANGE     : " + (System.currentTimeMillis() - l));
+            log.debug("RANGE       : " + (System.currentTimeMillis() - l));
 
             // draw domain
             l = System.currentTimeMillis();
             if (showDomain) {
                 g2d.setColor(new Color(0x00a0a0a0));
-                for (Conversion2 c : iograph.getDomain(target)) {
+                for (Conversion2 c : iograph.getDomain(target) ) {
                     if (!useWeights || (c.getWeight() != Conversion2.UNKNOWN_WEIGHT)) {
                         Point p1 = vertexMap.get(c.getInput());
                         Point p2 = vertexMap.get(c.getOutput());
@@ -347,12 +450,12 @@ public class IOGraph2Panel extends JPanel {
                     }
                 }
             }
-            log.debug("DOMAIN    : " + (System.currentTimeMillis() - l));
+            log.debug("DOMAIN      : " + (System.currentTimeMillis() - l));
 
             // show conversion path
             l = System.currentTimeMillis();
             g2d.setColor(new Color(0x00c3a3bd));
-            for (Conversion2 c : path) {
+            for (Conversion2 c : path ) {
                 Point p1 = vertexMap.get(c.getInput());
                 Point p2 = vertexMap.get(c.getOutput());
                 if ((p1 != null) && (p2 != null) && showEdgeQuality && (c.getWeight() != Conversion2.UNKNOWN_WEIGHT)) {
@@ -361,13 +464,13 @@ public class IOGraph2Panel extends JPanel {
                     drawArrow(g2d, p1.x, p1.y, p2.x, p2.y, true, null);
                 }
             }
-            log.debug("PATH      : " + (System.currentTimeMillis() - l));
+            log.debug("PATH        : " + (System.currentTimeMillis() - l));
 
             // draw vertices
             l = System.currentTimeMillis();
             FontMetrics fm = g2d.getFontMetrics();
             int h = fm.getDescent() / 2 + fm.getAscent() / 2;
-            for (Entry<String, Point> entry : vertexMap.entrySet()) {
+            for (Entry<String, Point> entry : vertexMap.entrySet() ) {
                 String v = entry.getKey();
                 Point p = entry.getValue();
                 int w = fm.stringWidth(v);
@@ -380,9 +483,9 @@ public class IOGraph2Panel extends JPanel {
                 }
                 g2d.drawString(v, p.x - w / 2, p.y - h);
             }
-            log.debug("VERTICES  : " + (System.currentTimeMillis() - l));
-            log.debug("TOTAL     : " + (System.currentTimeMillis() - t));
-            
+            log.debug("VERTICES    : " + (System.currentTimeMillis() - l));
+            log.debug("TOTAL       : " + (System.currentTimeMillis() - t));
+
             setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
         }
 
@@ -450,101 +553,12 @@ public class IOGraph2Panel extends JPanel {
     // DEBUG FUNCTIONS
     // ----------------------------------------------------------------------
 
-    public static void showCSR(final URL url) throws IOException, PolyglotException {
-        final IOGraph2 iograph = new IOGraph2();
-        final IOGraph2Panel iographPanel = new IOGraph2Panel(iograph);
-
-        String line;
-        BufferedReader br;
-
-        JMenu menu = new JMenu("Weights");
-        iographPanel.getPopupMenu().addSeparator();
-        iographPanel.getPopupMenu().add(menu);
-
-        ButtonGroup group = new ButtonGroup();
-        JRadioButtonMenuItem mi = new JRadioButtonMenuItem(new AbstractAction("No weights") {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    iograph.resetWeights();
-                    iographPanel.showEdgeQuality(false);
-                    iographPanel.useWeights(false);
-                } catch (PolyglotException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        });
-        mi.setSelected(true);
-        menu.add(mi);
-        group.add(mi);
-
-        br = new BufferedReader(new InputStreamReader(new URL(url, "get_measures.php").openStream()));
-        while ((line = br.readLine()) != null) {
-            String[] pieces = line.split("\t");
-            if (pieces.length != 5) {
-                continue;
-            }
-            final String menuitem = pieces[1];
-            mi = new JRadioButtonMenuItem(new AbstractAction(menuitem) {
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        iographPanel.showEdgeQuality(true);
-                        iograph.resetWeights();
-
-                        URL m_url = new URL(url, "get_weights_average.php?measure=" + URLEncoder.encode(menuitem, "UTF8"));
-                        BufferedReader br = new BufferedReader(new InputStreamReader(m_url.openStream()));
-                        String line;
-                        while ((line = br.readLine()) != null) {
-                            if (line.toLowerCase().endsWith("<br>")) {
-                                line = line.substring(0, line.length() - 4);
-                            }
-                            String[] parts = line.split("\t");
-                            if (parts.length != 4) {
-                                System.err.println("Bad line : " + line);
-                            } else {
-                                try {
-                                    Double w = Math.abs(Double.parseDouble(parts[3]));
-                                    iograph.setWeight(parts[1], parts[2], parts[0], w);
-                                } catch (NumberFormatException exc) {
-                                    System.err.println("Bad line : " + line);
-                                    exc.printStackTrace();
-                                }
-                            }
-                        }
-                        br.close();
-                        iographPanel.useWeights(true);
-                    } catch (Exception exc) {
-                        exc.printStackTrace();
-                    }
-                }
-            });
-            mi.setSelected(false);
-            menu.add(mi);
-            group.add(mi);
-        }
-        br.close();
-
-        br = new BufferedReader(new InputStreamReader(new URL(url, "get_conversions.php").openStream()));
-        while ((line = br.readLine()) != null) {
-            int tmpi = line.lastIndexOf(" ");
-            String output = line.substring(tmpi + 1, line.length() - 4);
-            line = line.substring(0, tmpi);
-            tmpi = line.lastIndexOf(" ");
-            String input = line.substring(tmpi + 1, line.length());
-            String application = line.substring(0, tmpi);
-            iograph.addConversion(input, output, application);
-        }
-        br.close();
-
-        iograph.complexity();
-
-        JFrame frm = new JFrame();
-        frm.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frm.add(iographPanel);
-        frm.pack();
-        frm.setVisible(true);
-    }
 
     public static void main(String[] args) throws Exception {
-        showCSR(new URL("http://141.142.227.69/php/search/"));
+        JFrame frm = new JFrame();
+        frm.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frm.add(new CSRPanel(new URL("http://141.142.227.69/php/search/")).getIOGraphPanel());
+        frm.pack();
+        frm.setVisible(true);
     }
 }

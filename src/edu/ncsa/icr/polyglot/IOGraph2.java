@@ -13,6 +13,9 @@ import java.util.TreeSet;
 
 import javax.swing.JFrame;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import edu.ncsa.icr.ICRAuxiliary.Application;
 import edu.ncsa.icr.ICRAuxiliary.Data;
 import edu.ncsa.icr.ICRAuxiliary.Operation;
@@ -27,11 +30,16 @@ import edu.ncsa.icr.SoftwareServerClient;
  * @author Rob Kooper
  */
 public class IOGraph2 {
+    private static Log                     log               = LogFactory.getLog(IOGraph2.class);
+
     /** empty list returned if no answers available */
     private static final List<Conversion2> EMPTY_LIST        = new ArrayList<Conversion2>();
 
     /** list of all conversions */
     private List<Conversion2>              conversions       = new ArrayList<Conversion2>();
+
+    /** list of all conversions by id */
+    private Map<Integer, Conversion2>      idMap             = new HashMap<Integer, Conversion2>();
 
     /** list of all conversions that can be done by a specific application */
     private Map<String, List<Conversion2>> applicationMap    = new HashMap<String, List<Conversion2>>();
@@ -62,6 +70,7 @@ public class IOGraph2 {
      */
     public void reset() {
         conversions.clear();
+        idMap.clear();
         applicationMap.clear();
         inputMap.clear();
         outputMap.clear();
@@ -112,10 +121,10 @@ public class IOGraph2 {
      *             conversions to the existing graph.
      */
     public void addConversions(SoftwareServerClient server) throws PolyglotException {
-        for (Application app : server.getApplications()) {
-            for (Operation op : app.operations) {
-                for (Data inp : op.inputs) {
-                    for (Data out : op.outputs) {
+        for (Application app : server.getApplications() ) {
+            for (Operation op : app.operations ) {
+                for (Data inp : op.inputs ) {
+                    for (Data out : op.outputs ) {
                         addConversion(inp.toString(), out.toString(), app.name);
                     }
                 }
@@ -140,7 +149,11 @@ public class IOGraph2 {
      *             conversions to the existing graph.
      */
     public void addConversion(String input, String output, String application) throws PolyglotException {
-        addConversion(new Conversion2(input, output, application));
+        Integer id = 0;
+        while(idMap.containsKey(id)) {
+            id = new Random().nextInt();
+        }
+        addConversion(id, input, output, application, Conversion2.UNKNOWN_WEIGHT);
     }
 
     /**
@@ -162,7 +175,57 @@ public class IOGraph2 {
      *             conversions to the existing graph.
      */
     public void addConversion(String input, String output, String application, double weight) throws PolyglotException {
-        addConversion(new Conversion2(input, output, application, weight));
+        Integer id = 0;
+        while(idMap.containsKey(id)) {
+            id = new Random().nextInt();
+        }
+        addConversion(id, input, output, application, weight);
+    }
+
+    /**
+     * This will add the conversion from <code>input</code> to
+     * <code>output</code> using the <code>application</code> for the
+     * conversion. The weights assigned to the conversion are set to be
+     * undefined.
+     * 
+     * @param id
+     *            unique id used to reference the conversion
+     * @param input
+     *            input format
+     * @param output
+     *            output format
+     * @param application
+     *            application used for the conversion
+     * @throws PolyglotException
+     *             throws PolyglotException if there was a problem adding the
+     *             conversions to the existing graph.
+     */
+    public void addConversion(int id, String input, String output, String application) throws PolyglotException {
+        addConversion(id, input, output, application, Conversion2.UNKNOWN_WEIGHT);
+    }
+
+    /**
+     * This will add the conversion from <code>input</code> to
+     * <code>output</code> using the <code>application</code> for the conversion
+     * with the <code>weight</weight>.
+     * 
+     * @param id
+     *            unique id used to reference the conversion
+     * @param input
+     *            input format
+     * @param output
+     *            output format
+     * @param application
+     *            application used for the conversion
+     * @param weight
+     *            the weight assigned to the conversion, ranging from 0 (perfect
+     *            conversion) to unknown weight (10000, all information lost).
+     * @throws PolyglotException
+     *             throws PolyglotException if there was a problem adding the
+     *             conversions to the existing graph.
+     */
+    public void addConversion(int id, String input, String output, String application, double weight) throws PolyglotException {
+        addConversion(new Conversion2(id, input, output, application, weight));
     }
 
     /**
@@ -175,6 +238,10 @@ public class IOGraph2 {
         conversions.add(c);
         vertices.add(c.getInput());
         vertices.add(c.getOutput());
+        if (idMap.containsKey(c.getId())) {
+            log.warn("Already contain conversion for id : " + c.getId());
+        }
+        idMap.put(c.getId(), c);
         List<Conversion2> list = applicationMap.get(c.getApplication());
         if (list == null) {
             list = new ArrayList<Conversion2>();
@@ -195,6 +262,15 @@ public class IOGraph2 {
         list.add(c);
     }
 
+    public void addParameter(int id, String name, String values, String defaultValue) {
+        Conversion2 c = idMap.get(id);
+        if (c != null) {
+            c.addParameter(name, values, defaultValue);
+        } else {
+            log.error("Could not find conversion with id : " + id);
+        }
+    }
+
     /**
      * Sets all the weights of all conversions to unknown.
      * 
@@ -203,7 +279,7 @@ public class IOGraph2 {
      *             weights.
      */
     public void resetWeights() throws PolyglotException {
-        for (Conversion2 c : conversions) {
+        for (Conversion2 c : conversions ) {
             c.setWeight(Conversion2.UNKNOWN_WEIGHT);
         }
     }
@@ -226,7 +302,7 @@ public class IOGraph2 {
      *             weights.
      */
     public void setWeight(String input, String output, String application, double weight) throws PolyglotException {
-        for (Conversion2 c : conversions) {
+        for (Conversion2 c : conversions ) {
             if (c.getInput().equals(input) && c.getOutput().equals(output) && c.getApplication().equals(application)) {
                 c.setWeight(weight);
             }
@@ -279,6 +355,10 @@ public class IOGraph2 {
      */
     public Set<String> getVertices() {
         return vertices;
+    }
+
+    public Conversion2 getConversion(int id) {
+        return idMap.get(id);
     }
 
     /**
@@ -376,7 +456,7 @@ public class IOGraph2 {
         Map<String, Double> dist = new HashMap<String, Double>();
         Map<String, Conversion2> previous = new HashMap<String, Conversion2>();
 
-        for (String u : Q) {
+        for (String u : Q ) {
             dist.put(u, Double.MAX_VALUE);
             previous.put(u, null);
         }
@@ -409,7 +489,7 @@ public class IOGraph2 {
 
             // for each neighbor v of u:
             if (inputMap.get(u) != null) {
-                for (Conversion2 c : inputMap.get(u)) {
+                for (Conversion2 c : inputMap.get(u) ) {
                     if (getValidApplications().contains(c.getApplication())) {
                         String v = c.getOutput();
                         if (Q.contains(v)) {
@@ -455,7 +535,7 @@ public class IOGraph2 {
         l = System.currentTimeMillis();
         Random r = new Random();
         int s, t;
-        for (int i = 0; i < edges; i++) {
+        for (int i = 0; i < edges; i++ ) {
             do {
                 s = r.nextInt(formats);
                 t = r.nextInt(formats);
@@ -518,13 +598,13 @@ public class IOGraph2 {
 
         List<Conversion2> path = iograph.getShortestPath("1", "5", false);
         System.out.print("1");
-        for (Conversion2 c : path) {
+        for (Conversion2 c : path ) {
             System.out.print(" -(" + c.getApplication() + ")-> " + c.getOutput());
         }
         System.out.println();
         path = iograph.getShortestPath("1", "5", true);
         System.out.print("1");
-        for (Conversion2 c : path) {
+        for (Conversion2 c : path ) {
             System.out.print(" -(" + c.getApplication() + ")-> " + c.getOutput());
         }
         System.out.println();

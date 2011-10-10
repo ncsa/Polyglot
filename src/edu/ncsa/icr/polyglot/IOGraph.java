@@ -140,7 +140,9 @@ public class IOGraph<V extends Comparable,E> implements Serializable
      
       while((line = ins.readLine()) != null){
 				tmpi = line.lastIndexOf(" ");
-				output_format = line.substring(tmpi+1, line.length()-4);
+                line = line.substring(0, tmpi);
+                tmpi = line.lastIndexOf(" ");
+				output_format = line.substring(tmpi+1, line.length());
 				line = line.substring(0, tmpi);
 				tmpi = line.lastIndexOf(" ");
 				input_format = line.substring(tmpi+1, line.length());

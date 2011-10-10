@@ -355,7 +355,7 @@
 		<zip basedir="${tmp_srs}" destfile="build/SoftwareServer.zip"/>
 	</target>
 	
-	<target name="polyglot_utils" depends="compile" description="Archive all the code needed by the web interface">
+	<target name="applet" depends="compile" description="Archive all the code needed by the web interface">
 		<mkdir dir="${tmp_utils}"/>
 		<copy todir="${tmp_utils}">
 			<fileset dir="${classes}">
@@ -373,6 +373,7 @@
 		<jar basedir="${tmp_utils}" destfile="build/PolyglotUtils.jar"/>
 		<input message="keystore password:" addproperty="storepass"/>
 		<signjar jar="build/PolyglotUtils.jar" signedjar="build/PolyglotUtils-signed.jar" alias="mykey" storepass="${storepass}"/>
+		<copy failonerror="false" tofile="../CSR/java/IOGraphApplet-signed.jar" file="build/PolyglotUtils-signed.jar" />
 	</target>
 	
 	<target name="iograph_archive" depends="compile" description="Archive the code needed for the I/O-graph applet">
