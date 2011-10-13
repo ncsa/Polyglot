@@ -51,7 +51,6 @@ input_arithmetic:=RegExReplace(input_arithmetic, "^\s*\-", "1{F9}*")
 StringReplace, input_arithmetic, input_arithmetic, ^, y
 ;get operations ready for autohotkey send
 input_arithmetic:=RegExReplace(input_arithmetic, "([\+\-\*\/])", "{$1}")
-MsgBox, %input_arithmetic%
 
 ;check output filetype
 arg2=%2%
