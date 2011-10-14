@@ -3,22 +3,34 @@
 ;txt
 ;txt
 
-alias_cos:="co"
+alias_cos:="o"
 alias_sin:="s"
 alias_tan:="t"
 alias_ln:="n"
+alias_log:="l"
+alias_sinh:="{Ctrl Down}{s}{Ctrl Up}"
+alias_cosh:="{Ctrl Down}{o}{Ctrl Up}"
+alias_tanh:="{Ctrl Down}{t}{Ctrl Up}"
+alias_int:=";"
+alias_acos:="io"
+alias_asin:="is"
+alias_atan:="it"
+alias_acosh:="i" . alias_cosh
+alias_asinh:="i" . alias_sinh
+alias_atanh:="i" . alias_tanh
 
 ;recursively converts mathematical functions to calculator hotkeys
 parseFunctions(arithmetic)
 {
-	foundPos:=RegexMatch(arithmetic, "i)(cos|sin|tan|ln)\(", match)
+	foundPos:=RegexMatch(arithmetic, "i)(acos|asin|atan|cos|sin|tan|ln|log|sinh|cosh|tanh|int)\(", match)
 	;base case
 	if(foundPos==0){
 		return arithmetic
 	}
+	nameLength:=Strlen(match1)
 	;find where the function's parenthesis become balanced
 	parenthesis:=1
-	currPos:=foundPos+4
+	currPos:=foundPos+nameLength+1
 	while parenthesis!=0
 	{
 		char:=SubStr(arithmetic, currPos, 1)
@@ -29,7 +41,6 @@ parseFunctions(arithmetic)
 		}
 		currPos++
 	}
-	nameLength:=Strlen(match1)
 	inner:=SubStr(arithmetic, foundPos+nameLength, currPos-foundPos-nameLength)
 	StringLeft, left_arithmetic, arithmetic, foundPos - 1
 	StringRight, right_arithmetic, arithmetic, StrLen(arithmetic) - currPos + 1
@@ -49,8 +60,14 @@ input_arithmetic:=RegExReplace(input_arithmetic, "([\^\*\(\/\-\+])\s*\-", "$11{F
 input_arithmetic:=RegExReplace(input_arithmetic, "^\s*\-", "1{F9}*")
 ;convert exponent operation to hotkey
 StringReplace, input_arithmetic, input_arithmetic, ^, y
+;convert modulo operation to hotkey
+StringReplace, input_arithmetic, input_arithmetic, `%, d
+;convert euler's number to the exponential operation hotkey
+StringReplace, input_arithmetic, input_arithmetic, e, 1in
+;convert pi to hotkey
+StringReplace, input_arithmetic, input_arithmetic, pi, p
 ;get operations ready for autohotkey send
-input_arithmetic:=RegExReplace(input_arithmetic, "([\+\-\*\/])", "{$1}")
+input_arithmetic:=RegExReplace(input_arithmetic, "([\+\-\*\/\!])", "{$1}")
 
 ;check output filetype
 arg2=%2%
