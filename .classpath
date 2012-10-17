@@ -45,5 +45,6 @@
 	<classpathentry kind="lib" path="lib/ij143/plugins/mpicbg_.jar"/>
 	<classpathentry kind="lib" path="lib/ij143/plugins/TrakEM2_.jar"/>
 	<classpathentry kind="lib" path="lib/ij143/plugins/jars/mpicbg.jar"/>
+	<classpathentry kind="lib" path="lib/google-gson-2.2.2/gson-2.2.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
