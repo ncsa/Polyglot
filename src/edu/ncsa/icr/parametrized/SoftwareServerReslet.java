@@ -37,7 +37,7 @@ public class SoftwareServerReslet extends ServerResource
 	{
 		server = new SoftwareServer("SoftwareServer.conf");
 		applications = server.getApplications();
-		application_tasks = Task.getApplicationTasks(applications); //liana: changed to include parameters
+		application_tasks = Task.getApplicationTasks(applications); //changed to include parameters
 		//Build alias map
 		for(int i=0; i<applications.size(); i++){
 			alias_map.put(applications.get(i).alias, applications.get(i));
@@ -237,7 +237,7 @@ public class SoftwareServerReslet extends ServerResource
 	// * @param input_file the input filename
 	// * @return the parameters supported
 	// */
-	// public String getApplicationTaskParameters(String alias, String task, String output_format, String input_file) //liana: changed. the parameters associated with input_format, output_format will be only from the FIRST option of this pair found
+	// public String getApplicationTaskParameters(String alias, String task, String output_format, String input_file) //changed: the parameters associated with input_format, output_format will be only from the FIRST option of this pair found
 	// {
 	// TaskInfo task_info;
 	// String buffer = "";
@@ -359,9 +359,11 @@ public class SoftwareServerReslet extends ServerResource
 		return buffer;
 	}
 	//TODO
-	//TODO
-	//TODO
-	//TODO
+
+	/**
+	 * Recursive - Get HTML for a single parameter (might contain nested elements)
+	 * @return the HTML for the parameter
+	 */
 	Pair<String, String> getJSSingleParam(String prefix, SingleParameter ps, String parent_id, String parent_val,int level){
 		String ans="";
 		String ind="";
@@ -427,6 +429,7 @@ public class SoftwareServerReslet extends ServerResource
 		return new Pair<String,String>(ans,enabledisable);
 	}
 	/**
+	 * Get the HTML for parameters form
 	 * @param application_alias the application to use
 	 * @param task_string the task to perform (nothing assumed to be a conversion)
 	 * @param output_format the output format
@@ -530,7 +533,7 @@ public class SoftwareServerReslet extends ServerResource
 	 * @return the form
 	 */
 	public String getForm(boolean POST_UPLOADS, String selected_application, boolean HIDE_APPLICATIONS)
-	{//TODO: change to support the parameters
+	{
 		String buffer = "";
 		String format;
 		Application application;
@@ -594,13 +597,13 @@ public class SoftwareServerReslet extends ServerResource
 				buffer += "  }\n";
 			}
 		}
-		//liana
+		//changed
 		buffer += "  setParameters()\n";
-		//liana
+		//changed
 		buffer += "}\n";
 		buffer += "\n";
 		String buffer2="";
-		//liana
+		//changed
 		buffer += "function setParameters(){\n";
 		buffer += "  var params = document.getElementById('params');\n";
 		buffer += "  params.innerHTML=\"\";\n";
@@ -665,7 +668,7 @@ public class SoftwareServerReslet extends ServerResource
 		buffer2 += "}\n\n";
 		buffer+=buffer2;
 		buffer += "\n";
-		//liana
+		//changed
 		buffer += "function setAPICall(){\n";
 		buffer += "  var select = document.getElementById('application');\n";
 		buffer += "  var application = select.options[select.selectedIndex].value;\n";
@@ -779,17 +782,17 @@ public class SoftwareServerReslet extends ServerResource
 			buffer += "<tr><td><b>File:</b></td><td><input type=\"file\" name=\"file\" id=\"file\" size=\"100\" onchange=\"setParameters()\" /></td></tr>\n";
 		}
 		buffer += "<tr><td><b>Format:</b></td>\n";
-		//buffer += "<td><select name=\"format\" id=\"format\" >\n";//liana
-		buffer += "<td><select name=\"format\" id=\"format\" onchange=\"setParameters();\">\n";//liana
+		//buffer += "<td><select name=\"format\" id=\"format\" >\n";//changed
+		buffer += "<td><select name=\"format\" id=\"format\" onchange=\"setParameters();\">\n";//changed
 		for(Iterator<String> itr=application_tasks.get(0).first().outputs.iterator(); itr.hasNext();){
 			format = itr.next();
 			buffer += "<option value=\"" + format + "\">" + format + "</option>\n";
 		}
 		buffer += "</select></td></tr>\n";
-		//liana
+		//changed
 		buffer += "<tr><td><b>Parameters:</b></td>\n";
 		buffer += "<tr><td></td><td align=\"left\"><div name=\"params\" id=\"params\">PPPPPPPPPPP</div></td></tr>\n";
-		//liana
+		//changed
 		buffer += "<tr><td height=\"25\"></td><td></td></tr>\n";
 		buffer += "<tr><td></td><td><input type=\"submit\" value=\"Submit\"></td></tr>\n";
 		buffer += "<tr><td height=\"25\"></td><td></td></tr>\n";

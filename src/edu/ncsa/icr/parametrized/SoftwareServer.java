@@ -354,8 +354,8 @@ public class SoftwareServer implements Runnable
   	BUSY = true;  
   	task_count++;
   	
-//  	for(String aa:task_params)
-//  		System.out.println(aa);
+//  	for(String tp:task_params)
+//  		System.out.println(tp);
   	
   	//Execute each subtask in the task
 		for(int i=0; i<task_attempts; i++){

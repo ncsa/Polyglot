@@ -382,7 +382,7 @@ public class SoftwareServerClient implements Comparable
 		}
 		
 		//Test user specified task execution
-		if(true){
+		if(false){
 			Task task = new Task(icr);
 			task.add("Blender", "convert", debug_input_path + "heart.wrl", "heart.stl");
 			task.add("A3DReviewer", "open", "heart.stl", "");

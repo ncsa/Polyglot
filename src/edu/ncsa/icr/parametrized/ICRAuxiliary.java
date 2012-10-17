@@ -1,11 +1,3 @@
-/*
- * changes:
- * 		(1) Script:
- * 					(a) add support for script name of format : "SW_convert_outputFormat" 
- * 
- * */
-
-
 package edu.ncsa.icr.parametrized;
 
 import com.google.gson.Gson;
