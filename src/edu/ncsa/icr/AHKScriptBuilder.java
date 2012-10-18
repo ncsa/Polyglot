@@ -8,20 +8,12 @@
 
 /*
  * changes:
- * 			(0) changes to nextWord, advanceLine, 
- * 			(1) func that parses the roadmap and gives it the JSON string (in ParameterSelection.java)
- * 			(2) options of userchoose now with ""
- * 			(4) input and output from params (in any place in stream): inputFile, outputFile AND if not defined as %1% and %2%
- *          (5) arguments from file AND from command line
- *          (6) changed menu command so the "&" is added on the roadmap and not here, this in order to deal with the 2 possible options of menu commands
- * 			(7) managed new commands generated because of the new feedback feature: userinput/insert (added number 1,2,3,4 that defines the method of input), choose/userchoose (added number 1,2,3 that defines the how to choose)
- * 			(8) joined Parameters and Parameter Selection in the same package
- * 			(9) added function that generates the script header
- * 
+ *			(1) added header lines, including JSON 
+ *			(2) removed differentiation between actions that occur obligatory and those which don't
+ *      	(3) write func to replace the input file string and the output file string (and paths and extensions if necessary)
  * 
  * TODO list:			
- *          (3) debug wait options
- *          (4) write func to replace the input file string and the output file string (and paths and extensions if necessary)
+ *      (4) debug wait options
  * 			(5) write a rec func that takes a file and copies its contents to a new one in a way that 
  * 			every time there is if(curr_param="a"){}if(curr_param="b"){}if(curr_param="c"){}
  * 			it transforms to while((curr_param="a")or (curr_param="b")or (curr_param="c")){if(curr_param="a"){}if(curr_param="b"){}if(curr_param="c"){}}
@@ -36,8 +28,10 @@
  *
  * general comments:         
  *          (*) keeping in mind the goal of complete control of SW:
- *          		(a) the "always" option would be probably out since the user will have complete liberty to decide the 
- *          		actions to be taken - maybe the only action that will be always present is "run"
+ *          		(a) every option should be optional since the user will have complete liberty to decide which 
+ *          		actions to be taken and when - maybe the only action that will be always present is "run". 
+ *          		this can be accomplished by recording one script per action. although it does not seem a good solution, there might not be 
+ *          		another better solution because of the nested parameters which order could generate different results 
  *          		(b) in this case (total control), each possible action is transformed in a "parameter" and should probably (if no
  *          		better solution is found) be recorded separately. for example, a user will open a file using a "openFile=fileName"
  * 			(*) the option of saving text to file was introduced mainly to contribute towards the goal of total SW control.
@@ -50,13 +44,17 @@
 
 package edu.ncsa.icr;
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Vector;
+import kgm.utility.Utility;
 //import com.google.gson.Gson;
 
 
@@ -64,29 +62,170 @@ public class AHKScriptBuilder{
 	static private int debug=1;
 	
 	/**
-	 * AHKScriptBuilder can be called from cmd line by giving 2 arguments: output AHK script path and input files directory path 
+	 * AHKScriptBuilder can be called from cmd line by giving 2 arguments: output AHK script directory path and input files directory path 
 	 **/
-	public static void main (String[] args){
-		String scriptPath="C:\\Documents and Settings\\liana\\Desktop\\script_test.ahk";
-		String roadmapFilesDirectory="C:\\Documents and Settings\\liana\\Desktop\\a\\a\\teste";
-		File script;
+	public static void main(String[] args){
+		String scriptFolderPath="C:\\Documents and Settings\\liana\\Desktop\\scripts_report\\";
+		String roadmapFilesDirectory="C:\\temp\\";//"C:\\Documents and Settings\\liana\\Desktop\\testNew\\";
+		String[] swFolders;
+		File formatRoadmapFolder, mainRoadmapFolder, scriptFolder;
 		
 		if (args.length>0){
 			if (args.length!=2){
-				System.out.println("Usage: first argument is the resulting script name (with complete path), second argument is the directory of roadmap files to be used");
+				System.out.println("Usage: first argument is the resulting script folder (with complete path), second argument is the directory of roadmap files to be used");
 				System.exit(1);
 			}
-			scriptPath=args[0];
+			scriptFolderPath=args[0];
 			roadmapFilesDirectory=args[1];
 		}
+		if(!roadmapFilesDirectory.endsWith("\\")){
+			roadmapFilesDirectory+="\\";
+		}
+		scriptFolder=new File(scriptFolderPath);
+		if(!scriptFolder.exists())
+			scriptFolder.mkdir();
+
+		if(!scriptFolderPath.endsWith("\\")){
+			scriptFolderPath+="\\";
+		}
 		
-		script = new File(scriptPath);
-		if (script.exists())
-			script.delete();
-		writeScript(scriptPath, roadmapFilesDirectory);
+		mainRoadmapFolder= new File(roadmapFilesDirectory);
+		swFolders = mainRoadmapFolder.list();//list of softwares
+		for(String f:swFolders){
+			formatRoadmapFolder = new File(roadmapFilesDirectory+f);
+			if (formatRoadmapFolder.isDirectory()){
+				softwareWriteAllScripts(roadmapFilesDirectory+f, scriptFolderPath);
+			}
+		}
 		if(debug==1)
-			System.out.println("SOFHASIPUR");
+			System.out.println("FINISHED");
 	}
+	
+	
+	public static void softwareWriteAllScripts(String swRoadMapDirectory, String scriptDirectory){
+		String[] folders;
+		String scriptPath;
+		File script, formatRoadmapFolder, swRoadmapFolder;
+	
+		if(!scriptDirectory.endsWith("\\"))
+			scriptDirectory+="\\";
+		
+		if(!swRoadMapDirectory.endsWith("\\"))
+			swRoadMapDirectory+="\\";
+		
+		swRoadmapFolder = new File(swRoadMapDirectory);
+		folders = swRoadmapFolder.list();//list of formats
+		for(String format:folders){
+			formatRoadmapFolder = new File(swRoadMapDirectory+format);
+			if (formatRoadmapFolder.isDirectory()){
+				scriptPath = scriptDirectory+swRoadmapFolder.getName()+"_convert_"+formatRoadmapFolder.getName()+".ahk";
+				script = new File(scriptPath);
+				if (script.exists())
+					script.delete();
+				writeScript(scriptPath, swRoadMapDirectory+format);
+			}
+		}
+	}
+
+	
+	public static String findFilePath(File f,String command){
+		String match="";
+		String str;
+		BufferedReader ins;
+		try{
+			ins = new BufferedReader(new FileReader(f));
+			while((str=ins.readLine())!=null){
+				if (nextWord(str).equalsIgnoreCase(command)){
+					str = advanceLine(str);
+					match=removeDoubleQuotes(nextWord(str));
+					break;
+				}
+			}
+			ins.close();
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return match;
+	}
+	
+	public static void replaceStringInScript(File f, String old_str, String new_str){
+		String str;
+		File new_f=new File("temp.txt");
+		if(new_f.exists())
+			new_f.delete();
+		try{
+		BufferedReader br = new BufferedReader(new FileReader(f));
+		FileWriter fw = new FileWriter("temp.txt", true);
+		
+		int index;
+		while((str=br.readLine())!=null){
+			while((index=str.indexOf(old_str))!=-1){
+				str = str.substring(0, index)+new_str+str.substring(index+old_str.length());
+			}
+			fw.write(str+"\r\n");
+		}
+		
+		br.close();
+		fw.close();
+		f.delete();
+		new_f.renameTo(f);
+//		System.out.println(new_f.renameTo(f));
+//		new_f.delete();
+		}catch(Exception e){
+			System.out.println(old_str);
+			System.out.println(new_str);
+			e.printStackTrace();
+		}
+		
+		
+	}
+	
+	
+	
+	public static void replaceScriptFileInfo(File[] files){
+		String input_path_in_script="";
+		String input_file_in_script="";
+		String input_filename_in_script="";
+		String output_path_in_script="";
+		String output_file_in_script="";
+		String output_filename_in_script="";
+		
+		for (int i=0; i<files.length; i++){
+			if (files[i].isFile()){
+				if (input_path_in_script.equalsIgnoreCase(""))input_path_in_script=findFilePath(files[i],"inputfile");
+				if (output_path_in_script.equalsIgnoreCase("")) output_path_in_script=findFilePath(files[i],"outputfile");
+				if (!input_path_in_script.equalsIgnoreCase("")&&!output_path_in_script.equalsIgnoreCase("")) break;
+			}
+		}
+		
+		if(!input_path_in_script.equalsIgnoreCase("")){
+			
+			Vector<String> in_path_toks = Utility.split(input_path_in_script, '\\');
+			input_file_in_script = in_path_toks.get(in_path_toks.size()-1);
+			Vector<String> in_file_toks = Utility.split(input_file_in_script, '.');
+			input_filename_in_script = in_file_toks.get(0);
+		}
+		if(!output_path_in_script.equalsIgnoreCase("")){
+			Vector<String> out_path_toks = Utility.split(output_path_in_script, '\\');
+			output_file_in_script = out_path_toks.get(out_path_toks.size()-1);
+			Vector<String> out_file_toks = Utility.split(output_file_in_script, '.');
+			output_filename_in_script = out_file_toks.get(0);
+		}
+			
+		for (int i=0; i<files.length; i++){
+			if (files[i].isFile()){
+				if(!input_path_in_script.equalsIgnoreCase(""))	replaceStringInScript(files[i],input_path_in_script, "%inputPath%");
+				if(!output_path_in_script.equalsIgnoreCase(""))	replaceStringInScript(files[i],output_path_in_script, "%outputPath%");
+				if(!input_file_in_script.equalsIgnoreCase(""))	replaceStringInScript(files[i],input_file_in_script, "%inputFile%");
+				if(!output_file_in_script.equalsIgnoreCase(""))	replaceStringInScript(files[i],output_file_in_script, "%outputFile%");
+				if(!input_filename_in_script.equalsIgnoreCase(""))	replaceStringInScript(files[i],input_filename_in_script, "%inputName%");
+				if(!output_filename_in_script.equalsIgnoreCase(""))	replaceStringInScript(files[i],output_filename_in_script, "%outputName%");
+			}
+		}
+
+	}
+	
+	
 	
 	/**
 	 * loops over all input files to build the script - it assumes that the file #0 will have the "run" command
@@ -94,10 +233,25 @@ public class AHKScriptBuilder{
 	 * @param roadMapFolder input directory
 	 **/
 	public static void writeScript(String scriptName, String roadMapFolder){
+		
+		if(!roadMapFolder.endsWith("\\"))
+			roadMapFolder+="\\";
 		File folder = new File(roadMapFolder);
-		File[] files = folder.listFiles();
-		generateHeader(scriptName, roadMapFolder);
-		for (int i=0; i<files.length; i++) {
+		String[] fs = folder.list();
+		Vector<String> fileNames = new Vector<String>();
+		for(String st:fs){
+			fileNames.add(st);
+		}
+		Collections.sort(fileNames);
+		File[] files = new File[fileNames.size()];
+		for (int i=0; i<fileNames.size(); i++){
+			files[i]=new File(roadMapFolder+fileNames.get(i));
+		}
+
+		replaceScriptFileInfo(files);
+		
+		for (int i=0; i<files.length; i++){
+//			System.out.println(files[i].getAbsolutePath());
 			if (files[i].isFile()){
 				if (files[i].getName().charAt(0)=='0')
 					startScript(scriptName,files[i]);
@@ -108,27 +262,32 @@ public class AHKScriptBuilder{
 		finishScript(scriptName);
 	}
 	
-	//TODO: add lines to header
 	/**
 	 * generates the header for the script
 	 * @param scriptName name of output AHK script
 	 * @param roadMapFolder the directory where the "path" files can be found
 	 **/
-	public static void generateHeader(String scriptName, String roadMapFolder){
+	public static void generateHeader(String scriptName, String roadMapFolder, String inputs, String domain){
 		FileWriter fw;
-		String format, formatJSON;
+		String format, formatJSON, swName;
 
 		try{
 			fw = new FileWriter(scriptName, true);
 
-			format=roadMapFolder.substring(roadMapFolder.lastIndexOf('\\')+1);
+			if(!roadMapFolder.endsWith("\\"))
+				roadMapFolder+="\\";
+			format = roadMapFolder.substring(0, roadMapFolder.lastIndexOf('\\'));
+			format= format.substring(format.lastIndexOf('\\')+1);
 			formatJSON=generateFormatJSONString(format, roadMapFolder);
-			scriptComment("first line",fw, 0);
-			scriptComment("second line",fw, 0);
-			scriptComment("third line",fw, 0);
-			scriptComment(formatJSON,fw, 0);
+			swName = scriptName.substring(scriptName.lastIndexOf('\\')+1, scriptName.indexOf("_convert"));
+			scriptComment("txt/json",fw, 0); //first line is for format: txt/xml/JSON
+			scriptComment(swName,fw, 0); //second line is for SoftwareName(SWVersion)
+			scriptComment(removeDoubleQuotes(domain),fw, 0); //third line is for domain: image, audio, video, etc
+			scriptComment("",fw, 0); //fourth line is left blank for Software parameters
+			scriptComment(removeDoubleQuotes(inputs),fw, 0); //fifth line is for input formats
+			scriptComment("outputFormat:["+formatJSON+"]",fw, 0);
 
-	    	fw.close();
+	    fw.close();
 		} 
 		catch (IOException e){
 			e.printStackTrace();
@@ -144,15 +303,20 @@ public class AHKScriptBuilder{
 	public static void startScript(String scriptName, File f){
 		FileWriter fw;
 		BufferedReader ins;
-		String line;
+		String domain, inputs, run;
 		try{
 			fw = new FileWriter(scriptName, true);
-	    	ins = new BufferedReader(new FileReader(f));
-			line=readLine(ins);
-			line=advanceLine(line);
-			scriptRun(line, fw, 0);
-	    	fw.close();
-	    	ins.close();
+	    ins = new BufferedReader(new FileReader(f));
+			run=readLine(ins);
+			run=advanceLine(run);
+			domain = readLine(ins);
+			domain = advanceLine(domain);
+			inputs = readLine(ins);
+			inputs = advanceLine(inputs);
+			generateHeader(scriptName, f.getParent(), inputs, domain);
+			scriptRun(run, fw, 0);
+	    fw.close();
+	    ins.close();
 		} 
 		catch (IOException e){
 			e.printStackTrace();
@@ -186,7 +350,7 @@ public class AHKScriptBuilder{
 		scriptWrite("curr_arg:=curr_arg+1", fw, level+1);
 		scriptWrite("inputPath:=%curr_arg%", fw, level+1);
 		scriptWrite("}",fw, level);
-		scriptComment("output path is the second argument of script  OR given by the tag outputFile",fw, level);
+		scriptComment("output path is the second argument of script OR given by the tag outputFile",fw, level);
 		scriptWrite("outputPath:=LookupParam(\"outputFile\")",fw, level);
 		scriptWrite("l := StrLen(outputPath)",fw, level);
 		scriptWrite("if (l = 0)",fw, level);
@@ -309,22 +473,26 @@ public class AHKScriptBuilder{
 		FileWriter fw;
 		String f, rm;
 		try{
-			fw = new FileWriter(scriptName, true);
+				fw = new FileWriter(scriptName, true);
 	    	ins = new BufferedReader(new FileReader(roadMapFile));
 	    	
-	    	f=roadMapFile.getName();
-	    	f=f.substring(f.indexOf('_')+1);
-	    	if (f.charAt(0)=='0'){
-	    		rm = prepareExtraParams(roadMapFile);
-	    		if (!rm.isEmpty()){
-		    		scriptWrite(rm,fw,0);
-		    		scriptWrite("{",fw,0);
-		    		generateScriptRec(ins, fw, 1, "");
-		    		scriptWrite("}",fw,0);
-	    		}
-	    		else return;
-	    	}
-	    	else
+	    	//remove comments for adding the option of not performing related steps
+	    	//if the parameters are not being used - this was the 'always' option of 'obligatory steps' in the AHKPathRecorder
+	    	
+//	    	f=roadMapFile.getName();
+//	    	f=f.substring(f.indexOf('_')+1);	    	
+//
+//	    	if (f.charAt(0)=='0'){
+//	    		rm = prepareExtraParams(roadMapFile);
+//	    		if (!rm.isEmpty()){
+//		    		scriptWrite(rm,fw,0);
+//		    		scriptWrite("{",fw,0);
+//		    		generateScriptRec(ins, fw, 1, "");
+//		    		scriptWrite("}",fw,0);
+//	    		}
+//	    		else return;
+//	    	}
+//	    	else
 	    		generateScriptRec(ins, fw, 0, "");
 	   		ins.close();
 			fw.close();
@@ -1444,7 +1612,7 @@ public class AHKScriptBuilder{
 		}
 		try {
 			fw.write(tabs+";");
-			for(;!line.isEmpty();line=advanceLine(line))
+			for(;line!=null && !line.isEmpty();line=advanceLine(line))
 				fw.write(nextWord(line)+' ');
 			fw.write("\n");
 		} catch (IOException e) {
