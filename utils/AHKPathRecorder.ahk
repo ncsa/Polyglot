@@ -1,25 +1,15 @@
 ; testing GUI capabilities of script recording for Polyglot
 ; Changes:
-;	(1) after param scrollbar and user input added in the next line the word ANY
-;	(2) the order of the command for user input was changed from "insert control value" to "insert value control" to accomodate the addition of possible range 
-; 	(3) menus and buttons should have a true/false as checkboxes
-;	(4) ask whether there is a range in text and if so, put it as userinput edit1 range minval minval maxval maxval
-;	(5) added scripting feedback for all controls apart from Wait
-;	(6) added new forms of performing the same actions to use when the user try the command but it does not perform as expected.
-;				(a) insert text has now 4 possible methods of input
-;				(b) button choose has now  3 possible methods of clicking the button
-;				(c) dropdown menus have 3 methods of selecting list items 
-;				(d) checkboxes have 2 methods to select button
-;				(e) menus have 2 methods to select item
-;	(7) added dropdownlist with all possible names of params (readen from file) for the user to choose from when naming params
-;	(8) changed order of options for dropdownmenu from "#\n option_num option_text" to "#\n option_text option_num"
- 
+;	(0) add domain and inputs form to beginning of script - domain line is of format "domain image", inputs line format is "inputs jpg, bmp, xfig, tiff"
+;	(1) add the option of reporting which were the input and output files used during the script recording
+;	(2) remove the "obligatory step" option for now
+
 ; TODO list:
 ;	(1) deal with param that has options as a group of radio buttons - this is a bit complicate because 
 ;	groups of radio buttons (mutually exclusive) should be grouped under one single param, but how the user
 ;	will record each one of the options? after that, it is pretty much like a ddl, where the user has a predefined list of possible values
 ;	(2) advanced: if nothing works during the feedback phase, ask people to give words to be excluded from the win title/text
-;	(3) to discuss: maybe the best defaul method should be based on the text of the controls, that way if in a new version a new control is added (like a new item in a menu list), 
+;	(3) to discuss: maybe the best default method should be based on the text of the controls, that way if in a new version a new control is added (like a new item in a menu list), 
 ;	the old script may be still usable 
  
 #SingleInstance force
@@ -47,11 +37,12 @@ WorkingSet:
 		File%A_Index% := WorkingDirectory . "\" . el . "\"
 	}
 	GoSub StartLines
-	Gui %working_gui%:Add, Checkbox, ym vAlways, Always
+	;for obligatory steps:
+	;Gui %working_gui%:Add, Checkbox, ym vAlways, Recording obligatory steps
 	Gui %working_gui%:Add, Button, ym gWorkingSetStart, Start
 	Gui %working_gui%:Add, Button, ym gWorkingSetStop, Stop
 	Gui %working_gui%:Add, Button, ym gWorkingSetFinished, Finished!
-	Gui %working_gui%:Show, x0 y0, Formats %working_gui%
+	Gui %working_gui%:Show, x0 y0, Formats ;%working_gui%
 	GuiControl Disable, Stop
 Return
 
@@ -66,7 +57,8 @@ WorkingSetStart:
 		el := Format%A_Index%
 		GuiControl Disable, %el%	
 	}
-	GuiControl Disable, Always
+	;for obligatory steps:
+	;GuiControl Disable, Always
 	
 	GoSub PrepareParams
 	
@@ -82,7 +74,8 @@ WorkingSetStop:
 		el := Format%A_Index%
 		GuiControl Enable, %el%	
 	}
-	GuiControl Enable, Always
+	;for obligatory steps:
+	;GuiControl Enable, Always
 	Hotkey ^LButton, Off
 Return
 
@@ -90,11 +83,11 @@ ChooseControl:
 	MouseGetPos, CurrentControlX, CurrentControlY, WindowID, CurrentControl
 	WinGetClass, CurrentWindowClass, ahk_id %WindowID%
 	WinGetTitle, CurrentWindowTitle, ahk_id %WindowID%
-	Gui %guiCount%:Add, DropDownList, vControlType, Menu|Button|CheckBox|Insert Text|Dropdown Menu|Scrollbar|Wait|Save Text
+	Gui %guiCount%:Add, DropDownList, vControlType, Menu|Button|CheckBox|Insert Text|Dropdown Menu|Scrollbar|Save Text ;|Wait
 	Gui %guiCount%:Add, Checkbox, Checked0 vIsParam, Is a Parameter
 	; TODO deal with random pop-ups - add to guiCount dropdownlist popup window
 	Gui %guiCount%:Add, Button, ym gFillControlForm, Fill Form
-	Gui %guiCount%:Show, xCenter y0, %guiCount%
+	Gui %guiCount%:Show, w300 xCenter y0, Choose control type ;%guiCount%
 Return
 
 Test:
@@ -141,50 +134,50 @@ FillControlForm:
 			Gui %guiCount%:Add, Text,, Parameter Name
 			Gui %guiCount%:Add, DropDownList, Sort vParamName, %ParamsToPresent%
 		}
-		Gui %guiCount%: Add, Button, gFillMenu, Fill
-		Gui %guiCount%: Add, Button, gWrongControl, Ooops Wrong Choice
 		Gui %guiCount%: Add, Button, gMenuFeedback, Try it
-		Gui %guiCount%:Show, xCenter y0, Menu Info %guiCount%
+		Gui %guiCount%: Add, Button, gFillMenu, Done
+		Gui %guiCount%: Add, Button, gWrongControl, Ooops Wrong Choice
+		Gui %guiCount%:Show, xCenter y0, Menu Info ;%guiCount%
 	}
 	else if (ControlType = "Button")
 	{
 		Gui %guiCount%:Add, Text,, Button Text
-		Gui %guiCount%:Add, Edit, vButtonText
+		Gui %guiCount%:Add, Edit, w300 vButtonText
 		
 		if (IsParam = 1)
 		{
 			Gui %guiCount%:Add, Text,, Parameter Name
 			Gui %guiCount%:Add, DropDownList, Sort vParamName, %ParamsToPresent%
 		}
-		Gui %guiCount%: Add, Button, gFillButton, Fill
-		Gui %guiCount%: Add, Button, gWrongControl, Ooops Wrong Choice
 		Gui %guiCount%: Add, Button, gButtonFeedback, Try it
-		Gui %guiCount%:Show, xCenter y0, Button Info %guiCount%
+		Gui %guiCount%: Add, Button, gFillButton, Done
+		Gui %guiCount%: Add, Button, gWrongControl, Ooops Wrong Choice
+		Gui %guiCount%:Show, xCenter y0, Button Info ;%guiCount%
 	}
 	else if (ControlType = "CheckBox")
 	{
 		Gui %guiCount%:Add, Text,, Checkbox Text
-		Gui %guiCount%:Add, Edit, vCheckboxText
+		Gui %guiCount%:Add, Edit, w300 vCheckboxText
 		
 		if (IsParam = 1)
 		{
 			Gui %guiCount%:Add, Text,, Parameter Name
-			Gui %guiCount%:Add, DropDownList, Sort vParamName, %ParamsToPresent%
+			Gui %guiCount%:Add, DropDownList, w300 Sort vParamName, %ParamsToPresent%
 		}
 		else
 		{
 			Gui %guiCount%:Add, Text,, Value (Checked: 1, Unchecked: 0)
 			Gui %guiCount%:Add, Edit, vValue
 		}
-		Gui %guiCount%: Add, Button, gFillCheckbox, Fill
-		Gui %guiCount%: Add, Button, gWrongControl, Ooops Wrong Choice
 		Gui %guiCount%: Add, Button, gCheckboxFeedback, Try it
-		Gui %guiCount%:Show, xCenter y0, Checkbox Info %guiCount%
+		Gui %guiCount%: Add, Button, gFillCheckbox, Done
+		Gui %guiCount%: Add, Button, gWrongControl, Ooops Wrong Choice
+		Gui %guiCount%:Show, xCenter y0, Checkbox Info ;%guiCount%
 	}
 	else if (ControlType = "Insert Text")
 	{
 		Gui %guiCount%:Add, Text,, Insert Text Title
-		Gui %guiCount%:Add, Edit, vTextTitle
+		Gui %guiCount%:Add, Edit, w300 vTextTitle
 		
 		if (IsParam = 1)
 		{
@@ -212,11 +205,15 @@ FillControlForm:
 		{
 			Gui %guiCount%:Add, Text,, Text to Insert
 			Gui %guiCount%:Add, Edit, vValue
+			Gui %guiCount%:Add, Checkbox, Checked0 vinputFile, This is the input file
+			Gui %guiCount%:Add, Checkbox, Checked0 voutputFile, This is the output file
+			Gui %guiCount%:Add, Text,, If you did check any of checkbox please write the whole path of the file used
+			Gui %guiCount%:Add, Edit, vFileUsed
 		}
-		Gui %guiCount%: Add, Button, gFillInserText, Fill
-		Gui %guiCount%: Add, Button, gWrongControl, Ooops Wrong Choice
 		Gui %guiCount%: Add, Button, gTextFeedback, Try it
-		Gui %guiCount%:Show, xCenter y0, Insert Text Info %guiCount%
+		Gui %guiCount%: Add, Button, gFillInserText, Done
+		Gui %guiCount%: Add, Button, gWrongControl, Ooops Wrong Choice
+		Gui %guiCount%:Show, xCenter y0, Insert Text Info ;%guiCount%
 	}
 	else if (ControlType = "Dropdown Menu")
 	{
@@ -242,7 +239,7 @@ FillControlForm:
 		Value :=""
 		
 		Gui %guiCount%:Add, Text,, Scrollbar Text
-		Gui %guiCount%:Add, Edit, vScrollbarText
+		Gui %guiCount%:Add, Edit, w300 vScrollbarText
 
 		Gui %guiCount%:Add, Text,, Scrollbar Range Min
 		Gui %guiCount%:Add, Edit, vScrollbarMin
@@ -260,10 +257,10 @@ FillControlForm:
 			Gui %guiCount%:Add, Text,, Value
 			Gui %guiCount%:Add, Edit, vValue
 		}
-		Gui %guiCount%: Add, Button, gFillScrollbar, Fill
-		Gui %guiCount%: Add, Button, gWrongControl, Ooops Wrong Choice
 		Gui %guiCount%: Add, Button, gScrollbarFeedback, Try it
-		Gui %guiCount%:Show, xCenter y0, Scrollbar Info %guiCount%
+		Gui %guiCount%: Add, Button, gFillScrollbar, Done
+		Gui %guiCount%: Add, Button, gWrongControl, Ooops Wrong Choice
+		Gui %guiCount%:Show, xCenter y0, Scrollbar Info ;%guiCount%
 	}
 	else if (ControlType = "Wait")
 	{
@@ -272,7 +269,7 @@ FillControlForm:
 		Gui %guiCount%:Add, DropDownList, w280 vWaitType, Until text is present on status bar|Until text is present on clicked Window|Until image is present on clicked Window (not recommended)|Until clicked Window appears|For pre-defined amount of Time
 		Gui %guiCount%:Add, Button, gWaitOK, OK
 		Gui %guiCount%:Add, Button, gWrongControl, Ooops Wrong Choice
-		Gui %guiCount%:Show, xCenter y0, Wait for Event %guiCount%
+		Gui %guiCount%:Show, xCenter y0, Wait for Event ;%guiCount%
 	}
 	else if (ControlType = "Save Text")
 	{
@@ -287,10 +284,10 @@ FillControlForm:
 		Gui %guiCount%:Add, Text,, Title Text
 		Gui %guiCount%:Add, Edit, vTitleText
 		
-		Gui %guiCount%:Add, Button, gSaveTextOK, OK
-		Gui %guiCount%:Add, Button, gWrongControl, Ooops Wrong Choice
 		Gui %guiCount%: Add, Button, gSaveTextFeedback, Try it
-		Gui %guiCount%:Show, xCenter y0, Save Text %guiCount%		
+		Gui %guiCount%:Add, Button, gSaveTextOK, Done
+		Gui %guiCount%:Add, Button, gWrongControl, Ooops Wrong Choice
+		Gui %guiCount%:Show, xCenter y0, Save Text ;%guiCount%		
 	}
 Return
 
@@ -323,13 +320,18 @@ StartDebug:
 	Gui Add, Text,, Folder:
 	Gui Add, Text,, Program Name:
 	Gui Add, Text,, Program Path:
+	Gui Add, Text,, Program Domain:
+	Gui Add, Text,, Program Input Formats:
 	Gui Add, Text,, Params File Path:
-	Gui Add, Edit, vFolder ym, a
-	Gui Add, Edit, vProgram, a
-	Gui Add, Edit, vProgramPath, a
-	Gui Add, Edit, vParamFilePath, C:\Documents and Settings\liana\Desktop\temp.txt
+	Gui Add, Edit, vFolder ym, C:\temp
+	Gui Add, Edit, vProgram, IrfanView
+	Gui Add, Edit, vProgramPath, C:\Program Files\IrfanView\i_view32.exe
+	Gui Add, Edit, vProgramDomain, Image
+	Gui Add, Edit, vProgramInputFormats, ani, cur, avi, wmv, asf, b3d, bmp, dib, rle,
+	Gui Add, Edit, vParamFilePath, C:\ImageParamNames.txt
 	Gui Add, Button, gStartOK Default, OK
-	Gui Show,, Script Builder %guiCount%
+	Gui Add, Button, gCancelExit, Cancel
+	Gui Show,, Script Builder ;%guiCount%
 Return
 
 
@@ -337,13 +339,18 @@ Start:
 	Gui Add, Text,, Folder:
 	Gui Add, Text,, Program Name:
 	Gui Add, Text,, Program Path:
+	Gui Add, Text,, Program Domain:
+	Gui Add, Text,, Program Input Formats:
 	Gui Add, Text,, Params File Path:
-	Gui Add, Edit, vFolder ym
-	Gui Add, Edit, vProgram
-	Gui Add, Edit, vProgramPath
-	Gui Add, Edit, vParamFilePath
-	Gui Add, Button, gStartOK, OK
-	Gui Show,, Script Builder %guiCount%
+	Gui Add, Edit, w400 vFolder ym
+	Gui Add, Edit, w400 vProgram
+	Gui Add, Edit, w400 vProgramPath
+	Gui Add, Edit, w400 vProgramDomain
+	Gui Add, Edit, w400 vProgramInputFormats
+	Gui Add, Edit, w400 vParamFilePath
+	Gui Add, Button, gStartOK ym, OK
+	Gui Add, Button, gCancelExit, Cancel
+	Gui Show,, AHK Path Recorder ;%guiCount%
 Return
 
 StartOK:
@@ -376,7 +383,7 @@ AddFormats:
 	Gui %guiCount%:Add, Edit, vCurrFormat
 	Gui %guiCount%:Add, Button, ym gFormatsDone, Done
 	Gui %guiCount%:Add, Button, gAddMoreFormats, Add more Format(s)
-	Gui %guiCount%:Show,, Please list all output formats: %guiCount%
+	Gui %guiCount%:Show,, Please list all output formats: ;%guiCount%
 Return
 
 
@@ -391,7 +398,7 @@ FormatsDone:
 			Gui %guiCount%:Add, Text,, You need to define at least one output format
 			Gui %guiCount%:Add, Button, gFormatsCancelOK, OK
 			Gui %guiCount%:Add, Button, gFormatsCancelExit, Leave
-			Gui %guiCount%:Show,, %guiCount%
+			Gui %guiCount%:Show,, ;%guiCount%
 		}
 		else
 		{
@@ -482,7 +489,9 @@ WriteToFile:
 		if (Active%A_Index% = 1)
 		{
 			f := File%A_Index%
-			ff := f . fileCount . "_" . Always  . ".txt"
+			;for obligatory steps:
+			;ff := f . fileCount . "_" . Always  . ".txt"
+			ff := f . fileCount . ".txt"
 			StringSplit lines, roadlines, `n
 			Loop %lines0%
 			{
@@ -497,11 +506,19 @@ Return
 
 StartLines:
 	start_line := "run " . Program . " """ . ProgramPath . """`n"
+	domain_line := "domain """ . ProgramDomain . """`n"
+	input_format_line := "inputs """ . ProgramInputFormats . """`n"
+	
+	
 	Loop %formatCount%
 	{
 		f:= File%A_Index%
-		ff := f . "0_1_.txt"
+		;for obligatory steps:
+		;ff := f . "0_1.txt"
+		ff := f . "0.txt"
 		FileAppend %start_line%, %ff%
+		FileAppend %domain_line%, %ff%
+		FileAppend %input_format_line%, %ff%
 	}
 Return
 
@@ -510,7 +527,7 @@ WrongControl:
 	Gui %guiCount%: Destroy
 Return
 
-
+CancelExit:
 WorkingSetFinished:
 FormatsCancelExit:
 	ExitApp
@@ -622,7 +639,7 @@ FillMenu:
 	if (method =1)
 	{
 		command := "menu1 """ . Menu1Num . "&"""
-		comment := "comment " . Menu1Num . "=" . Menu1 . " "
+		comment := "comment " . Menu1Num . "&=" . Menu1 . " "
 		Loop 6
 		{
 			if (SubMenu%A_Index%Num != "")
@@ -678,7 +695,7 @@ MenuParam:
 	
 	MenuParamCount%guiCount% := 0
 	
-	Gui %guiCount%:Show, xCenter y0, Recording after Menu parameter %ParamName% %guiCount%
+	Gui %guiCount%:Show, xCenter y0, Recording after Menu parameter %ParamName% ;%guiCount%
 Return
 
 
@@ -857,7 +874,7 @@ ButtonParam:
 	
 	ButtonParamCount%guiCount% := 0
 	
-	Gui %guiCount%:Show, xCenter y0, Recording after Button parameter %ParamName% %guiCount%
+	Gui %guiCount%:Show, xCenter y0, Recording after Button parameter %ParamName% ;%guiCount%
 Return
 
 
@@ -1037,7 +1054,7 @@ CheckboxParam:
 	
 	CheckboxParamCount%guiCount% := 0
 	
-	Gui %guiCount%:Show, xCenter y0, Recording after Checkbox parameter %ParamName% %guiCount%
+	Gui %guiCount%:Show, xCenter y0, Recording after Checkbox parameter %ParamName% ;%guiCount%
 Return
 
 
@@ -1215,7 +1232,19 @@ FillInserText:
 	else
 	{	
 		command := "insert " . """" . Value . """ method " . method . " """ . CurrentControl . """"  
-		roadlines := win . "`n" . command . "`n" . comment
+		extra := ""
+		if (inputFile = 1)
+		{
+			extra := "`ninputfile """ . FileUsed . """ `n"
+			extra := extra . "comment the input file used during script recording"
+		}
+		if (outputFile = 1)
+		{
+			extra := extra . "`noutputfile """ . FileUsed . """ `n"
+			extra := extra . "comment the output file used during script recording"
+		}
+		roadlines := win . "`n" . command . "`n" . comment . extra
+
 	}
 	
 	Gui %guiCount%:Destroy
@@ -1233,7 +1262,7 @@ UserInputParam:
 	Gui %guiCount%:Add, Button, gUserInputParamStartRecording, Start
 	Gui %guiCount%:Add, Button, gUserInputParamStopRecording, Stop
 	GuiControl Disable, Stop
-	Gui %guiCount%:Show, xCenter y0, Recording after UserInput parameter %ParamName% %guiCount%
+	Gui %guiCount%:Show, xCenter y0, Recording after UserInput parameter %ParamName% ;%guiCount%
 Return
 
 UserInputParamStartRecording:
@@ -1334,10 +1363,10 @@ SimpleDropdown:
 	Gui %guiCount%:Add, Edit, vItemText
 	Gui %guiCount%:Add, Text,, Number of item to choose
 	Gui %guiCount%:Add, Edit, vItemNum
-	Gui %guiCount%:Add, Button, gFillDropdown, Fill
-	Gui %guiCount%:Add, Button, gWrongControl, Ooops Wrong Choice
 	Gui %guiCount%:Add, Button, gDropDownFeedback, Try it
-	Gui %guiCount%:Show, xCenter y0, Dropdown Menu Info %guiCount%
+	Gui %guiCount%:Add, Button, gFillDropdown, Done
+	Gui %guiCount%:Add, Button, gWrongControl, Ooops Wrong Choice
+	Gui %guiCount%:Show, xCenter y0, Dropdown Menu Info ;%guiCount%
 Return
 
 FillDropdown:
@@ -1366,7 +1395,7 @@ ParamDropdown:
 	Gui %guiCount%:Add, Edit, vDropdownText			
 	Gui %guiCount%:Add, Text,, Param Name
 	Gui %guiCount%:Add, DropDownList, Sort vParamName, %ParamsToPresent%
-	Gui %guiCount%:Add, Button, gParamDropdown2, Go
+	Gui %guiCount%:Add, Button, gParamDropdown2, Done
 	Gui %guiCount%:Add, Button, gWrongControl, Ooops Wrong Choice
 	
 	Gui %guiCount%:Add, Text,, Text of item to choose for trying
@@ -1374,7 +1403,7 @@ ParamDropdown:
 	Gui %guiCount%:Add, Text,, Number of item to choose for trying
 	Gui %guiCount%:Add, Edit, vItemNum
 	Gui %guiCount%:Add, Button, gDropDownFeedback, Try it
-	Gui %guiCount%:Show, xCenter y0, Dropdown Menu Info %guiCount%
+	Gui %guiCount%:Show, xCenter y0, Dropdown Menu Info ;%guiCount%
 Return	
 
 
@@ -1408,7 +1437,7 @@ RecordDDParams:
 	Gui %guiCount%:Add, Button, Disable gFinishedRecording, Finished All
 	GuiControl Disable, Stop
 	GuiControl Disable, Finished All
-	Gui %guiCount%:Show, xCenter y0, %guiCount%
+	Gui %guiCount%:Show, xCenter y0, ;%guiCount%
 Return
 
 StartRecordSingleParam:
@@ -1502,7 +1531,7 @@ AddDDParams:
 	Gui %guiCount%:Add, Edit, vCurrParamNum
 	Gui %guiCount%:Add, Button, ym gParamsDone, Done
 	Gui %guiCount%:Add, Button, gAddMoreParams, Add more option(s)
-	Gui %guiCount%:Show, xCenter y0, Please list all dropdown options: %guiCount%
+	Gui %guiCount%:Show, xCenter y0, Please list all dropdown options: ;%guiCount%
 Return
 
 ParamsDone:
@@ -1518,7 +1547,7 @@ ParamsDone:
 			pd_form_gui_error := guiCount + 1
 			Gui %pd_form_gui_error%:Add, Text,, You need to define at least one option
 			Gui %pd_form_gui_error%:Add, Button, gParamsCancelOK, OK
-			Gui %pd_form_gui_error%:Show,, %guiCount%
+			Gui %pd_form_gui_error%:Show,, ;%guiCount%
 		}
 		else
 		{
@@ -1632,7 +1661,7 @@ ScrollParam:
 	Gui %guiCount%:Add, Button, gScrollParamStartRecording, Start
 	Gui %guiCount%:Add, Button, gScrollParamStopRecording, Stop
 	GuiControl Disable, Stop
-	Gui %guiCount%:Show, xCenter y0, Recording after Scroll parameter %ParamName% %guiCount%
+	Gui %guiCount%:Show, xCenter y0, Recording after Scroll parameter %ParamName% ;%guiCount%
 Return
 
 
@@ -1670,7 +1699,7 @@ WaitOK:
 		Gui %guiCount%:Add, Edit, vTextToWait
 		Gui %guiCount%:Add, Button, gFillWaitStatus, OK
 		Gui %guiCount%:Add, Button, gWrongControl, Ooops Wrong Choice
-		Gui %guiCount%:Show, xCenter y0, Wait until text is present on statusbar %guiCount%
+		Gui %guiCount%:Show, xCenter y0, Wait until text is present on statusbar ;%guiCount%
 	}
 	if (WaitType = "Until text is present on clicked Window")
 	{
@@ -1678,7 +1707,7 @@ WaitOK:
 		Gui %guiCount%:Add, Edit, vTextToWait
 		Gui %guiCount%:Add, Button, gFillWaitText, OK
 		Gui %guiCount%:Add, Button, gWrongControl, Ooops Wrong Choice
-		Gui %guiCount%:Show, xCenter y0, Wait until text appears on window %guiCount%
+		Gui %guiCount%:Show, xCenter y0, Wait until text appears on window ;%guiCount%
 	}
 	else if (WaitType = "Until image is present on clicked Window (not recommended)")
 	{
@@ -1686,14 +1715,14 @@ WaitOK:
 		Gui %guiCount%:Add, Edit, vImageToWait
 		Gui %guiCount%:Add, Button, gFillWaitImage, OK	
 		Gui %guiCount%:Add, Button, gWrongControl, Ooops Wrong Choice
-		Gui %guiCount%:Show, xCenter y0, Wait until image appears on window %guiCount%
+		Gui %guiCount%:Show, xCenter y0, Wait until image appears on window ;%guiCount%
 	}
 	else if (WaitType = "Until clicked Window appears")
 	{
 		Gui %guiCount%:Add, Text, w300 , Please click OK if you want the program to wait for the Window to appear 
 		Gui %guiCount%:Add, Button, gFillWaitWindow, OK	
 		Gui %guiCount%:Add, Button, gWrongControl, Ooops Wrong Choice
-		Gui %guiCount%:Show, xCenter y0, Wait until clicked window appears %guiCount%
+		Gui %guiCount%:Show, xCenter y0, Wait until clicked window appears ;%guiCount%
 		;AQUI
 	}
 	else ;For pre-defined amount of Time
@@ -1824,7 +1853,7 @@ SaveTextParam:
 	Gui %guiCount%:Add, Button, gSaveTextParamStartRecording, Start
 	Gui %guiCount%:Add, Button, gSaveTextParamStopRecording, Stop
 	GuiControl Disable, Stop
-	Gui %guiCount%:Show, xCenter y0, Recording after Save Text parameter %ParamName% %guiCount%
+	Gui %guiCount%:Show, xCenter y0, Recording after Save Text parameter %ParamName% ;%guiCount%
 Return
 
 SaveTextParamStartRecording:
