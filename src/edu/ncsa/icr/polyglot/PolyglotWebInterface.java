@@ -1,7 +1,7 @@
 package edu.ncsa.icr.polyglot;
+import kgm.utility.*;
 import java.io.*;
 import java.util.*;
-import kgm.utility.*;
 
 /**
  * A background process that monitors a folder for conversion tasks.  When a folder
@@ -12,7 +12,8 @@ import kgm.utility.*;
  */
 public class PolyglotWebInterface implements Runnable
 {
-	private Polyglot polyglot = null;
+  private Polyglot polyglot = null;
+  private TreeSet<String> outputs = new TreeSet<String>();
   private String path = ".";  
   private int sleep_length = 1000;  				 //How long to sleep before checking for more jobs (in milliseconds)
   private boolean VERBOSE = false;
@@ -26,7 +27,7 @@ public class PolyglotWebInterface implements Runnable
   	loadConfiguration(filename);
   	this.VERBOSE = VERBOSE;
   	
-    writeOutputFormats();
+    updateOutputFormats();
     new Thread(this).start();
   }
   
@@ -88,22 +89,26 @@ public class PolyglotWebInterface implements Runnable
   }
   
   /**
-   * Write out available output formats.
+   * Update and write out available output formats.
    */
-  public void writeOutputFormats()
+  public void updateOutputFormats()
   {
     TreeSet<String> outputs = polyglot.getOutputs();
     
-    try{
-      BufferedWriter outs = new  BufferedWriter(new FileWriter(path + "var/output_formats.txt"));
-      
-      for(Iterator<String> itr=outputs.iterator(); itr.hasNext();){
-        outs.write(itr.next());
-        outs.newLine();
-      }
-      
-      outs.close();
-    }catch(Exception e) {e.printStackTrace();}
+    if(!outputs.equals(this.outputs)){
+    	this.outputs = outputs;
+    	
+	    try{
+	      BufferedWriter outs = new  BufferedWriter(new FileWriter(path + "var/output_formats.txt"));
+	      
+	      for(Iterator<String> itr=outputs.iterator(); itr.hasNext();){
+	        outs.write(itr.next());
+	        outs.newLine();
+	      }
+	      
+	      outs.close();
+	    }catch(Exception e) {e.printStackTrace();}
+    }
   }
   
   /**
@@ -280,6 +285,7 @@ public class PolyglotWebInterface implements Runnable
         }
       }
       
+      updateOutputFormats();
       Utility.pause(sleep_length);	//Sleep for a bit to prevent spinning
     }
   }

@@ -1,10 +1,10 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.*;
+import kgm.utility.*;
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 import java.util.*;
-import kgm.utility.*;
 
 /**
  * A tool to monitor the status of a Polyglot server.
@@ -213,7 +213,7 @@ public class PolyglotMonitor extends HTMLPanel implements Runnable, ActionListen
 		
 		//Debug arguments
 		if(true && args.length == 0){
-			args = new String[]{"polyglot1.ncsa.illinois.edu:50002"};
+			args = new String[]{"polyglot.ncsa.illinois.edu:50002"};
 		}
 		
 		//Process command line arguments

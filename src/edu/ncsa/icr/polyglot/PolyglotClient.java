@@ -1,9 +1,9 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.ICRAuxiliary.*;
+import kgm.utility.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import kgm.utility.*;
 
 public class PolyglotClient extends Polyglot
 {

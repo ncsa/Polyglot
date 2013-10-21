@@ -1,10 +1,10 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
+import kgm.utility.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
-import kgm.utility.*;
 
 /**
  * An Imposed Code Reuse server.
@@ -496,14 +496,19 @@ public class SoftwareServer implements Runnable
   		
 	  	new Thread(){
 	  		public void run(){
-	  			Socket socket;
+	  			Socket socket = null;
 	  			
 	  			while(true){
 		  			try{
 		  				socket = new Socket(steward_server, steward_port);
 		  				Utility.writeObject(socket.getOutputStream(), port);
 		  				Utility.readObject(socket.getInputStream());		//Wait for any response before moving on to prevent re-sending
-		  			}catch(Exception e) {}
+		  			}catch(Exception e){
+		  			}finally{
+		  				try{
+		  					socket.close();																//Close socket to prevent OS from running out of resources!
+		  				}catch(Exception e) {};
+		  			}
 		  			
 		  			Utility.pause(500);
 	  			}

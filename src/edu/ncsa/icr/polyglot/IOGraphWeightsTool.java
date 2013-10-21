@@ -1,6 +1,7 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.ICRAuxiliary.*;
+import kgm.utility.*;
 import edu.illinois.ncsa.versus.engine.impl.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -11,7 +12,6 @@ import javax.swing.tree.*;
 import java.io.*;
 import java.text.*;
 import java.util.*;
-import kgm.utility.*;
 
 /**
  * A program to facilitate in the running of polyglot tests to fill in I/O-Graph edge weights.

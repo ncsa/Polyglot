@@ -1,8 +1,8 @@
 package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.ICRAuxiliary.*;
+import kgm.utility.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
-import kgm.utility.*;
 
 /**
  * An interface for file format conversion services that contain at its heart an I/O-Graph built

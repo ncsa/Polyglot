@@ -1,1 +1,1 @@
-java -cp "%~dp0bin" edu.ncsa.icr.polyglot.PolyglotPanel
+java -cp "%~dp0bin;%~dp0lib/kgm/Utilities.jar" edu.ncsa.icr.polyglot.PolyglotPanel

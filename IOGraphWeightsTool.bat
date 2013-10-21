@@ -1,1 +1,1 @@
-java -cp "%~dp0bin;%~dp0lib/ncsa/3DUtilities.jar;%~dp0lib/ncsa/versus.jar-api-0.5.jar;%~dp0lib/ncsa/versus-impl-0.5.jar;%~dp0lib/misc/commons-logging-1.1.1.jar" -Xmx1024m edu.ncsa.icr.polyglot.IOGraphWeightsTool
+java -cp "%~dp0bin;%~dp0lib/ncsa/3DUtilities.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/MatrixUtilities.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/ncsa/versus.jar-api-0.5.jar;%~dp0lib/ncsa/versus-impl-0.5.jar;%~dp0lib/misc/commons-logging-1.1.1.jar" -Xmx1024m edu.ncsa.icr.polyglot.IOGraphWeightsTool

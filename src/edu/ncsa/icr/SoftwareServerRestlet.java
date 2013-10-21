@@ -1,13 +1,13 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
 import edu.ncsa.icr.ICRAuxiliary.Application;
+import kgm.image.ImageUtility;
+import kgm.utility.*;
 import java.util.*;
 import java.io.*;
 import java.lang.management.*;
 import java.net.*;
 import javax.servlet.*;
-import kgm.image.ImageUtility;
-import kgm.utility.*;
 import org.restlet.*;
 import org.restlet.resource.*;
 import org.restlet.data.*;
@@ -665,18 +665,34 @@ public class SoftwareServerRestlet extends ServerResource
 			return new StringRepresentation(getApplicationStack(), MediaType.TEXT_HTML);
 		}else if(part0.equals("software")){
 			if(part1.isEmpty()){
-				return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
+				if(isPlainRequest(Request.getCurrent())){
+					return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
+				}else{
+					return new StringRepresentation(createHTMLList(getApplications(), Utility.endSlash(getReference().toString()), true, "Software"), MediaType.TEXT_HTML);
+				}
 			}else{
 				if(part2.isEmpty()){
-					return new StringRepresentation(getApplicationTasks(part1), MediaType.TEXT_PLAIN);
+					if(isPlainRequest(Request.getCurrent())){
+						return new StringRepresentation(getApplicationTasks(part1), MediaType.TEXT_PLAIN);
+					}else{
+						return new StringRepresentation(createHTMLList(getApplicationTasks(part1), Utility.endSlash(getReference().toString()), true, "software/" + part1), MediaType.TEXT_HTML);
+					}
 				}else{
 					if(part3.isEmpty()){
-						return new StringRepresentation(getApplicationTaskOutputs(part1, part2), MediaType.TEXT_PLAIN);
+						if(isPlainRequest(Request.getCurrent())){
+							return new StringRepresentation(getApplicationTaskOutputs(part1, part2), MediaType.TEXT_PLAIN);
+						}else{
+							return new StringRepresentation(createHTMLList(getApplicationTaskOutputs(part1, part2), Utility.endSlash(getReference().toString()), true, "software/" + part1 + "/" + part2), MediaType.TEXT_HTML);
+						}
 					}else{
 						if(part3.equals("*")){
 							return new StringRepresentation(getApplicationTaskInputsOutputs(part1, part2), MediaType.TEXT_PLAIN);
 						}else if(part4.isEmpty()){
-							return new StringRepresentation(getApplicationTaskInputs(part1, part2), MediaType.TEXT_PLAIN);
+							if(isPlainRequest(Request.getCurrent())){
+								return new StringRepresentation(getApplicationTaskInputs(part1, part2), MediaType.TEXT_PLAIN);
+							}else{
+								return new StringRepresentation(createHTMLList(getApplicationTaskInputs(part1, part2), Utility.endSlash(getReference().getBaseRef().toString()) + "form/post?application=" + part1, false, "software/" + part1 + "/" + part2 + "/" + part3), MediaType.TEXT_HTML);
+							}
 						}else{
 							application = part1;
 							task = part2;
@@ -694,7 +710,7 @@ public class SoftwareServerRestlet extends ServerResource
 														
 							executeTaskLater(session, application, task, file, format);
 							
-							if(isTextOnly(Request.getCurrent())){
+							if(isPlainRequest(Request.getCurrent())){
 								return new StringRepresentation(result, MediaType.TEXT_PLAIN);
 							}else{
 								return new StringRepresentation("<a href=" + result + ">" + result + "</a>", MediaType.TEXT_HTML);
@@ -850,7 +866,7 @@ public class SoftwareServerRestlet extends ServerResource
 				
 				result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + Utility.getFilenameName(file) + "." + format;
 
-				if(isTextOnly(Request.getCurrent())){
+				if(isPlainRequest(Request.getCurrent())){
 					return new StringRepresentation(result, MediaType.TEXT_PLAIN);
 				}else{
 					return new StringRepresentation("<a href=" + result + ">" + result + "</a>", MediaType.TEXT_HTML);
@@ -878,6 +894,7 @@ public class SoftwareServerRestlet extends ServerResource
 			  			
 	  try{
 	    conn = (HttpURLConnection)new URL(url).openConnection();
+      	conn.setRequestProperty("Accept", "text/plain");
 	    conn.connect();
 	    ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 	    
@@ -902,7 +919,7 @@ public class SoftwareServerRestlet extends ServerResource
 	 * @param request the request
 	 * @return true if plain/text only
 	 */
-	public static boolean isTextOnly(Request request)
+	public static boolean isPlainRequest(Request request)
 	{
 		List<Preference<MediaType>> types = request.getClientInfo().getAcceptedMediaTypes();
 
@@ -911,6 +928,46 @@ public class SoftwareServerRestlet extends ServerResource
 		}else{
 			return false;
 		}
+	}
+	
+	/**
+	 * Convert a line separated list into an HTML list of links.
+	 * @param list the line separated list of items
+	 * @param link the URL base
+	 * @param APPEND true if list items should be appended to the end of link
+	 * @param title the title of the generated HTML page (can be null)
+	 * @return an HTML version of the given list
+	 */
+	public static String createHTMLList(String list, String link, boolean APPEND, String title)
+	{
+		String buffer = "";
+		Scanner scanner = new Scanner(list);
+		String line, endpoint;
+		int tmpi;
+		
+		if(title != null){
+			buffer += "<h1>" + title + "</h1>\n";
+		}
+		
+		buffer += "<ul>\n";
+		
+		while(scanner.hasNextLine()){
+			line = scanner.nextLine().trim();
+			endpoint = line;
+			tmpi = endpoint.indexOf('(');
+			
+			if(tmpi >= 0){	//Remove full application name within parenthesis of software list
+				endpoint = endpoint.substring(0, tmpi).trim();
+			}
+			
+			buffer += "<li><a href=\"" + link;
+			if(APPEND) buffer += endpoint;
+			buffer += "\">" + line + "</a></li>\n";
+		}
+		
+		buffer += "</ul>\n";
+		
+		return buffer;
 	}
 	
 	/**

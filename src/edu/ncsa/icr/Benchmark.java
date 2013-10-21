@@ -1,8 +1,8 @@
 package edu.ncsa.icr;
+import kgm.utility.*;
 import java.io.*;
 import java.text.*;
 import java.util.*;
-import kgm.utility.*;
 
 /**
  * Benchmark for software servers.

@@ -2,6 +2,8 @@ package edu.ncsa.icr.polyglot;
 import edu.ncsa.icr.polyglot.PolyglotAuxiliary.*;
 import edu.ncsa.icr.*;
 import edu.ncsa.icr.ICRAuxiliary.*;
+import kgm.image.*;
+import kgm.utility.*;
 import javax.swing.*;
 import javax.swing.tree.*;
 import javax.swing.event.*;
@@ -10,8 +12,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.util.*;
-import kgm.image.*;
-import kgm.utility.*;
 
 /**
  * A panel/program that displays a graph of input/output operations and allows for the exploration of paths
@@ -437,13 +437,16 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     weight_active_vertices.setSize(active_vertices.size());
     Vector<Vector<Boolean>> weight_active_edges = new Vector<Vector<Boolean>>();
     weight_active_edges.setSize(active_edges.size());
+    
     for(int i=0; i<vertices.size(); i++) {
     	weight_active_vertices.set(i, false);
     }
+    
     for(int i=0; i<edges.size(); i++){
     	Vector<Boolean> inner = new Vector<Boolean>();
     	inner.setSize(edges.get(i).size());
     	weight_active_edges.set(i, inner);
+    	
       for(int j=0; j<edges.get(i).size(); j++){
       	if(active_edges.get(i).get(j) && (!ENABLE_WEIGHTED_PATHS || iograph.showEdge(i, j))){
       		inner.set(j, true);
@@ -456,6 +459,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     }
     
     if(SET_VERTEX_POSITIONS){
+        //arrangePointsInRings(vertices, active_vertices, width, height, rings, theta + theta_offset);
     	arrangePointsInRings(vertices, weight_active_vertices, width, height, rings, theta + theta_offset);
     	SET_VERTEX_POSITIONS = false;
     }
@@ -470,6 +474,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
       		bg.setColor(edge_colors.get(i).get(j));
       	}
       	
+      	//if(active_edges.get(i).get(j)){
       	if(weight_active_edges.get(i).get(j)){
 	        x0 = vertices.get(i).x;
 	        y0 = vertices.get(i).y;
@@ -514,6 +519,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
     
     //Draw vertices
     for(int i=0; i<vertices.size(); i++){
+    	//if(active_vertices.get(i)){
     	if(weight_active_vertices.get(i)){
     		BLANK = false;
     		
@@ -694,14 +700,15 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	        if(!ENABLE_WEIGHTED_PATHS){
 	        	paths = iograph.getShortestPaths(source);
 	        }else{
+	        	//paths = iograph.getShortestWeightedPaths(source).first;
 	        	paths = iograph.dijkstra(source).first;
 	        }
 	      }else if(event_source == menuitem_SET_TARGET){
 	        target = mini;
 	        //domain = iograph.getDomain(target);
 	      }
+	      
 	      computePath();
-	    
 	    }else if(event_source == menuitem_WORKINGSET_ADD || event_source == menuitem_WORKINGSET_REMOVE){
 	      if(event_source == menuitem_WORKINGSET_ADD){
 	        working_set.add(mini);

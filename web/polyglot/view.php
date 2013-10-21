@@ -13,11 +13,11 @@
 <?php
 include "bin/utils.php";
 
-$server_url = "http://" . $_SERVER['SERVER_ADDR'] . ":8183/distributed_software/";
+$server_url = "http://" . $_SERVER['SERVER_ADDR'] . ":8183/";
 
 if(url_exists($server_url . "alive")){
 	echo "&nbsp;\n";
-	echo "<a href=\"" . $server_url . "form\"><i>Software</i></a>\n";
+	echo "<a href=\"" . $server_url . "form/get\"><i>Software</i></a>\n";
 }
 ?>
 </div>

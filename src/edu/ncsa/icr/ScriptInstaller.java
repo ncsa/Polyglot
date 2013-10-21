@@ -1,9 +1,9 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
-import java.io.*;
-import java.util.*;
 import kgm.image.ImageUtility;
 import kgm.utility.*;
+import java.io.*;
+import java.util.*;
 
 /**
  * A program to setup a software reuse server on the local machine.

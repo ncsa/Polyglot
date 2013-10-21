@@ -1,9 +1,9 @@
 package edu.ncsa.icr;
 import edu.ncsa.icr.ICRAuxiliary.*;
+import kgm.utility.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import kgm.utility.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
 import org.restlet.*;
@@ -629,18 +629,34 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 			return new StringRepresentation(getApplicationStack(), MediaType.TEXT_HTML);
 		}else if(part0.equals("software")){
 			if(part1.isEmpty()){
-				return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
+				if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+					return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
+				}else{
+					return new StringRepresentation(SoftwareServerRestlet.createHTMLList(getApplications(), Utility.endSlash(getReference().toString()), true, "Software"), MediaType.TEXT_HTML);
+				}
 			}else{
 				if(part2.isEmpty()){
-					return new StringRepresentation(getApplicationTasks(part1), MediaType.TEXT_PLAIN);
+					if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+						return new StringRepresentation(getApplicationTasks(part1), MediaType.TEXT_PLAIN);
+					}else{
+						return new StringRepresentation(SoftwareServerRestlet.createHTMLList(getApplicationTasks(part1), Utility.endSlash(getReference().toString()), true, "software/" + part1), MediaType.TEXT_HTML);
+					}
 				}else{
 					if(part3.isEmpty()){
-						return new StringRepresentation(getApplicationTaskInputs(part1, part2), MediaType.TEXT_PLAIN);
+						if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+							return new StringRepresentation(getApplicationTaskOutputs(part1, part2), MediaType.TEXT_PLAIN);
+						}else{
+							return new StringRepresentation(SoftwareServerRestlet.createHTMLList(getApplicationTaskOutputs(part1, part2), Utility.endSlash(getReference().toString()), true, "software/" + part1 + "/" + part2), MediaType.TEXT_HTML);
+						}
 					}else{
 						if(part3.equals("*")){
 							return new StringRepresentation(getApplicationTaskInputsOutputs(part1, part2), MediaType.TEXT_PLAIN);
 						}else if(part4.isEmpty()){
-							return new StringRepresentation(getApplicationTaskOutputs(part1, part2), MediaType.TEXT_PLAIN);
+							if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+								return new StringRepresentation(getApplicationTaskInputs(part1, part2), MediaType.TEXT_PLAIN);
+							}else{
+								return new StringRepresentation(SoftwareServerRestlet.createHTMLList(getApplicationTaskInputs(part1, part2), Utility.endSlash(getReference().getBaseRef().toString()) + "form/post?application=" + part1, false, "software/" + part1 + "/" + part2 + "/" + part3), MediaType.TEXT_HTML);
+							}
 						}else{
 							application = part1;
 							task = part2;
@@ -653,7 +669,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 							System.out.println("[" + server + "]: " + application + "/" + task + "/" + format + "/" + file);
 							result = Utility.readURL(url, "text/plain");
 							
-							if(SoftwareServerRestlet.isTextOnly(Request.getCurrent())){
+							if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
 								return new StringRepresentation(result, MediaType.TEXT_PLAIN);
 							}else{
 								return new StringRepresentation("<a href=" + result + ">" + result + "</a>", MediaType.TEXT_HTML);
@@ -783,7 +799,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 
 				if(result == null){
 					return new StringRepresentation("Error: could not POST file", MediaType.TEXT_PLAIN);
-				}else if(SoftwareServerRestlet.isTextOnly(Request.getCurrent())){
+				}else if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
 					return new StringRepresentation(result, MediaType.TEXT_PLAIN);
 				}else{
 					return new StringRepresentation("<a href=" + result + ">" + result + "</a>", MediaType.TEXT_HTML);

@@ -1,7 +1,7 @@
 package edu.ncsa.icr;
+import kgm.utility.*;
 import java.util.*;
 import java.io.*;
-import kgm.utility.*;
 
 /**
  * Helper classes for the Imposed Code Reuse package.
