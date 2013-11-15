@@ -1,0 +1,1 @@
+start cmd /c "cd C:\Docume~1\polyglot\Desktop\Polyglot2 && SoftwareServer.bat"

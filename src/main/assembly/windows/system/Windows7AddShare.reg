@@ -1,0 +1,9 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\lnkfile\Shell]
+
+[HKEY_CLASSES_ROOT\lnkfile\Shell\Share]
+@="Enable RESTful Interface"
+
+[HKEY_CLASSES_ROOT\lnkfile\Shell\Share\command]
+@="C:\\Users\\polyglot\\Desktop\\Polyglot2\\Share.bat \"%1\""
