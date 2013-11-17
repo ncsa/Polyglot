@@ -12,6 +12,7 @@ public class ScriptDebugger
 {
 	private String data_path = "./";
 	private Vector<String> search_path = new Vector<String>();
+	private boolean AUTO_SELECT = false;
 	
 	/**
 	 * Class constructor.
@@ -31,7 +32,7 @@ public class ScriptDebugger
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader(filename));
 	    Scanner scanner;
-	    String line, key, value;
+	    String line, key, value, tmp;
 	    
 	    while((line=ins.readLine()) != null){
 	      if(line.contains("=")){
@@ -46,8 +47,11 @@ public class ScriptDebugger
 	          	scanner.useDelimiter(";");
 	          	
 	          	while(scanner.hasNext()){
-	          		search_path.add(scanner.next().trim());
+	          		tmp = scanner.next().trim();
+	          		if(Utility.exists(tmp)) search_path.add(tmp);
 	          	}
+	          }else if(key.equals("AutoSelect")){
+	          	AUTO_SELECT = Boolean.valueOf(value);
 	          }
 	        }
 	      }
@@ -254,8 +258,14 @@ public class ScriptDebugger
 											}
 										}
 										
-										if(tmpi < 0) tmpi = Integer.valueOf(System.console().readLine("  enter choice: "))-1;
-										
+										if(tmpi < 0){
+											if(AUTO_SELECT && matches.size() == 1){
+												tmpi = 0;
+											}else{
+												tmpi = Integer.valueOf(System.console().readLine("  enter choice: "))-1;
+											}
+										}
+																				
 										if(tmpi < 0){
 											System.out.println("  no matches found!");
 											SAVE = false;

@@ -22,7 +22,7 @@
   </repositories>
   
   <dependencies>
-    	<dependency>
+    <dependency>
   		<groupId>kgm</groupId>
   		<artifactId>Utilities</artifactId>
   		<version>0.0.0</version>
@@ -163,6 +163,19 @@
   
   <build>
   	<plugins>
+  		<plugin>
+			<groupId>org.apache.maven.plugins</groupId>
+			<artifactId>maven-javadoc-plugin</artifactId>
+			<version>2.9.1</version>
+			<executions>
+				<execution>
+					<phase>generate-resources</phase>
+					<goals>
+						<goal>javadoc</goal>
+					</goals>
+				</execution>
+			</executions>
+		</plugin>
 		<plugin>
 			<artifactId>maven-dependency-plugin</artifactId>
 			<version>2.4</version>
@@ -178,7 +191,6 @@
 				</execution>
 			</executions>
 		</plugin>
-	
 		<plugin>
 			<artifactId>maven-clean-plugin</artifactId>
 			<version>2.4.1</version>
@@ -190,7 +202,6 @@
 				</filesets>
 			</configuration>
 		</plugin>
-		
 		<plugin>
 			<groupId>org.apache.maven.plugins</groupId>
 			<artifactId>maven-assembly-plugin</artifactId>
@@ -208,20 +219,6 @@
 					<phase>package</phase>
 					<goals>
 						<goal>single</goal>
-					</goals>
-				</execution>
-			</executions>
-		</plugin>
-		
-		<plugin>
-			<groupId>org.apache.maven.plugins</groupId>
-			<artifactId>maven-javadoc-plugin</artifactId>
-			<version>2.9.1</version>
-			<executions>
-				<execution>
-					<phase>generate-resources</phase>
-					<goals>
-						<goal>javadoc</goal>
 					</goals>
 				</execution>
 			</executions>

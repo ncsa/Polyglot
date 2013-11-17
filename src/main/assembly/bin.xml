@@ -88,6 +88,47 @@
 			<fileMode>0644</fileMode>
 			<directoryMode>0755</directoryMode>
 		</fileSet>
+		<fileSet>
+			<directory>data</directory>
+			<outputDirectory>data</outputDirectory>
+			<includes>
+				<include>demo/*</include>
+				<include>weights/*</include>
+				<include>weights/*/*</include>
+				<include>tmp</include>
+			</includes>
+			<fileMode>0644</fileMode>
+			<directoryMode>0755</directoryMode>
+		</fileSet>
+		
+		<!--  Empty directories -->
+		<fileSet>
+			<directory>tmp</directory>
+			<outputDirectory>tmp</outputDirectory>
+			<includes>
+				<include>*</include>
+				<include>Benchmark/*</include>
+			</includes>
+			<fileMode>0644</fileMode>
+			<directoryMode>0755</directoryMode>
+		</fileSet>
+		
+		<fileSet>
+			<directory>doc</directory>
+			<outputDirectory>scripts/monkey</outputDirectory>
+			<excludes>
+				<exclude>*</exclude>
+			</excludes>
+			<directoryMode>0755</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>doc</directory>
+			<outputDirectory>misc</outputDirectory>
+			<excludes>
+				<exclude>*</exclude>
+			</excludes>
+			<directoryMode>0755</directoryMode>
+		</fileSet>
 	</fileSets>
 	
 	<files>
