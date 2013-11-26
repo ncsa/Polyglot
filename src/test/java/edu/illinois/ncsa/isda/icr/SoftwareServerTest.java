@@ -32,10 +32,16 @@ public class SoftwareServerTest
 	 */	
 	@Test
 	public void test2() throws Exception
-	{
-		SoftwareServer server = new SoftwareServer("SoftwareServer.conf");
-    SoftwareServerClient client = new SoftwareServerClient("localhost", 50000);
+	{    
+		//Check if the Software Server is running from a previous test
+		SoftwareServerClient client = new SoftwareServerClient("localhost", 50000);
+
+    if(!client.isAlive()){
+    	SoftwareServer server = new SoftwareServer("SoftwareServer.conf");
+    	client = new SoftwareServerClient("localhost", 50000);
+    }
     
+    //Run the test
     assertTrue(client.isAlive());
     
     Vector<Application> applications = client.getApplications();
@@ -49,12 +55,15 @@ public class SoftwareServerTest
 	@Test
 	public void test3() throws Exception
 	{
+		//Check if Software Server is running from a previous test
     SoftwareServerClient client = new SoftwareServerClient("localhost", 50000);
 
     if(!client.isAlive()){
   		SoftwareServer server = new SoftwareServer("SoftwareServer.conf");
+  		client = new SoftwareServerClient("localhost", 50000);
     }
     
+    //Run the test
     client.sendData(new FileData("data/demo/Lenna.png", true));
 		
 		Task task = new Task(client);

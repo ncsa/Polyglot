@@ -78,12 +78,22 @@
 			<directoryMode>0755</directoryMode>
 		</fileSet>
 		<fileSet>
-			<directory>src/main/webapp</directory>
+			<directory>src/main/web</directory>
 			<outputDirectory>web</outputDirectory>
 			<includes>
 				<include>polyglot/*</include>
 				<include>polyglot/*/*</include>
 				<include>polyglot/*/*/*</include>
+			</includes>
+			<fileMode>0644</fileMode>
+			<directoryMode>0755</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>src/main/documentation</directory>
+			<outputDirectory>documentation</outputDirectory>
+			<includes>
+				<include>*</include>
+				<include>images/*</include>
 			</includes>
 			<fileMode>0644</fileMode>
 			<directoryMode>0755</directoryMode>
@@ -112,7 +122,6 @@
 			<fileMode>0644</fileMode>
 			<directoryMode>0755</directoryMode>
 		</fileSet>
-		
 		<fileSet>
 			<directory>doc</directory>
 			<outputDirectory>scripts/monkey</outputDirectory>
