@@ -1,1 +1,1 @@
-java -cp "%~dp0polyglot.jar;%~dp0lib/*" -Xmx1g edu.illinois.ncsa.isda.icr.ScriptInstaller -test 5 %*
+java -cp "%~dp0polyglot.jar;%~dp0lib/*" -Xmx1g edu.illinois.ncsa.isda.softwareserver.ScriptInstaller -test 5 %*

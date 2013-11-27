@@ -1,1 +1,1 @@
-java -cp "%~dp0polyglot.jar;%~dp0lib/*" -Xmx1g edu.illinois.ncsa.isda.icr.polyglot.DistributedSoftwareIOGraphPanel %1
+java -cp "%~dp0polyglot.jar;%~dp0lib/*" -Xmx1g edu.illinois.ncsa.isda.softwareserver.polyglot.DistributedSoftwareIOGraphPanel %1

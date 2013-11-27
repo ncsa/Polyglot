@@ -1,1 +1,1 @@
-java -cp polyglot.jar:lib/* -Xmx1g edu.illinois.ncsa.isda.icr.polyglot.PolyglotServer
+java -cp polyglot.jar:lib/* -Xmx1g edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotServer

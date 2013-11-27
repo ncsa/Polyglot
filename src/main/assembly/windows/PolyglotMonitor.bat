@@ -1,1 +1,1 @@
-java -cp "%~dp0polyglot.jar;%~dp0lib/*" -Xmx1024m edu.illinois.ncsa.isda.icr.polyglot.PolyglotMonitor
+java -cp "%~dp0polyglot.jar;%~dp0lib/*" -Xmx1024m edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotMonitor

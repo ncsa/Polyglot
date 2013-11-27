@@ -1,1 +1,1 @@
-java -cp "%~dp0polyglot.jar;%~dp0lib/*" -Xmx1g edu.illinois.ncsa.isda.icr.Benchmark %*
+java -cp "%~dp0polyglot.jar;%~dp0lib/*" -Xmx1g edu.illinois.ncsa.isda.softwareserver.Benchmark %*
