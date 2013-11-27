@@ -1,10 +1,10 @@
 [Setup]
 AppName=Polyglot2
-AppVerName=Polyglot 2.0
+AppVerName=Polyglot 2.1
 AppPublisher=NCSA
-AppPublisherURL=http://isda.ncsa.uiuc.edu
-AppSupportURL=http://isda.ncsa.uiuc.edu
-AppUpdatesURL=http://isda.ncsa.uiuc.edu
+AppPublisherURL=http://isda.ncsa.illinois.edu
+AppSupportURL=http://isda.ncsa.illinois.edu
+AppUpdatesURL=http://isda.ncsa.illinois.edu
 UsePreviousAppDir=no
 DefaultDirName={userdesktop}\Polyglot2
 DefaultGroupName=Polyglot2
@@ -14,9 +14,9 @@ OutputDir=build
 OutputBaseFilename=Polyglot2
 
 [Files]
-Source: "lib\*"; DestDir: "{app}\lib"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "lib\maven\*"; DestDir: "{app}\lib"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "scripts\*"; DestDir: "{app}\scripts"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "build\Polyglot2.jar"; DestDir: "{app}"; Flags: ignoreversion; AfterInstall: BuildDefaultConfiguration
+Source: "target\polyglot-2.1.0-SNAPSHOT.jar"; DestDir: "{app}"; Flags: ignoreversion; AfterInstall: BuildDefaultConfiguration
 
 [Dirs]
 Name: "{app}/tmp"
@@ -26,10 +26,10 @@ procedure BuildDefaultConfiguration;
 var
   output: string;
 begin
-  output := ExpandConstant('{app}') + '\SoftwareReuseServer.bat'
-  SaveStringToFile(output, 'java -cp "%~dp0lib/ncsa/Utilities.jar;%~dp0Polyglot2.jar" -Xmx1024m edu.ncsa.icr.SoftwareReuseServer %1 %2', false);
+  output := ExpandConstant('{app}') + '\SoftwareServer.bat'
+  SaveStringToFile(output, 'java -cp "%~dp0polyglot-2.1.0-SNAPSHOT.jar;%~dp0lib/*" -Xmx1g edu.ncsa.softwareserver.SoftwareServer %*', false);
 
-  output := ExpandConstant('{app}') + '\SoftwareReuseServer.ini'
+  output := ExpandConstant('{app}') + '\SoftwareServer.conf'
   SaveStringToFile(output, 'RootPath=tmp' + #10, false);
   SaveStringToFile(output, 'Port=30' + #10, true);
   SaveStringToFile(output, 'MaxOperationTime=30000' + #10, true);

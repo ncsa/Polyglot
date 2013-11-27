@@ -1,0 +1,403 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Polyglot2" default="archive">
+	<property name="classes" location="build/classes"/>
+	<property name="javadocs" location="build/javadocs"/>
+	<property name="tmp" location="build/tmp"/>
+	<property name="tmp_zip" location="${tmp}/zip"/>
+	<property name="tmp_icr" location="${tmp}/icr"/>
+	<property name="tmp_srs" location="${tmp}/software_server"/>
+	<property name="tmp_utils" location="${tmp}/polyglot_utils"/>
+	<property name="tmp_iograph" location="${tmp}/iograph_archive"/>
+
+	<path id="classpath">
+		<fileset dir="lib">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+	
+	<target name="javadocs" description="Make javadocs">
+		<mkdir dir="${javadocs}"/>
+		<javadoc sourcepath="src" destdir="${javadocs}" packagenames="edu.ncsa.icr.*" classpathref="classpath"/>
+	</target>
+	
+	<target name="compile" description="Compiles the Java source code">
+		<mkdir dir="${classes}"/>
+		<javac srcdir="src" destdir="${classes}" classpathref="classpath" debug="true"/>
+	</target>
+	
+	<target name="archive" depends="compile" description="Creates the JAR file">
+		<jar basedir="${classes}" destfile="build/Polyglot2.jar"/>
+	</target>	
+	
+	<target name="zip" depends="clean,archive,javadocs" description="Build a zip file containing the installation">
+		<mkdir dir="${tmp_zip}"/>
+		<mkdir dir="${tmp_zip}/scripts"/>
+		<mkdir dir="${tmp_zip}/scripts/applescript"/>
+		<mkdir dir="${tmp_zip}/scripts/monkey"/>
+		<mkdir dir="${tmp_zip}/data"/>
+		<mkdir dir="${tmp_zip}/misc"/>
+		<mkdir dir="${tmp_zip}/tmp"/>
+		<mkdir dir="${tmp_zip}/tmp/SoftwareServer"/>
+		<mkdir dir="${tmp_zip}/tmp/Benchmark"/>
+		<mkdir dir="${tmp_zip}/tmp/Benchmark/Data"/>
+		<mkdir dir="${tmp_zip}/tmp/Benchmark/Results"/>
+		<mkdir dir="${tmp_zip}/tmp/IOGraphWeightsTool"/>
+		<mkdir dir="${tmp_zip}/tmp/PolyglotWebInterface"/>
+		<mkdir dir="${tmp_zip}/tmp/MonkeyScript"/>
+		
+		<copy todir="${tmp_zip}/lib">
+			<fileset dir="lib"/>
+		</copy>
+		<copy todir="${tmp_zip}/scripts/ahk">
+			<fileset dir="scripts/ahk"/>
+		</copy>
+		<copy todir="${tmp_zip}/scripts/sikuli">
+			<fileset dir="scripts/sikuli"/>
+		</copy>
+		<copy todir="${tmp_zip}/scripts/py">
+			<fileset dir="scripts/py"/>
+		</copy>
+		<copy todir="${tmp_zip}/scripts/sh">
+			<fileset dir="scripts/sh"/>
+		</copy>
+		<copy todir="${tmp_zip}/web/polyglot">
+			<fileset dir="web/polyglot"/>
+		</copy>
+		<copy todir="${tmp_zip}/javadocs">
+			<fileset dir="${javadocs}"/>
+		</copy>
+		<copy file="build/Polyglot2.jar" todir="${tmp_zip}"/>
+		<copy file="misc/polyglot2.sh" todir="${tmp_zip}/misc"/>
+		<copy file="misc/dssr.sh" todir="${tmp_zip}/misc"/>
+
+		<property name="icr_port" value="50000"/>
+		<property name="steward_port" value="50001"/>
+		<property name="polyglot_port" value="50002"/>
+		
+		<echo file="${tmp_zip}/ScriptDebugger.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptDebugger %*</echo>
+		<echo file="${tmp_zip}/ScriptDebugger.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptDebugger $1 $2</echo>
+		<echo file="${tmp_zip}/ScriptDebugger.conf" append="false">DataPath=data${line.separator}</echo>
+		<echo file="${tmp_zip}/ScriptDebugger.conf" append="true">SearchPath=C:/Program Files;C:/Program Files (x86)</echo>
+		
+		<echo file="${tmp_zip}/ScriptInstaller.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller %*</echo>
+		<echo file="${tmp_zip}/ScriptInstaller.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptInstaller $1 $2 $3 $4</echo>
+		<echo file="${tmp_zip}/TestScripts.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller -test 5 %*</echo>
+
+		<echo file="${tmp_zip}/Share.bat" append="false">taskkill /f /im java.exe${line.separator}</echo>
+		<echo file="${tmp_zip}/Share.bat" append="true">cd "%~dp0"${line.separator}</echo>
+		<echo file="${tmp_zip}/Share.bat" append="true">call ScriptInstaller -shortcut \"%1\"${line.separator}</echo>
+		<echo file="${tmp_zip}/Share.bat" append="true">SoftwareServerRestlet</echo>
+				
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="false">Windows Registry Editor Version 5.00${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell]${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share]${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">@="Enable RESTful Interface"${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share\command]${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">@="C:\\Users\\polyglot\\Desktop\\Polyglot2\\Share.bat \"%1\""</echo>
+		
+		<echo file="${tmp_zip}/SoftwareServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServer %*</echo>
+		<echo file="${tmp_zip}/SoftwareServer.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServer $1 $2</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="false">RootPath=tmp/SoftwareServer${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">Port=${icr_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">MaxOperationTime=30000${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">TaskAttempts=1${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">ShowExecutables=false${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">HandleOperationOutput=false${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">ShowOperationOutput=false${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">EnableMonitors=true${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">AttemptAutoKill=false${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">AHKScripts=scripts/csr-configured${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#AppleScripts=scripts/applescript${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#SikuliScripts=scripts/sikuli${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#PythonScripts=scripts/py${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#ShellScripts=scripts/sh${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">#PolyglotSteward=localhost:${steward_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">Broadcast=225.4.5.6:${steward_port}</echo>
+
+		<echo file="${tmp_zip}/SoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.restlet.ext.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.io.jar;%~dp0lib/restlet-2.0.4/javax.servlet.jar" -Xmx1g edu.ncsa.icr.SoftwareServerRestlet %*</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/kgm/ImageUtilities.jar:lib/kgm/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.restlet.ext.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar:lib/restlet-2.0.4/org.apache.commons.io.jar:lib/restlet-2.0.4/javax.servlet.jar -Xmx1g edu.ncsa.icr.SoftwareServerRestlet</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="false">Port=8182${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#DistributedServer=localhost:8183${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=user1:password${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=admin:password${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#EnableAdministrators=false</echo>
+
+		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet %*</echo>
+		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet</echo>
+		<echo file="${tmp_zip}/DistributedSoftwareServerRestlet.conf" append="false">Port=8183</echo>
+
+		<echo file="${tmp_zip}/SoftwareServerClient.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServerClient %*</echo>
+		<echo file="${tmp_zip}/SoftwareServerClient.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServerClient $1</echo>
+		<echo file="${tmp_zip}/SoftwareServerClient.conf" append="false">SoftwareServer=localhost:${icr_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerClient.conf" append="true">#DefaultPath=data</echo>
+
+		<echo file="${tmp_zip}/Benchmark.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/restlet-2.0.4/org.restlet.jar;%~dp0lib/restlet-2.0.4/org.apache.commons.fileupload.jar" -Xmx1g edu.ncsa.icr.Benchmark %*</echo>
+		<echo file="${tmp_zip}/Benchmark.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar:lib/restlet-2.0.4/org.restlet.jar:lib/restlet-2.0.4/org.apache.commons.fileupload.jar -Xmx1g edu.ncsa.icr.Benchmark $@</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="false">SoftwareServer=http://141.142.224.231:8182${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="true">Application=A3DReviewer${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="true">Task=convert${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="true">DataPath=tmp/Benchmark/Data/A3DReviewer4_valid${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="true">TempPath=tmp/Benchmark/Results${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="true">MaxWaitTime=30000${line.separator}</echo>
+		<echo file="${tmp_zip}/Benchmark.conf" append="true">MaxTime=1.01</echo>
+
+		<echo file="${tmp_zip}/PolyglotServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
+		<echo file="${tmp_zip}/PolyglotServer.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotServer</echo>
+		<echo file="${tmp_zip}/PolyglotServer.conf" append="false">Port=${polyglot_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/PolyglotServer.conf" append="true">StewardPort=${steward_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/PolyglotServer.conf" append="true">#SoftwareServer=localhost:${icr_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/PolyglotServer.conf" append="true">PolyglotWebInterface=true${line.separator}</echo>
+		<echo file="${tmp_zip}/PolyglotServer.conf" append="true">PolyglotMonitor=true</echo>
+
+		<echo file="${tmp_zip}/PolyglotMonitor.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotMonitor %*</echo>
+		<echo file="${tmp_zip}/PolyglotMonitor.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotMonitor $1</echo>
+		
+		<echo file="${tmp_zip}/PolyglotClient.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotClient %*</echo>
+		<echo file="${tmp_zip}/PolyglotClient.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotClient $1 $2</echo>
+		<echo file="${tmp_zip}/PolyglotClient.conf">PolyglotServer=localhost:${polyglot_port}</echo>
+	
+		<echo file="${tmp_zip}/PolyglotPanel.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotPanel</echo>
+		<echo file="${tmp_zip}/PolyglotPanel.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotPanel</echo>
+		<echo file="${tmp_zip}/PolyglotPanel.conf" append="false">DefaultPath=data${line.separator}</echo>
+		<echo file="${tmp_zip}/PolyglotPanel.conf" append="true">#SoftwareServer=localhost:${icr_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/PolyglotPanel.conf" append="true">PolyglotServer=localhost:${polyglot_port}</echo>
+	
+		<echo file="${tmp_zip}/PolyglotWebInterface.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebInterface</echo>
+		<echo file="${tmp_zip}/PolyglotWebInterface.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.PolyglotWebInterface</echo>
+		<echo file="${tmp_zip}/PolyglotWebInterface.conf" append="false">PolyglotPath=tmp/PolyglotWebInterface${line.separator}</echo>
+		<echo file="${tmp_zip}/PolyglotWebInterface.conf" append="true">#SoftwareServer=localhost:${icr_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/PolyglotWebInterface.conf" append="true">PolyglotServer=localhost:${polyglot_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/PolyglotWebInterface.conf" append="true">SleepLength=1000</echo>
+
+		<echo file="${tmp_zip}/IOGraphPanel.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel %*</echo>
+		<echo file="${tmp_zip}/IOGraphPanel.sh">java -cp Polyglot2.jar:lib/kgm/ImageUtilities.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.IOGraphPanel $1 $2</echo>
+		<echo file="${tmp_zip}/DistributedSoftwareIOGraphPanel.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel %1</echo>
+		<echo file="${tmp_zip}/DistributedSoftwareIOGraphPanel.sh">java -cp Polyglot2.jar:lib/kgm/ImageUtilities.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.polyglot.DistributedSoftwareIOGraphPanel $1</echo>
+
+		<echo file="${tmp_zip}/IOGraphWeightsTool.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/ncsa/3DUtilities.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/MatrixUtilities.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/ncsa/versus-api-0.5.jar;%~dp0lib/ncsa/versus-impl-0.5.jar;%~dp0lib/misc/commons-logging-1.1.1.jar" -Xmx1g edu.ncsa.icr.polyglot.IOGraphWeightsTool</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="false">SoftwareServer=localhost:${icr_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">TestPath=tmp/IOGraphWeightsTool${line.separator}</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">RetryLevel=3${line.separator}</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">Threaded=false${line.separator}</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">PolyglotMonitor=true${line.separator}</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">${line.separator}</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">DataPath=data${line.separator}</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">Adapter=BufferedImageAdapter${line.separator}</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">Extractor=ArrayFeatureExtractor${line.separator}</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">Measure=NormalizedCrossCorrelationMeasure${line.separator}</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">WeightFunction=x${line.separator}</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">InvalidValue=0${line.separator}</echo>
+		<echo file="${tmp_zip}/IOGraphWeightsTool.conf" append="true">Extension=jpg</echo>
+		
+		<echo file="${tmp_zip}/SoftwareMonekey_VNC.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/misc/VncViewer.jar" -Xmx1g edu.ncsa.icr.SoftwareMonkey_VNC</echo>
+		<echo file="${tmp_zip}/SoftwareMonekey_VNC.sh">java -cp Polyglot2.jar:lib/kgm/ImageUtilities.jar:lib/kgm/Utilities.jar:lib/misc/VncViewer.jar -Xmx1g edu.ncsa.icr.SoftwareMonkey_VNC</echo>
+		<echo file="${tmp_zip}/SoftwareMonekey_VNC.conf" append="false">Server=localhost:5900${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareMonekey_VNC.conf" append="true">OutputPath=tmp/MonkeyScript${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareMonekey_VNC.conf" append="true">IgnoredBottom=32</echo>
+
+		<echo file="${tmp_zip}/MonkeyScript.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.MonkeyScript %*</echo>
+
+		<echo file="${tmp_zip}/AutoUpdate.bat">java -cp "%~dp0lib/kgm/Utilities.jar" kgm.utility.AutoUpdate</echo>
+		<echo file="${tmp_zip}/AutoUpdate.sh">java -cp lib/kgm/Utilities.jar kgm.utility.AutoUpdate</echo>
+		<echo file="${tmp_zip}/AutoUpdate.conf" append="false">!conf, scripts/${line.separator}</echo>
+		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">!win: sh${line.separator}</echo>
+		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">!unix: bat, reg${line.separator}</echo>
+		<echo file="${tmp_zip}/AutoUpdate.conf" append="true">http://isda.ncsa.uiuc.edu/kmchenry/tmp/Polyglot2/Polyglot2.zip</echo>
+		
+		<!--
+		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.bat">java -cp "%~dp0../../lib/kgm/Utilities.jar" kgm.utility.AutoUpdate</echo>
+		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.conf" append="false">http://isda.ncsa.uiuc.edu/~kmchenry/tmp/Polyglot2/MonkeyScript/${line.separator}</echo>
+		<echo file="${tmp_zip}/scripts/monkey/AutoUpdate.conf" append="true">000_open.zip</echo>
+		-->
+		
+		<echo file="${tmp_zip}/InstallWeb.bat">xcopy web\polyglot "C:\Program Files\Apache Software Foundation\Apache2.2\htdocs\polyglot" /e /i /y</echo>
+		<echo file="${tmp_zip}/InstallWeb.sh">cp -r web/polyglot /var/www</echo>
+		<echo file="${tmp_zip}/misc/AUTOEXEC.BAT">start cmd /c "cd C:\Docume~1\polyglot\Desktop\Polyglot2 &amp;&amp; SoftwareServer.bat"</echo>
+		
+		<fixcrlf srcdir="${tmp_zip}" includes="**/*.sh" eol="unix" eof="remove" />
+		<fixcrlf srcdir="${tmp_zip}" includes="**/*.bat, **/*.conf" eol="dos" eof="asis" />
+
+		<zip basedir="${tmp_zip}" destfile="build/Polyglot2.zip"/>
+	</target>
+	
+	<target name="publish" depends="zip" description="Publish zip archive">
+		<copy file="build/Polyglot2.zip" todir="\\isda.ncsa.uiuc.edu\www\kmchenry\tmp\Polyglot2"/>
+	</target>
+	
+	<target name="publish.rob" depends="zip" description="Publish zip archive">
+		<!-- <copy file="build/Polyglot2.zip" todir="\\isda.ncsa.uiuc.edu\www\kmchenry\tmp\Polyglot2"/> -->
+		<exec executable="scp">
+			<arg value="build/Polyglot2.zip"/>
+			<arg value="kooper@isda:public_html"/>
+		</exec>
+	</target>
+	
+	<target name="installer" depends="archive" description="Build an installer for this project">
+		<exec executable="C:/Program Files/Inno Setup 5/Compil32">
+			<arg value="/cc"/>
+			<arg value="Polyglot2.iss"/>
+		</exec>
+	</target>
+	
+	<target name="icr_archive" depends="compile" description="Archive the code needed for the software servers">
+		<mkdir dir="${tmp_icr}"/>
+		<copy todir="${tmp_icr}">
+			<fileset dir="${classes}">
+				<include name="edu/ncsa/icr/*.class"/>
+			</fileset>
+		</copy>
+		<jar basedir="${tmp_icr}" destfile="build/icr.jar"/>
+	</target>
+			
+	<target name="software_server" depends="icr_archive,javadocs" description="Build a zip file containing the software server installation">
+		<mkdir dir="${tmp_srs}"/>
+		<mkdir dir="${tmp_srs}/scripts"/>
+		<mkdir dir="${tmp_srs}/scripts/applescript"/>
+		<mkdir dir="${tmp_srs}/scripts/monkey"/>
+		<mkdir dir="${tmp_srs}/data"/>
+		<mkdir dir="${tmp_srs}/misc"/>
+		<mkdir dir="${tmp_srs}/tmp"/>
+		<mkdir dir="${tmp_srs}/tmp/SoftwareServer"/>
+		<mkdir dir="${tmp_srs}/tmp/MonkeyScript"/>
+		
+		<copy todir="${tmp_srs}/lib">
+			<fileset dir="lib"/>
+		</copy>
+		<copy todir="${tmp_srs}/scripts/ahk">
+			<fileset dir="scripts/ahk"/>
+		</copy>
+		<copy todir="${tmp_srs}/scripts/sikuli">
+			<fileset dir="scripts/sikuli"/>
+		</copy>
+		<copy todir="${tmp_srs}/scripts/py">
+			<fileset dir="scripts/py"/>
+		</copy>
+		<copy todir="${tmp_srs}/scripts/sh">
+			<fileset dir="scripts/sh"/>
+		</copy>
+		<copy todir="${tmp_srs}/javadocs">
+			<fileset dir="${javadocs}"/>
+		</copy>
+		<copy file="build/icr.jar" todir="${tmp_srs}"/>
+		
+		<property name="icr_port" value="50000"/>
+		
+		<echo file="${tmp_srs}/ScriptDebugger.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptDebugger %*</echo>
+		<echo file="${tmp_srs}/ScriptDebugger.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptDebugger $1 $2</echo>
+		<echo file="${tmp_srs}/ScriptDebugger.conf" append="false">DataPath=data${line.separator}</echo>
+		<echo file="${tmp_srs}/ScriptDebugger.conf" append="true">SearchPath=C:/Program Files;C:/Program Files (x86)</echo>
+		
+		<echo file="${tmp_srs}/ScriptInstaller.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller %*</echo>
+		<echo file="${tmp_srs}/ScriptInstaller.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.ScriptInstaller $1 $2 $3 $4</echo>
+		<echo file="${tmp_zip}/TestScripts.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.ScriptInstaller -test 5 %*</echo>
+
+		<echo file="${tmp_zip}/Share.bat" append="false">taskkill /f /im java.exe${line.separator}</echo>
+		<echo file="${tmp_zip}/Share.bat" append="true">cd "%~dp0"${line.separator}</echo>
+		<echo file="${tmp_zip}/Share.bat" append="true">call ScriptInstaller -shortcut \"%1\"${line.separator}</echo>
+		<echo file="${tmp_zip}/Share.bat" append="true">SoftwareServerRestlet</echo>
+		
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="false">Windows Registry Editor Version 5.00${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell]${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share]${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">@="Share Software"${line.separator}${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">[HKEY_CLASSES_ROOT\lnkfile\Shell\Share\command]${line.separator}</echo>
+		<echo file="${tmp_zip}/misc/Windows7AddShare.reg" append="true">@="C:\\Users\\polyglot\\Desktop\\Polyglot2\\Share.bat \"%1\""</echo>
+		
+		<echo file="${tmp_srs}/SoftwareServer.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServer %*</echo>
+		<echo file="${tmp_srs}/SoftwareServer.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServer $1 $2</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="false">RootPath=tmp/SoftwareServer${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">Port=${icr_port}${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">MaxOperationTime=30000${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">HandleOperationOutput=false${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">ShowOperationOutput=false${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">TaskAttempts=1${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">EnableMonitors=true${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">AHKScripts=scripts/ahk${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#AppleScripts=scripts/applescript${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#SikuliScripts=scripts/sikuli${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#PythonScripts=scripts/py${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#ShellScripts=scripts/sh${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServer.conf" append="true">#PolyglotSteward=localhost:${steward_port}${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServer.conf" append="true">Broadcast=225.4.5.6:${steward_port}</echo>
+
+		<echo file="${tmp_srs}/SoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.SoftwareServerRestlet %*</echo>
+		<echo file="${tmp_srs}/SoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/kgm/ImageUtilities.jar:lib/kgm/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.SoftwareServerRestlet</echo>
+		<echo file="${tmp_srs}/SoftwareServerRestlet.conf" append="false">Port=8182${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServerRestlet.conf" append="true">#DistributedServer=localhost:8183${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=user1:password{line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#Authentication=admin:password${line.separator}</echo>
+		<echo file="${tmp_zip}/SoftwareServerRestlet.conf" append="true">#EnableAdministrators=false</echo>
+		
+		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.bat">java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/restlet/org.restlet.jar" -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet %*</echo>
+		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.sh">java -cp Polyglot2.jar:lib/kgm/Utilities.jar:lib/restlet/org.restlet.jar -Xmx1g edu.ncsa.icr.DistributedSoftwareServerRestlet</echo>
+		<echo file="${tmp_srs}/DistributedSoftwareServerRestlet.conf" append="false">Port=8183</echo>
+
+		<echo file="${tmp_srs}/SoftwareServerClient.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.SoftwareServerClient %*</echo>
+		<echo file="${tmp_srs}/SoftwareServerClient.sh">cmd /c java -cp Polyglot2.jar:lib/kgm/Utilities.jar -Xmx1g edu.ncsa.icr.SoftwareServerClient $1</echo>
+		<echo file="${tmp_srs}/SoftwareServerClient.conf" append="false">SoftwareServer=localhost:${icr_port}${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareServerClient.conf" append="true">#DefaultPath=data</echo>
+
+		<echo file="${tmp_srs}/SoftwareMonekey_VNC.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar;%~dp0lib/misc/VncViewer.jar" -Xmx1g edu.ncsa.icr.SoftwareMonkey_VNC</echo>
+		<echo file="${tmp_srs}/SoftwareMonekey_VNC.sh">java -cp Polyglot2.jar:lib/kgm/ImageUtilities.jar:lib/kgm/Utilities.jar:lib/misc/VncViewer.jar -Xmx1g edu.ncsa.icr.SoftwareMonkey_VNC</echo>
+		<echo file="${tmp_srs}/SoftwareMonekey_VNC.conf" append="false">Server=localhost:5900${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareMonekey_VNC.conf" append="true">OutputPath=tmp/MonkeyScript${line.separator}</echo>
+		<echo file="${tmp_srs}/SoftwareMonekey_VNC.conf" append="true">IgnoredBottom=32</echo>
+
+		<echo file="${tmp_srs}/MonkeyScript.bat">cmd /c java -cp "%~dp0Polyglot2.jar;%~dp0lib/kgm/ImageUtilities.jar;%~dp0lib/kgm/Utilities.jar" -Xmx1g edu.ncsa.icr.MonkeyScript %*</echo>
+
+		<echo file="${tmp_srs}/AutoUpdate.bat">java -cp "%~dp0lib/kgm/Utilities.jar" kgm.utility.AutoUpdate</echo>
+		<echo file="${tmp_srs}/AutoUpdate.sh">java -cp lib/kgm/Utilities.jar kgm.utility.AutoUpdate</echo>
+		<echo file="${tmp_srs}/AutoUpdate.conf" append="false">!conf, scripts/${line.separator}</echo>
+		<echo file="${tmp_srs}/AutoUpdate.conf" append="true">http://isda.ncsa.uiuc.edu/~kmchenry/tmp/Polyglot2/SoftwareServer.zip</echo>
+
+		<echo file="${tmp_srs}/misc/AUTOEXEC.BAT">start cmd /c "cd C:\Docume~1\polyglot\Desktop\Polyglot2 &amp;&amp; SoftwareServer.bat"</echo>
+
+		<zip basedir="${tmp_srs}" destfile="build/SoftwareServer.zip"/>
+	</target>
+	
+	<target name="polyglot_utils" depends="compile" description="Archive all the code needed by the web interface">
+		<mkdir dir="${tmp_utils}"/>
+		<copy todir="${tmp_utils}">
+			<fileset dir="${classes}">
+				<include name="**/ICRAuxiliary*.class"/>
+				<include name="**/SoftwareServerClient*.class"/>
+				<include name="**/polyglot/*.class"/>
+				<include name="**/polyglot/IOGraph*.class"/>
+				<include name="**/polyglot/Polyglot*.class"/>
+			</fileset>
+		</copy>
+		<unjar src="lib/misc/commons-logging-1.1.1.jar" dest="${tmp_utils}"/>
+		<unjar src="lib/kgm/Utilities.jar" dest="${tmp_utils}"/>
+		<unjar src="web/utils/UploadApplet.jar" dest="${tmp_utils}"/>
+		<unjar src="web/utils/ModelViewer_Lite.jar" dest="${tmp_utils}"/>
+		<jar basedir="${tmp_utils}" destfile="build/PolyglotUtils.jar"/>
+		<input message="keystore password:" addproperty="storepass"/>
+		<signjar jar="build/PolyglotUtils.jar" signedjar="build/PolyglotUtils-signed.jar" alias="mykey" storepass="${storepass}"/>
+		<copy failonerror="false" tofile="../CSR/java/IOGraphApplet-signed.jar" file="build/PolyglotUtils-signed.jar" />
+	</target>
+	
+	<target name="iograph_archive" depends="compile" description="Archive the code needed for the I/O-graph applet">
+		<mkdir dir="${tmp_iograph}"/>
+		<copy todir="${tmp_iograph}">
+			<fileset dir="${classes}">
+				<include name="**/IOGraph*.class"/>
+				<include name="**/Polyglot*.class"/>
+			</fileset>
+		</copy>
+		<unjar src="lib/misc/commons-logging-1.1.1.jar" dest="${tmp_iograph}"/>
+		<unjar src="lib/kgm/ImageUtilities.jar" dest="${tmp_iograph}"/>
+		<unjar src="lib/kgm/Utilities.jar" dest="${tmp_iograph}"/>
+		<jar basedir="${tmp_iograph}" destfile="build/IOGraphApplet.jar"/>
+		<input message="keystore password:" addproperty="storepass"/>
+		<signjar jar="build/IOGraphApplet.jar" signedjar="build/IOGraphApplet-signed.jar" alias="mykey" storepass="${storepass}"/>
+		<copy file="build/IOGraphApplet-signed.jar" todir="../CSR/java" failonerror="false" />
+	</target>
+	
+	<target name="clean_tmp" description="Deletes tmp folder">
+		<delete dir="build/tmp"/>
+	</target>
+		
+	<target name="clean" description="Deletes all generated files">
+		<delete dir="build"/>
+	</target>
+</project>
