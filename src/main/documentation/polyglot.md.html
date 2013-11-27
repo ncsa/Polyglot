@@ -4,13 +4,13 @@
 
 The motivation for developing Polyglot comes from academic, government, and industrial collaborations that have required research and development into new methods and solutions for the preservation of digital data.  At it's origins Polyglot was designed to aid in the preservation of 3D data by providing an empirical means by which to choose an optimal long term preservation file format by measuring and minimizing potential accumulated information loss as one converted from file format to file format.  In order to carry out that study a means of converting between any pair of file formats was required.   Due to the large number of available/legacy formats, the closed/proprietary nature of many of their specifications, and the complexity of many of the available specifications, the task of directly supporting, i.e. constructing the code the parse or load data from a particular format, for each file format would have been an enormous if not nearly impossible undertaking.
 
-Rather than re-implementing the code necessary to support every possible format an alternative methodology was used, referred to as imposed code reuse or software reuse. The vendors of 3D software, in particular those owning proprietary file formats, obvsously directly support such formats within their software. These file loaders are often locked away in compiled software.  Further, most software allows for the importing/exporting of a small handful of formats used to allow users of the software ability of file exchange.  Designed with an interface tailored for human users, however, this software functionality isn't readily accessible to other programs, a necessity for usage in any system that would serve to explore/preserve large collections of digital data.  By utilizing a variety of scripting languages, in particular several tailored towards the automation of graphical user interfaces (GUIs), NCSA Polyglot re-introduces a programmable API like interface to underlying functionality within arbitrary software.  Designed for extensibilty and to be horizontally scalable, Polyglot exists as a highly distributed service capable of growing to provide a means of accessing digital content within large collections of heterogenous files.
+Rather than re-implementing the code necessary to support every possible format an alternative code/software reuse methodology was used.  Software utilizing unique and/or closed formats will often support importing/exporting to a handful of other formats to allow users some level of file/data migration out of the software.  With most softare designed with an interface tailored for human users, however, this software functionality isn't readily accessible to other programs, a necessity for usage in any system that would serve to explore/preserve large collections of digital data.  By utilizing a variety of scripting languages, in particular several tailored towards the automation of graphical user interfaces (GUIs), NCSA Polyglot re-introduces a programmable API like interface to underlying functionality within arbitrary software.  Designed for extensibilty and to be horizontally scalable, Polyglot exists as a highly distributed service capable of growing to provide a means of accessing digital content within large collections of heterogenous files.
 
 NCSA Polyglot incorporates conversions for images, 3D models, audio, documents, etc. all simultaneously allowing for further more exotic possibilities for viewing/previewing digital data.  In the following sections we describe the installation of a Polyglot server and the various methods by which it can be used.  Additional information not contained within this manual can be found on the project website, http://isda.ncsa.illinois.edu/drupal/software/Polyglot/.
 
 ## Server Setup
 
-NCSA Polyglot exists within a layered architecture depicted below. 
+NCSA Polyglot exists within a layered architecture:
 
 ![The layers in architecture of the Polyglot system.](images/layers.png)
 
@@ -243,10 +243,10 @@ Though the primary purpose of the Software Server Clients are to provide a Java 
 ```dos
 > SoftwarServerClient localhost:50000 -cwd data
 
-icr> 
+softwareserver> 
 ```
 
-Where the "-cwd" flag indicates that the next argument will set the current working directory.  Note by default the Software Server will be set to "localhost:50000" and the data path to your actual current working directory.  Once the program starts it will present you with an "icr>" prompt where you can now enter commands.  The Software Server Client session will accept the basic Linux folder traversal commands such as: "pwd", "ls", and "cd".  The complete list of accepted commands is listed below:
+Where the "-cwd" flag indicates that the next argument will set the current working directory.  Note by default the Software Server will be set to "localhost:50000" and the data path to your actual current working directory.  Once the program starts it will present you with an "softwareserver>" prompt where you can now enter commands.  The Software Server Client session will accept the basic Linux folder traversal commands such as: "pwd", "ls", and "cd".  The complete list of accepted commands is listed below:
 
 * **help**
   * List the software and operations available on the Software Server.
@@ -268,7 +268,7 @@ Where the "-cwd" flag indicates that the next argument will set the current work
 The main means of executing jobs on the Software Server is to use the "tasks" command:
 
 ```
-icr> tasks
+softwareserver> tasks
 task 1>
 ```
 
@@ -280,16 +280,16 @@ Software_Alias Operation Input Output
 The software alias and available operations can be obtained from the "help" command.  The inputs and outputs are just files.  Depending on the operation both, one, or neither may be required.  In such events where both aren’t required an empty string, "", can be used in its place.  When specifying files it is important to append a "./" for files that are local on your current system and append nothing if the file is currently cached on the Software Server.  The following illustrates a common task of using more than one software package to convert a file from one format to another (converting "heart.wrl" to "heart.stp"):
 
 ```
-icr> ls
+softwareserver> ls
 heart.wrl
 
-icr> tasks
+softwareserver> tasks
 task 1> Blender convert ./heart.wrl heart.stl
 task 2> A3DReviewer open heart.stl ""
 task 3> A3DReviewer export "" heart.stp
 task 4> end
 
-icr> ls
+softwareserver> ls
 heart.stp
 heart.wrl
 ```
@@ -411,19 +411,19 @@ One form of the Polyglot API is available in Java.  In this document we will giv
 A Software Server Client is declared as follows:
 
 ```java
-SoftwareServerClient icr = new SoftwareServerClient("localhost", 50002);
+SoftwareServerClient softwareserver = new SoftwareServerClient("localhost", 50002);
 ```
 
 where the first constructor argument is the host name or IP address and the second argument is the port number to connect to.  The client will connect to the server as soon as it is declared.  To disconnect you would call the "close" method:
 
 ```java
-icr.close();
+softwareserver.close();
 ```
 
 Though jobs can be sent to the Software Server several ways the most convenient ways is via the use of a "TaskList".  A task list is a helper data structure that hides away much of the low level workings of the Software Server Client.  A task list is declared with a Software Server Client as its only argument:
 
 ```java
-Tasklist tasks = new TaskList(icr);
+Tasklist tasks = new TaskList(softwareserver);
 ```
 
 Tasks can now be added to a task list via the "add" method.  The below example adds three tasks to the tasklist in order to convert a local file "heart.wrl" to the *.stp format:
@@ -450,7 +450,7 @@ where the first constructor argument is the local file this object represents an
 
 ```java
 CachedFileData cached_data = tasks.execute();
-FileData file_data = icr.retrieveData(cached_data);
+FileData file_data = softwareserver.retrieveData(cached_data);
 ```
 
 Note that the returned file, file_data, is still not on the local file system but only in memory.  To save the file to the file system we would use the save method:
@@ -472,7 +472,7 @@ tasks.add("A3DReviewer", "export", null, cached_data2);
 
 tasks.execute();
 
-FileData file_data2 = icr.retrieveData(cached_data2);
+FileData file_data2 = softwareserver.retrieveData(cached_data2);
 file_data2.save("./", null);
 ```
 
@@ -558,12 +558,12 @@ One example of why one might want to do this is to gain access to the software r
 ```java
 PolyglotSteward polyglot = new PolyglotSteward();
 
-SoftwareServer icr = new SoftwareServer("localhost", 50000);
-polyglot.add(icr);
+SoftwareServer softwareserver = new SoftwareServer("localhost", 50000);
+polyglot.add(softwareserver);
 
 FileData file_data0 = new FileData("heart.wrl", true);
 CachedFileData cached_data1 = polyglot.convert(file_data0, "stp");
-FileData file_data1 = icr.retrieveData(cached_data1);
+FileData file_data1 = softwareserver.retrieveData(cached_data1);
 file_data1.save("./", null);
 ```
 

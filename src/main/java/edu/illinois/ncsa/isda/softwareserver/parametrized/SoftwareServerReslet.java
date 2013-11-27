@@ -1,6 +1,6 @@
 package edu.illinois.ncsa.isda.softwareserver.parametrized;
-import edu.illinois.ncsa.isda.softwareserver.parametrized.ICRAuxiliary.*;
-import edu.illinois.ncsa.isda.softwareserver.parametrized.ICRAuxiliary.Application;
+import edu.illinois.ncsa.isda.softwareserver.parametrized.SoftwareServerAuxiliary.*;
+import edu.illinois.ncsa.isda.softwareserver.parametrized.SoftwareServerAuxiliary.Application;
 import java.util.*;
 import java.io.*;
 import java.lang.management.*;

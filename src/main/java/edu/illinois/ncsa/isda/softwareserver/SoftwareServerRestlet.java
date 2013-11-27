@@ -1,6 +1,6 @@
 package edu.illinois.ncsa.isda.softwareserver;
-import edu.illinois.ncsa.isda.softwareserver.ICRAuxiliary.*;
-import edu.illinois.ncsa.isda.softwareserver.ICRAuxiliary.Application;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Application;
 import kgm.image.ImageUtility;
 import kgm.utility.*;
 import java.util.*;

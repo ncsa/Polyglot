@@ -4,10 +4,10 @@ import java.util.*;
 import java.io.*;
 
 /**
- * Helper classes for the Imposed Code Reuse package.
+ * Helper classes for the Software Server package.
  * @author Kenton McHenry
  */
-public class ICRAuxiliary
+public class SoftwareServerAuxiliary
 {
 	/**
 	 * An container for some kind of data.

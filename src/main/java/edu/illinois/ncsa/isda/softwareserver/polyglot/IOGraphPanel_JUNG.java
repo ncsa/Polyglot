@@ -1,6 +1,6 @@
 package edu.illinois.ncsa.isda.softwareserver.polyglot;
 import edu.illinois.ncsa.isda.softwareserver.*;
-import edu.illinois.ncsa.isda.softwareserver.ICRAuxiliary.*;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import java.awt.*;
 import java.awt.geom.*;
 import javax.swing.*;

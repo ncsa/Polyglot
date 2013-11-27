@@ -14,9 +14,9 @@ import javax.swing.JFrame;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerClient;
-import edu.illinois.ncsa.isda.softwareserver.ICRAuxiliary.Application;
-import edu.illinois.ncsa.isda.softwareserver.ICRAuxiliary.Data;
-import edu.illinois.ncsa.isda.softwareserver.ICRAuxiliary.Operation;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Application;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Data;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Operation;
 
 /**
  * Graph that contains all possible conversions. Conversions are from an input

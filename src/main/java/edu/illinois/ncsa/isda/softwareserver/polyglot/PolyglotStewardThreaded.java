@@ -1,6 +1,6 @@
 package edu.illinois.ncsa.isda.softwareserver.polyglot;
 import edu.illinois.ncsa.isda.softwareserver.*;
-import edu.illinois.ncsa.isda.softwareserver.ICRAuxiliary.*;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.*;
 import java.io.*;
 import java.net.*;

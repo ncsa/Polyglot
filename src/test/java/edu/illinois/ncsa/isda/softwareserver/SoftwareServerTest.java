@@ -1,8 +1,5 @@
-package edu.illinois.ncsa.isda.icr;
-import edu.illinois.ncsa.isda.softwareserver.ScriptDebugger;
-import edu.illinois.ncsa.isda.softwareserver.SoftwareServer;
-import edu.illinois.ncsa.isda.softwareserver.SoftwareServerClient;
-import edu.illinois.ncsa.isda.softwareserver.ICRAuxiliary.*;
+package edu.illinois.ncsa.isda.softwareserver;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import kgm.utility.Utility;
 import org.junit.Test;
 import static org.junit.Assert.*;

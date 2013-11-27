@@ -1,8 +1,5 @@
-package edu.illinois.ncsa.isda.icr.polyglot;
-import edu.illinois.ncsa.isda.softwareserver.SoftwareServer;
-import edu.illinois.ncsa.isda.softwareserver.SoftwareServerClient;
-import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotClient;
-import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotServer;
+package edu.illinois.ncsa.isda.softwareserver.polyglot;
+import edu.illinois.ncsa.isda.softwareserver.*;
 import kgm.utility.Utility;
 import org.junit.Test;
 import static org.junit.Assert.*;

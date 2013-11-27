@@ -1,6 +1,6 @@
 package edu.illinois.ncsa.isda.softwareserver.polyglot;
 import kgm.utility.*;
-import edu.illinois.ncsa.isda.softwareserver.ICRAuxiliary.*;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.*;
 import edu.illinois.ncsa.versus.engine.impl.*;
 import java.awt.*;

@@ -1,5 +1,5 @@
 package edu.illinois.ncsa.isda.softwareserver;
-import edu.illinois.ncsa.isda.softwareserver.ICRAuxiliary.*;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import kgm.utility.*;
 import java.io.*;
 import java.net.*;
