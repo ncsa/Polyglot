@@ -705,7 +705,7 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	        }
 	      }else if(event_source == menuitem_SET_TARGET){
 	        target = mini;
-	        //domain = iograph.getDomain(target);
+	        domain = iograph.getDomain(target);	//TODO: Rob, why was this line commented out?
 	      }
 	      
 	      computePath();
@@ -959,12 +959,12 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 	  		}
   		}
   	}else{		//Debugging
-	  	if(true){
+	  	if(false){
 	  		PolyglotClient polyglot = new PolyglotClient("localhost", 32);
 	  		iograph_panel = new IOGraphPanel<String,String>(polyglot.getInputOutputGraph(), 2);
 	  		polyglot.close();
-	  	}else if(false){
-		  	SoftwareServerClient icr = new SoftwareServerClient("localhost", 30);
+	  	}else if(true){
+		  	SoftwareServerClient icr = new SoftwareServerClient("localhost", 50000);
 		  	iograph = new IOGraph<Data,Application>(icr);
 		  	icr.close();
 		  	

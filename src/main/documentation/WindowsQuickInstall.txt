@@ -1,24 +1,26 @@
-Polyglot Quick Install (Windows):
+Polyglot Quick Install (Windows)
 
-The following ports will be needed: 8182, 8183, 50000, 50001, 50002
+1. The following ports will be needed:
+ 
+Software Server Restlet - 8182
+Distributed Software Server Restlet - 8183
+Software Server - 50000
+Polyglot Steward - 50001
+Polyglot Server - 50002
 
-1. Install Windows and the software you wish to use.
+2. Install Windows and the software you wish to use.
 
-2. Install Java and AutoHotKey.
+3. Install Java and AutoHotKey.
 
-3. Download Polyglot snapshot from http://isda.ncsa.illinois.edu and unzip.
+4. Download Polyglot snapshot from http://isda.ncsa.illinois.edu and unzip.
 
-4. Open command prompt to this folder and run the following to configure and install ImageMagick script:
+5. Open command prompt to this folder and run the following to configure and install ImageMagick script:
 
 > ScriptDebugger -config scripts/ahk/ImgMgk_convert.ahk
 
-5. Edit SoftwareServer.conf:
+6. Edit SoftwareServer.conf:
 
 AHKScripts=scripts/ahk-configured
-
-6. Edit SoftwareServerRestlet.conf and uncomment second line:
-
-DistributedServer=localhost:8183
 
 7. Run SoftwareServerRestlet.bat
 
@@ -33,3 +35,7 @@ DistributedServer=localhost:8183
 11. Put some images in the data folder.
 
 12. Run PolyglotPanel.bat.
+
+13. Edit last line of AutoUpdate.conf to point to the location to download the Polyglot snapshot.
+
+*14. Run AutoUpdate.bat to update the Polyglot installation.

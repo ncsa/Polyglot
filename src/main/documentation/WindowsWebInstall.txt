@@ -1,0 +1,47 @@
+Polyglot Web Install (Windows)
+
+1. The following ports will be needed:
+ 
+Software Server Restlet - 8182
+Distributed Software Server Restlet - 8183
+Software Server - 50000
+Polyglot Steward - 50001
+Polyglot Server - 50002
+
+2. Install Windows and the software you wish to use.
+
+3. Install Java, AutoHotKey, and Apache HTTPD with the PHP plugin.
+
+4. Download Polyglot snapshot from http://isda.ncsa.illinois.edu and unzip.
+
+5. Open command prompt to this folder and run the following to configure and install ImageMagick script:
+
+> ScriptDebugger -config scripts/ahk/ImgMgk_convert.ahk
+
+6. Edit SoftwareServer.conf:
+
+AHKScripts=scripts/ahk-configured
+
+7. Edit SoftwareServerRestlet.conf and uncomment second line:
+
+DistributedServer=localhost:8183
+
+8. Run SoftwareServerRestlet.bat
+
+9. From a browser go to localhost:8182 to see if the Software Server is working.
+
+10. Run DistributedSoftwareServerRestlet.bat
+
+11. Run InstallWeb.bat
+
+12. Edit PolyglotWebInterface.conf and set the path of the polyglot installation:
+
+PolyglotPath=C:\Program Files (x86)\Apache Software Foundation\Apache2.2\htdocs\polyglot
+
+13. Run PolyglotServer.bat
+
+14. Open a browser and navigate to http://localhost/polyglot/
+
+15. Edit last line of AutoUpdate.conf to point to the location to download the Polyglot snapshot.
+
+*16. Run AutoUpdate.bat to update the Polyglot installation.

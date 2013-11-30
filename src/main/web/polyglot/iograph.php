@@ -51,7 +51,7 @@ Use the I/O-Graph to check which applications will be used when converting betwe
 </div>
 </td><td width="100%" align="center">
 
-<applet codebase="lib" archive="PolyglotUtils-signed.jar" code="edu.ncsa.icr.polyglot.IOGraphApplet.class" width="900" height="650">
+<applet codebase="lib" archive="PolyglotUtils-signed.jar" code="edu.illinois.ncsa.isda.softwareserver.polyglot.IOGraphApplet.class" width="900" height="650">
 <param name="url" value="<?php echo $_SERVER['SERVER_ADDR']?>:50002">
 <param name="side_pane_width" value="275">
 <param name="output_panel_height" value="0">
