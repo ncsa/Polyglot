@@ -1,0 +1,13 @@
+The National Center for Supercomputing Applications (NCSA), located at the University of Illinois at Urbana-Champaign, provides computing, data, networking, and visualization resources and services that help scientists and engineers across the country better understand our world.
+
+NCSA—established in 1986 as one of the original sites of the National Science Foundation's Supercomputer Centers Program—is supported by the state of Illinois, the University of Illinois, the National Science Foundation, and grants from other federal agencies.
+
+The center focuses on:
+
+- Data & Information Science & Technology: NCSA works with researchers to aggregate distributed, highly heterogeneous datasets at all scales, analyze them to obtain reproducible results with scalable, maintainable software pipelines on optimized computational data platforms in highly efficient, secure collaborative environments.
+
+- @Scale Science & Technologies: NCSA will continue to be a world leader in enabling researchers to gain timely insight into challenging science and engineering problems by deploying, supporting and improving computational, analytical, storage and communication technologies and services at capabilities and complexities of notable scale.
+
+- Collaborative eScience: NCSA is leading the creation and management of a distributed, yet integrated, environment that will support the inclusion of a diverse range of advanced computing resources and services to accelerate the discovery and application of new knowledge.
+
+- Industry: NCSA helps industry partners take advantage of advanced computing and digital ecosystems to enhance their competitiveness.
