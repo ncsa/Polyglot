@@ -19,8 +19,8 @@ import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
 
 /**
- * A restful interface for a software reuse server.
- * Think of this as an extended software reuse server.
+ * A restful interface for a software server.
+ * Think of this as an extended software server.
  * @author Kenton McHenry
  */
 public class SoftwareServerRestlet extends ServerResource
@@ -31,6 +31,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static TreeMap<String,Application> alias_map = new TreeMap<String,Application>();
 	private static String public_path = "./";
 	private static boolean ADMINISTRATORS_ENABLED = false;
+	private static Component component;
 	
 	/**
 	 * Initialize.
@@ -878,6 +879,20 @@ public class SoftwareServerRestlet extends ServerResource
 	}
 	
 	/**
+	 * Stop the REST interface and underlying Software Server.
+	 */
+	public void stop()
+	{
+		//Stop the REST interface
+		try{
+			component.stop();
+		}catch(Exception e) {e.printStackTrace();}
+		
+		//Stop the Software Server
+		server.stop();
+	}
+	
+	/**
 	 * Query an endpoint.
 	 * @param url the URL of the endpoint
 	 * @return the text obtained from the endpoint
@@ -978,7 +993,7 @@ public class SoftwareServerRestlet extends ServerResource
 	{		
 		int port = 8182;		
 		String distributed_server = null;
-		TreeMap<String,String> accounts = new TreeMap<String,String>();
+		TreeMap<String,String> accounts = new TreeMap<String,String>();	
 		
 		//Load configuration file
 	  try{
@@ -1011,16 +1026,16 @@ public class SoftwareServerRestlet extends ServerResource
 	  }catch(Exception e) {e.printStackTrace();}
 		
 	  //Initialize and start the service
-		initialize();
-  	
+	  initialize();
+	  
 		/*
 		try{
-			new Server(Protocol.HTTP, port, SoftwareReuseRestlet.class).start();
+			new Server(Protocol.HTTP, port, SoftwareServerRestlet.class).start();
 		}catch(Exception e) {e.printStackTrace();}
 		*/
-		
+			
 		try{			
-			Component component = new Component();
+			component = new Component();
 			component.getServers().add(Protocol.HTTP, port);
 			component.getClients().add(Protocol.HTTP);
 			component.getLogService().setEnabled(false);
@@ -1033,7 +1048,7 @@ public class SoftwareServerRestlet extends ServerResource
 					return router;
 				}
 			};
-			
+				
 			if(!accounts.isEmpty()){
 				ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
 				MapVerifier verifier = new MapVerifier();
@@ -1046,45 +1061,45 @@ public class SoftwareServerRestlet extends ServerResource
 					}else{
 						FOUND_USER = true;
 					}
-					
+						
 					verifier.getLocalSecrets().put(username, accounts.get(username).toCharArray());
 				}
-				
+					
 				if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
-				
+					
 				guard.setVerifier(verifier);
 				guard.setNext(application);
 				component.getDefaultHost().attachDefault(guard);
 			}else{
 				component.getDefaultHost().attach("/", application);
 			}
-			
+				
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
-		
-  	//Notify other services of our existence
-  	if(distributed_server != null){
-  		final int port_final = port;
-  		final String distributed_server_final = distributed_server;
-  		  		
-  		System.out.println("\nStarting distributed software restlet notification thread...\n");
+			
+	 	//Notify other services of our existence
+	 	if(distributed_server != null){
+	 		final int port_final = port;
+	 		final String distributed_server_final = distributed_server;
+	  		  		
+	 		System.out.println("\nStarting distributed software restlet notification thread...\n");
 
 	  	new Thread(){
 	  		public void run(){
 	  			String hostname = "", url;
-	  			
+		  			
 	  			try{
 	  				hostname = InetAddress.getLocalHost().getHostAddress();		  			
 	  			}catch(Exception e) {e.printStackTrace();}
-	  			
+		  			
 	  			url = "http://" + distributed_server_final + "/register/" + URLEncoder.encode(hostname + ":" + port_final);
-	  			
+		  			
 	  			while(true){
 	  				queryEndpoint(url);
 	  				Utility.pause(2000);
 	  			}
 	  		}
 	  	}.start();
-  	}
+	 	}
 	}
 }

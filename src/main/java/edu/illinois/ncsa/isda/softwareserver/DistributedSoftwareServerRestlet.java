@@ -14,17 +14,17 @@ import org.restlet.resource.*;
 import org.restlet.routing.*;
 
 /**
- * A restful interface to multiple software reuse servers.
+ * A restful interface to multiple software servers.
  * @author Kenton McHenry
  */
 public class DistributedSoftwareServerRestlet extends ServerResource
 {
 	private static TreeMap<RemoteTaskInfo, TreeSet<String>> tasks = new TreeMap<RemoteTaskInfo, TreeSet<String>>();
 	private static TreeSet<String> servers = new TreeSet<String>();
-	
 	private static TreeSet<String> applications = new TreeSet<String>();
 	private static TreeMap<String,String> name_map = new TreeMap<String,String>();
 	private static TreeMap<String,String> server_map = new TreeMap<String,String>();
+	private static Component component;
 	
 	/**
 	 * Record the existence of a software server and the applications/tasks it provides.
@@ -736,6 +736,16 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		}
 	}
 	
+	/**
+	 * Stop the REST interface.
+	 */
+	public void stop()
+	{
+		try{
+			component.stop();
+		}catch(Exception e) {e.printStackTrace();}
+	}
+	
 	@Post
 	/**
 	 * Handle HTTP POST requests.
@@ -879,7 +889,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		
 	  //Start the service		
 		try{			
-			Component component = new Component();
+			component = new Component();
 			component.getServers().add(Protocol.HTTP, port);
 			component.getClients().add(Protocol.HTTP);
 			component.getLogService().setEnabled(false);
@@ -897,6 +907,6 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
   	
-		System.out.println("\nDistributed software reuse restlet is running...\n");
+		System.out.println("\nDistributed software server restlet is running...\n");
 	}
 }

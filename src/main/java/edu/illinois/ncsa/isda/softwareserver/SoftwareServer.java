@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 
 /**
- * An Imposed Code Reuse server.
+ * A Software Server.
  * @author Kenton McHenry
  */
 public class SoftwareServer implements Runnable
@@ -539,24 +539,28 @@ public class SoftwareServer implements Runnable
   	}
   	
   	//Begin accepting connections
-  	System.out.println("\nSoftware reuse server is running...\n");
+  	System.out.println("\nSoftware server is running...\n");
 		RUNNING = true;
 		
 		while(RUNNING){
-			//Wait for a connection
-			try{
+			try{			
+				//Wait for a connection
 				client_socket = server_socket.accept();
-			}catch(Exception e) {e.printStackTrace();}
-						
-			//Spawn a thread to handle this connection
-			final Socket client_socket_final = client_socket;
-			
-			new Thread(){
-				public void run(){
-					serveConnection(session_counter.incrementAndGet(), client_socket_final);
-				}
-			}.start();
+				
+				//Spawn a thread to handle this connection
+				final Socket client_socket_final = client_socket;
+				
+				new Thread(){
+					public void run(){
+						serveConnection(session_counter.incrementAndGet(), client_socket_final);
+					}
+				}.start();
+			}catch(SocketException e){
+				RUNNING = false;
+			}catch(IOException e) {e.printStackTrace();}
 		}  	
+		
+		System.out.println("... Software Server is exiting.");
   }
   
   /**
@@ -670,6 +674,28 @@ public class SoftwareServer implements Runnable
 				Runtime.getRuntime().exec("shutdown -r -t 5");
 			}catch(Exception e) {e.printStackTrace();}
 		}
+	}
+	
+  /**
+   * Wait until the servers main thread stops.
+   */
+  public void waitUntilStopped()
+  {
+  	while(RUNNING){
+  		Utility.pause(500);
+  	}
+  }
+	
+	/**
+	 * Stop the Software Server.
+	 */
+	public void stop()
+	{
+		try{
+			server_socket.close();
+		}catch(Exception e) {e.printStackTrace();}
+		
+		waitUntilStopped();
 	}
 
 	/**

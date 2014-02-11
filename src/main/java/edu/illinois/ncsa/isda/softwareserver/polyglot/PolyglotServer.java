@@ -99,20 +99,24 @@ public class PolyglotServer implements Runnable
 		RUNNING = true;
 		
 		while(RUNNING){
-			//Wait for a connection
-			try{
+			try{			
+				//Wait for a connection
 				client_socket = server_socket.accept();
+				
+				//Spawn a thread to handle this connection
+				final Socket client_socket_final = client_socket;
+				
+				new Thread(){
+					public void run(){
+						serveConnection(session_counter.incrementAndGet(), client_socket_final);
+					}
+				}.start();
+			}catch(SocketException e){
+				RUNNING = false;
 			}catch(Exception e) {e.printStackTrace();}
-						
-			//Spawn a thread to handle this connection
-			final Socket client_socket_final = client_socket;
-			
-			new Thread(){
-				public void run(){
-					serveConnection(session_counter.incrementAndGet(), client_socket_final);
-				}
-			}.start();
-		}  	
+		}
+		
+		System.out.println("... Polyglot Server is exiting.");
   }
   
   /**
@@ -215,6 +219,28 @@ public class PolyglotServer implements Runnable
 		synchronized(clients){
 			clients.remove(host);
 		}
+	}
+	
+  /**
+   * Wait until the servers main thread stops.
+   */
+  public void waitUntilStopped()
+  {
+  	while(RUNNING){
+  		Utility.pause(500);
+  	}
+  }
+  
+	/**
+	 * Stop the Polyglot server.
+	 */
+	public void stop()
+	{
+		try{
+			server_socket.close();
+		}catch(Exception e) {e.printStackTrace();}
+		
+		waitUntilStopped();
 	}
   
 	/**

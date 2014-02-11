@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.atomic.*;
 
 /**
- * An Imposed Code Reuse client interface.
+ * A Software Server client interface.
  * @author Kenton McHenry
  */
 public class SoftwareServerClient implements Comparable
@@ -291,7 +291,7 @@ public class SoftwareServerClient implements Comparable
 	}
 
 	/**
-	 * Close the connection to the software reuse server.
+	 * Close the connection to the software server.
 	 */
 	public synchronized void close()
 	{

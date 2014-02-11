@@ -16,20 +16,21 @@ public class PolyglotTest
 	@Test
 	public void test1() throws Exception
 	{
-		//Software Server
-    SoftwareServerClient sclient = new SoftwareServerClient("localhost", 50000);
+		System.out.println("\n=== Polyglot: Test 1 ===");
 
-    if(!sclient.isAlive()){
-    	SoftwareServer sserver = new SoftwareServer("SoftwareServer.conf");
-    }
+		//Software Server    	
+		SoftwareServer sserver = new SoftwareServer("SoftwareServer.conf");
     
     //Polyglot
 		PolyglotServer pserver = new PolyglotServer("PolyglotServer.conf");
-		
 		PolyglotClient pclient = new PolyglotClient("localhost", 50002);
 		pclient.convert("data/demo/Lenna.png", "data/tmp/", "gif");
 		pclient.close();
-		
+		pserver.stop();
+
 		assertTrue(Utility.existsAndRecent("data/tmp/Lenna.gif", 100000));
+		
+		//Stop Software Server
+		sserver.stop();
 	}
 }

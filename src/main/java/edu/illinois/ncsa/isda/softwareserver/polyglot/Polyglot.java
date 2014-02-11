@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.*;
 
 /**
  * An interface for file format conversion services that contain at its heart an I/O-Graph built
- * around a set of ICR clients.
+ * around a set of Software Server clients.
  * @author Kenton McHenry
  */
 public abstract class Polyglot
