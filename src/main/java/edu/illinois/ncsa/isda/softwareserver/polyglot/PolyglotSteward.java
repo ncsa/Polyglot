@@ -149,6 +149,16 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	}
 	
 	/**
+	 * Get the inputs available for the given output type.
+	 * @param output the output type
+	 * @return the list of inputs
+	 */
+	public TreeSet<String> getInputs(String output)
+	{
+		return iograph.getDomainStrings(output);
+	}
+	
+	/**
 	 * Get the available inputs, outputs, and conversions.
 	 * @return an IOGraph containing the information as strings
 	 */

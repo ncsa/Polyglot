@@ -736,16 +736,6 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		}
 	}
 	
-	/**
-	 * Stop the REST interface.
-	 */
-	public void stop()
-	{
-		try{
-			component.stop();
-		}catch(Exception e) {e.printStackTrace();}
-	}
-	
 	@Post
 	/**
 	 * Handle HTTP POST requests.
@@ -821,6 +811,16 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 	}
 	
 	/**
+	 * Stop the REST interface.
+	 */
+	public void stop()
+	{
+		try{
+			component.stop();
+		}catch(Exception e) {e.printStackTrace();}
+	}
+
+	/**
 	 * Query a restlet endpoint that responds with a line separated text list of values.
 	 * @param url the URL of the restlet endpoint to query
 	 * @return the values returned from the endpoint
@@ -864,7 +864,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 	 */
 	public static void main(String[] args)
 	{		
-		int port = 8182;
+		int port = 8183;
 		
 		//Load configuration file
 	  try{

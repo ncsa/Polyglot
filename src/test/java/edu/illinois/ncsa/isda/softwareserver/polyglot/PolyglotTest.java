@@ -13,15 +13,45 @@ import org.junit.runners.MethodSorters;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PolyglotTest
 {
+	/**
+	 * Test Polyglot Server and Client.
+	 */
 	@Test
 	public void test1() throws Exception
 	{
 		System.out.println("\n=== Polyglot: Test 1 ===");
 
-		//Software Server    	
+		//Start Software Server    	
 		SoftwareServer sserver = new SoftwareServer("SoftwareServer.conf");
     
-    //Polyglot
+    //Start Polyglot
+		PolyglotServer pserver = new PolyglotServer("PolyglotServer.conf");
+		PolyglotClient pclient = new PolyglotClient("localhost", 50002);
+		
+		//Run the test
+		pclient.convert("data/demo/Lenna.png", "data/tmp/", "gif");
+		pclient.close();
+		pserver.stop();
+
+		assertTrue(Utility.existsAndRecent("data/tmp/Lenna.gif", 100000));
+		
+		//Stop Software Server
+		sserver.stop();
+	}
+	
+	/**
+	 * Test PolyglotRestlet.
+	 */
+	@Test
+	public void test2() throws Exception
+	{
+		System.out.println("\n=== Polyglot: Test 2 ===");
+
+		//Start Software Server    	
+		SoftwareServer sserver = new SoftwareServer("SoftwareServer.conf");
+    
+		/*
+    //Start Polyglot
 		PolyglotServer pserver = new PolyglotServer("PolyglotServer.conf");
 		PolyglotClient pclient = new PolyglotClient("localhost", 50002);
 		pclient.convert("data/demo/Lenna.png", "data/tmp/", "gif");
@@ -29,6 +59,7 @@ public class PolyglotTest
 		pserver.stop();
 
 		assertTrue(Utility.existsAndRecent("data/tmp/Lenna.gif", 100000));
+		*/
 		
 		//Stop Software Server
 		sserver.stop();
