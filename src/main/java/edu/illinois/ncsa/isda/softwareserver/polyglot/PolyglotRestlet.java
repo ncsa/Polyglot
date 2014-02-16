@@ -25,10 +25,20 @@ public class PolyglotRestlet extends ServerResource
   private static PolyglotSteward polyglot = new PolyglotSteward();
 	private static int steward_port = -1;
 	private static int port = 8184;
+	private static boolean RETURN_URL = false;
 	private static String root_path = "./";
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
 	private static Component component;
+	
+	/**
+	 * Set whether or not to return a URL as the result (as opposed to the file itself)
+	 * @param value true if the URL to the resulting file should be returned
+	 */
+	public void setReturnURL(boolean value)
+	{
+		RETURN_URL = value;
+	}
 	
 	/**
 	 * Get a web form interface for this restful service.
@@ -145,17 +155,17 @@ public class PolyglotRestlet extends ServerResource
 		return getForm(false, null);
 	}	
 	
-	@Get
 	/**
 	 * Handle HTTP GET requests.
 	 */
+	@Get
 	public Representation httpGetHandler()
 	{
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
-		String file = null, output = null, result_file, result_url, url;
+		String file = null, output = null, result_file, result_url, url, type;
 		String buffer;
 		Form form;
 		Parameter p;
@@ -237,6 +247,26 @@ public class PolyglotRestlet extends ServerResource
 			}else{
 				return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
 			}
+		}else if(part0.equals("image")){
+			if(!part1.isEmpty()){	
+				file = "images/" + Utility.getFilename(Utility.unixPath(part1));
+				
+				if(Utility.exists(file)){
+					type = Utility.getFilenameExtension(file);
+					
+					if(type.equals("png")){
+						return new FileRepresentation(file, MediaType.IMAGE_PNG);
+					}else if(type.equals("gif")){
+						return new FileRepresentation(file, MediaType.IMAGE_GIF);
+					}else{
+						return new FileRepresentation(file, MediaType.IMAGE_JPEG);
+					}
+				}else{
+					return new StringRepresentation("Image doesn't exist", MediaType.TEXT_PLAIN);
+				}
+			}else{
+				return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
+			}
 		}else if(part0.equals("servers")){				
 			return new StringRepresentation(toString(polyglot.getServers()), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("alive")){
@@ -246,24 +276,21 @@ public class PolyglotRestlet extends ServerResource
 		}
 	}
 	
-	@Post
 	/**
 	 * Handle HTTP POST requests.
 	 * @param entity the entity
 	 */
-	/*
+	@Post
 	public Representation httpPostHandler(Representation entity)
 	{
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
-		String part3 = (parts.size() > 3) ? parts.get(3) : "";
-		TreeMap<String,String> parameters = new TreeMap<String,String>();
-		String application = null, task = null, format = null, server, url, result = null;
 		boolean FORM_POST = !part0.isEmpty() && part0.equals("form");
-		boolean TASK_POST = !part1.isEmpty() && !part2.isEmpty() && !part3.isEmpty();
-		FileItem file = null;
+		boolean TASK_POST = !part1.isEmpty();
+		TreeMap<String,String> parameters = new TreeMap<String,String>();
+		String file=null, output = null, result_file, result_url;
 		
 		if(FORM_POST || TASK_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
@@ -282,54 +309,64 @@ public class PolyglotRestlet extends ServerResource
 						if(fi.getName() == null){
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
 						}else{
-							file = fi;
+							file = temp_path + fi.getName();
+							fi.write(new File(file));
 						}
 					}
 				}catch(Exception e) {e.printStackTrace();}
 			}
 			
 			if(FORM_POST){
-				application = parameters.get("application");
-				task = parameters.get("task");
-				format = parameters.get("format");
+				output = parameters.get("output");
 			}else if(TASK_POST){
-				application = part1;
-				task = part2;
-				format = part3;				
+				output = part1;				
 			}
 			
-			if(application != null && task != null && file != null && format != null){	
-				server = getNonBusyServer(application, task, Utility.getFilenameExtension(Utility.unixPath(file.getName())), format);
-				url = "http://" + server + "/software/" + application + "/" + task + "/" + format + "/";
+			if(file != null && output != null){	
+				System.out.print("[" + getClientInfo().getAddress() + "]: " + Utility.getFilename(file) + " -> " + output + "...");
 				
-				System.out.println("[" + server + "]: " + application + "/" + task + "/" + format + "/[" + file.getName() + "]");
+				polyglot.convert(file, public_path, output);
+				result_file = Utility.getFilenameName(file) + "." + output;
+				result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 
-				try{				
-					result = Utility.postFile(url, file.getName(), file.getInputStream(), "text/plain");
-				}catch(Exception e) {e.printStackTrace();}
-
-				if(result == null){
-					return new StringRepresentation("Error: could not POST file", MediaType.TEXT_PLAIN);
-				}else if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
-					return new StringRepresentation(result, MediaType.TEXT_PLAIN);
+				if(Utility.existsAndNotEmpty(public_path + result_file)){
+					System.out.println(" [Success]");
 				}else{
-					return new StringRepresentation("<a href=" + result + ">" + result + "</a>", MediaType.TEXT_HTML);
+					System.out.println(" [Failed]");
+				}
+				
+				if(RETURN_URL){		//Return URL of file
+					if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+						return new StringRepresentation(result_url, MediaType.TEXT_PLAIN);
+					}else{
+						return new StringRepresentation("<a href=" + result_url + ">" + result_url + "</a>", MediaType.TEXT_HTML);
+					}
+				}else{						//Return the file
+					result_file = public_path + result_file;
+					
+					if(Utility.exists(result_file)){
+						return new FileRepresentation(result_file, MediaType.MULTIPART_ALL);
+					}else{
+						setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
+					}
 				}
 			}
 		}
 		
 		return httpGetHandler();
 	}
-	*/
 	
 	/**
 	 * Stop the REST interface.
 	 */
 	public void stop()
-	{
+	{		
 		try{
 			component.stop();
 		}catch(Exception e) {e.printStackTrace();}
+		
+		polyglot.stop();
 	}
 	
 	/**
@@ -408,6 +445,8 @@ public class PolyglotRestlet extends ServerResource
 	        			port = Integer.valueOf(value.substring(tmpi+1));
 	        			polyglot.add(server, port);
 	        		}
+	          }else if(key.equals("ReturnURL")){
+	          	RETURN_URL = Boolean.valueOf(value);
 	          }
 	        }
 	      }

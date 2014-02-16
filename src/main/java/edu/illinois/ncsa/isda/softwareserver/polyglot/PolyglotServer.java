@@ -241,6 +241,8 @@ public class PolyglotServer implements Runnable
 		}catch(Exception e) {e.printStackTrace();}
 		
 		waitUntilStopped();
+		
+		polyglot.stop();
 	}
   
 	/**

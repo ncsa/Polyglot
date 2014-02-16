@@ -20,6 +20,9 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	private IOGraph<Data,Application> iograph = new IOGraph<Data,Application>();
 	private int application_flexibility = 0;
 	
+	private boolean RUNNING = false, TCP_LISTENER_RUNNING = false;
+	private ServerSocket tcp_listener_server_socket = null;
+	
 	/**
 	 * Class constructor.
 	 */
@@ -351,7 +354,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	}
 
 	/**
-	 * Close all software reuse client connections.
+	 * Close all software server client connections.
 	 */
 	public void close()
 	{
@@ -360,6 +363,32 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		for(int i=0; i<sr_clients.size(); i++){
 			sr_clients.get(i).close();
 		}
+	}
+	
+  /**
+   * Wait until the steward's threads have stopped.
+   */
+  public void waitUntilStopped()
+  {
+  	while(RUNNING || TCP_LISTENER_RUNNING){
+  		Utility.pause(500);
+  	}
+  }
+	
+	/**
+	 * Stop the PolyglotSteward thread.
+	 */
+	public void stop()
+	{
+		close();
+		RUNNING = false;
+		
+		//Close the TCP listener socket
+		try{
+			tcp_listener_server_socket.close();
+		}catch(IOException e) {e.printStackTrace();}
+		
+		waitUntilStopped();
 	}
 
 	/**
@@ -374,32 +403,35 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		if(true){
 			new Thread(){
 				public void run(){
-					ServerSocket server_socket = null;
 					Socket client_socket = null;
 					String sr_server;
 					int sr_port;
 					
+					TCP_LISTENER_RUNNING = true;
+					
 					try{
-						server_socket = new ServerSocket(port_final);
+						tcp_listener_server_socket = new ServerSocket(port_final);
 					}catch(Exception e) {e.printStackTrace();}
 					
 			  	//Begin accepting connections
 			  	System.out.println("[Steward]: Listening for Software Servers...");
 					
-					while(true){
+					while(TCP_LISTENER_RUNNING){
 						try{
 							//Wait for a connection
-							client_socket = server_socket.accept();
+							client_socket = tcp_listener_server_socket.accept();
 							
 							//Handle this connection
 							sr_server = client_socket.getInetAddress().getHostName();
 							sr_port = (Integer)Utility.readObject(client_socket.getInputStream());
 							
 							if(add(sr_server, sr_port)){
-								System.out.println("[Steward]: Found Software Server - " + sr_server + ":" + sr_port);
+								System.out.println("[Steward]: Found Software Server over TCP - " + sr_server + ":" + sr_port);
 							}
+						}catch(SocketException e){
+							TCP_LISTENER_RUNNING = false;
 						}catch(Exception e) {e.printStackTrace();}
-					}
+					}					
 				}
 			}.start();
 		}
@@ -412,24 +444,25 @@ public class PolyglotSteward extends Polyglot implements Runnable
 					int sr_port = 50000;
 					byte[] buffer = new byte[10];
 					DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-
+					
 					try{
 						MulticastSocket multicast_socket = new MulticastSocket(port_final);
 						multicast_socket.joinGroup(InetAddress.getByName("225.4.5.6"));
 						
-						while(true){
+						while(RUNNING){
 							multicast_socket.receive(packet);
 							sr_server = packet.getAddress().toString().substring(1);
 							
 							if(add(sr_server, sr_port)){
-								System.out.println("[Steward]: Found Software Server - " + sr_server + ":" + sr_port);
+								System.out.println("[Steward]: Found Software Server over UDP - " + sr_server + ":" + sr_port);
 							}
 							
 							Utility.pause(100);
 						}
 						
-						//socket.leaveGroup(InetAddress.getByName("225.4.5.6"));
-						//socket.close();
+						//Close the socket
+						//multicast_socket.leaveGroup(InetAddress.getByName("225.4.5.6"));
+						//multicast_socket.close();						
 					}catch(Exception e) {e.printStackTrace();}
 				}
 			}.start();
@@ -443,7 +476,9 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	{
 		boolean DROPPED_CONNECTION;
 		
-		while(true){
+		RUNNING = true;
+		
+		while(RUNNING){
 			DROPPED_CONNECTION = false;
 			int i = 0;
 			

@@ -50,18 +50,23 @@ public class PolyglotTest
 		//Start Software Server    	
 		SoftwareServer sserver = new SoftwareServer("SoftwareServer.conf");
     
-		/*
     //Start Polyglot
-		PolyglotServer pserver = new PolyglotServer("PolyglotServer.conf");
-		PolyglotClient pclient = new PolyglotClient("localhost", 50002);
-		pclient.convert("data/demo/Lenna.png", "data/tmp/", "gif");
-		pclient.close();
-		pserver.stop();
-
-		assertTrue(Utility.existsAndRecent("data/tmp/Lenna.gif", 100000));
-		*/
+		PolyglotRestlet polyglot = new PolyglotRestlet();
+		polyglot.main(new String[0]);
+		polyglot.setReturnURL(true);
+		
+		//Run the test
+		Utility.pause(2000);
+		String result = Utility.postFile("http://localhost:8184/convert/gif/", "data/demo/Lenna.png", "text/plain");
+		Utility.pause(2000);
+		
+		assertTrue(Utility.existsURL(result));
+				
+		Utility.downloadFile("data/tmp/", "Lenna2", result);
+		assertTrue(Utility.existsAndRecent("data/tmp/Lenna2.gif", 10000));
 		
 		//Stop Software Server
+		polyglot.stop();
 		sserver.stop();
 	}
 }

@@ -1,6 +1,7 @@
 package edu.illinois.ncsa.isda.softwareserver;
 import kgm.utility.*;
 import java.util.*;
+import java.util.Map;
 import java.io.*;
 
 /**
@@ -365,6 +366,181 @@ public class SoftwareServerAuxiliary
 			return file_data;
 		}
 	}
+		
+	/**
+	 * A structure to represent various script types.
+	 */
+	public static class ScriptType
+	{
+		public String extension;
+		public String name;
+		public String os;
+		public String comment;
+		public String command;
+		public String command_head;
+		public String command_tail;
+		
+		/**
+		 * Class constructor.
+		 * @param extension the scripts extension
+		 * @param name the scripts name
+		 * @param os the os the script executes on
+		 * @param comment the comment delimiter used by this type of script
+		 * @param command the command used to execute the script
+		 */
+		public ScriptType(String extension, String name, String os, String comment, String command)
+		{
+			this.extension = extension;
+			this.name = name;
+			this.os = os;
+			this.comment = comment;
+			this.command = command;
+			
+			parseCommand();
+		}
+		
+		/**
+		 * Class constructor.
+		 * @param line a comma separated line of text to parse for the scripts attributes
+		 */
+		public ScriptType(String line)
+		{
+			Vector<String> strings = Utility.split(line, ',', false, true);
+
+			extension = strings.get(0);
+			name = strings.get(1);
+			os = strings.get(2);
+			comment = strings.get(3);
+			
+			if(strings.size() > 4){
+				command = strings.get(4);
+			}else{
+				command = "";
+			}
+			
+			parseCommand();
+		}
+		
+		/**
+		 * Parse the command into head and tail parts where the script name is marked via a '@' character.
+		 */
+		private void parseCommand()
+		{			
+			if(!command.contains("@")){
+				command_head = command;
+				command_tail = "";
+			}else{
+				Vector<String> strings = Utility.split(command, '@', false, true);
+
+				command_head = strings.get(0);
+				command_tail = strings.get(1);
+			}
+		}
+	}
+	
+	/**
+	 * A structure to represent various script types.
+	 */
+	public static class ScriptTypes
+	{
+		Vector<ScriptType> scripttypes = new Vector<ScriptType>();
+		ScriptType scripttype;
+		
+		/**
+		 * Class constructor.
+		 */
+		public ScriptTypes()
+		{
+			this("scripts.txt");
+			//print();
+		}
+		
+		/**
+		 * Class constructor.
+		 * @param filename the name of the file containing the script information
+		 */
+		public ScriptTypes(String filename)
+		{
+		  try{
+		    BufferedReader ins = new BufferedReader(new FileReader(filename));
+		    String line;
+		    
+		    while((line=ins.readLine()) != null){
+		      if(!line.startsWith("#")){
+		      	scripttype = new ScriptType(line);
+		      	scripttypes.add(scripttype);
+		      }
+		    }
+		    
+		  	ins.close();
+		  }catch(Exception e) {e.printStackTrace();}
+		}
+		
+		/**
+		 * Display all script type information.
+		 */
+		public void print()
+		{
+			ScriptType scripttype;
+			
+			for(int i=0; i<scripttypes.size(); i++){
+				scripttype = scripttypes.get(i);
+				
+				if(scripttype.command.isEmpty()){
+					System.out.println(scripttype.extension + ", " + scripttype.name + ", " + scripttype.os + ", " + scripttype.comment);
+				}else if(scripttype.command_tail.isEmpty()){
+					System.out.println(scripttype.extension + ", " + scripttype.name + ", " + scripttype.os + ", " + scripttype.comment + ", " + scripttype.command);
+				}else{
+					System.out.println(scripttype.extension + ", " + scripttype.name + ", " + scripttype.os + ", " + scripttype.comment + ", " + scripttype.command_head + " @ " + scripttype.command_tail);
+				}
+			}
+		}
+		
+		/**
+		 * Retrieve info on a script type.
+		 * @param extension the extension of the script type
+		 * @return the script type information
+		 */
+		public ScriptType getScriptType(String extension)
+		{
+			for(int i=0; i<scripttypes.size(); i++){
+				if(scripttypes.get(i).extension.equals(extension)){
+					return scripttypes.get(i);
+				}
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * Retrieve info on a script type.
+		 * @param extension the extension of the script type
+		 * @param os the target operating system
+		 * @return the script type information
+		 */
+		public ScriptType getScriptType(String extension, String os)
+		{
+			for(int i=0; i<scripttypes.size(); i++){
+				if(scripttypes.get(i).extension.equals(extension) && os.contains(scripttypes.get(i).os)){
+					return scripttypes.get(i);
+				}
+			}
+			
+			return null;
+		}
+		
+		/**
+		 * Check if a script of the given type is runnable on the current platform.
+		 * @param extension the extension of the script type
+		 * @return true if runnable on the current platform
+		 */
+		public boolean isRunnable(String extension)
+		{
+			String os = System.getProperty("os.name");
+			
+			return getScriptType(extension, os) != null;
+		}
+	}
 	
   /**
 	 * A structure representing a wrapper script.
@@ -382,14 +558,35 @@ public class SoftwareServerAuxiliary
 		public TreeSet<String> inputs = new TreeSet<String>();
 		public TreeSet<String> outputs = new TreeSet<String>();
 		public TreeSet<String> executables = new TreeSet<String>();
+		public static ScriptTypes scripttypes = null;
 		
 		/**
 		 * Class constructor.
+		 */
+		public Script()
+		{
+			//Load script type information for all instances if not yet done
+			if(scripttypes == null) scripttypes = new ScriptTypes();
+		}
+		
+		/**
+		 * Class constructor.  Script info will be looked up via extension.
+		 * @param filename the script file name
+		 */
+		public Script(String filename)
+		{
+			this(filename, null);
+		}
+		
+		/**
+		 * Class constructor.  Useful when script can be called stand alone and all that's needed is the comment style.
 		 * @param filename the script file name
 		 * @param comment_head the preceding sequence of characters indicating a commented line (can be null)
 		 */
 		public Script(String filename, String comment_head)
 		{
+			this();
+			
 			Scanner scanner;  		
 			String line;
 			int tmpi;
@@ -399,7 +596,8 @@ public class SoftwareServerAuxiliary
 	    name = Utility.getFilenameName(this.filename);
 	    type = Utility.getFilenameExtension(this.filename);
 	    
-	    //Set comment syntax if not set already
+	    /*
+	    //Set comment syntax if not set already (deprecated by below version that uses scripttypes info)
 	    if(comment_head == null){
 	    	if(type.equals("ahk")){
 	    		comment_head = ";";
@@ -411,6 +609,19 @@ public class SoftwareServerAuxiliary
 		    	comment_head = "#";
 	    	}else if(type.equals("sh")){
 		    	comment_head = "#";
+	    	}else{
+	    		System.out.println("Warning: Unknown comment style for script of type: " + type + "!");
+	    		comment_head = "#";
+	    	}
+	    }
+	    */
+	    
+	    //Set comment syntax if not set already
+	    if(comment_head == null){
+	    	ScriptType scripttype = scripttypes.getScriptType(type);
+	    	
+	    	if(scripttype != null){
+	    		comment_head = scripttype.comment;
 	    	}else{
 	    		System.out.println("Warning: Unknown comment style for script of type: " + type + "!");
 	    		comment_head = "#";
@@ -441,7 +652,7 @@ public class SoftwareServerAuxiliary
 	    
 	    //Examine script header
 	    try{
-		    //Check for scripts within sub-directories
+		    //Check for scripts within sub-directories (TODO: this needs to be made flexible to different script types and use the scripttypes structure for details)
 		    if(new File(filename).isDirectory()){
 		    	if(type.equals("sikuli")){
 		    		filename = this.filename + "/" + name + ".py"; 
@@ -498,7 +709,7 @@ public class SoftwareServerAuxiliary
 	      	}
 	      }
 	      
-	      //Find executables
+	      //Find executables (TODO: this needs to be made flexible to different script types and use the scripttypes structure for details)
 	      if(type.equals("ahk")){
 	      	while((line=ins.readLine()) != null){
 						if(line.trim().startsWith("Run") || line.trim().startsWith("RunWait")){
@@ -682,6 +893,8 @@ public class SoftwareServerAuxiliary
 		 * @param script the absolute filename of the script
 		 * @return the execution command
 		 */
+		/*
+		@Deprecated
 		public static String getCommand(String script)
 		{
 			if(script.endsWith(".ahk")){
@@ -699,6 +912,31 @@ public class SoftwareServerAuxiliary
 				}
 			}else if(script.endsWith(".py")){
 				return "python " + script;
+			}
+			
+			return script;
+		}
+		*/
+		
+		/**
+		 * Get the execution command for the given script.
+		 * @param script the absolute filename of the script
+		 * @return the execution command
+		 */
+		public static String getCommand(String script)
+		{
+			String type = Utility.getFilenameExtension(script);
+			String os = System.getProperty("os.name");
+			ScriptType scripttype = scripttypes.getScriptType(type, os);
+			
+			if(scripttype != null){
+				if(scripttype.command.isEmpty()){
+					return script;
+				}else if(scripttype.command_tail.isEmpty()){
+					return scripttype.command + " " + script;
+				}else{
+					return scripttype.command_head + " " + script + " " + scripttype.command_tail;
+				}
 			}
 			
 			return script;

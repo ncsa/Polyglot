@@ -765,14 +765,16 @@ public class SoftwareServerRestlet extends ServerResource
 				return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
 			}
 		}else if(part0.equals("image")){
-			if(!part1.isEmpty()){					
-				file = alias_map.get(Utility.getFilenameName(part1)).icon;
+			if(!part1.isEmpty()){
+				file = Utility.getFilenameName(part1);
 				
-				if(file != null){
-					return new FileRepresentation(file, MediaType.IMAGE_JPEG);
-				}else{
-					return new StringRepresentation("Image doesn't exist", MediaType.TEXT_PLAIN);
+				if(alias_map.containsKey(file)){
+					file = alias_map.get(file).icon;
+					if(file != null) return new FileRepresentation(file, MediaType.IMAGE_JPEG);
 				}
+				
+				//return new StringRepresentation("Image doesn't exist", MediaType.TEXT_PLAIN);
+				return new FileRepresentation("images/polyglot.png", MediaType.IMAGE_PNG);
 			}else{
 				return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
 			}

@@ -106,16 +106,20 @@ public class SoftwareServer implements Runnable
 	        		
 	        		temp_path = root_path + "Temp" + Utility.toString(tmpi,3) + "/";
 	        		new File(temp_path).mkdir();
+	        	}else if(key.equals("Scripts")){
+	        		addScriptedOperations(value + "/", null);
 	        	}else if(key.equals("AHKScripts")){
-	          	addScriptedOperations(value + "/", "ahk", ";");
+	          	addScriptedOperations(value + "/", "ahk");
 	        	}else if(key.equals("AppleScripts")){
-	          	addScriptedOperations(value + "/", "applescript", "--");
+	          	addScriptedOperations(value + "/", "applescript");
 	        	}else if(key.equals("SikuliScripts")){
-	          	addScriptedOperations(value + "/", "sikuli", "#");
+	          	addScriptedOperations(value + "/", "sikuli");
 	        	}else if(key.equals("PythonScripts")){
-	          	addScriptedOperations(value + "/", "py", "#");
+	          	addScriptedOperations(value + "/", "py");
 	        	}else if(key.equals("ShellScripts")){
-	          	addScriptedOperations(value + "/", "sh", "#");
+	          	addScriptedOperations(value + "/", "sh");
+	        	}else if(key.equals("BatchScripts")){
+	          	addScriptedOperations(value + "/", "bat");
 	        	}else if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("MaxOperationTime")){
@@ -152,16 +156,32 @@ public class SoftwareServer implements Runnable
 	    }
 	    
 	    ins.close();
-	  }catch(Exception e){}
+	  }catch(Exception e) {}
 	  
 		//Application.print(applications);
 	}
 
 	/**
+	 * Add operation scripts within the given directory.  Script info will be looked up.
+	 * Note: all scripts must follow the text header convention
+	 * @param path the path to the scripts
+	 * @param extension the script file extension (can be null indicating any extension)
+	 */
+  public void addScriptedOperations(String path, String extension)
+  {   
+  	if(extension == null || new Script().scripttypes.isRunnable(extension)){
+  		System.out.println("Adding *." + extension + " scripts.");
+  		addScriptedOperations(path, extension, null);
+  	}else{
+  		System.out.println("Skipping *." + extension + " scripts.");
+  	}
+  }
+  
+	/**
 	 * Add operation scripts within the given directory.
 	 * Note: all scripts must follow the text header convention
 	 * @param path the path to the scripts
-	 * @param extension the script file extension
+	 * @param extension the script file extension (can be null indicating any extension)
 	 * @param comment_head the preceding sequence of characters indicating a commented line (can be null)
 	 */
   public void addScriptedOperations(String path, String extension, String comment_head)
@@ -195,7 +215,7 @@ public class SoftwareServer implements Runnable
     //Examine scripts with the given extension
     FilenameFilter extension_filter = new FilenameFilter(){
       public boolean accept(File dir, String name){
-      	return !name.startsWith(".") && !name.startsWith("#") && name.endsWith("." + extension_final);
+      	return !name.startsWith(".") && !name.startsWith("#") && (extension_final == null || name.endsWith("." + extension_final));
       }
     };    
     
