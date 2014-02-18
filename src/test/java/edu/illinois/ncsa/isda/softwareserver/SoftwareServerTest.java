@@ -24,11 +24,13 @@ public class SoftwareServerTest
 	{
 		System.out.println("\n=== Software Server: Test 1 ===");
 		
-		String script_name = "ImgMgk_convert.ahk";
-		ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.conf");
-		debugger.configureScript("scripts/ahk/" + script_name);
-		
-		assertTrue(Utility.existsAndRecent("scripts/ahk-configured/" + script_name, 10000));
+		if(System.getProperty("os.name").contains("Windows")){		//Only run the test on Windows machines!
+			String script_name = "ImgMgk_convert.ahk";
+			ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.conf");
+			debugger.configureScript("scripts/ahk/" + script_name);
+			
+			assertTrue(Utility.existsNotEmptyAndRecent("scripts/ahk-configured/" + script_name, 10000));
+		}
 	}
 	
 	/**
@@ -73,7 +75,7 @@ public class SoftwareServerTest
 		task.add("ImgMgk", "convert", "data/demo/Lenna.png", "Lenna.jpg");
 		task.execute("data/tmp/");
 		
-		assertTrue(Utility.existsAndRecent("data/tmp/Lenna.jpg", 10000));
+		assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna.jpg", 10000));
 		
 		//Stop the Software Server
 		client.close();
@@ -99,7 +101,7 @@ public class SoftwareServerTest
 		assertTrue(Utility.existsURL(result));
 		
 		Utility.downloadFile("data/tmp/", "Lenna4", result);
-		assertTrue(Utility.existsAndRecent("data/tmp/Lenna4.pgm", 10000));
+		assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna4.pgm", 10000));
 
 		//Stop the REST interface and its underlying Software Server
 		server.stop();
@@ -127,7 +129,7 @@ public class SoftwareServerTest
 		assertTrue(Utility.existsURL(result));
 				
 		Utility.downloadFile("data/tmp/", "Lenna5", result);
-		assertTrue(Utility.existsAndRecent("data/tmp/Lenna5.pgm", 10000));
+		assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna5.pgm", 10000));
 		
 		//Stop the services
 		dsserver.stop();		

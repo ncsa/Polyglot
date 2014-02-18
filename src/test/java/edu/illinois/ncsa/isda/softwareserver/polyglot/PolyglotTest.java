@@ -33,7 +33,7 @@ public class PolyglotTest
 		pclient.close();
 		pserver.stop();
 
-		assertTrue(Utility.existsAndRecent("data/tmp/Lenna.gif", 100000));
+		assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna.gif", 100000));
 		
 		//Stop Software Server
 		sserver.stop();
@@ -63,7 +63,7 @@ public class PolyglotTest
 		assertTrue(Utility.existsURL(result));
 				
 		Utility.downloadFile("data/tmp/", "Lenna2", result);
-		assertTrue(Utility.existsAndRecent("data/tmp/Lenna2.gif", 10000));
+		assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna2.gif", 10000));
 		
 		//Stop Software Server
 		polyglot.stop();
