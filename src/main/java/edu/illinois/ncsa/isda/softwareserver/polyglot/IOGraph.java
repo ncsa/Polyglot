@@ -464,6 +464,22 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 		
 		return set;
 	}
+	
+	/**
+	 * Get the string representations for the unique edges in the graph.
+	 * @return the string representations for the unique edges in the graph
+	 */
+	public TreeSet<String> getUniqueEdgeStrings()
+	{
+		TreeSet<String> edge_strings = new TreeSet<String>();
+		TreeSet<E> edges = getUniqueEdges();
+		
+		for(Iterator<E> itr=edges.iterator(); itr.hasNext();){
+			edge_strings.add(itr.next().toString());
+		}
+				
+		return edge_strings;
+	}
 		  
 	/**
 	 * Get a list of edges parallel to the given edge.
@@ -1163,6 +1179,26 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	  	  if(paths.get(target) != -1) domain.add(i);
   		}
   	}
+  	
+  	return domain;
+  }
+  
+  /**
+   * Get a set of all vertices that can reach other vertices.
+   * @return the set of vertices which can reach other vertices
+   */
+  public TreeSet<String> getDomainStrings()
+  {
+  	TreeSet<String> domain = new TreeSet<String>();
+  	Set<Integer> domain_indices;
+  	
+    for(int i=0; i<vertices.size(); i++){
+      domain_indices = getDomain(i);
+      
+      for(Iterator<Integer> itr=domain_indices.iterator(); itr.hasNext();){
+        domain.add(vertices.get(itr.next()).toString());
+      }
+    }    
   	
   	return domain;
   }

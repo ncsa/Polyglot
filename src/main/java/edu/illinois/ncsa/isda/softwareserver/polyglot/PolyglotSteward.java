@@ -121,6 +121,15 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	{
 		return iograph;
 	}
+	
+	/**
+	 * Get the software available.
+	 * @return the list of software
+	 */
+	public TreeSet<String> getSoftware()
+	{
+		return iograph.getUniqueEdgeStrings();
+	}
 
 	/**
 	 * Get the outputs available.
@@ -149,6 +158,15 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	public TreeSet<String> getOutputs(TreeSet<String> inputs)
 	{
 		return iograph.getRangeIntersectionStrings(inputs);
+	}
+	
+	/**
+	 * Get the inputs available.
+	 * @return the list of inputs
+	 */
+	public TreeSet<String> getInputs()
+	{
+		return iograph.getDomainStrings();
 	}
 	
 	/**

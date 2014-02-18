@@ -269,6 +269,12 @@ public class PolyglotRestlet extends ServerResource
 			}
 		}else if(part0.equals("servers")){				
 			return new StringRepresentation(toString(polyglot.getServers()), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("software")){
+			return new StringRepresentation(toString(polyglot.getSoftware()), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("inputs")){				
+			return new StringRepresentation(toString(polyglot.getInputs()), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("outputs")){				
+			return new StringRepresentation(toString(polyglot.getOutputs()), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("alive")){
 			return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
 		}else{
