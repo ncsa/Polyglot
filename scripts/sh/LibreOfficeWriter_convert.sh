@@ -23,11 +23,9 @@ sleep 1
 xdotool key --clearmodifiers "Return" 
 
 while [ ! -s $2  ]; do
-     true      ## waitting for file to save
+    true      ## waitting for file to save
 done
 
-sleep 10
-xdotool search  --name  $outputFile.".*LibreOffice Writer" windowactivate
-sleep 5
-xdotool key --clearmodifiers "alt+f+c"
+sleep 2
+xdotool search  --name  $outputFile.".*LibreOffice Writer" windowactivate key "alt+f+c"
 
