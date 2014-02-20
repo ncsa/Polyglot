@@ -40,7 +40,6 @@ public class SoftwareServerTest
 	public void test2() throws Exception
 	{    
 		System.out.println("\n=== Software Server: Test 2 ===");
-		Utility.pause(2000);
 
 		//Start the Software Server
   	SoftwareServer server = new SoftwareServer("SoftwareServer.conf");
@@ -64,7 +63,6 @@ public class SoftwareServerTest
 	public void test3() throws Exception
 	{  		
 		System.out.println("\n=== Software Server: Test 3 ===");
-		Utility.pause(2000);
 
 		//Start the Software Server
 		SoftwareServer server = new SoftwareServer("SoftwareServer.conf");
@@ -91,7 +89,6 @@ public class SoftwareServerTest
 	public void test4() throws Exception
 	{  		
 		System.out.println("\n=== Software Server: Test 4 ===");
-		Utility.pause(2000);
 
 		//Start the Software Server and its REST interface
 		SoftwareServerRestlet server = new SoftwareServerRestlet();
@@ -117,7 +114,6 @@ public class SoftwareServerTest
 	public void test5() throws Exception
 	{  		
 		System.out.println("\n=== Software Server: Test 5 ===");
-		Utility.pause(2000);
 
 		//Start services
 		SoftwareServerRestlet sserver = new SoftwareServerRestlet();

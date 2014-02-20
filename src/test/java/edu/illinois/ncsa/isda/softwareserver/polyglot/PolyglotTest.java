@@ -20,7 +20,6 @@ public class PolyglotTest
 	public void test1() throws Exception
 	{
 		System.out.println("\n=== Polyglot: Test 1 ===");
-		Utility.pause(2000);
 
 		//Start Software Server    	
 		SoftwareServer sserver = new SoftwareServer("SoftwareServer.conf");
@@ -47,7 +46,6 @@ public class PolyglotTest
 	public void test2() throws Exception
 	{
 		System.out.println("\n=== Polyglot: Test 2 ===");
-		Utility.pause(2000);
 
 		//Start Software Server    	
 		SoftwareServer sserver = new SoftwareServer("SoftwareServer.conf");
