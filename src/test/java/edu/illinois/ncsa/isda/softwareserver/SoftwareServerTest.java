@@ -49,7 +49,16 @@ public class SoftwareServerTest
     assertTrue(client.isAlive());
     
     Vector<Application> applications = client.getApplications();
-    assertTrue(applications.size() > 0 && applications.get(0).alias.equals("ImgMgk"));
+    boolean FOUND_IMGMGK = false;
+    
+    for(int i=0; i<applications.size(); i++){
+    	if(applications.get(i).alias.equals("ImgMgk")){
+    		FOUND_IMGMGK = true;
+    		break;
+    	}
+    }
+    
+    assertTrue(FOUND_IMGMGK);
     
     //Stop the Software Server
     client.close();

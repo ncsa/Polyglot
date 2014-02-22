@@ -1,5 +1,6 @@
 package edu.illinois.ncsa.isda.softwareserver.polyglot;
 import edu.illinois.ncsa.isda.softwareserver.*;
+import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.*;
 import kgm.utility.Utility;
 import java.io.*;
 import java.net.*;
@@ -30,6 +31,10 @@ public class PolyglotRestlet extends ServerResource
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
 	private static Component component;
+	
+	//Logs
+	private static long start_time;
+	private static ArrayList<PolyglotRequest> requests = new ArrayList<PolyglotRequest>();
 	
 	/**
 	 * Set whether or not to return a URL as the result (as opposed to the file itself)
@@ -161,11 +166,12 @@ public class PolyglotRestlet extends ServerResource
 	@Get
 	public Representation httpGetHandler()
 	{
+		PolyglotRequest request;
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
-		String file = null, output = null, result_file, result_url, url, type;
+		String client, file = null, output = null, result_file, result_url, url, type;
 		String buffer;
 		Form form;
 		Parameter p;
@@ -181,21 +187,30 @@ public class PolyglotRestlet extends ServerResource
 				if(part2.isEmpty()){
 					return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
 				}else{
+					client = getClientInfo().getAddress();
 					output = part1;
 					file = URLDecoder.decode(part2);
 					
-					System.out.print("[" + getClientInfo().getAddress() + "]: " + Utility.getFilename(file) + " -> " + output + "...");
+					//Do the conversion
+					System.out.print("[" + client + "]: " + Utility.getFilename(file) + " -> " + output + "...");
 					
 					Utility.downloadFile(temp_path, file);
-					polyglot.convert(temp_path + Utility.getFilename(file), public_path, output);
+					file = temp_path + Utility.getFilename(file);
+					
+					request = new PolyglotRequest(client, file, output);
+					polyglot.convert(file, public_path, output);
 					result_file = Utility.getFilenameName(file) + "." + output;
 					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 
 					if(Utility.existsAndNotEmpty(public_path + result_file)){
+						request.setEndOfRequest(true);
 						System.out.println(" [Success]");
 					}else{
+						request.setEndOfRequest(false);
 						System.out.println(" [Failed]");
 					}
+					
+					requests.add(request);
 					
 					if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
 						return new StringRepresentation(result_url, MediaType.TEXT_PLAIN);
@@ -277,6 +292,14 @@ public class PolyglotRestlet extends ServerResource
 			return new StringRepresentation(toString(polyglot.getOutputs()), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("alive")){
 			return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
+		}else if(part0.equals("requests")){
+			buffer = Long.toString(start_time) + "\n";
+			
+			for(Iterator<PolyglotRequest> itr=requests.iterator(); itr.hasNext();){
+				buffer += itr.next().toString() + "\n";
+			}
+			
+			return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
 		}else{
 			return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
 		}
@@ -289,6 +312,7 @@ public class PolyglotRestlet extends ServerResource
 	@Post
 	public Representation httpPostHandler(Representation entity)
 	{
+		PolyglotRequest request;
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
@@ -296,7 +320,7 @@ public class PolyglotRestlet extends ServerResource
 		boolean FORM_POST = !part0.isEmpty() && part0.equals("form");
 		boolean TASK_POST = !part1.isEmpty();
 		TreeMap<String,String> parameters = new TreeMap<String,String>();
-		String file=null, output = null, result_file, result_url;
+		String client, file=null, output = null, result_file, result_url;
 		
 		if(FORM_POST || TASK_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
@@ -327,19 +351,26 @@ public class PolyglotRestlet extends ServerResource
 			}else if(TASK_POST){
 				output = part1;				
 			}
-			
+							
+			//Do the conversion
 			if(file != null && output != null){	
-				System.out.print("[" + getClientInfo().getAddress() + "]: " + Utility.getFilename(file) + " -> " + output + "...");
+				client = getClientInfo().getAddress();
+				System.out.print("[" + client + "]: " + Utility.getFilename(file) + " -> " + output + "...");
 				
+				request = new PolyglotRequest(client, file, output);
 				polyglot.convert(file, public_path, output);
 				result_file = Utility.getFilenameName(file) + "." + output;
 				result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 
 				if(Utility.existsAndNotEmpty(public_path + result_file)){
+					request.setEndOfRequest(true);
 					System.out.println(" [Success]");
 				}else{
+					request.setEndOfRequest(false);
 					System.out.println(" [Failed]");
 				}
+				
+				requests.add(request);
 				
 				if(RETURN_URL){		//Return URL of file
 					if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
@@ -461,7 +492,9 @@ public class PolyglotRestlet extends ServerResource
 	    ins.close();
 	  }catch(Exception e) {e.printStackTrace();}
 		
-	  //Start the service		
+	  //Start the service
+	  start_time = System.currentTimeMillis();
+	  
 		try{			
 			component = new Component();
 			component.getServers().add(Protocol.HTTP, port);

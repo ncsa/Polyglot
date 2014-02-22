@@ -160,4 +160,52 @@ public class PolyglotAuxiliary
 	    return str;
 	  }
 	}
+	
+	/**
+	 * A structure to store information about Polyglot requests.
+	 */
+	public static class PolyglotRequest
+	{
+		public String address;
+		public String filename;
+		public long filesize;
+		public String input;
+		public String output;
+		public long start_time, end_time;
+		public boolean success;
+
+		/**
+		 * Class constructor.
+		 * @param address the client address
+		 * @param filename the filename
+		 * @param output the desired output format
+		 */
+		public PolyglotRequest(String address, String filename, String output)
+		{
+			this.address = address;
+			this.filename = Utility.getFilename(filename);
+			filesize = new File(filename).length();
+			input = Utility.getFilenameExtension(filename);
+			this.output = output;
+			start_time = System.currentTimeMillis();
+		}
+		
+		/**
+		 * Set the end time of the request along with whether or not the conversion was successful or not
+		 * @param success true if the conversion request was successful
+		 */
+		public void setEndOfRequest(boolean success)
+		{
+			end_time = System.currentTimeMillis();
+			this.success = success;
+		}
+		
+		/**
+		 * Return a string representation of the Polyglot request information.
+		 */
+		public String toString()
+		{
+			return address + ", " + filename + ", " + filesize + ", " + input + ", " + output + ", " + start_time + ", " + end_time + ", " + success;
+		}
+	}
 }
