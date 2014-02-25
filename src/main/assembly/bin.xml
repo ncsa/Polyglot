@@ -74,7 +74,7 @@
 				<include>sh/*.sh</include>
 				<include>sikuli/*/*</include>
 			</includes>
-			<fileMode>0644</fileMode>
+			<fileMode>0755</fileMode>
 			<directoryMode>0755</directoryMode>
 		</fileSet>
 		<fileSet>
