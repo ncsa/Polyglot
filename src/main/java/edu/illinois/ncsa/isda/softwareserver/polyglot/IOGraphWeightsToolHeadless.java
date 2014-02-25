@@ -29,7 +29,7 @@ import org.apache.log4j.BasicConfigurator;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Application;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Data;
 import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.Conversion;
-import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.FileInfo;
+import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.FileInformation;
 import kgm.utility.*;
 
 /**
@@ -46,7 +46,7 @@ public class IOGraphWeightsToolHeadless
 	private IOGraph<Data,Application> iograph;
 	List<MeasureInfo> measures = new ArrayList<MeasureInfo>();
 
-	private Map<String, List<FileInfo>> working_set = new HashMap<String, List<FileInfo>>();
+	private Map<String, List<FileInformation>> working_set = new HashMap<String, List<FileInformation>>();
 	private Map<String, Vector<Pair<Vector<Conversion<Data,Application>>,Vector<Conversion<Data,Application>>>>> jobs = new HashMap<String,Vector<Pair<Vector<Conversion<Data,Application>>,Vector<Conversion<Data,Application>>>>>();
 	private Map<String, Vector<Integer>> job_status = new HashMap<String,Vector<Integer>>();
 	private String test = null;
@@ -200,7 +200,7 @@ public class IOGraphWeightsToolHeadless
 		int count = 0;
 
 		if (!working_set.containsKey(extension)) {
-			working_set.put(extension, new ArrayList<PolyglotAuxiliary.FileInfo>());
+			working_set.put(extension, new ArrayList<PolyglotAuxiliary.FileInformation>());
 		}
 		
 		// Load model files in this folder
@@ -232,7 +232,7 @@ public class IOGraphWeightsToolHeadless
 						}
 
 						if(ext.equalsIgnoreCase(extension)){
-							working_set.get(extension).add(new FileInfo(folder_files[i].getAbsolutePath()));
+							working_set.get(extension).add(new FileInformation(folder_files[i].getAbsolutePath()));
 							count++;
 						}
 					}
@@ -426,7 +426,7 @@ public class IOGraphWeightsToolHeadless
 			File folder = new File(foldername);
 			File[] folder_files = folder.listFiles();
 			TreeSet<String> set = new TreeSet<String>();
-			FileInfo fi;
+			FileInformation fi;
 			int count_old = 0;
 			int count_new = 0;
 	
@@ -437,7 +437,7 @@ public class IOGraphWeightsToolHeadless
 				}
 			}
 	
-			for(Iterator<FileInfo> itr = working_set.get(ext).iterator(); itr.hasNext();){
+			for(Iterator<FileInformation> itr = working_set.get(ext).iterator(); itr.hasNext();){
 				fi = itr.next();
 	
 				if(!set.contains(fi.filename)){
@@ -689,7 +689,7 @@ public class IOGraphWeightsToolHeadless
 			System.out.println("Conversion   : Running   " + path);
 				
 			try {				
-				for(Iterator<FileInfo> itr = working_set.get(ext).iterator(); itr.hasNext();){
+				for(Iterator<FileInformation> itr = working_set.get(ext).iterator(); itr.hasNext();){
 					Vector<Conversion<Data,Application>> conversion = new Vector<PolyglotAuxiliary.Conversion<Data,Application>>();
 					conversion.addAll(jobs.get(ext).get(idx).first);
 					conversion.addAll(jobs.get(ext).get(idx).second);
@@ -720,7 +720,7 @@ public class IOGraphWeightsToolHeadless
            
       
 			// compare all conversions 		
-			for(Iterator<FileInfo> itr = working_set.get(ext).iterator(); itr.hasNext();){
+			for(Iterator<FileInformation> itr = working_set.get(ext).iterator(); itr.hasNext();){
 				String filename = itr.next().filename;
 				for(MeasureInfo mi : measures) {
 					File file1 = new File(path0 + filename);

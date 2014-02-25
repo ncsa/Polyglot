@@ -90,7 +90,7 @@ public class PolyglotAuxiliary
 	/**
 	 * A structure to hold file information.
 	 */
-	public static class FileInfo
+	public static class FileInformation
 	{
 	  public String absolutename;    //path + name + ext
 	  public String filename;        //name + ext
@@ -104,7 +104,7 @@ public class PolyglotAuxiliary
 	   * Class constructor to initialize the file information.
 	   *  @param absolutename the absolute name of the file
 	   */
-	  public FileInfo(String absolutename)
+	  public FileInformation(String absolutename)
 	  {
 	    this.absolutename = absolutename;
 	    
@@ -164,7 +164,7 @@ public class PolyglotAuxiliary
 	/**
 	 * A structure to store information about Polyglot requests.
 	 */
-	public static class PolyglotRequest
+	public static class RequestInformation
 	{
 		public String address;
 		public String filename;
@@ -180,7 +180,7 @@ public class PolyglotAuxiliary
 		 * @param filename the filename
 		 * @param output the desired output format
 		 */
-		public PolyglotRequest(String address, String filename, String output)
+		public RequestInformation(String address, String filename, String output)
 		{
 			this.address = address;
 			this.filename = Utility.getFilename(filename);

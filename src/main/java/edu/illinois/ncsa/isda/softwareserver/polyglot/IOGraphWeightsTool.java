@@ -58,8 +58,8 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   private JMenuItem item_ABOUT;
     
   private FilenameFilter filename_filter;
-  private Vector<FileInfo> file_info = new Vector<FileInfo>();
-  private LinkedList<FileInfo> working_set = new LinkedList<FileInfo>();
+  private Vector<FileInformation> file_info = new Vector<FileInformation>();
+  private LinkedList<FileInformation> working_set = new LinkedList<FileInformation>();
   private Vector<Pair<String,String>> jobs = new Vector<Pair<String,String>>();	//Made up of two polyglot jobs (to and from a format)
   private Vector<Integer> job_status = new Vector<Integer>();
   private int working_set_size = 0;
@@ -330,7 +330,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	  file_info.clear();
 	  
 	  for(int i=0; i<files.size(); i++){
-	    file_info.add(new FileInfo(files.get(i)));
+	    file_info.add(new FileInformation(files.get(i)));
 	    working_set.add(file_info.get(i));
 	    child = new DefaultMutableTreeNode(file_info.get(i));
 	    root.add(child);
@@ -869,13 +869,13 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
   {
     TreePath[] treepaths = e.getPaths();  //Paths that have been added or removed from the selection
     DefaultMutableTreeNode node;
-    FileInfo fi;
+    FileInformation fi;
     
     //Extract changes from JTree
     for(int i=0; i<treepaths.length; i++){
       if(treepaths[i].getPathCount() > 1){
         node = (DefaultMutableTreeNode)treepaths[i].getPathComponent(1);
-        fi = (FileInfo)node.getUserObject();
+        fi = (FileInformation)node.getUserObject();
         fi.FLAG = !fi.FLAG;
         
         if(fi.FLAG){
@@ -929,7 +929,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	    File folder = new File(foldername);
 	    File[] folder_files = folder.listFiles(filename_filter);
 	    TreeSet<String> set = new TreeSet<String>();
-	    FileInfo fi;
+	    FileInformation fi;
 	    int count_old = 0;
 	    int count_new = 0;
 	    
@@ -940,7 +940,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	      }
 	    }
 	    
-	    for(Iterator<FileInfo> itr=working_set.iterator(); itr.hasNext();){
+	    for(Iterator<FileInformation> itr=working_set.iterator(); itr.hasNext();){
 	      fi = itr.next();
 	      
 	      if(!set.contains(fi.filename)){
@@ -982,7 +982,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 		        //Convert files to target format
 		        output_panel.addText("<br><b>Performing Job-" + (i+1) + "A </b> (" + working_set.size() + " files) ");
 		        
-		        for(Iterator<FileInfo> itr=working_set.iterator(); itr.hasNext();){
+		        for(Iterator<FileInformation> itr=working_set.iterator(); itr.hasNext();){
 	          	conversions = iograph.getConversions(jobs.get(i).first);
 	          	polyglot.convert(test_path + test + "/0/" + itr.next().filename, tmp_path, conversions);
 	          	output_panel.addText(".");
@@ -1042,7 +1042,7 @@ public class IOGraphWeightsTool extends JPanel implements ActionListener, TreeSe
 	  		        //Convert files to target format
 	  		        output_panel.addText("<br><b>Performing Job-" + (i_final+1) + " </b> (" + working_set.size() + " files)");
 
-	  		        for(Iterator<FileInfo> itr=working_set.iterator(); itr.hasNext();){
+	  		        for(Iterator<FileInformation> itr=working_set.iterator(); itr.hasNext();){
 	  	          	conversions = thread_iograph.getConversions(jobs.get(i_final).first);
 	  	          	thread_polyglot.convert(test_path + test + "/0/" + itr.next().filename, tmp_path_final, conversions);
 	  		        }

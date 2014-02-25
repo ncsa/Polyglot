@@ -34,7 +34,7 @@ public class PolyglotRestlet extends ServerResource
 	
 	//Logs
 	private static long start_time;
-	private static ArrayList<PolyglotRequest> requests = new ArrayList<PolyglotRequest>();
+	private static ArrayList<RequestInformation> requests = new ArrayList<RequestInformation>();
 	
 	/**
 	 * Set whether or not to return a URL as the result (as opposed to the file itself)
@@ -115,14 +115,6 @@ public class PolyglotRestlet extends ServerResource
 		}
 		
 		buffer += "<table>\n";
-		buffer += "<tr><td><td width=\"100\"><i><font size=\"-1\"><div id=\"inputs\"></div></font></i></td></tr>\n";
-		
-		if(!POST_UPLOADS){
-			buffer += "<tr><td><b>File URL:</b></td><td><input type=\"text\" name=\"file\" id=\"file\" size=\"100\"></td></tr>\n";
-		}else{
-			buffer += "<tr><td><b>File:</b></td><td><input type=\"file\" name=\"file\" id=\"file\" size=\"100\"></td></tr>\n";
-		}
-		
 		buffer += "<tr><td><b>Output:</b></td>\n";
 		buffer += "<td><select name=\"output\" id=\"output\" onchange=\"setInputs();\">\n";
 		
@@ -137,7 +129,15 @@ public class PolyglotRestlet extends ServerResource
 			buffer += ">" + output + "</option>\n";
 		}
 		
-		buffer += "</select></td></tr>\n";		
+		buffer += "</select></td></tr>\n";	
+
+		if(!POST_UPLOADS){
+			buffer += "<tr><td><b>File URL:</b></td><td><input type=\"text\" name=\"file\" id=\"file\" size=\"100\"></td></tr>\n";
+		}else{
+			buffer += "<tr><td><b>File:</b></td><td><input type=\"file\" name=\"file\" id=\"file\" size=\"100\"></td></tr>\n";
+		}
+		
+		buffer += "<tr><td></td><td width=\"625\"><i><font size=\"-1\"><div id=\"inputs\"></div></font></i></td></tr>\n";
 		buffer += "<tr><td></td><td><input type=\"submit\" value=\"Submit\"></td></tr>\n";
 		buffer += "<tr><td height=\"25\"></td><td></td></tr>\n";
 		buffer += "<tr><td></td><td align=\"center\"><div name=\"api\" id=\"api\"></div></td></tr>\n";
@@ -166,7 +166,7 @@ public class PolyglotRestlet extends ServerResource
 	@Get
 	public Representation httpGetHandler()
 	{
-		PolyglotRequest request;
+		RequestInformation request;
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
@@ -197,7 +197,7 @@ public class PolyglotRestlet extends ServerResource
 					Utility.downloadFile(temp_path, file);
 					file = temp_path + Utility.getFilename(file);
 					
-					request = new PolyglotRequest(client, file, output);
+					request = new RequestInformation(client, file, output);
 					polyglot.convert(file, public_path, output);
 					result_file = Utility.getFilenameName(file) + "." + output;
 					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
@@ -282,6 +282,8 @@ public class PolyglotRestlet extends ServerResource
 			}else{
 				return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
 			}
+		}else if(part0.equals("alive")){
+			return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
 		}else if(part0.equals("servers")){				
 			return new StringRepresentation(toString(polyglot.getServers()), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("software")){
@@ -290,18 +292,31 @@ public class PolyglotRestlet extends ServerResource
 			return new StringRepresentation(toString(polyglot.getInputs()), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("outputs")){				
 			return new StringRepresentation(toString(polyglot.getOutputs()), MediaType.TEXT_PLAIN);
-		}else if(part0.equals("alive")){
-			return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
 		}else if(part0.equals("requests")){
 			buffer = Long.toString(start_time) + "\n";
+			buffer += System.currentTimeMillis() + "\n";
 			
-			for(Iterator<PolyglotRequest> itr=requests.iterator(); itr.hasNext();){
+			for(Iterator<RequestInformation> itr=requests.iterator(); itr.hasNext();){
 				buffer += itr.next().toString() + "\n";
 			}
 			
 			return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
 		}else{
-			return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
+			buffer = "";
+			buffer += "convert\n";
+			buffer += "form\n";
+			buffer += "alive\n";
+			buffer += "servers\n";
+			buffer += "software\n";
+			buffer += "inputs\n";
+			buffer += "outputs\n";
+			buffer += "requests\n";
+			
+			if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+				return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
+			}else{
+				return new StringRepresentation(SoftwareServerRestlet.createHTMLList(buffer, Utility.endSlash(getReference().toString()), true, "Endpoints"), MediaType.TEXT_HTML);
+			}
 		}
 	}
 	
@@ -312,7 +327,7 @@ public class PolyglotRestlet extends ServerResource
 	@Post
 	public Representation httpPostHandler(Representation entity)
 	{
-		PolyglotRequest request;
+		RequestInformation request;
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
@@ -357,7 +372,7 @@ public class PolyglotRestlet extends ServerResource
 				client = getClientInfo().getAddress();
 				System.out.print("[" + client + "]: " + Utility.getFilename(file) + " -> " + output + "...");
 				
-				request = new PolyglotRequest(client, file, output);
+				request = new RequestInformation(client, file, output);
 				polyglot.convert(file, public_path, output);
 				result_file = Utility.getFilenameName(file) + "." + output;
 				result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
@@ -392,6 +407,14 @@ public class PolyglotRestlet extends ServerResource
 		}
 		
 		return httpGetHandler();
+	}
+	
+	/**
+	 * Push stats to mongodb instance.
+	 */
+	public void updateMongo()
+	{
+		//TODO
 	}
 	
 	/**
