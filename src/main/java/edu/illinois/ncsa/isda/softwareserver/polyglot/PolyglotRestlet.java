@@ -15,6 +15,7 @@ import org.restlet.security.*;
 import org.restlet.ext.fileupload.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
+import com.mongodb.*;
 
 /**
  * A restful interface for a polyglot steward.
@@ -27,6 +28,7 @@ public class PolyglotRestlet extends ServerResource
 	private static int steward_port = -1;
 	private static int port = 8184;
 	private static boolean RETURN_URL = false;
+	private static int mongo_update_time = -1;
 	private static String root_path = "./";
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
@@ -410,14 +412,6 @@ public class PolyglotRestlet extends ServerResource
 	}
 	
 	/**
-	 * Push stats to mongodb instance.
-	 */
-	public void updateMongo()
-	{
-		//TODO
-	}
-	
-	/**
 	 * Stop the REST interface.
 	 */
 	public void stop()
@@ -429,6 +423,31 @@ public class PolyglotRestlet extends ServerResource
 		polyglot.stop();
 	}
 	
+	/**
+	 * Push logged information to mongodb.
+	 */
+	public static void updateMongo()
+	{
+		try{
+			//Setup database connection
+	    Properties properties = new Properties();
+	    properties.load(new FileInputStream("mongo.properties"));
+	    MongoClient mongo = new MongoClient(properties.getProperty("server"));
+	    DB db = mongo.getDB(properties.getProperty("database"));
+	    //db.authenticate(properties.getProperty("username"), properties.getProperty("password").toCharArray());
+	    DBCollection collection = db.getCollection(properties.getProperty("collection"));
+	    
+	    //Update software collection
+	    BasicDBObject document = new BasicDBObject("name", "software");
+	    
+	    for(Iterator<String> itr=polyglot.getSoftware().iterator(); itr.hasNext();){
+	    	document.append("software", itr.next());
+	    }
+	    
+	    collection.insert(document);
+		}catch(Exception e) {e.printStackTrace();}
+	}
+
 	/**
 	 * Convert a Collection of strings to a line separated list of strings.
 	 * @param strings a Collection of strings
@@ -507,6 +526,8 @@ public class PolyglotRestlet extends ServerResource
 	        		}
 	          }else if(key.equals("ReturnURL")){
 	          	RETURN_URL = Boolean.valueOf(value);
+	          }else if(key.equals("MongoUpdateTime")){
+	          	mongo_update_time = Integer.valueOf(value) * 1000;
 	          }
 	        }
 	      }
@@ -538,5 +559,19 @@ public class PolyglotRestlet extends ServerResource
 		}catch(Exception e) {e.printStackTrace();}
   	
 		System.out.println("\nPolyglot restlet is running...\n");
+		
+	 	//Push information into MongoDB
+	 	if(mongo_update_time >= 0){
+	 		System.out.println("\nStarting Mongo information update thread...\n");
+
+	  	new Thread(){
+	  		public void run(){		  			
+	  			while(true){
+	  				updateMongo();
+	  				Utility.pause(mongo_update_time);
+	  			}
+	  		}
+	  	}.start();
+	 	}
 	}
 }
