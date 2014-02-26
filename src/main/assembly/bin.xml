@@ -70,11 +70,21 @@
 			<includes>
 				<include>ahk/*.ahk</include>
 				<include>ahk/auxiliary/*</include>
-				<include>py/*.py</include>
-				<include>sh/*.sh</include>
-				<include>sikuli/*/*</include>
+				<include>appliescript/*.applescript</include>
+				<include>bat/*.bat</include>
 			</includes>
 			<fileMode>0644</fileMode>
+			<directoryMode>0755</directoryMode>
+		</fileSet>
+		<fileSet>
+			<directory>scripts</directory>
+			<outputDirectory>/scripts</outputDirectory>
+			<includes>
+				<include>sh/*.sh</include>
+				<include>py/*.py</include>
+				<include>sikuli/*/*</include>
+			</includes>
+			<fileMode>0755</fileMode>
 			<directoryMode>0755</directoryMode>
 		</fileSet>
 		<fileSet>
