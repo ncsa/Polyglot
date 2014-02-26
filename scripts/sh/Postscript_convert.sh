@@ -1,8 +1,8 @@
 #!/bin/bash
-#poscript2Many
-#documents
-#ps
-#ascii, eps, epsi, pdf, pdf12, pdf13, pdf14, pdfwr, ps, ps2, txt
+# poscript2Many
+# documents
+# ps
+# ascii, eps, epsi, pdf, pdf12, pdf13, pdf14, pdfwr, ps, ps2, txt
 
 #inputFile=`echo ${1##*/}`
 #outputFile=`echo ${2##*/}`
@@ -20,8 +20,8 @@ elif [ "pdf14" = "$extO" ]; then
     ps2pdf14 $1 $2
 elif [ "ascii" = "$extO" ]; then
     ps2ascii $1 $2
-elif [ "tex" = "$extO" ]; then
-    ps2tex $1 $2
+elif [ "txt" = "$extO" ]; then
+    ps2txt $1 $2
 elif [ "eps" = "$extO" ]; then
     ps2eps $1
 elif [ "epsi" = "$extO" ]; then
