@@ -28,7 +28,8 @@ public class PolyglotRestlet extends ServerResource
 	private static int steward_port = -1;
 	private static int port = 8184;
 	private static boolean RETURN_URL = false;
-	private static int mongo_update_time = -1;
+	private static boolean MONGO_LOGGING = false;
+	private static int mongo_update_interval = 300;
 	private static String root_path = "./";
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
@@ -37,6 +38,8 @@ public class PolyglotRestlet extends ServerResource
 	//Logs
 	private static long start_time;
 	private static ArrayList<RequestInformation> requests = new ArrayList<RequestInformation>();
+  private static MongoClient mongo;
+	private static DB db;
 	
 	/**
 	 * Set whether or not to return a URL as the result (as opposed to the file itself)
@@ -213,6 +216,7 @@ public class PolyglotRestlet extends ServerResource
 					}
 					
 					requests.add(request);
+					if(MONGO_LOGGING) updateMongo(request);
 					
 					if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
 						return new StringRepresentation(result_url, MediaType.TEXT_PLAIN);
@@ -388,6 +392,7 @@ public class PolyglotRestlet extends ServerResource
 				}
 				
 				requests.add(request);
+				if(MONGO_LOGGING) updateMongo(request);
 				
 				if(RETURN_URL){		//Return URL of file
 					if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
@@ -424,28 +429,66 @@ public class PolyglotRestlet extends ServerResource
 	}
 	
 	/**
-	 * Push logged information to mongodb.
+	 * Push logged information to mongo.
 	 */
 	public static void updateMongo()
 	{
-		try{
-			//Setup database connection
-	    Properties properties = new Properties();
-	    properties.load(new FileInputStream("mongo.properties"));
-	    MongoClient mongo = new MongoClient(properties.getProperty("server"));
-	    DB db = mongo.getDB(properties.getProperty("database"));
-	    //db.authenticate(properties.getProperty("username"), properties.getProperty("password").toCharArray());
-	    DBCollection collection = db.getCollection(properties.getProperty("collection"));
-	    
-	    //Update software collection
-	    BasicDBObject document = new BasicDBObject("name", "software");
-	    
-	    for(Iterator<String> itr=polyglot.getSoftware().iterator(); itr.hasNext();){
-	    	document.append("software", itr.next());
-	    }
-	    
-	    collection.insert(document);
-		}catch(Exception e) {e.printStackTrace();}
+	  DBCollection collection;
+		
+		//Update active software servers
+		collection = db.getCollection("servers");
+		collection.drop();
+
+		for(Iterator<String> itr=polyglot.getServers().iterator(); itr.hasNext();){
+	   	BasicDBObject document = new BasicDBObject("host", itr.next());
+	   	collection.insert(document);
+    }
+
+		//Update available software
+		collection = db.getCollection("software");
+		collection.drop();
+
+		for(Iterator<String> itr=polyglot.getSoftware().iterator(); itr.hasNext();){
+	   	BasicDBObject document = new BasicDBObject("name", itr.next());
+	   	collection.insert(document);
+    }
+	
+		//Update allowed inputs	
+		collection = db.getCollection("inputs");
+		collection.drop();
+
+		for(Iterator<String> itr=polyglot.getInputs().iterator(); itr.hasNext();){
+	   	BasicDBObject document = new BasicDBObject("extension", itr.next());
+	   	collection.insert(document);
+    }
+
+		//Update allowed outputs
+		collection = db.getCollection("outputs");
+		collection.drop();
+
+		for(Iterator<String> itr=polyglot.getOutputs().iterator(); itr.hasNext();){
+	   	BasicDBObject document = new BasicDBObject("extension", itr.next());
+	   	collection.insert(document);
+    }
+	}
+	
+	/**
+	 * Push request information to mongo.
+	 */
+	public static void updateMongo(RequestInformation request)
+	{
+	  DBCollection collection = db.getCollection("requests");
+		
+		BasicDBObject document = new BasicDBObject();
+		document.append("address", request.address);
+		document.append("filename", request.filename);
+		document.append("filesize", request.filesize);
+		document.append("input", request.input);
+		document.append("output", request.output);
+		document.append("start_time", request.start_time);
+		document.append("end_time", request.end_time);
+		document.append("success", request.success);
+		collection.insert(document);
 	}
 
 	/**
@@ -526,8 +569,10 @@ public class PolyglotRestlet extends ServerResource
 	        		}
 	          }else if(key.equals("ReturnURL")){
 	          	RETURN_URL = Boolean.valueOf(value);
-	          }else if(key.equals("MongoUpdateTime")){
-	          	mongo_update_time = Integer.valueOf(value) * 1000;
+	          }else if(key.equals("MongoLogging")){
+	          	MONGO_LOGGING = Boolean.valueOf(value);
+	          }else if(key.equals("MongoUpdateInterval")){
+	          	mongo_update_interval = Integer.valueOf(value) * 1000;
 	          }
 	        }
 	      }
@@ -558,17 +603,27 @@ public class PolyglotRestlet extends ServerResource
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
   	
-		System.out.println("\nPolyglot restlet is running...\n");
+		System.out.println("\nPolyglot restlet is running...");
 		
-	 	//Push information into MongoDB
-	 	if(mongo_update_time >= 0){
-	 		System.out.println("\nStarting Mongo information update thread...\n");
+	 	//Push information to Mongo
+	 	if(MONGO_LOGGING){
+			//Setup database connection
+			try{
+	    	Properties properties = new Properties();
+	    	properties.load(new FileInputStream("mongo.properties"));
+	    	mongo = new MongoClient(properties.getProperty("server"));
+	    	db = mongo.getDB(properties.getProperty("database"));
+	    	//db.authenticate(properties.getProperty("username"), properties.getProperty("password").toCharArray());
+	    	//DBCollection collection = db.getCollection(properties.getProperty("collection"));
+			}catch(Exception e) {e.printStackTrace();}
+
+	 		System.out.println("\nStarting Mongo information update thread...");
 
 	  	new Thread(){
 	  		public void run(){		  			
 	  			while(true){
 	  				updateMongo();
-	  				Utility.pause(mongo_update_time);
+	  				Utility.pause(mongo_update_interval);
 	  			}
 	  		}
 	  	}.start();
