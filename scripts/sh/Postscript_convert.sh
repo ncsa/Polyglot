@@ -32,7 +32,4 @@ elif [ "ps2" = "$extO" ]; then
     ps2ps2 $1 $2
 elif [ "pdfwr" = "$extO" ]; then
     ps2pdfwr $1 $2
-fi  
-
-
-#ps2eps $1 $2
+fi
