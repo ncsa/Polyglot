@@ -1,8 +1,8 @@
 #!/bin/bash
 #LibreOffice Writer (v4.0.2.2)
-# spreadsheet
-# odt, ott, sxw, stw, fodt, uot, docx, xml, doc, html,rtf, txt
-# odt, ott, sxw, stw, fodt, uot, docx, xml, doc, html,rtf, txt
+#spreadsheet
+#odt, ott, sxw, stw, fodt, uot, docx, xml, doc, html,rtf, txt
+#odt, ott, sxw, stw, fodt, uot, docx, xml, doc, html,rtf, txt
 
 inputFile=`echo ${1##*/}`
 outputFile=`echo ${2##*/}`
