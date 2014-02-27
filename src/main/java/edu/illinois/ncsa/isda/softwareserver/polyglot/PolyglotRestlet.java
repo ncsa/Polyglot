@@ -580,6 +580,34 @@ public class PolyglotRestlet extends ServerResource
 	    
 	    ins.close();
 	  }catch(Exception e) {e.printStackTrace();}
+	 	
+	 	if(MONGO_LOGGING){
+			//Setup database connection
+			try{
+	    	Properties properties = new Properties();
+	    	properties.load(new FileInputStream("mongo.properties"));
+	    	mongo = new MongoClient(properties.getProperty("server"));
+	    	db = mongo.getDB(properties.getProperty("database"));
+	    	//db.authenticate(properties.getProperty("username"), properties.getProperty("password").toCharArray());
+	    	//DBCollection collection = db.getCollection(properties.getProperty("collection"));
+			}catch(ConnectException e){
+				System.out.println("\nMongo database not found, disabiling Mongo logging...");
+				MONGO_LOGGING = false;
+			}catch(Exception e) {e.printStackTrace();}
+
+			if(MONGO_LOGGING){
+	 			System.out.println("\nStarting Mongo information update thread...");
+
+	  		new Thread(){
+	  			public void run(){		  			
+	  				while(true){
+	  					updateMongo();
+	  					Utility.pause(mongo_update_interval);
+	  				}
+	  			}
+	  		}.start();
+			}
+	 	}
 		
 	  //Start the service
 	  start_time = System.currentTimeMillis();
@@ -604,29 +632,5 @@ public class PolyglotRestlet extends ServerResource
 		}catch(Exception e) {e.printStackTrace();}
   	
 		System.out.println("\nPolyglot restlet is running...");
-		
-	 	//Push information to Mongo
-	 	if(MONGO_LOGGING){
-			//Setup database connection
-			try{
-	    	Properties properties = new Properties();
-	    	properties.load(new FileInputStream("mongo.properties"));
-	    	mongo = new MongoClient(properties.getProperty("server"));
-	    	db = mongo.getDB(properties.getProperty("database"));
-	    	//db.authenticate(properties.getProperty("username"), properties.getProperty("password").toCharArray());
-	    	//DBCollection collection = db.getCollection(properties.getProperty("collection"));
-			}catch(Exception e) {e.printStackTrace();}
-
-	 		System.out.println("\nStarting Mongo information update thread...");
-
-	  	new Thread(){
-	  		public void run(){		  			
-	  			while(true){
-	  				updateMongo();
-	  				Utility.pause(mongo_update_interval);
-	  			}
-	  		}
-	  	}.start();
-	 	}
 	}
 }
