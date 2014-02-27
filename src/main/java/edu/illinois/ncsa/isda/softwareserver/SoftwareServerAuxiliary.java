@@ -451,7 +451,7 @@ public class SoftwareServerAuxiliary
 		 */
 		public ScriptTypes()
 		{
-			this("scripting_langauges.types");
+			this("scripting_languages.types");
 			//print();
 		}
 		
