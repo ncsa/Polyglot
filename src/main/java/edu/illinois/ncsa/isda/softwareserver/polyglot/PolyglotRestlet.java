@@ -590,10 +590,11 @@ public class PolyglotRestlet extends ServerResource
 	    	db = mongo.getDB(properties.getProperty("database"));
 	    	//db.authenticate(properties.getProperty("username"), properties.getProperty("password").toCharArray());
 	    	//DBCollection collection = db.getCollection(properties.getProperty("collection"));
-			}catch(ConnectException e){
+	    	db.getLastError();		//Test the connection, will cause an exception if not connected.
+			}catch(Exception e){
 				System.out.println("\nMongo database not found, disabiling Mongo logging...");
 				MONGO_LOGGING = false;
-			}catch(Exception e) {e.printStackTrace();}
+			}
 
 			if(MONGO_LOGGING){
 	 			System.out.println("\nStarting Mongo information update thread...");
