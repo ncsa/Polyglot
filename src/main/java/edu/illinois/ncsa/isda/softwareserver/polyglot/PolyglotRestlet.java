@@ -190,7 +190,7 @@ public class PolyglotRestlet extends ServerResource
 				}
 			}else{
 				if(part2.isEmpty()){
-					return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
+					return new StringRepresentation(toString(polyglot.getInputs(part1)), MediaType.TEXT_PLAIN);
 				}else{
 					client = getClientInfo().getAddress();
 					output = part1;

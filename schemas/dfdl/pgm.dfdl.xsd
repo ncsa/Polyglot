@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+
+<!--
+Load image data from a PGM file and represent the data as a sequence of pixels in row major order.
+-->
+
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dfdl="http://www.ogf.org/dfdl/dfdl-1.0/" xmlns:ex="http://example.com" targetNamespace="http://example.com">
+  <xs:include schemaLocation="xsd/built-in-formats.xsd"/>
+
+	<xs:annotation>
+		<xs:appinfo source="http://www.ogf.org/dfdl/">
+      <dfdl:format ref="ex:daffodilTest1" separator="" initiator="" terminator="" leadingSkip='0' textTrimKind="none" initiatedContent="no"
+        alignment="implicit" alignmentUnits="bits" trailingSkip="0" ignoreCase="no" separatorPolicy="suppressed" 
+        separatorPosition="infix" occursCountKind="parsed" emptyValueDelimiterPolicy="both" representation="text" 
+        textNumberRep="standard" lengthKind="delimited" encoding="ASCII"/>
+		</xs:appinfo>
+	</xs:annotation>
+
+	<xs:element name="file">
+		<xs:complexType>
+			<xs:sequence>
+
+				<xs:element name="header" dfdl:lengthKind="implicit" maxOccurs="1">
+					<xs:complexType>
+						<xs:sequence dfdl:sequenceKind="ordered" dfdl:separator="%NL;" dfdl:separatorPosition="postfix">
+							<xs:element name="type" type="xs:string"/>
+							<xs:element name="dimensions" maxOccurs="1" dfdl:occursCountKind="implicit">
+								<xs:complexType>
+									<xs:sequence dfdl:sequenceKind="ordered" dfdl:separator="%SP;">
+										<xs:element name="width" type="xs:integer"/>
+										<xs:element name="height" type="xs:integer"/>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="depth" type="xs:integer"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+
+				<xs:element name="pixels" dfdl:lengthKind="implicit" maxOccurs="1">
+					<xs:complexType>
+						<xs:sequence dfdl:separator="%SP; %NL; %SP;%NL;" dfdl:separatorPosition="postfix" dfdl:separatorSuppressionPolicy="anyEmpty">
+							<xs:element name="pixel" type="xs:integer" maxOccurs="unbounded"/>
+							<!-- <xs:element name="pixel" type="xs:integer" maxOccurs="unbounded" dfdl:occursCountKind="expression"
+								dfdl:occursCount="{../../../ex:header/ex:dimensions/ex:width * ../../../ex:header/ex:dimensions/ex:height }"/> -->
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	
+</xs:schema>
