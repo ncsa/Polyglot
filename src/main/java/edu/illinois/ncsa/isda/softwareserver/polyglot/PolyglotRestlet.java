@@ -294,8 +294,16 @@ public class PolyglotRestlet extends ServerResource
 			return new StringRepresentation(toString(polyglot.getServers()), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("software")){
 			return new StringRepresentation(toString(polyglot.getSoftware()), MediaType.TEXT_PLAIN);
-		}else if(part0.equals("inputs")){				
-			return new StringRepresentation(toString(polyglot.getInputs()), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("inputs")){
+			if(part1.isEmpty()){
+				if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+					return new StringRepresentation(toString(polyglot.getInputs()), MediaType.TEXT_PLAIN);
+				}else{
+					return new StringRepresentation(SoftwareServerRestlet.createHTMLList(toString(polyglot.getInputs()), Utility.endSlash(getReference().toString()), true, "Inputs"), MediaType.TEXT_HTML);
+				}
+			}else{
+				return new StringRepresentation(toString(polyglot.getOutputs(part1)), MediaType.TEXT_PLAIN);
+			}
 		}else if(part0.equals("outputs")){				
 			return new StringRepresentation(toString(polyglot.getOutputs()), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("requests")){
