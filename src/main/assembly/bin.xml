@@ -71,9 +71,11 @@
 			<outputDirectory>/scripts</outputDirectory>
 			<includes>
 				<include>ahk/*.ahk</include>
+				<include>ahk/.aliases.txt</include>
 				<include>ahk/auxiliary/*</include>
 				<include>appliescript/*.applescript</include>
 				<include>bat/*.bat</include>
+				<include>sh/.aliases.txt</include>
 			</includes>
 			<fileMode>0644</fileMode>
 			<directoryMode>0755</directoryMode>
