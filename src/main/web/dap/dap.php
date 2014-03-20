@@ -1,4 +1,7 @@
 <?php
+$requests = $_GET["requests"];
+if($requests == null) $requests = false;
+
 $m = new MongoClient();
 $db = $m->dap;
 
@@ -58,27 +61,28 @@ foreach($cursor as $document) {
 	echo $document["extension"];
 }
 
-echo "<br>\n";
-
 //Requests
-$collection = $db->requests;
-$cursor = $collection->find();
+if($requests){
+	$collection = $db->requests;
+	$cursor = $collection->find();
 
-echo "<h2>Requests</h2>\n";
-echo "<table border=\"1\">\n";
-echo "<tr><th>Address</th><th>Filename</th><th>Filesize</th><th>Input</th><th>Output</th><th>Start Time</th><th>End Time</th><th>Success</th></tr>\n";
+	echo "<br>\n";
+	echo "<h2>Requests</h2>\n";
+	echo "<table border=\"1\">\n";
+	echo "<tr><th>Address</th><th>Filename</th><th>Filesize</th><th>Input</th><th>Output</th><th>Start Time</th><th>End Time</th><th>Success</th></tr>\n";
 
-foreach($cursor as $document) {
-	echo "<tr>";
-	echo "<td>" . $document["address"] . "</td>";
-	echo "<td>" . $document["filename"] . "</td>";
-	echo "<td>" . $document["filesize"] . "</td>";
-	echo "<td>" . $document["input"] . "</td>";
-	echo "<td>" . $document["output"] . "</td>";
-	echo "<td>" . $document["start_time"] . "</td>";
-	echo "<td>" . $document["end_time"] . "</td>";
-	echo "<td>" . $document["success"] . "</td>";
+	foreach($cursor as $document) {
+		echo "<tr>";
+		echo "<td>" . $document["address"] . "</td>";
+		echo "<td>" . $document["filename"] . "</td>";
+		echo "<td>" . $document["filesize"] . "</td>";
+		echo "<td>" . $document["input"] . "</td>";
+		echo "<td>" . $document["output"] . "</td>";
+		echo "<td>" . $document["start_time"] . "</td>";
+		echo "<td>" . $document["end_time"] . "</td>";
+		echo "<td>" . $document["success"] . "</td>";
+	}
+
+	echo "</table>\n";
 }
-
-echo "</table>\n";
 ?>
