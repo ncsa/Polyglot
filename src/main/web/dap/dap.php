@@ -10,11 +10,13 @@ $m = new MongoClient();
 $db = $m->dap;
 
 //Servers
-if($servers){
+if($servers) {
 	$collection = $db->servers;
 	$cursor = $collection->find();
 
-	echo "<h2>Software Servers</h2>\n";
+	if($headings) {
+		echo "<h2>Software Servers</h2>\n";
+	}
 
 	foreach($cursor as $document) {
 		echo $document["host"] . "<br>\n";
@@ -26,7 +28,9 @@ if($software){
 	$collection = $db->software;
 	$cursor = $collection->find();
 
-	echo "<h2>Software</h2>\n";
+	if($headings) {
+		echo "<h2>Software</h2>\n";
+	}
 
 	foreach($cursor as $document) {
 		echo $document["name"] . "<br>\n";
@@ -39,7 +43,9 @@ if($inputs){
 	$cursor = $collection->find();
 	$FIRST = true;
 
-	echo "<h2>Supported Inputs</h2>\n";
+	if($headings) {
+		echo "<h2>Supported Inputs</h2>\n";
+	}
 
 	foreach($cursor as $document) {
 		if($FIRST) {
@@ -58,8 +64,10 @@ if($outputs){
 	$cursor = $collection->find();
 	$FIRST = true;
 
-	echo "<br>\n";
-	echo "<h2>Supported Outputs</h2>\n";
+	if($headings) {
+		echo "<br>\n";
+		echo "<h2>Supported Outputs</h2>\n";
+	}
 
 	foreach($cursor as $document) {
 		if($FIRST) {
@@ -77,8 +85,11 @@ if($requests){
 	$collection = $db->requests;
 	$cursor = $collection->find();
 
-	echo "<br>\n";
-	echo "<h2>Requests</h2>\n";
+	if($headings) {
+		echo "<br>\n";
+		echo "<h2>Requests</h2>\n";
+	}
+
 	echo "<table border=\"1\">\n";
 	echo "<tr><th>Address</th><th>Filename</th><th>Filesize</th><th>Input</th><th>Output</th><th>Start Time</th><th>End Time</th><th>Success</th></tr>\n";
 
