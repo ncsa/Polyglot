@@ -1,64 +1,75 @@
 <?php
+$servers = $_GET["servers"];
+$software = $_GET["software"];
+$inputs = $_GET["inputs"];
+$outputs = $_GET["outputs"];
 $requests = $_GET["requests"];
-if($requests == null) $requests = false;
+$headings = $_GET["headings"];
 
 $m = new MongoClient();
 $db = $m->dap;
 
 //Servers
-$collection = $db->servers;
-$cursor = $collection->find();
+if($servers){
+	$collection = $db->servers;
+	$cursor = $collection->find();
 
-echo "<h2>Software Servers</h2>\n";
+	echo "<h2>Software Servers</h2>\n";
 
-foreach($cursor as $document) {
-	echo $document["host"] . "<br>\n";
+	foreach($cursor as $document) {
+		echo $document["host"] . "<br>\n";
+	}
 }
 
 //Software
-$collection = $db->software;
-$cursor = $collection->find();
+if($software){
+	$collection = $db->software;
+	$cursor = $collection->find();
 
-echo "<h2>Software</h2>\n";
+	echo "<h2>Software</h2>\n";
 
-foreach($cursor as $document) {
-	echo $document["name"] . "<br>\n";
+	foreach($cursor as $document) {
+		echo $document["name"] . "<br>\n";
+	}
 }
 
 //Inputs
-$collection = $db->inputs;
-$cursor = $collection->find();
-$FIRST = true;
+if($inputs){
+	$collection = $db->inputs;
+	$cursor = $collection->find();
+	$FIRST = true;
 
-echo "<h2>Supported Inputs</h2>\n";
+	echo "<h2>Supported Inputs</h2>\n";
 
-foreach($cursor as $document) {
-	if($FIRST) {
-		$FIRST = false;
-	} else {
-		echo ", ";
+	foreach($cursor as $document) {
+		if($FIRST) {
+			$FIRST = false;
+		} else {
+			echo ", ";
+		}
+
+		echo $document["extension"];
 	}
-
-	echo $document["extension"];
 }
 
-echo "<br>\n";
-
 //Outputs
-$collection = $db->outputs;
-$cursor = $collection->find();
-$FIRST = true;
+if($outputs){
+	$collection = $db->outputs;
+	$cursor = $collection->find();
+	$FIRST = true;
 
-echo "<h2>Supported Outputs</h2>\n";
+	echo "<br>\n";
+	echo "<h2>Supported Outputs</h2>\n";
 
-foreach($cursor as $document) {
-	if($FIRST) {
-		$FIRST = false;
-	} else {
-		echo ", ";
+	foreach($cursor as $document) {
+		if($FIRST) {
+			$FIRST = false;
+		} else {
+			echo ", ";
+		}
+
+		echo $document["extension"];
 	}
-
-	echo $document["extension"];
 }
 
 //Requests
