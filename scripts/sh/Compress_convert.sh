@@ -1,7 +1,7 @@
 #!/bin/bash
 #Compressed_Conversion_Format (v0.9)
 #Convert among different compression formats
-#tgz, tar.bz2, zip, 7z, rar
+#tgz, tbz2, zip, 7z, rar
 #tar.gz, tgz, tar.bz2,tbz2, zip, 7z, rar
 #note: tgz=tar.gz
 #note: tbz2=tar.bz2
