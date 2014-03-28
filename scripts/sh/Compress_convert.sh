@@ -1,8 +1,11 @@
 #!/bin/bash
 #Compressed_Conversion_Format (v0.9)
 #Convert among different compression formats
-#tar.gz, tar.bz2, zip, 7z, rar
-#tar.gz, tar.bz2, zip, 7z, rar
+#tgz, tar.bz2, zip, 7z, rar
+#tar.gz, tgz, tar.bz2,tbz2, zip, 7z, rar
+#note: tgz=tar.gz
+#note: tbz2=tar.bz2
+
 
 randomDir=$RANDOM
 
@@ -34,6 +37,10 @@ zipNoTar() {
         7za a "$1".x  `ls`  > /dev/null
     elif [ "$2" == "rar" ]; then
         rar a -r -inul "$1".x `ls`
+    elif [ "$2" == "tgz" ]; then
+        tar czf "$1".x `ls`
+    elif [ "$2" == "tbz2" ]; then
+        tar cjf "$1".x `ls`
     fi
     mv "$1".x "$3"
 } # end of zipNoTar()
@@ -46,6 +53,10 @@ unzipNoTar() {
         7za x "$1" > /dev/null
     elif [ "$2" == "rar" ]; then
         unrar x -inul "$1"
+    elif [ "$2" == "tgz" ]; then
+        tar xzf $1
+    elif [ "$2" == "tbz2" ]; then
+        tar xjf $1
     fi
     rm "$1"
 } # end of unzipNoTar()
@@ -70,7 +81,7 @@ else
         fi    
         rm $inputFile
         
-        # then rezip it  
+        # then rezip it
 
         if [ "$extO" == "gz" ]; then
             tar czf $inputFile.x `ls`
