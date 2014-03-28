@@ -1,7 +1,7 @@
 #!/bin/bash
 #Compressed_Conversion_Format (v0.9)
 #Convert among different compression formats
-#tgz, tbz2, zip, 7z, rar
+#tgz, tbz2, zip, 7z, rar, cab
 #tar.gz, tgz, tar.bz2,tbz2, zip, 7z, rar
 #note: tgz=tar.gz
 #note: tbz2=tar.bz2
@@ -54,9 +54,11 @@ unzipNoTar() {
     elif [ "$2" == "rar" ]; then
         unrar x -inul "$1"
     elif [ "$2" == "tgz" ]; then
-        tar xzf $1
+        tar xzf "$1"
     elif [ "$2" == "tbz2" ]; then
-        tar xjf $1
+        tar xjf "$1"
+    elif [ "$2" == "cab" ]; then
+        cabextract -q "$1"
     fi
     rm "$1"
 } # end of unzipNoTar()
