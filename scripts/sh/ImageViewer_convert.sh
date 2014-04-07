@@ -6,7 +6,7 @@
 
 ## This script need some debug.
 ## It does not write png files
-## correctly.
+## correctly when run from poliglot.
 
 inputFile=`echo ${1##*/}`
 #echo $inputFile
@@ -27,5 +27,5 @@ xdotool search --name "Save Image" windowactivate --sync
 xdotool key --clearmodifiers 'Return'
 sleep 1
 xdotool search --name $inputFile windowactivate --sync  
-sleep 1
+sleep 5
 xdotool key --clearmodifiers 'ctrl+w'
