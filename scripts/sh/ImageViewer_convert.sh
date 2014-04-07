@@ -12,7 +12,7 @@ inputFile=`echo ${1##*/}`
 #echo $inputFile
 #echo $2
 
-xdotool exec --sync   eog "$1"  2> /dev/null  "$1" &
+xdotool exec --sync   eog "$1"  2> /dev/null  &
 sleep 3             ## waitting for file to open
 xdotool search --name $inputFile windowactivate --sync  
 sleep 1
