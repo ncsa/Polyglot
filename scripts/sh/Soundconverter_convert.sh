@@ -1,5 +1,5 @@
 #!/bin/bash
-#soundconverter (2.0.4)
+#soundconverter (2.1.2)
 #sound
 #ogg, aac, mp3, flac, wav, avi, mpeg, mov, m4a, ac3, dts, alac, mpc, shorten, ape, sid, mod, xm, s3m
 #ogg, flac, wav, aac, mp3, mpeg
