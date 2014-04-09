@@ -1,22 +1,26 @@
 #!/bin/bash
 #soundconverter (2.1.2)
 #sound
-#ogg, aac, mp3, flac, wav, avi, mpeg, mov, m4a, ac3, dts, alac, mpc, shorten, ape, sid, mod, xm, s3m
-#ogg, flac, wav, aac, mp3, mpeg
+#ogg, aac, mp3, flac, wav, avi, mpeg, mov, m4a, ac3, dts, alac, mpc, shorten, ape, sid, mod, xm, s3m, mp4
+#ogg, flac, wav, aac, mp3, mpeg, m4a
 
-extO=`echo ${2##*.}`
+inputFile=$(basename "$1")
+#echo $inputFile
+extO=${2##*.}
+#echo $extO
 
-oF=`echo ${2##*/}`
-name=`echo ${oF%.*}`
-#echo $name
+
+outputFile=${1%%.*}
+echo $outputFile.$extO
 
 if   [ "ogg" = "$extO" ]; then
-    soundconverter -b  $1
+    soundconverter -b  "$1"
 elif [ "mpeg" = "$extO" ]; then    
-    soundconverter -b   --mime-type=audio/mpeg  --suffix=."$extO"  $1
+    soundconverter -b   -m audio/mpeg  -s ."$extO"  "$1"
+elif [ "m4a" = "$extO" ]; then    
+    soundconverter -b   -m audio/x-m4a -s ."$extO"  "$1"
 else    
-    soundconverter -b   --mime-type="$extO"  --suffix=."$extO"  $1
+    soundconverter -b   -m "$extO"  -s ."$extO"  "$1"
 fi
 
-mv "$name"."$extO" "$2"
-
+mv $outputFile.$extO "$2"
