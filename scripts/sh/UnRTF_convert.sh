@@ -2,18 +2,17 @@
 #UnRTF (v0.19.2)
 #Documents
 #rtf
-#tex, ps, tex, html
+#tex, ps, txt, html
 
-extO=`echo ${2##*.}`
+extO="${2##*.}"
 
-if [ "ps" = "$extO" ]; then
+if [ "$extO" = "ps" ]; then
     unrtf -t ps "$1"  > "$2"
-elif [ "html" = "$extO" ]; then
+elif [ "$extO" = "html" ]; then
     unrtf -t html "$1"  > "$2"
-elif [ "tex" = "$extO" ]; then
+elif [ "$extO" = "tex" ];  then
     unrtf -t latex "$1"  > "$2"
-elif [ "txt" = "$extO" ]; then
+elif [ "$extO" = "txt" ]; then
     unrtf -t text "$1"  > "$2"
 fi
-
 
