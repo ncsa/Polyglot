@@ -10,12 +10,13 @@ inputFile=$(basename "$1")
 outputFile=$(basename "$2")
 #echo $outputFile
 
-extO=${outputFile##*.}
+extO="${2##*.}"
 #echo $extO
-if [ "$extO" == "tiff" ]; then
+
+if [ "$extO" = "tiff" ]; then
     outputFile=${outputFile%?}
     #echo "after removal of last char: "$outputFile
-elif [ "$extO" == "tif" ]; then
+elif [ "$extO" = "tif" ]; then
     extO="tiff"
     #echo "adding character: "$extO
 fi
