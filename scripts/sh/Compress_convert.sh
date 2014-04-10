@@ -9,7 +9,6 @@
 
 randomDir=$RANDOM
 
-#inputFile=`echo ${1##*/}`
 inputFile=$(basename "$1")
 outputFile=$(basename "$2")
 
