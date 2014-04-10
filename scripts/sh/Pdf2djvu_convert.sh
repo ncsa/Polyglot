@@ -4,5 +4,5 @@
 #pdf
 #djvu
 
-pdf2djvu "$1" --output="$2"
+pdf2djvu "$1" --quiet --output="$2"
 
