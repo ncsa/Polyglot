@@ -40,9 +40,9 @@ Load image data from a PGM file and represent the data as a sequence of pixels i
 				<xs:element name="pixels" dfdl:lengthKind="implicit" maxOccurs="1">
 					<xs:complexType>
 						<xs:sequence dfdl:separator="%SP; %NL; %SP;%NL;" dfdl:separatorPosition="postfix" dfdl:separatorSuppressionPolicy="anyEmpty">
-							<xs:element name="pixel" type="xs:integer" maxOccurs="unbounded"/>
-							<!-- <xs:element name="pixel" type="xs:integer" maxOccurs="unbounded" dfdl:occursCountKind="expression"
-								dfdl:occursCount="{../../../ex:header/ex:dimensions/ex:width * ../../../ex:header/ex:dimensions/ex:height }"/> -->
+							<!-- <xs:element name="pixel" type="xs:integer" maxOccurs="unbounded"/> -->
+							<xs:element name="pixel" type="xs:integer" maxOccurs="unbounded" dfdl:occursCountKind="expression"
+								dfdl:occursCount="{../../ex:header/ex:dimensions/ex:width * ../../ex:header/ex:dimensions/ex:height }"/>
 						</xs:sequence>
 					</xs:complexType>
 				</xs:element>
