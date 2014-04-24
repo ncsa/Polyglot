@@ -11,7 +11,7 @@ extO=${2##*.}
 
 
 outputFile=${1%%.*}
-echo $outputFile.$extO
+#echo $outputFile.$extO
 
 if   [ "ogg" = "$extO" ]; then
     soundconverter -b  "$1"
