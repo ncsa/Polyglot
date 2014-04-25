@@ -1,8 +1,8 @@
 #!/bin/bash
 #TeighaFileConverter (v3.91)
-#Convert among autocad .dwg and .dxf files to/from different versions.
+#model
 #dwg, dxf
-#dwgv2013,dwgv2010,dwgv2007,dwgv2004,dwgv2000,dwgv14,dwgv13,dwgv12,dxfv2013tascii,dxfv2010tascii,dxfv2007tascii,dxfv2004tascii,dxfv2000tascii,dxfv14tascii,dxfv13tascii,dxfv12tascii,dxfv10tascii,dxfv9tascii,dxfv2013tbinary,dxfv2010tbinary,dxfv2007tbinary,dxfv2004tbinary,dxfv2000tbinary,dxfv14tbinary,dxfv13tbinary,dxfv12tbinary,dxfv10tbinary
+#dwgv2013, dwgv2010, dwgv2007, dwgv2004, dwgv2000, dwgv14, dwgv13, dwgv12, dxfv2013tascii, dxfv2010tascii, dxfv2007tascii, dxfv2004tascii, dxfv2000tascii, dxfv14tascii, dxfv13tascii, dxfv12tascii, dxfv10tascii, dxfv9tascii, dxfv2013tbinary, dxfv2010tbinary, dxfv2007tbinary, dxfv2004tbinary, dxfv2000tbinary, dxfv14tbinary, dxfv13tbinary, dxfv12tbinary, dxfv10tbinary
 
 #randomDir=$RANDOM
 randomDir="001"
@@ -23,7 +23,6 @@ realExt=${extO:0:3}
 
 outputFileName=${inputFile%%.*}.$realExt
 #echo "outputFileName: "$outputFileName
-
 
 verAndType=${extO:3:255}
 #echo "Version and type: "$verAndType

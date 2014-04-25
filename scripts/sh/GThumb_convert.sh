@@ -1,8 +1,8 @@
 #!/bin/bash
 #GThumb (v3.0.2)
-#images
-#jpeg,jpg, tiff,tif, png, tga, svg
-#jpeg,jpg, tiff,tif, png, tga
+#image
+#jpeg, jpg, tiff,tif, png, tga, svg
+#jpeg, jpg, tiff,tif, png, tga
 
 ## This script need some debug.
 ## It does not write png files

@@ -1,6 +1,6 @@
 #!/bin/sh
 #UnRTF (v0.19.2)
-#Documents
+#document
 #rtf
 #tex, ps, txt, html
 

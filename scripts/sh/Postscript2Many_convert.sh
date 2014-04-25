@@ -1,6 +1,6 @@
 #!/bin/bash
 #Poscript2Many
-#documents
+#document
 #ps
 #ascii, eps, epsi, pdf, pdf12, pdf13, pdf14, pdfwr, ps, ps2, txt
 

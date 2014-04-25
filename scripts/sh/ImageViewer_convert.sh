@@ -1,6 +1,6 @@
 #!/bin/bash
 #Image Viewer (v3.6.2)
-#images
+#image
 #jpeg, bmp, tiff, png, ico
 #jpeg, bmp, tiff, png, ico
 

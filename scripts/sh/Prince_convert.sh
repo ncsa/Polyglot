@@ -1,6 +1,6 @@
 #!/bin/sh
 #Prince (v9.0 rev 4)
-#documents
+#document
 #html
 #ps, pdf, html
 

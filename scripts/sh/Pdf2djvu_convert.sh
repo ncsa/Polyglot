@@ -1,6 +1,6 @@
 #!/bin/sh
 #pdf2djvu (0.7.12)
-#Documents
+#document
 #pdf
 #djvu
 

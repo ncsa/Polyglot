@@ -1,17 +1,15 @@
 #!/bin/bash
-#Compressed_Conversion_Format (v0.9)
-#Convert among different compression formats
+#Miscellaenous Containers
+#container
 #tgz, tbz2, zip, 7z, rar, cab
-#tar.gz, tgz, tar.bz2,tbz2, zip, 7z, rar
-#note: tgz=tar.gz
-#note: tbz2=tar.bz2
+#tar.gz, tgz, tar.bz2, tbz2, zip, 7z, rar
 
+#Notes: tgz=tar.gz, tbz2=tar.bz2
 
 randomDir=$RANDOM
 
 inputFile=$(basename "$1")
 outputFile=$(basename "$2")
-
 
 inputExt="${inputFile##*.}"
 outputExt="${outputFile##*.}"
@@ -25,8 +23,6 @@ filenameO=${outputFile%.*}
 extO=${outputFile##*.}
 isTarO=${filenameO##*.}
 newOFN=${2%%.*}
-
-
 
 zipNoTar() {
     # just add more cases as needed
@@ -61,7 +57,6 @@ unzipNoTar() {
     fi
     rm "$1"
 } # end of unzipNoTar()
-
 
 if [ "$inputFile" == "$outputFile" ]; then
     #echo 'This is a simple copy'
@@ -131,4 +126,3 @@ else
     fi
     rm -rf /tmp/CompressedConversion_$randomDir
 fi
-

@@ -1,6 +1,6 @@
 #!/bin/bash
 #Kabeja (v0.4)
-# Convert autocad dxf (ascii) to other formats.
+#model
 #dxf
 #svg, pdf, png, tif, tiff
 

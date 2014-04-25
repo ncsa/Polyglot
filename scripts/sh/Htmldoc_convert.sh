@@ -1,7 +1,7 @@
 #!/bin/sh
 #Htmldoc (v1.8.27)
-#documents
+#document
 #html
 #ps, pdf, html
 
-htmldoc   -f "$2"  "$1"
+htmldoc -f "$2" "$1"

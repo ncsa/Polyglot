@@ -8,7 +8,6 @@ outExt=`echo ${2##*.}`
 inputFile=`echo ${1##*/}`
 outputFile=`echo ${2##*/}`
 
-
 xdotool exec --sync libreoffice --nologo --calc  $1 &
 
 sleep 5             ## waitting for file to open
@@ -50,4 +49,3 @@ done
 
 sleep 2 
 xdotool search  --name  $outputFile.".*LibreOffice Calc" windowactivate key --clearmodifiers "alt+f+c"
-

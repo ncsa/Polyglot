@@ -1,5 +1,5 @@
 #!/bin/bash
-#FLAC Free lossless audio codec (1.2.1)
+#FLAC (1.2.1)
 #audio
 #flac, fla, wav, aiff, aif
 #flac, fla, wav, aiff, aif
@@ -26,4 +26,3 @@ else  # this is to convert wav <-falc-> aiff or aiff <-flac-> wav
     flac -d "/tmp/FlacConversion_$randomDir/temp.flac" -f -o "$2"
     rm -rf "/tmp/FlacConversion_$randomDir"
 fi
-
