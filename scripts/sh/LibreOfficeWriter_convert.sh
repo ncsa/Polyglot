@@ -1,8 +1,8 @@
 #!/bin/bash
 #LibreOffice Writer (v4.0.2.2)
-# spreadsheet
-# odt, ott, sxw, stw, fodt, uot, docx, xml, doc, html,rtf, txt
-# odt, ott, sxw, stw, fodt, uot, docx, xml, doc, html,rtf, txt
+#spreadsheet
+#odt, ott, sxw, stw, fodt, uot, docx, xml, doc, html,rtf, txt
+#odt, ott, sxw, stw, fodt, uot, docx, xml, doc, html,rtf, txt
 
 inputFile=`echo ${1##*/}`
 outputFile=`echo ${2##*/}`
@@ -23,11 +23,9 @@ sleep 1
 xdotool key --clearmodifiers "Return" 
 
 while [ ! -s $2  ]; do
-     true      ## waitting for file to save
+    true      ## waitting for file to save
 done
 
-sleep 10
-xdotool search  --name  $outputFile.".*LibreOffice Writer" windowactivate
-sleep 5
-xdotool key --clearmodifiers "alt+f+c"
+sleep 2
+xdotool search  --name  $outputFile.".*LibreOffice Writer" windowactivate key "alt+f+c"
 
