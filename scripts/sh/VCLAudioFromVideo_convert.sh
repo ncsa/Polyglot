@@ -1,7 +1,7 @@
 #!/bin/bash
 #VCL Audio From Video (2.0.8)
 #audio
-#mp4, mpg, wmv, mp4
+#mp4, mpg, wmv
 #mp3, ogg, mp4, flac, fla, wav
 
 extI=${1##*.}
