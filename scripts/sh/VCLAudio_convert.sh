@@ -2,7 +2,7 @@
 #VCL Audio Converter (2.0.8)
 #audio
 #wav,mp3, mp4, aiff, aif 
-#mp3, ogg, mp4, flac
+#mp3, ogg, mp4, flac, wav
 
 extI=${1##*.}
 extO=${2##*.}
@@ -30,6 +30,9 @@ else
     elif [ "$extO" = "flac" -o  "$extO" = "fla"  ]; then
         ACODEC=flac
         MUX=raw
+    elif [ "$extO" = "wav"  ]; then
+        ACODEC=s16l
+        MUX=wav
     fi    
     cvlc "$1" --sout "#transcode{acodec=$ACODEC,  channels=2,ab=$BitRate}:std{access=file,mux=$MUX,dst='$2'}" vlc://quit
 fi
