@@ -440,7 +440,12 @@ public class PolyglotSteward extends Polyglot implements Runnable
 							client_socket = tcp_listener_server_socket.accept();
 							
 							//Handle this connection
-							sr_server = client_socket.getInetAddress().getHostName();
+							sr_server = client_socket.getInetAddress().getCanonicalHostName();
+
+							if(sr_server.equals("localhost")){
+								sr_server = InetAddress.getLocalHost().getCanonicalHostName();
+							}
+
 							sr_port = (Integer)Utility.readObject(client_socket.getInputStream());
 							
 							if(add(sr_server, sr_port)){

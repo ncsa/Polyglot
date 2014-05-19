@@ -67,7 +67,8 @@ public class SoftwareServerClient implements Comparable
 	 */
 	public String toString()
 	{
-		return server + ":" + port;
+		//return server + ":" + port;
+		return server;
 	}
 
 	/**
