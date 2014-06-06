@@ -1,10 +1,10 @@
 <?php
-$servers = $_GET["servers"];
-$software = $_GET["software"];
-$inputs = $_GET["inputs"];
-$outputs = $_GET["outputs"];
-$requests = $_GET["requests"];
-$headings = $_GET["headings"];
+$servers = isset($_REQUEST["servers"]) ? $_REQUEST["servers"] : "";
+$software = isset($_REQUEST["software"]) ? $_REQUEST["software"] : "";
+$inputs = isset($_REQUEST["inputs"]) ? $_REQUEST["inputs"] : "";
+$outputs = isset($_REQUEST["outputs"]) ? $_REQUEST["outputs"] : "";
+$requests = isset($_REQUEST["requests"]) ? $_REQUEST["requests"] : "";
+$headings = isset($_REQUEST["headings"]) ? $_REQUEST["headings"] : "";
 
 $m = new MongoClient();
 $db = $m->dap;
