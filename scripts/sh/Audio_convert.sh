@@ -1,5 +1,5 @@
 #!/bin/bash
-#Video2Audio (0.8.9-6)
+#Audio (0.8.9-6)
 #video to audio
 #ogg, aac, m4a, mp3, flac, wav, mpeg, aiff, mov, avi
 #ogg, aac, m4a, mp3, flac, wav, mpeg, aiff, mov, avi
