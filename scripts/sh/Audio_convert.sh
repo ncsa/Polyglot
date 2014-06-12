@@ -1,8 +1,8 @@
 #!/bin/bash
 #Audio (0.8.9-6)
 #video to audio
-#ogg, aac, m4a, mp3, flac, wav, mpeg, aiff, mov, avi
-#ogg, aac, m4a, mp3, flac, wav, mpeg, aiff, mov, avi
+#ogg, ogv, aac, m4a, mp3, flac, wav, mpeg, aiff, mov, avi
+#ogg, ogv, aac, m4a, mp3, flac, wav, mpeg, aiff, mov, avi
 
 avconv -i "$1"  -map 0:a  -strict experimental  -y "$2"
 
