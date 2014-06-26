@@ -713,7 +713,11 @@ public class SoftwareServer implements Runnable
 	{
 		try{
 			server_socket.close();
-		}catch(Exception e) {e.printStackTrace();}
+		}catch(Exception e) {
+			e.printStackTrace();
+			if (e instanceof NullPointerException)
+				return;
+		}
 		
 		waitUntilStopped();
 	}
