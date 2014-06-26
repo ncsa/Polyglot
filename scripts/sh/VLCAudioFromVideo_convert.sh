@@ -1,5 +1,5 @@
 #!/bin/bash
-#VCL Audio From Video (2.0.8)
+#VLC Audio From Video (2.0.8)
 #audio
 #mp4, mpg, wmv
 #mp3, ogg, mp4, flac, fla, wav
@@ -30,4 +30,3 @@ elif [ "$extO" = "wav"  ]; then
 fi    
 
 cvlc --no-sout-video --sout-audio "$1" --sout "#transcode{acodec=$ACODEC,ab=$BitRate,scale=1,channels=2,deinterlace,audio-sync }:std{access=file,mux=$MUX,dst='$2'}" vlc://quit
-

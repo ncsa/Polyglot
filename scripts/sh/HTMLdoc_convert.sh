@@ -1,5 +1,5 @@
 #!/bin/sh
-#Htmldoc (v1.8.27)
+#htmldoc (v1.8.27)
 #document
 #html
 #ps, pdf, html

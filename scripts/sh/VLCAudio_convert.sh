@@ -1,5 +1,5 @@
 #!/bin/bash
-#VCL Audio Converter (2.0.8)
+#VLC Audio Converter (2.0.8)
 #audio
 #wav,mp3, mp4, aiff, aif 
 #mp3, ogg, mp4, flac, wav
@@ -33,7 +33,7 @@ else
     elif [ "$extO" = "wav"  ]; then
         ACODEC=s16l
         MUX=wav
-    fi    
+    fi
+    
     cvlc "$1" --sout "#transcode{acodec=$ACODEC,  channels=2,ab=$BitRate}:std{access=file,mux=$MUX,dst='$2'}" vlc://quit
 fi
-
