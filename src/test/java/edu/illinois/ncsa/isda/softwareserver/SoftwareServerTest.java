@@ -20,7 +20,7 @@ public class SoftwareServerTest
 	 * Test ScriptInstaller.
 	 */	
 	@Test
-	public void test1() throws Exception
+	public void test1()
 	{
 		System.out.println("\n=== Software Server: Test 1 ===");
 		
@@ -37,7 +37,7 @@ public class SoftwareServerTest
 	 * Test SoftwareServer connection.
 	 */	
 	@Test
-	public void test2() throws Exception
+	public void test2()
 	{    
 		System.out.println("\n=== Software Server: Test 2 ===");
 
@@ -69,7 +69,7 @@ public class SoftwareServerTest
 	 * Test SoftwareServer task.
 	 */	
 	@Test
-	public void test3() throws Exception
+	public void test3()
 	{  		
 		System.out.println("\n=== Software Server: Test 3 ===");
 
@@ -95,7 +95,7 @@ public class SoftwareServerTest
 	 * Test SoftwareServerRestlet.
 	 */	
 	@Test
-	public void test4() throws Exception
+	public void test4()
 	{  		
 		System.out.println("\n=== Software Server: Test 4 ===");
 
@@ -120,7 +120,7 @@ public class SoftwareServerTest
 	 * Test DistributedSoftwareServerRestlet.
 	 */	
 	@Test
-	public void test5() throws Exception
+	public void test5()
 	{  		
 		System.out.println("\n=== Software Server: Test 5 ===");
 

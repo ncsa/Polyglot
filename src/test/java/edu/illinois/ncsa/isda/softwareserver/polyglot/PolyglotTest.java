@@ -17,7 +17,7 @@ public class PolyglotTest
 	 * Test Polyglot Server and Client.
 	 */
 	@Test
-	public void test1() throws Exception
+	public void test1()
 	{
 		System.out.println("\n=== Polyglot: Test 1 ===");
 
@@ -43,7 +43,7 @@ public class PolyglotTest
 	 * Test PolyglotRestlet.
 	 */
 	@Test
-	public void test2() throws Exception
+	public void test2()
 	{
 		System.out.println("\n=== Polyglot: Test 2 ===");
 
