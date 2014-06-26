@@ -1,6 +1,6 @@
-Avconv
+AVConvAudio
+AVConvVideo
 Containers
 DFDL
 eBookConvert
-ImgMgk
-SoundConverter
+ImageMagick
