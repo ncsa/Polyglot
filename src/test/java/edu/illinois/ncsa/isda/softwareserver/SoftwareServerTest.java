@@ -56,13 +56,13 @@ public class SoftwareServerTest
 	    boolean FOUND_IMGMGK = false;
 	    
 	    for(int i=0; i<applications.size(); i++){
-	    	if(applications.get(i).alias.equals("ImgMgk")){
+	    	if(applications.get(i).alias.equals("ImageMagick")){
 	    		FOUND_IMGMGK = true;
 	    		break;
 	    	}
 	    }
 	    
-	    assertTrue(FOUND_IMGMGK);
+	    assertTrue("Did not find ImageMagick", FOUND_IMGMGK);
 		} finally {
 	    //Stop the Software Server
 	    if (client != null) client.close();
@@ -93,7 +93,7 @@ public class SoftwareServerTest
 			task.add("ImgMgk", "convert", "data/demo/Lenna.png", "Lenna.jpg");
 			task.execute("data/tmp/");
 			
-			assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna.jpg", 10000));
+			assertTrue("Did not find Lenna.jpg", Utility.existsNotEmptyAndRecent("data/tmp/Lenna.jpg", 10000));
 			
 		} finally {
 	    //Stop the Software Server
@@ -121,10 +121,10 @@ public class SoftwareServerTest
 			String result = Utility.postFile("http://localhost:8182/software/ImgMgk/convert/pgm/", "data/demo/Lenna.png", "text/plain");
 			Utility.pause(2000);
 			
-			assertTrue(Utility.existsURL(result));
+			assertTrue("Did not post url", Utility.existsURL(result));
 			
 			Utility.downloadFile("data/tmp/", "Lenna4", result);
-			assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna4.pgm", 10000));
+			assertTrue("Did not find Lenna4.pgm", Utility.existsNotEmptyAndRecent("data/tmp/Lenna4.pgm", 10000));
 		} finally {
 			//Stop the REST interface and its underlying Software Server
 			if (server != null) server.stop();
@@ -154,10 +154,10 @@ public class SoftwareServerTest
 			String result = Utility.postFile("http://localhost:8183/software/ImgMgk/convert/pgm/", "data/demo/Lenna.png", "text/plain");
 			Utility.pause(2000);
 			
-			assertTrue(Utility.existsURL(result));
+			assertTrue("Did not post URL", Utility.existsURL(result));
 					
 			Utility.downloadFile("data/tmp/", "Lenna5", result);
-			assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna5.pgm", 10000));
+			assertTrue("Did not find Lenna5.pgm", Utility.existsNotEmptyAndRecent("data/tmp/Lenna5.pgm", 10000));
 		
 		} finally {
 			//Stop the services
