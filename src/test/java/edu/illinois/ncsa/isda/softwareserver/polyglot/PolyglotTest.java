@@ -33,7 +33,7 @@ public class PolyglotTest
 		pclient.close();
 		pserver.stop();
 
-		assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna.gif", 100000));
+		assertTrue("Conversion failed", Utility.existsNotEmptyAndRecent("data/tmp/Lenna.gif", 100000));
 		
 		//Stop Software Server
 		sserver.stop();
@@ -60,10 +60,10 @@ public class PolyglotTest
 		String result = Utility.postFile("http://localhost:8184/convert/gif/", "data/demo/Lenna.png", "text/plain");
 		Utility.pause(2000);
 		
-		assertTrue(Utility.existsURL(result));
+		assertTrue("Did not get answer from URL [" + result + "]", Utility.existsURL(result));
 				
 		Utility.downloadFile("data/tmp/", "Lenna2", result);
-		assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna2.gif", 10000));
+		assertTrue("Conversion failed", Utility.existsNotEmptyAndRecent("data/tmp/Lenna2.gif", 10000));
 		
 		//Stop Software Server
 		polyglot.stop();

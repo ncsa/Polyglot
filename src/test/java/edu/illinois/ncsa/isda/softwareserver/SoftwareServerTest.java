@@ -29,7 +29,7 @@ public class SoftwareServerTest
 			ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.conf");
 			debugger.configureScript("scripts/ahk/" + script_name);
 			
-			assertTrue(Utility.existsNotEmptyAndRecent("scripts/ahk-configured/" + script_name, 10000));
+			assertTrue("Script not configured", Utility.existsNotEmptyAndRecent("scripts/ahk-configured/" + script_name, 10000));
 		}
 	}
 	
@@ -50,7 +50,7 @@ public class SoftwareServerTest
 			client = new SoftwareServerClient("localhost", 50000);
 	    
 	    //Run the tests
-	    assertTrue(client.isAlive());
+	    assertTrue("SoftwareServerClient not connected", client.isAlive());
 	    
 	    Vector<Application> applications = client.getApplications();
 	    boolean FOUND_IMGMGK = false;
@@ -93,7 +93,7 @@ public class SoftwareServerTest
 			task.add("ImageMagick", "convert", "data/demo/Lenna.png", "Lenna.jpg");
 			task.execute("data/tmp/");
 			
-			assertTrue("Did not find Lenna.jpg", Utility.existsNotEmptyAndRecent("data/tmp/Lenna.jpg", 10000));
+			assertTrue("Conversion failed", Utility.existsNotEmptyAndRecent("data/tmp/Lenna.jpg", 10000));
 			
 		} finally {
 	    //Stop the Software Server
@@ -125,7 +125,7 @@ public class SoftwareServerTest
 			assertTrue("Did not get answer from URL [" + result + "]", Utility.existsURL(result));
 			
 			Utility.downloadFile("data/tmp/", "Lenna4", result);
-			assertTrue("Did not find Lenna4.pgm", Utility.existsNotEmptyAndRecent("data/tmp/Lenna4.pgm", 10000));
+			assertTrue("Conversion failed", Utility.existsNotEmptyAndRecent("data/tmp/Lenna4.pgm", 10000));
 		} finally {
 			//Stop the REST interface and its underlying Software Server
 			if (server != null) server.stop();
@@ -159,7 +159,7 @@ public class SoftwareServerTest
 			assertTrue("Did not get answer from URL [" + result + "]", Utility.existsURL(result));
 					
 			Utility.downloadFile("data/tmp/", "Lenna5", result);
-			assertTrue("Did not find Lenna5.pgm", Utility.existsNotEmptyAndRecent("data/tmp/Lenna5.pgm", 10000));
+			assertTrue("Conversion failed", Utility.existsNotEmptyAndRecent("data/tmp/Lenna5.pgm", 10000));
 		
 		} finally {
 			//Stop the services
