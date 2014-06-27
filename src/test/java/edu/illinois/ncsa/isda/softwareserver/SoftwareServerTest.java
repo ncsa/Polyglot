@@ -25,7 +25,7 @@ public class SoftwareServerTest
 		System.out.println("\n=== Software Server: Test 1 ===");
 		
 		if(System.getProperty("os.name").contains("Windows")){		//Only run the test on Windows machines!
-			String script_name = "ImgMgk_convert.ahk";
+			String script_name = "ImageMagick_convert.ahk";
 			ScriptDebugger debugger = new ScriptDebugger("ScriptDebugger.conf");
 			debugger.configureScript("scripts/ahk/" + script_name);
 			
@@ -118,7 +118,7 @@ public class SoftwareServerTest
 			SoftwareServerRestlet.main(new String[0]);
 			
 			//Run the test
-			String result = Utility.postFile("http://localhost:8182/software/ImgMgk/convert/pgm/", "data/demo/Lenna.png", "text/plain");
+			String result = Utility.postFile("http://localhost:8182/software/ImageMagick/convert/pgm/", "data/demo/Lenna.png", "text/plain");
 			assertNotNull("result is null", result);
 			Utility.pause(2000);
 			
@@ -152,7 +152,7 @@ public class SoftwareServerTest
 	
 			//Run the test
 			Utility.pause(2000);
-			String result = Utility.postFile("http://localhost:8183/software/ImgMgk/convert/pgm/", "data/demo/Lenna.png", "text/plain");
+			String result = Utility.postFile("http://localhost:8183/software/ImageMagick/convert/pgm/", "data/demo/Lenna.png", "text/plain");
 			assertNotNull("result is null", result);
 			Utility.pause(2000);
 			
