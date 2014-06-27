@@ -90,7 +90,7 @@ public class SoftwareServerTest
 	    client.sendData(new FileData("data/demo/Lenna.png", true));
 			
 			Task task = new Task(client);
-			task.add("ImgMgk", "convert", "data/demo/Lenna.png", "Lenna.jpg");
+			task.add("ImageMagick", "convert", "data/demo/Lenna.png", "Lenna.jpg");
 			task.execute("data/tmp/");
 			
 			assertTrue("Did not find Lenna.jpg", Utility.existsNotEmptyAndRecent("data/tmp/Lenna.jpg", 10000));
@@ -119,9 +119,10 @@ public class SoftwareServerTest
 			
 			//Run the test
 			String result = Utility.postFile("http://localhost:8182/software/ImgMgk/convert/pgm/", "data/demo/Lenna.png", "text/plain");
+			assertNotNull("result is null", result);
 			Utility.pause(2000);
 			
-			assertTrue("Did not post url", Utility.existsURL(result));
+			assertTrue("Did not get answer from URL [" + result + "]", Utility.existsURL(result));
 			
 			Utility.downloadFile("data/tmp/", "Lenna4", result);
 			assertTrue("Did not find Lenna4.pgm", Utility.existsNotEmptyAndRecent("data/tmp/Lenna4.pgm", 10000));
@@ -152,9 +153,10 @@ public class SoftwareServerTest
 			//Run the test
 			Utility.pause(2000);
 			String result = Utility.postFile("http://localhost:8183/software/ImgMgk/convert/pgm/", "data/demo/Lenna.png", "text/plain");
+			assertNotNull("result is null", result);
 			Utility.pause(2000);
 			
-			assertTrue("Did not post URL", Utility.existsURL(result));
+			assertTrue("Did not get answer from URL [" + result + "]", Utility.existsURL(result));
 					
 			Utility.downloadFile("data/tmp/", "Lenna5", result);
 			assertTrue("Did not find Lenna5.pgm", Utility.existsNotEmptyAndRecent("data/tmp/Lenna5.pgm", 10000));
