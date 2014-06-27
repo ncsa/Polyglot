@@ -715,8 +715,9 @@ public class SoftwareServer implements Runnable
 			server_socket.close();
 		}catch(Exception e) {
 			e.printStackTrace();
-			if (e instanceof NullPointerException)
-				return;
+			
+			//No need to wait in case of null pointer exception
+			if(e instanceof NullPointerException) return;
 		}
 		
 		waitUntilStopped();
