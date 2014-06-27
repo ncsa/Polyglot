@@ -39,30 +39,35 @@ public class SoftwareServerTest
 	@Test
 	public void test2()
 	{    
+		SoftwareServer server = null;
+		SoftwareServerClient client = null;
+		
 		System.out.println("\n=== Software Server: Test 2 ===");
 
-		//Start the Software Server
-  	SoftwareServer server = new SoftwareServer("SoftwareServer.conf");
-		SoftwareServerClient client = new SoftwareServerClient("localhost", 50000);
-    
-    //Run the tests
-    assertTrue(client.isAlive());
-    
-    Vector<Application> applications = client.getApplications();
-    boolean FOUND_IMGMGK = false;
-    
-    for(int i=0; i<applications.size(); i++){
-    	if(applications.get(i).alias.equals("ImgMgk")){
-    		FOUND_IMGMGK = true;
-    		break;
-    	}
-    }
-    
-    assertTrue(FOUND_IMGMGK);
-    
-    //Stop the Software Server
-    client.close();
-    server.stop();
+		try {
+			//Start the Software Server
+	  	server = new SoftwareServer("SoftwareServer.conf");
+			client = new SoftwareServerClient("localhost", 50000);
+	    
+	    //Run the tests
+	    assertTrue(client.isAlive());
+	    
+	    Vector<Application> applications = client.getApplications();
+	    boolean FOUND_IMGMGK = false;
+	    
+	    for(int i=0; i<applications.size(); i++){
+	    	if(applications.get(i).alias.equals("ImgMgk")){
+	    		FOUND_IMGMGK = true;
+	    		break;
+	    	}
+	    }
+	    
+	    assertTrue(FOUND_IMGMGK);
+		} finally {
+	    //Stop the Software Server
+	    if (client != null) client.close();
+	    if (server != null) server.stop();
+		}
 	}
 	
 	/**
@@ -71,24 +76,30 @@ public class SoftwareServerTest
 	@Test
 	public void test3()
 	{  		
+		SoftwareServer server = null;
+		SoftwareServerClient client = null;
+
 		System.out.println("\n=== Software Server: Test 3 ===");
 
-		//Start the Software Server
-		SoftwareServer server = new SoftwareServer("SoftwareServer.conf");
-    SoftwareServerClient client = new SoftwareServerClient("localhost", 50000);
-    
-    //Run the test
-    client.sendData(new FileData("data/demo/Lenna.png", true));
-		
-		Task task = new Task(client);
-		task.add("ImgMgk", "convert", "data/demo/Lenna.png", "Lenna.jpg");
-		task.execute("data/tmp/");
-		
-		assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna.jpg", 10000));
-		
-		//Stop the Software Server
-		client.close();
-		server.stop();
+		try {
+			//Start the Software Server
+		  server = new SoftwareServer("SoftwareServer.conf");
+	    client = new SoftwareServerClient("localhost", 50000);
+	    
+	    //Run the test
+	    client.sendData(new FileData("data/demo/Lenna.png", true));
+			
+			Task task = new Task(client);
+			task.add("ImgMgk", "convert", "data/demo/Lenna.png", "Lenna.jpg");
+			task.execute("data/tmp/");
+			
+			assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna.jpg", 10000));
+			
+		} finally {
+	    //Stop the Software Server
+	    if (client != null) client.close();
+	    if (server != null) server.stop();
+		}
 	}
 	
 	/**
@@ -97,23 +108,27 @@ public class SoftwareServerTest
 	@Test
 	public void test4()
 	{  		
+		SoftwareServerRestlet server = null;
+		
 		System.out.println("\n=== Software Server: Test 4 ===");
 
-		//Start the Software Server and its REST interface
-		SoftwareServerRestlet server = new SoftwareServerRestlet();
-		server.main(new String[0]);
-		
-		//Run the test
-		String result = Utility.postFile("http://localhost:8182/software/ImgMgk/convert/pgm/", "data/demo/Lenna.png", "text/plain");
-		Utility.pause(2000);
-		
-		assertTrue(Utility.existsURL(result));
-		
-		Utility.downloadFile("data/tmp/", "Lenna4", result);
-		assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna4.pgm", 10000));
-
-		//Stop the REST interface and its underlying Software Server
-		server.stop();
+		try {
+			//Start the Software Server and its REST interface
+		  server = new SoftwareServerRestlet();
+			SoftwareServerRestlet.main(new String[0]);
+			
+			//Run the test
+			String result = Utility.postFile("http://localhost:8182/software/ImgMgk/convert/pgm/", "data/demo/Lenna.png", "text/plain");
+			Utility.pause(2000);
+			
+			assertTrue(Utility.existsURL(result));
+			
+			Utility.downloadFile("data/tmp/", "Lenna4", result);
+			assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna4.pgm", 10000));
+		} finally {
+			//Stop the REST interface and its underlying Software Server
+			if (server != null) server.stop();
+		}
 	}
 	
 	/**
@@ -122,26 +137,32 @@ public class SoftwareServerTest
 	@Test
 	public void test5()
 	{  		
+		SoftwareServerRestlet sserver = null;
+		DistributedSoftwareServerRestlet dsserver = null;
+				
 		System.out.println("\n=== Software Server: Test 5 ===");
 
-		//Start services
-		SoftwareServerRestlet sserver = new SoftwareServerRestlet();
-		sserver.main(new String[0]);
-		DistributedSoftwareServerRestlet dsserver = new DistributedSoftwareServerRestlet();
-		dsserver.main(new String[0]);
-
-		//Run the test
-		Utility.pause(2000);
-		String result = Utility.postFile("http://localhost:8183/software/ImgMgk/convert/pgm/", "data/demo/Lenna.png", "text/plain");
-		Utility.pause(2000);
+		try {
+			//Start services
+		  sserver = new SoftwareServerRestlet();
+			sserver.main(new String[0]);
+			dsserver = new DistributedSoftwareServerRestlet();
+			dsserver.main(new String[0]);
+	
+			//Run the test
+			Utility.pause(2000);
+			String result = Utility.postFile("http://localhost:8183/software/ImgMgk/convert/pgm/", "data/demo/Lenna.png", "text/plain");
+			Utility.pause(2000);
+			
+			assertTrue(Utility.existsURL(result));
+					
+			Utility.downloadFile("data/tmp/", "Lenna5", result);
+			assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna5.pgm", 10000));
 		
-		assertTrue(Utility.existsURL(result));
-				
-		Utility.downloadFile("data/tmp/", "Lenna5", result);
-		assertTrue(Utility.existsNotEmptyAndRecent("data/tmp/Lenna5.pgm", 10000));
-		
-		//Stop the services
-		dsserver.stop();		
-		sserver.stop();
+		} finally {
+			//Stop the services
+			if (dsserver != null) dsserver.stop();		
+			if (sserver != null) sserver.stop();
+		}
 	}
 }
