@@ -229,7 +229,8 @@ public class PolyglotRestlet extends ServerResource
 					
 						if(Utility.exists(result_file)){
 							FileRepresentation file_representation = new FileRepresentation(result_file, MediaType.MULTIPART_ALL);
-							file_representation.getDisposition().setType(Disposition.TYPE_ATTACHMENT);
+							//FileRepresentation file_representation = new FileRepresentation(result_file, MediaType.IMAGE_JPEG);
+							file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
 							return file_representation;
 						}else{
 							setStatus(Status.CLIENT_ERROR_NOT_FOUND);
@@ -426,7 +427,7 @@ public class PolyglotRestlet extends ServerResource
 					
 					if(Utility.exists(result_file)){
 						FileRepresentation file_representation = new FileRepresentation(result_file, MediaType.MULTIPART_ALL);
-						file_representation.getDisposition().setType(Disposition.TYPE_ATTACHMENT);
+						file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
 						return file_representation;
 					}else{
 						setStatus(Status.CLIENT_ERROR_NOT_FOUND);
