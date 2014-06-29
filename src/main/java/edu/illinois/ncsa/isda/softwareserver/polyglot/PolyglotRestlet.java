@@ -218,10 +218,23 @@ public class PolyglotRestlet extends ServerResource
 					requests.add(request);
 					if(MONGO_LOGGING) updateMongo(request);
 					
-					if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
-						return new StringRepresentation(result_url, MediaType.TEXT_PLAIN);
-					}else{
-						return new StringRepresentation("<a href=" + result_url + ">" + result_url + "</a>", MediaType.TEXT_HTML);
+					if(RETURN_URL){		//Return URL of file
+						if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+							return new StringRepresentation(result_url, MediaType.TEXT_PLAIN);
+						}else{
+							return new StringRepresentation("<a href=" + result_url + ">" + result_url + "</a>", MediaType.TEXT_HTML);
+						}
+					}else{						//Return the file
+						result_file = public_path + result_file;
+					
+						if(Utility.exists(result_file)){
+							FileRepresentation file_representation = new FileRepresentation(result_file, MediaType.MULTIPART_ALL);
+							file_representation.getDisposition().setType(Disposition.TYPE_ATTACHMENT);
+							return file_representation;
+						}else{
+							setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+							return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
+						}
 					}
 				}
 			}
@@ -412,7 +425,9 @@ public class PolyglotRestlet extends ServerResource
 					result_file = public_path + result_file;
 					
 					if(Utility.exists(result_file)){
-						return new FileRepresentation(result_file, MediaType.MULTIPART_ALL);
+						FileRepresentation file_representation = new FileRepresentation(result_file, MediaType.MULTIPART_ALL);
+						file_representation.getDisposition().setType(Disposition.TYPE_ATTACHMENT);
+						return file_representation;
 					}else{
 						setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
