@@ -13,6 +13,7 @@ import org.restlet.representation.*;
 import org.restlet.routing.*;
 import org.restlet.security.*;
 import org.restlet.ext.fileupload.*;
+import org.restlet.service.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
 import com.mongodb.*;
@@ -228,9 +229,14 @@ public class PolyglotRestlet extends ServerResource
 						result_file = public_path + result_file;
 					
 						if(Utility.exists(result_file)){
-							FileRepresentation file_representation = new FileRepresentation(result_file, MediaType.MULTIPART_ALL);
-							//FileRepresentation file_representation = new FileRepresentation(result_file, MediaType.IMAGE_JPEG);
+							MetadataService metadata_service = new MetadataService();
+							MediaType media_type = metadata_service.getMediaType(output);
+							
+							if(media_type == null) media_type = MediaType.MULTIPART_ALL;
+							
+							FileRepresentation file_representation = new FileRepresentation(result_file, media_type);
 							file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
+							
 							return file_representation;
 						}else{
 							setStatus(Status.CLIENT_ERROR_NOT_FOUND);
@@ -426,8 +432,14 @@ public class PolyglotRestlet extends ServerResource
 					result_file = public_path + result_file;
 					
 					if(Utility.exists(result_file)){
-						FileRepresentation file_representation = new FileRepresentation(result_file, MediaType.MULTIPART_ALL);
+						MetadataService metadata_service = new MetadataService();
+						MediaType media_type = metadata_service.getMediaType(output);
+						
+						if(media_type == null) media_type = MediaType.MULTIPART_ALL;
+						
+						FileRepresentation file_representation = new FileRepresentation(result_file, media_type);
 						file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
+						
 						return file_representation;
 					}else{
 						setStatus(Status.CLIENT_ERROR_NOT_FOUND);
