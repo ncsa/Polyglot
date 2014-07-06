@@ -17,6 +17,7 @@ import org.restlet.security.*;
 import org.restlet.ext.fileupload.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
+import org.apache.commons.io.*;
 
 /**
  * A restful interface for a software server.
@@ -599,7 +600,13 @@ public class SoftwareServerRestlet extends ServerResource
 			}
 			
 			//Move result to public folder
-			Utility.copyFile(result, public_path + Utility.getFilename(result));
+			if(!Utility.isDirectory(result)){
+				Utility.copyFile(result, public_path + Utility.getFilename(result));
+			}else{
+				try{
+					FileUtils.copyDirectory(new File(result), new File(public_path + Utility.getFilename(result)));
+				}catch(Exception e) {e.printStackTrace();}
+			}
 		}
 	}
 	
