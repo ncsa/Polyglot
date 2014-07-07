@@ -4,3 +4,4 @@ Containers
 DFDL
 eBookConvert
 ImageMagick
+Zip

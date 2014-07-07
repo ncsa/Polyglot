@@ -592,13 +592,13 @@ public class SoftwareServerRestlet extends ServerResource
 			//Task.print(task, applications);
 			
 			result = server.executeTask("localhost", session, task);
-
+			
 			//Create empty output if not created (e.g. when no conversion path was found)
 			if(result == null){
 				result = server.getCachePath() + session + "_" + Utility.getFilenameName(file) + "." + format;
 				Utility.touch(result);
 			}
-			
+
 			//Move result to public folder
 			if(!Utility.isDirectory(result)){
 				Utility.copyFile(result, public_path + Utility.getFilename(result));
@@ -606,6 +606,11 @@ public class SoftwareServerRestlet extends ServerResource
 				try{
 					FileUtils.copyDirectory(new File(result), new File(public_path + Utility.getFilename(result)));
 				}catch(Exception e) {e.printStackTrace();}
+
+				//Attach directory as a new endpoint
+				Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + Utility.getFilename(result)));
+				directory.setListingAllowed(true);
+				component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", directory);
 			}
 		}
 	}
@@ -711,7 +716,7 @@ public class SoftwareServerRestlet extends ServerResource
 							if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "/file/")){		//Locally cached files already have session ids
 								session = SoftwareServer.getSession(file);
 								result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + Utility.getFilenameName(file) + "." + format;
-							}else{																													//Remote files must be assigned a session id
+							}else{																																											//Remote files must be assigned a session id
 								session = server.getSession();
 								result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + session + "_" + Utility.getFilenameName(file) + "." + format;
 							}
@@ -763,7 +768,12 @@ public class SoftwareServerRestlet extends ServerResource
 				file = public_path + part1;
 				
 				if(Utility.exists(file)){
-					return new FileRepresentation(file, MediaType.MULTIPART_ALL);
+					if(Utility.isDirectory(file)){
+						url = Utility.endSlash(getRootRef().toString()) + "file/" + part1 + "/";
+						return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head></html>", MediaType.TEXT_HTML);
+					}else{
+						return new FileRepresentation(file, MediaType.MULTIPART_ALL);
+					}
 				}else{
 					setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 					return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
@@ -1047,6 +1057,7 @@ public class SoftwareServerRestlet extends ServerResource
 			component = new Component();
 			component.getServers().add(Protocol.HTTP, port);
 			component.getClients().add(Protocol.HTTP);
+			component.getClients().add(Protocol.FILE);
 			component.getLogService().setEnabled(false);
 			
 			org.restlet.Application application = new org.restlet.Application(){
@@ -1082,7 +1093,7 @@ public class SoftwareServerRestlet extends ServerResource
 			}else{
 				component.getDefaultHost().attach("/", application);
 			}
-				
+			
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
 			
