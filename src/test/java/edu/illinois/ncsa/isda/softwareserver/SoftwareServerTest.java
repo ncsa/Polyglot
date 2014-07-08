@@ -53,16 +53,16 @@ public class SoftwareServerTest
 	    assertTrue("SoftwareServerClient not connected", client.isAlive());
 	    
 	    Vector<Application> applications = client.getApplications();
-	    boolean FOUND_IMGMGK = false;
+	    boolean FOUND_IMAGEMAGICK = false;
 	    
 	    for(int i=0; i<applications.size(); i++){
 	    	if(applications.get(i).alias.equals("ImageMagick")){
-	    		FOUND_IMGMGK = true;
+	    		FOUND_IMAGEMAGICK = true;
 	    		break;
 	    	}
 	    }
 	    
-	    assertTrue("Did not find ImageMagick", FOUND_IMGMGK);
+	    assertTrue("Did not find ImageMagick", FOUND_IMAGEMAGICK);
 		} finally {
 	    //Stop the Software Server
 	    if (client != null) client.close();
@@ -118,14 +118,14 @@ public class SoftwareServerTest
 			SoftwareServerRestlet.main(new String[0]);
 			
 			//Run the test
-			String result = Utility.postFile("http://localhost:8182/software/ImageMagick/convert/pgm/", "data/demo/Lenna.png", "text/plain");
+			String result = Utility.postFile("http://localhost:8182/software/ImageMagick/convert/jpg/", "data/demo/Lenna.png", "text/plain");
 			assertNotNull("result is null", result);
 			Utility.pause(2000);
 			
 			assertTrue("Did not get answer from URL [" + result + "]", Utility.existsURL(result));
-			
+		
 			Utility.downloadFile("data/tmp/", "Lenna4", result);
-			assertTrue("Conversion failed", Utility.existsNotEmptyAndRecent("data/tmp/Lenna4.pgm", 10000));
+			assertTrue("Conversion failed", Utility.existsNotEmptyAndRecent("data/tmp/Lenna4.jpg", 10000));
 		} finally {
 			//Stop the REST interface and its underlying Software Server
 			if (server != null) server.stop();
@@ -152,14 +152,14 @@ public class SoftwareServerTest
 	
 			//Run the test
 			Utility.pause(2000);
-			String result = Utility.postFile("http://localhost:8183/software/ImageMagick/convert/pgm/", "data/demo/Lenna.png", "text/plain");
+			String result = Utility.postFile("http://localhost:8183/software/ImageMagick/convert/jpg/", "data/demo/Lenna.png", "text/plain");
 			assertNotNull("result is null", result);
 			Utility.pause(2000);
 			
 			assertTrue("Did not get answer from URL [" + result + "]", Utility.existsURL(result));
 					
 			Utility.downloadFile("data/tmp/", "Lenna5", result);
-			assertTrue("Conversion failed", Utility.existsNotEmptyAndRecent("data/tmp/Lenna5.pgm", 10000));
+			assertTrue("Conversion failed", Utility.existsNotEmptyAndRecent("data/tmp/Lenna5.jpg", 10000));
 		
 		} finally {
 			//Stop the services
