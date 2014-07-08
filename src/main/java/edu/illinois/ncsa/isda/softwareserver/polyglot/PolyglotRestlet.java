@@ -30,6 +30,7 @@ public class PolyglotRestlet extends ServerResource
 	private static int port = 8184;
 	private static boolean RETURN_URL = false;
 	private static boolean MONGO_LOGGING = false;
+	private static boolean USE_REST_INTERFACE = false;
 	private static int mongo_update_interval = 300;
 	private static String root_path = "./";
 	private static String temp_path = root_path + "Temp";
@@ -204,7 +205,13 @@ public class PolyglotRestlet extends ServerResource
 					file = temp_path + Utility.getFilename(file);
 					
 					request = new RequestInformation(client, file, output);
-					polyglot.convert(file, public_path, output);
+					
+					if(USE_REST_INTERFACE){
+						polyglot.convertOverREST(file, public_path, output);
+					}else{
+						polyglot.convert(file, public_path, output);
+					}
+
 					result_file = Utility.getFilenameName(file) + "." + output;
 					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 
@@ -407,7 +414,13 @@ public class PolyglotRestlet extends ServerResource
 				System.out.print("[" + client + "]: " + Utility.getFilename(file) + " -> " + output + "...");
 				
 				request = new RequestInformation(client, file, output);
-				polyglot.convert(file, public_path, output);
+
+				if(USE_REST_INTERFACE){
+					polyglot.convertOverREST(file, public_path, output);
+				}else{
+					polyglot.convert(file, public_path, output);
+				}
+
 				result_file = Utility.getFilenameName(file) + "." + output;
 				result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 
@@ -609,6 +622,12 @@ public class PolyglotRestlet extends ServerResource
 	          	MONGO_LOGGING = Boolean.valueOf(value);
 	          }else if(key.equals("MongoUpdateInterval")){
 	          	mongo_update_interval = Integer.valueOf(value) * 1000;
+	          }else if(key.equals("UseRESTInterface")){
+	          	USE_REST_INTERFACE = Boolean.valueOf(value);
+	          }else if(key.equals("SoftwareServerRESTPort")){
+							polyglot.setSoftwareServerRESTPort(Integer.valueOf(value));
+	          }else if(key.equals("MaxTaskTime")){
+							polyglot.setMaxTaskTime(Integer.valueOf(value));
 	          }
 	        }
 	      }

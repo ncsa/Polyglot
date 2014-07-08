@@ -197,7 +197,8 @@
 			<version>2.9.1</version>
 			<executions>
 				<execution>
-					<phase>generate-resources</phase>
+					<!-- <phase>generate-resources</phase> -->
+					<phase>prepare-package</phase>
 					<goals>
 						<goal>javadoc</goal>
 					</goals>
@@ -209,7 +210,8 @@
 			<version>2.4</version>
 			<executions>
 				<execution>
-					<phase>generate-resources</phase>
+					<!-- <phase>generate-resources</phase> -->
+					<phase>prepare-package</phase>
 					<goals>
 						<goal>copy-dependencies</goal>
 					</goals>

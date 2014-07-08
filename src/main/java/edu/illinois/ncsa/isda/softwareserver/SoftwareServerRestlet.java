@@ -712,8 +712,9 @@ public class SoftwareServerRestlet extends ServerResource
 							format = part3;
 							file = URLDecoder.decode(part4);
 							session = -1;
-							
-							if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "/file/")){		//Locally cached files already have session ids
+						
+							//if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "/file/")){		//Locally cached files already have session ids
+							if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()))){		//Locally cached files already have session ids
 								session = SoftwareServer.getSession(file);
 								result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + Utility.getFilenameName(file) + "." + format;
 							}else{																																											//Remote files must be assigned a session id
@@ -770,7 +771,12 @@ public class SoftwareServerRestlet extends ServerResource
 				if(Utility.exists(file)){
 					if(Utility.isDirectory(file)){
 						url = Utility.endSlash(getRootRef().toString()) + "file/" + part1 + "/";
-						return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head></html>", MediaType.TEXT_HTML);
+
+						//return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head></html>", MediaType.TEXT_HTML);
+
+						file += "/" + part1;
+						Utility.save(file, "<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head></html>");
+						return new FileRepresentation(file, MediaType.TEXT_HTML);
 					}else{
 						return new FileRepresentation(file, MediaType.MULTIPART_ALL);
 					}

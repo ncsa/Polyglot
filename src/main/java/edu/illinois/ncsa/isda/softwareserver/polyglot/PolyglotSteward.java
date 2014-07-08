@@ -19,7 +19,9 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	private TreeSet<String> sr_client_strings = new TreeSet<String>();
 	private IOGraph<Data,Application> iograph = new IOGraph<Data,Application>();
 	private int application_flexibility = 0;
-	
+	private int software_server_rest_port = 8182;
+	private int max_task_time = 30000;		//In milliseconds
+
 	private boolean RUNNING = false, TCP_LISTENER_RUNNING = false;
 	private ServerSocket tcp_listener_server_socket = null;
 	
@@ -227,6 +229,24 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	}
 
 	/**
+	 * Set the software server port.
+	 * @param value the port
+	 */
+	public void setSoftwareServerRESTPort(int value)
+	{
+		software_server_rest_port = value;
+	}
+
+	/**
+	 * Set the maximum time to wait for a task to complete (used with the Software Server REST interface).
+	 * @param value the time to wait in milliseconds
+	 */
+	public void setMaxTaskTime(int value)
+	{
+		max_task_time = value;
+	}
+
+	/**
 	 * Convert a files format.
 	 * @param input_file_data the input file data
 	 * @param conversions the conversions to perform
@@ -369,6 +389,88 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		input_file_data = new FileData(input_filename, true);
 		output_file_data = convert(input_file_data, output_type);
 		output_file_data.save(output_path, null);
+	}
+	
+	/**
+	 * Convert a file's format using the Software Server's REST interface.  Allows intermediary results to be available (i.e. hosted) on the Software Servers.
+	 * @param input_filename the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_type the name of the output type
+	 */
+	public void convertOverREST(String input_filename, String output_path, String output_type)
+	{
+		Vector<Conversion<Data,Application>> conversions = iograph.getShortestConversionPath(Utility.getFilenameExtension(input_filename), output_type, false);
+		Application application;
+		Vector<Application> application_options = null;
+		FileData input, output;
+		String file, tmps;
+		long t0, dt;
+				
+		if(conversions != null){
+			file = input_filename;
+			
+			for(int i=0; i<conversions.size(); i++){
+				application = conversions.get(i).edge;
+				input = (FileData)conversions.get(i).input;
+				output = (FileData)conversions.get(i).output;
+	
+				//Attempt to avoid busy software reuse servers
+				if(application_flexibility > 0 && application.icr.isBusy()){
+					tmps = application.icr.toString();
+					
+					if(application_flexibility == 1){
+						application_options = iograph.getParallelEdges(input, output, application);
+					}else if(application_flexibility == 2){
+						application_options = iograph.getParallelEdges(input, output, null);
+					}
+					
+					for(int j=0; j<application_options.size(); j++){
+						application = application_options.get(j);
+						if(!application.icr.isBusy()) break;
+					}
+					
+					if(false){
+						if(!application.icr.toString().equals(tmps)){
+							System.out.println("[Steward]: " + tmps + " is busy, switching to " + application.icr.toString());
+						}else{
+							System.out.println("[Steward]: " + tmps + " is busy, remaining with " + application.icr.toString());
+						}
+					}
+				}
+			
+				//Execute task
+				String url = "http://" + application.icr.toString() + ":" + String.valueOf(software_server_rest_port) + "/software/" + application.toString() + "/convert/" + output.getFormat() + "/";
+				
+				System.out.println("\n Working file - " + file);
+				System.out.println(" Software Server REST Call - " + url + "...");
+
+				if(file.startsWith("http://")){
+					file = Utility.readURL(url + Utility.urlEncode(file), "text/plain");
+				}else{
+					file = Utility.postFile(url, file, "text/plain");
+				}
+
+				//Wait for result
+				t0 = System.currentTimeMillis();
+
+				while(!Utility.existsURL(file)){
+					Utility.pause(1000);
+
+					//Break if wait exceeds maximum wait time
+					dt = System.currentTimeMillis() - t0;
+
+					if(dt > max_task_time){
+						System.out.println(" Warning: maximum task wait time exceeded!");
+						break;
+					}
+				}
+			}
+			
+			System.out.println("\n Output file - " + file);
+
+			//Download output file
+			Utility.downloadFile(output_path, Utility.getFilenameName(input_filename), file);
+		}
 	}
 
 	/**

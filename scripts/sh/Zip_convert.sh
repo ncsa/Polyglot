@@ -2,6 +2,6 @@
 #Zip
 #container
 #zip
-#url
+#html
 
 unzip "$1" -d "$2"
