@@ -30,7 +30,7 @@ public class PolyglotRestlet extends ServerResource
 	private static int port = 8184;
 	private static boolean RETURN_URL = false;
 	private static boolean MONGO_LOGGING = false;
-	private static boolean USE_REST_INTERFACE = false;
+	private static boolean SOFTWARE_SERVER_REST_INTERFACE = false;
 	private static int mongo_update_interval = 300;
 	private static String root_path = "./";
 	private static String temp_path = root_path + "Temp";
@@ -44,12 +44,21 @@ public class PolyglotRestlet extends ServerResource
 	private static DB db;
 	
 	/**
-	 * Set whether or not to return a URL as the result (as opposed to the file itself)
+	 * Set whether or not to return a URL as the result (as opposed to the file itself).
 	 * @param value true if the URL to the resulting file should be returned
 	 */
 	public void setReturnURL(boolean value)
 	{
 		RETURN_URL = value;
+	}
+
+	/**
+	 * Set whether or not to access Software Servers via their REST interface.
+	 * @param value true if a Software Servers REST interface should be used
+	 */
+	public void setSoftwareServerRESTInterface(boolean value)
+	{
+		SOFTWARE_SERVER_REST_INTERFACE = value;
 	}
 	
 	/**
@@ -206,7 +215,7 @@ public class PolyglotRestlet extends ServerResource
 					
 					request = new RequestInformation(client, file, output);
 					
-					if(USE_REST_INTERFACE){
+					if(SOFTWARE_SERVER_REST_INTERFACE){
 						polyglot.convertOverREST(file, public_path, output);
 					}else{
 						polyglot.convert(file, public_path, output);
@@ -415,7 +424,7 @@ public class PolyglotRestlet extends ServerResource
 				
 				request = new RequestInformation(client, file, output);
 
-				if(USE_REST_INTERFACE){
+				if(SOFTWARE_SERVER_REST_INTERFACE){
 					polyglot.convertOverREST(file, public_path, output);
 				}else{
 					polyglot.convert(file, public_path, output);
@@ -622,8 +631,8 @@ public class PolyglotRestlet extends ServerResource
 	          	MONGO_LOGGING = Boolean.valueOf(value);
 	          }else if(key.equals("MongoUpdateInterval")){
 	          	mongo_update_interval = Integer.valueOf(value) * 1000;
-	          }else if(key.equals("UseRESTInterface")){
-	          	USE_REST_INTERFACE = Boolean.valueOf(value);
+	          }else if(key.equals("SoftwareServerRESTInterface")){
+	          	SOFTWARE_SERVER_REST_INTERFACE = Boolean.valueOf(value);
 	          }else if(key.equals("SoftwareServerRESTPort")){
 							polyglot.setSoftwareServerRESTPort(Integer.valueOf(value));
 	          }else if(key.equals("MaxTaskTime")){

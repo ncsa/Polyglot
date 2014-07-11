@@ -54,6 +54,7 @@ public class PolyglotTest
 		PolyglotRestlet polyglot = new PolyglotRestlet();
 		polyglot.main(new String[0]);
 		polyglot.setReturnURL(true);
+		polyglot.setSoftwareServerRESTInterface(false);
 		
 		//Run the test
 		Utility.pause(2000);
