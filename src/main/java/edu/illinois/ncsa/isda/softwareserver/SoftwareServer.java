@@ -246,7 +246,7 @@ public class SoftwareServer implements Runnable
           //If the application doesn't exist yet, create it
           if(application == null){
             application = new Application(script.application, alias);
-            
+ 
             if(Utility.exists(path + alias + ".jpg")){
             	application.icon = path + alias + ".jpg";
             }

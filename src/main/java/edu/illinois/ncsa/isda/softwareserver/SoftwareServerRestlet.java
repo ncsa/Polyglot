@@ -971,6 +971,22 @@ public class SoftwareServerRestlet extends ServerResource
 	}
 	
 	/**
+	 * Check if the given request is for json only.
+	 * @param request the request
+	 * @return true if application/json only
+	 */
+	public static boolean isJSONRequest(Request request)
+	{
+		List<Preference<MediaType>> types = request.getClientInfo().getAcceptedMediaTypes();
+
+		if(types.size() == 1 && types.get(0).getMetadata().getName().equals("application/json")){
+			return true;
+		}else{
+			return false;
+		}
+	}
+	
+	/**
 	 * Convert a line separated list into an HTML list of links.
 	 * @param list the line separated list of items
 	 * @param link the URL base

@@ -1,0 +1,51 @@
+/*style the main menu*/
+.menu {
+	display:inline-flex;
+	margin:0;
+	padding:0;
+}
+
+.menu li {
+	list-style:none;
+}
+
+.menu li a:link, .menu li a:visited {
+	/*display:block;*/
+	/*text-decoration:none;*/
+	/*background-color:#09F;*/
+	/*padding: 0.5em 2em;*/
+	/*margin:0;*/
+	/*border-right: 1px solid #fff;*/
+	/*color:#111;*/
+}
+
+.menu li a:hover {
+	background-color:lightgray;
+}
+
+/*style the sub menu*/
+.menu li ul {
+	position:absolute;
+	visibility:hidden;
+	border-top:1px solid #fff;
+	margin:0;
+	padding:0;
+}
+
+.menu li ul li {
+	display:inline;
+	float:none;
+}
+
+.menu li ul li a:link, .menu li ul li a:visited {
+	background-color:lightgray;
+	width:auto;
+	text-decoration:none;
+	padding: 0em 0.2em;
+	color:gray;
+}
+
+.menu li ul li a:hover {
+	background-color:#cc9966;
+	color:black;
+}

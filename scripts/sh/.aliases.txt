@@ -4,4 +4,6 @@ Containers
 DFDL
 eBookConvert
 ImageMagick
+Rar
+Tar
 Zip

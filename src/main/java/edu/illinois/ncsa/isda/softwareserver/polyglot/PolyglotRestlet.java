@@ -13,6 +13,8 @@ import org.restlet.representation.*;
 import org.restlet.routing.*;
 import org.restlet.security.*;
 import org.restlet.ext.fileupload.*;
+import org.restlet.ext.json.*;
+import org.json.*;
 import org.restlet.service.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
@@ -338,7 +340,11 @@ public class PolyglotRestlet extends ServerResource
 					return new StringRepresentation(SoftwareServerRestlet.createHTMLList(toString(polyglot.getInputs()), Utility.endSlash(getReference().toString()), true, "Inputs"), MediaType.TEXT_HTML);
 				}
 			}else{
-				return new StringRepresentation(toString(polyglot.getOutputs(part1)), MediaType.TEXT_PLAIN);
+				if(SoftwareServerRestlet.isJSONRequest(Request.getCurrent())){
+					return new JsonRepresentation(new JSONArray(polyglot.getOutputs(part1)));
+				}else{
+					return new StringRepresentation(toString(polyglot.getOutputs(part1)), MediaType.TEXT_PLAIN);
+				}
 			}
 		}else if(part0.equals("outputs")){				
 			return new StringRepresentation(toString(polyglot.getOutputs()), MediaType.TEXT_PLAIN);
