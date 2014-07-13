@@ -22,6 +22,10 @@ if (!window.jQuery) {
 
 //Process webpage once loaded
 function addMenuToLinks() {
+	//Add graphic
+	addGraphic();
+
+	//Proccess links
 	$('a').each(function() {
 		var link = this;
 		var href = this.href;
@@ -42,9 +46,14 @@ function addMenuToLinks() {
 			var menu_list = $('<ul/>').appendTo(menu);
 
 			$.each(outputs, function(i) {
-				var li = $('<li/>').appendTo(menu_list);
-				var a = $('<a/>').text(outputs[i]).appendTo(li);
-				a.attr('href', dap + ':8184/convert/' + outputs[i] + '/' + encodeURIComponent(href));
+				var li = $('<li/>')
+					.on('DOMMouseScroll', scrollMenu)
+					.appendTo(menu_list);
+
+				var a = $('<a/>')
+					.attr('href', dap + ':8184/convert/' + outputs[i] + '/' + encodeURIComponent(href))
+					.text(outputs[i])
+					.appendTo(li);
 			});
 
 			$(link).replaceWith(new_link);
@@ -54,8 +63,56 @@ function addMenuToLinks() {
 
 function openMenu() {
 	$(this).find('ul').css('visibility', 'visible');	
-};
+}
 		
 function closeMenu() {
 	$(this).find('ul').css('visibility', 'hidden');	
-};
+}
+
+function scrollMenu(event) {
+	if(event.originalEvent.detail < 0) {
+		$(this).siblings().first().appendTo(this.parentNode);
+	} else {
+		$(this).siblings().last().prependTo(this.parentNode);
+	}
+	
+	event.originalEvent.preventDefault();
+}
+
+function addGraphic() {
+	var graphic = $('<img>')
+		.attr('src', dap + '/bookmarklet/images/browndog-small.gif')
+		.attr('width', '25')
+		.attr('id', 'graphic')
+		.css('position', 'absolute')
+		.css('left', '0px')
+		.css('bottom', '25px')
+	$("body").append(graphic);
+
+	setTimeout(moveGraphicRight, 10);
+}
+
+function moveGraphicRight() {
+	var graphic = document.getElementById('graphic');
+	graphic.style.left = parseInt(graphic.style.left) + 25 + 'px';
+
+	if(parseInt(graphic.style.left) < $(window).width() - 50) {
+		setTimeout(moveGraphicRight, 10);
+	} else {
+		graphic.remove();
+
+		//Add powered by graphic
+		graphic = $('<img>')
+			.attr('src', dap + '/bookmarklet/images/poweredby.gif')
+			.attr('width', '100');
+
+		var link = $('<a/>')
+			.attr('href', 'http://browndog.ncsa.illinois.edu')
+			.css('position', 'absolute')
+			.css('right', '10px')
+			.css('bottom', '10px')
+			.append(graphic);
+
+		$("body").append(link);
+	}
+}

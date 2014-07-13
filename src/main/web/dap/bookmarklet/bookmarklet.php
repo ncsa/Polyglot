@@ -5,6 +5,8 @@ if(!isset($_REQUEST['js'])){
 	echo '<input type="submit" value="Create">' . "<br>\n";
 	echo '</form>' . "<br>\n";
 }
+
+$text = isset($_REQUEST['text']) ? $_REQUEST['text'] : "Bookmarklet";
 ?>
 
-<a href="javascript:void(d=document);void(h=d.getElementsByTagName('head')[0]);void((s=d.createElement('script')).setAttribute('src','<?php echo $_REQUEST['js']; ?>'));void(h.appendChild(s));">Bookmarklet</a>
+<a href="javascript:void(d=document);void(h=d.getElementsByTagName('head')[0]);void((s=d.createElement('script')).setAttribute('src','<?php echo $_REQUEST['js']; ?>'));void(h.appendChild(s));"><?php echo $text; ?></a>
