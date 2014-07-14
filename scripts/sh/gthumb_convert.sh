@@ -1,5 +1,5 @@
 #!/bin/bash
-#GThumb (v3.0.2)
+#gthumb (v3.0.2)
 #image
 #jpeg, jpg, tiff,tif, png, tga, svg
 #jpeg, jpg, tiff,tif, png, tga

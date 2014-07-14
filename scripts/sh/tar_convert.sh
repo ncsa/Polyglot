@@ -1,5 +1,5 @@
 #!/bin/sh
-#Tar
+#tar
 #container
 #tar, tgz
 #html

@@ -1,5 +1,5 @@
 #!/bin/bash
-#VLC Audio Converter (2.0.8)
+#VLC (2.0.8)
 #audio
 #wav,mp3, mp4, aiff, aif 
 #mp3, ogg, mp4, flac, wav

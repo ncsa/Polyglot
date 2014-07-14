@@ -1,5 +1,5 @@
 #!/bin/bash
-#Image Viewer (v3.6.2)
+#eog (v3.6.2)
 #image
 #jpeg, bmp, tiff, png, ico
 #jpeg, bmp, tiff, png, ico

@@ -1,5 +1,5 @@
 #!/bin/bash
-#Containers
+#Miscellaneous Containers
 #container
 #tgz, tbz2, zip, 7z, rar, cab
 #tar.gz, tgz, tar.bz2, tbz2, zip, 7z, rar

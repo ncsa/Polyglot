@@ -15,6 +15,7 @@ import org.restlet.representation.*;
 import org.restlet.routing.*;
 import org.restlet.security.*;
 import org.restlet.ext.fileupload.*;
+import org.restlet.service.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
 import org.apache.commons.io.*;
@@ -778,7 +779,13 @@ public class SoftwareServerRestlet extends ServerResource
 						Utility.save(file, "<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head></html>");
 						return new FileRepresentation(file, MediaType.TEXT_HTML);
 					}else{
-						return new FileRepresentation(file, MediaType.MULTIPART_ALL);
+						MetadataService metadata_service = new MetadataService();
+						MediaType media_type = metadata_service.getMediaType(Utility.getFilenameExtension(part1));
+						if(media_type == null) media_type = MediaType.MULTIPART_ALL;
+							
+						FileRepresentation file_representation = new FileRepresentation(file, media_type);
+						//file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
+						return file_representation;
 					}
 				}else{
 					setStatus(Status.CLIENT_ERROR_NOT_FOUND);

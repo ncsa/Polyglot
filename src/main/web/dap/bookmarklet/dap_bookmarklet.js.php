@@ -108,7 +108,8 @@ function moveGraphicRight() {
 
 		var link = $('<a/>')
 			.attr('href', 'http://browndog.ncsa.illinois.edu')
-			.css('position', 'absolute')
+			.attr('id', 'poweredby')
+			.css('position', 'fixed')
 			.css('right', '10px')
 			.css('bottom', '10px')
 			.append(graphic);

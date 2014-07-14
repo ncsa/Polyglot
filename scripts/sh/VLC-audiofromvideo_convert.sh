@@ -1,5 +1,5 @@
 #!/bin/bash
-#VLC Audio From Video (2.0.8)
+#VLC (2.0.8)
 #audio
 #mp4, mpg, wmv
 #mp3, ogg, mp4, flac, fla, wav

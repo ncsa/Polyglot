@@ -1,5 +1,5 @@
 #!/bin/bash
-#FLAC (1.2.1)
+#flac (1.2.1)
 #audio
 #flac, fla, wav, aiff, aif
 #flac, fla, wav, aiff, aif
