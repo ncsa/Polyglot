@@ -1,10 +1,10 @@
 #!/bin/bash
 
-mkdir -p /var/www/bookmarklet
-cp *.php /var/www/bookmarklet
-cp *.css /var/www/bookmarklet
+mkdir -p /var/www/dap/bookmarklet
+cp *.php /var/www/dap/bookmarklet
+cp *.css /var/www/dap/bookmarklet
 
-mkdir -p /var/www/bookmarklet/images
-cp ../../../../../images/favicon.png /var/www/bookmarklet/images 
-cp ../../../../../images/browndog-small.gif /var/www/bookmarklet/images 
-cp ../../../../../images/poweredby.gif /var/www/bookmarklet/images 
+mkdir -p /var/www/dap/bookmarklet/images
+cp ../../../../../images/favicon.png /var/www/dap/bookmarklet/images 
+cp ../../../../../images/browndog-small.gif /var/www/dap/bookmarklet/images 
+cp ../../../../../images/poweredby.gif /var/www/dap/bookmarklet/images 

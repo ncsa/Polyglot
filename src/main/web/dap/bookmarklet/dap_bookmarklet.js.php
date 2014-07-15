@@ -6,7 +6,7 @@ console.log(dap);
 var css = document.createElement('link');
 css.rel = 'stylesheet';
 css.type = 'text/css';
-css.href = dap + '/bookmarklet/menu.css';
+css.href = dap + '/dap/bookmarklet/menu.css';
 document.getElementsByTagName('head')[0].appendChild(css);
 
 //Load JQuery
@@ -31,7 +31,7 @@ function addMenuToLinks() {
 		var href = this.href;
 
 		//Get supported outputs for this file
-		$.getJSON(dap + '/bookmarklet/outputs.php?input=' + href.split('.').pop(), function(outputs) {
+		$.getJSON(dap + '/dap/bookmarklet/outputs.php?input=' + href.split('.').pop(), function(outputs) {
 			console.log(outputs);
 
 			//Replace link with a menu
@@ -81,7 +81,7 @@ function scrollMenu(event) {
 
 function addGraphic() {
 	var graphic = $('<img>')
-		.attr('src', dap + '/bookmarklet/images/browndog-small.gif')
+		.attr('src', dap + '/dap/bookmarklet/images/browndog-small.gif')
 		.attr('width', '25')
 		.attr('id', 'graphic')
 		.css('position', 'absolute')
@@ -103,7 +103,7 @@ function moveGraphicRight() {
 
 		//Add powered by graphic
 		graphic = $('<img>')
-			.attr('src', dap + '/bookmarklet/images/poweredby.gif')
+			.attr('src', dap + '/dap/bookmarklet/images/poweredby.gif')
 			.attr('width', '100');
 
 		var link = $('<a/>')

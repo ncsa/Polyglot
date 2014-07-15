@@ -1,3 +1,4 @@
 #!/bin/bash
 
-cp *.php /var/www
+mkdir -p /var/www/dap
+cp *.php /var/www/dap
