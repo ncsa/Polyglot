@@ -6,4 +6,4 @@
 
 extO="${2##*.}"
 
-unoconv -f $extO -o "$2" "$1"
+unoconv -f $extO "$1"

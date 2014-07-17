@@ -70,7 +70,7 @@ function closeMenu() {
 }
 
 function scrollMenu(event) {
-	if(event.originalEvent.detail < 0) {
+	if(event.originalEvent.detail > 0) {
 		$(this).siblings().first().appendTo(this.parentNode);
 	} else {
 		$(this).siblings().last().prependTo(this.parentNode);
