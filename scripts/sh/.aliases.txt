@@ -1,8 +1,8 @@
-#avconv-audio
-#avconv-video
+avconv-audio
+avconv-video
 daffodil
 ebook-convert
-ffmpeg
+#ffmpeg
 flac
 Ghostscript
 ImageMagick
