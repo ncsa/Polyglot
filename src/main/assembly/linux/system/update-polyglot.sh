@@ -61,8 +61,7 @@ fi
 
 # fetch software
 /usr/bin/wget -N -q -O polyglot-2.1.0-SNAPSHOT-bin.zip https://opensource.ncsa.illinois.edu/bamboo/browse/${BRANCH}/latest/artifact/JOB1/polyglot-2.1.0-SNAPSHOT-bin.zip/polyglot-2.1.0-SNAPSHOT-bin.zip
-
-if [ polyglot-2.1.0-SNAPSHOT-bin.zip -nt polyglot-2.1.0-SNAPSHOT ]; then
+if [ $? == 0 -a polyglot-2.1.0-SNAPSHOT-bin.zip -nt polyglot-2.1.0-SNAPSHOT ]; then
   echo "UPDATING POLYGLOT TO NEWER VERSION"
 
   /sbin/stop polyglot
@@ -78,4 +77,17 @@ if [ polyglot-2.1.0-SNAPSHOT-bin.zip -nt polyglot-2.1.0-SNAPSHOT ]; then
 
   /sbin/start softwareserver
   /sbin/start polyglot
+
+  # update web components
+  mkdir -p /var/www/html/dap
+  cp polyglot-2.1.0-SNAPSHOT/web/dap/*.php /var/www/html/dap
+  
+  mkdir -p /var/www/html/dap/images
+  cp polyglot-2.1.0-SNAPSHOT/images/favicon.png /var/www/html/dap/images 
+  cp polyglot-2.1.0-SNAPSHOT/images/browndog-small.gif /var/www/html/dap/images 
+  cp polyglot-2.1.0-SNAPSHOT/images/poweredby.gif /var/www/html/dap/images 
+
+  mkdir -p /var/www/html/dap/bookmarklet
+  cp polyglot-2.1.0-SNAPSHOT/web/dap/bookmarklet/*.php /var/www/html/dap/bookmarklet
+  cp polyglot-2.1.0-SNAPSHOT/web/dap/bookmarklet/*.css /var/www/html/dap/bookmarklet
 fi

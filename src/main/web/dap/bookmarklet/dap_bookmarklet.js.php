@@ -81,7 +81,7 @@ function scrollMenu(event) {
 
 function addGraphic() {
 	var graphic = $('<img>')
-		.attr('src', dap + '/dap/bookmarklet/images/browndog-small.gif')
+		.attr('src', dap + '/dap/images/browndog-small.gif')
 		.attr('width', '25')
 		.attr('id', 'graphic')
 		.css('position', 'absolute')
@@ -103,7 +103,7 @@ function moveGraphicRight() {
 
 		//Add powered by graphic
 		graphic = $('<img>')
-			.attr('src', dap + '/dap/bookmarklet/images/poweredby.gif')
+			.attr('src', dap + '/dap/images/poweredby.gif')
 			.attr('width', '100');
 
 		var link = $('<a/>')
