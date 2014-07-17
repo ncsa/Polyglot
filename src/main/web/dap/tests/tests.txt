@@ -1,0 +1,27 @@
+http://browndog.ncsa.illinois.edu/examples/0005.jp2 jpg
+#http://browndog.ncsa.illinois.edu/examples/0094.jp2 jpg
+#http://browndog.ncsa.illinois.edu/examples/105_1.sid jpg
+http://browndog.ncsa.illinois.edu/examples/Astell1700.docx pdf,txt
+http://browndog.ncsa.illinois.edu/examples/dob.csv xml
+#http://browndog.ncsa.illinois.edu/examples/drosophilatrack1.zip
+http://browndog.ncsa.illinois.edu/examples/favicon.png xml
+#http://browndog.ncsa.illinois.edu/examples/fly.zip
+#http://browndog.ncsa.illinois.edu/examples/humancells.zip
+http://browndog.ncsa.illinois.edu/examples/marbles.tga jpg
+#http://browndog.ncsa.illinois.edu/examples/ziptumor.zip
+#http://browndog.ncsa.illinois.edu/examples/zipyeast.zip
+#https://orion.math.iastate.edu/burkardt/data/pgm/balloons.pgm
+#http://upload.wikimedia.org/wikipedia/commons/b/b0/NewTux.svg jpg
+http://browndog.ncsa.illinois.edu/examples/cache/NewTux.svg jpg
+#http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
+#http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
+#http://www.eclassical.com/custom/eclassical/files/BIS1447-002-flac_24.flac
+#http://hubblesource.stsci.edu/sources/video/clips/details/images/grb_1.mpg
+#http://www.fullimpactwebdesign.com/solutions/websiteDevelopment/videoGalleryWebsites/files/jimiHendrixWoodstock.flv
+#https://epub-samples.googlecode.com/files/moby-dick-20120118.epub pdf,txt
+https://browndog.ncsa.illinois.edu/examples/cache/moby-dick-20120118.epub pdf,txt
+#http://www.gutenberg.org/files/15/text/moby-001.txt
+#http://ocrsdk.com/help/picture_samples.zip
+#http://sipi.usc.edu/database/preview/misc/4.2.04.png
+#http://isda.ncsa.illinois.edu/drupal/sites/default/files/images/ISDA.jpg
+#https://wiki.csiamerica.com/download/attachments/2590320/sample%20solid%20-%20pyramid%20base.DXF
