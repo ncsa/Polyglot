@@ -3,7 +3,10 @@ import edu.illinois.ncsa.isda.softwareserver.*;
 import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.*;
 import kgm.utility.Utility;
 import java.io.*;
+import java.nio.*;
+import java.nio.channels.*;
 import java.net.*;
+import java.lang.*;
 import java.util.*;
 import javax.servlet.*;
 import org.restlet.*;
@@ -32,8 +35,9 @@ public class PolyglotRestlet extends ServerResource
 	private static int port = 8184;
 	private static boolean RETURN_URL = false;
 	private static boolean MONGO_LOGGING = false;
-	private static boolean SOFTWARE_SERVER_REST_INTERFACE = false;
 	private static int mongo_update_interval = 300;
+	private static boolean SOFTWARE_SERVER_REST_INTERFACE = false;
+	private static String download_method = "";
 	private static String root_path = "./";
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
@@ -212,8 +216,24 @@ public class PolyglotRestlet extends ServerResource
 					//Do the conversion
 					System.out.print("[" + client + "]: " + Utility.getFilename(file) + " -> " + output + "...");
 					
-					Utility.downloadFile(temp_path, file);
-					file = temp_path + Utility.getFilename(file);
+					if(download_method.equals("wget")){
+						try{
+							Runtime.getRuntime().exec("wget -O " + temp_path + "/" + Utility.getFilenameName(file) + "." + SoftwareServerRestlet.removeParameters(Utility.getFilenameExtension(file)) + " " + file).waitFor();
+						}catch(Exception e){e.printStackTrace();}
+					}else if(download_method.equals("nio")){
+						try{
+							URL website = new URL(file);
+							ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+							FileOutputStream fos = new FileOutputStream(temp_path + "/" + Utility.getFilenameName(file) + "." + SoftwareServerRestlet.removeParameters(Utility.getFilenameExtension(file)));
+							fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+						}catch(Exception e){e.printStackTrace();}
+					}else{
+						//Utility.downloadFile(temp_path, file);
+						Utility.downloadFile(temp_path, Utility.getFilenameName(file) + "." + SoftwareServerRestlet.removeParameters(Utility.getFilenameExtension(file)), file);
+					}
+
+					//file = temp_path + Utility.getFilename(file);
+					file = temp_path + SoftwareServerRestlet.removeParameters(Utility.getFilename(file));
 					
 					request = new RequestInformation(client, file, output);
 					
@@ -641,6 +661,8 @@ public class PolyglotRestlet extends ServerResource
 	          	SOFTWARE_SERVER_REST_INTERFACE = Boolean.valueOf(value);
 	          }else if(key.equals("SoftwareServerRESTPort")){
 							polyglot.setSoftwareServerRESTPort(Integer.valueOf(value));
+	          }else if(key.equals("DownloadMethod")){
+							download_method = value;
 	          }else if(key.equals("MaxTaskTime")){
 							polyglot.setMaxTaskTime(Integer.valueOf(value));
 	          }

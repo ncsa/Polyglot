@@ -1,5 +1,5 @@
 //Set DAP server
-dap = "http://" + "<?php echo $_SERVER['SERVER_NAME']; ?>";
+dap = "https://" + "<?php echo $_SERVER['SERVER_NAME']; ?>";
 console.log(dap);
 
 //Load CSS
@@ -10,15 +10,15 @@ css.href = dap + '/dap/bookmarklet/menu.css';
 document.getElementsByTagName('head')[0].appendChild(css);
 
 //Load JQuery
-if (!window.jQuery) {
+//if (!window.jQuery) {
 	var jq = document.createElement('script');
 	jq.type = 'text/javascript';
 	jq.addEventListener('load', addMenuToLinks);
-	jq.src = "http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js";
+	jq.src = "https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js";
 	document.getElementsByTagName('head')[0].appendChild(jq);
-} else {
-	addMenuToLinks();
-}
+//} else {
+//	addMenuToLinks();
+//}
 
 //Process webpage once loaded
 function addMenuToLinks() {
@@ -29,35 +29,47 @@ function addMenuToLinks() {
 	$('a').each(function() {
 		var link = this;
 		var href = this.href;
+		var input = href.split('.').pop();
+
+		//Check for parameters
+		if(input.indexOf('?') > -1){
+			input = input.split('?')[0];
+		}
 
 		//Get supported outputs for this file
-		$.getJSON(dap + '/dap/bookmarklet/outputs.php?input=' + href.split('.').pop(), function(outputs) {
-			console.log(outputs);
+		if(input){
+			console.log('Input: ' + input);
 
-			//Replace link with a menu
-			var new_link = $('<ul/>').addClass('menu');
-			var new_link_item = $('<li/>')
-				.bind('mouseover', openMenu)
-				.bind('mouseout', closeMenu)
-				.appendTo(new_link);
-			$(link).clone().appendTo(new_link_item);
+			$.getJSON(dap + '/dap/bookmarklet/outputs.php?input=' + input, function(outputs) {
+				if(outputs.length > 0) {
+					console.log(outputs);
 
-			var menu = $('<li/>').appendTo(new_link_item);
-			var menu_list = $('<ul/>').appendTo(menu);
+					//Replace link with a menu
+					var new_link = $('<ul/>').addClass('menu');
+					var new_link_item = $('<li/>')
+						.bind('mouseover', openMenu)
+						.bind('mouseout', closeMenu)
+						.appendTo(new_link);
+					$(link).clone().appendTo(new_link_item);
 
-			$.each(outputs, function(i) {
-				var li = $('<li/>')
-					.on('DOMMouseScroll', scrollMenu)
-					.appendTo(menu_list);
+					var menu = $('<li/>').appendTo(new_link_item);
+					var menu_list = $('<ul/>').appendTo(menu);
 
-				var a = $('<a/>')
-					.attr('href', dap + ':8184/convert/' + outputs[i] + '/' + encodeURIComponent(href))
-					.text(outputs[i])
-					.appendTo(li);
+					$.each(outputs, function(i) {
+						var li = $('<li/>')
+							.on('DOMMouseScroll', scrollMenu)
+							.appendTo(menu_list);
+
+						var a = $('<a/>')
+							.attr('href', dap + ':8184/convert/' + outputs[i] + '/' + encodeURIComponent(href))
+							.text(outputs[i])
+							.appendTo(li);
+					});
+
+					$(link).replaceWith(new_link);
+				}
 			});
-
-			$(link).replaceWith(new_link);
-		});
+		}
 	});
 };
 
@@ -80,8 +92,12 @@ function scrollMenu(event) {
 }
 
 function addGraphic() {
+	//Preload images
+	$.get(dap + '/dap/images/browndog-small-transparent.gif');
+	$.get(dap + '/dap/images/poweredby-transparent.gif');
+
 	var graphic = $('<img>')
-		.attr('src', dap + '/dap/images/browndog-small.gif')
+		.attr('src', dap + '/dap/images/browndog-small-transparent.gif')
 		.attr('width', '25')
 		.attr('id', 'graphic')
 		.css('position', 'absolute')
@@ -103,7 +119,7 @@ function moveGraphicRight() {
 
 		//Add powered by graphic
 		graphic = $('<img>')
-			.attr('src', dap + '/dap/images/poweredby.gif')
+			.attr('src', dap + '/dap/images/poweredby-transparent.gif')
 			.attr('width', '100');
 
 		var link = $('<a/>')

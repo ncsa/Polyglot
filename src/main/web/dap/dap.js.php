@@ -20,8 +20,12 @@ window.onload = function() {
 
 //Brown Dog graphic
 function addGraphic() {
+	//Preload images
+	$.get(dap + '/dap/images/browndog-small-transparent.gif');
+	$.get(dap + '/dap/images/poweredby-transparent.gif');
+
 	var graphic = $('<img>')
-		.attr('src', dap + '/dap/images/browndog-small.gif')
+		.attr('src', dap + '/dap/images/browndog-small-transparent.gif')
 		.attr('width', '25')
 		.attr('id', 'graphic')
 		.css('position', 'absolute')
@@ -43,7 +47,7 @@ function moveGraphicRight() {
 
 		//Add powered by graphic
 		graphic = $('<img>')
-			.attr('src', dap + '/dap/images/poweredby.gif')
+			.attr('src', dap + '/dap/images/poweredby-transparent.gif')
 			.attr('width', '100');
 
 		var link = $('<a/>')

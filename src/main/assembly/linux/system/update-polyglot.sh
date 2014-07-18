@@ -91,8 +91,8 @@ if [ $? == 0 -a polyglot-2.1.0-SNAPSHOT-bin.zip -nt polyglot-2.1.0-SNAPSHOT ]; t
   cp polyglot-2.1.0-SNAPSHOT/web/dap/bookmarklet/*.php /var/www/html/dap/bookmarklet
   cp polyglot-2.1.0-SNAPSHOT/web/dap/bookmarklet/*.css /var/www/html/dap/bookmarklet
   
-	mkdir -p /var/www/html/dap/tests
-	mkdir -p /var/www/html/dap/tests/tmp
+  mkdir -p /var/www/html/dap/tests
+  mkdir -p /var/www/html/dap/tests/tmp
   cp polyglot-2.1.0-SNAPSHOT/web/dap/tests/*.php /var/www/html/dap/tests
   cp polyglot-2.1.0-SNAPSHOT/web/dap/tests/*.txt /var/www/html/dap/tests
   cp -r polyglot-2.1.0-SNAPSHOT/web/dap/tests/css /var/www/html/dap/tests

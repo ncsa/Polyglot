@@ -5,6 +5,9 @@ import kgm.image.ImageUtility;
 import kgm.utility.*;
 import java.util.*;
 import java.io.*;
+import java.nio.*;
+import java.nio.channels.*;
+import java.net.*;
 import java.lang.management.*;
 import java.net.*;
 import javax.servlet.*;
@@ -33,6 +36,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static TreeMap<String,Application> alias_map = new TreeMap<String,Application>();
 	private static String public_path = "./";
 	private static boolean ADMINISTRATORS_ENABLED = false;
+	private static String download_method = "";
 	private static Component component;
 	
 	/**
@@ -585,8 +589,22 @@ public class SoftwareServerRestlet extends ServerResource
 			if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "file/")){	//Remove session id from filenames of locally cached files
 				file = SoftwareServer.getFilename(Utility.getFilename(file));
 			}else{																											//Download remote files
-				Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file), file);
-				file = Utility.getFilename(file);
+				if(download_method.equals("wget")){
+					try{
+						Runtime.getRuntime().exec("wget -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + removeParameters(Utility.getFilenameExtension(file)) + " " + file).waitFor();
+					}catch(Exception e){e.printStackTrace();}
+				}else if(download_method.equals("nio")){
+					try{
+						URL website = new URL(file);
+						ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+						FileOutputStream fos = new FileOutputStream(server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + removeParameters(Utility.getFilenameExtension(file)));
+						fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+					}catch(Exception e){e.printStackTrace();}
+				}else{
+					Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file) + "." + removeParameters(Utility.getFilenameExtension(file)), file);
+				}
+
+				file = removeParameters(Utility.getFilename(file));
 			}
 		
 			task = getTask(application_alias, task_string, file, format);
@@ -1034,6 +1052,22 @@ public class SoftwareServerRestlet extends ServerResource
 	}
 	
 	/**
+	 * Remove parameters from a URL.
+	 * @param url the URL of a file
+	 * @return the URL of a file without parameters
+	 */
+	public static String removeParameters(String url)
+	{
+		int tmpi = url.lastIndexOf('?');
+
+		if(tmpi >= 0){
+			return url.substring(0, tmpi);
+		}else{
+			return url;
+		}
+	}
+
+	/**
 	 * Start the restful service.
 	 * @param args the input arguments
 	 */
@@ -1065,6 +1099,8 @@ public class SoftwareServerRestlet extends ServerResource
 	  	        accounts.put(username, password);
 	          }else if(key.equals("EnableAdministrators")){
 	          	ADMINISTRATORS_ENABLED = Boolean.valueOf(value);
+	          }else if(key.equals("DownloadMethod")){
+	          	download_method = value;
 	          }
 	        }
 	      }
