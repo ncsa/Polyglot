@@ -16,6 +16,10 @@ window.onload = function() {
 	$("a[dap]").each(function() {
 		this.href = dap + ":8184/convert/" + $(this).attr('dap') + "/" + encodeURIComponent(this.href);
 	});
+	
+	$("img[dap]").each(function() {
+		this.src = dap + ":8184/convert/" + $(this).attr('dap') + "/" + encodeURIComponent(this.src);
+	});
 };
 
 //Brown Dog graphic

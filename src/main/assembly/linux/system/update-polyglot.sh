@@ -85,7 +85,10 @@ if [ $? == 0 -a polyglot-2.1.0-SNAPSHOT-bin.zip -nt polyglot-2.1.0-SNAPSHOT ]; t
   mkdir -p /var/www/html/dap/images
   cp polyglot-2.1.0-SNAPSHOT/images/favicon.png /var/www/html/dap/images 
   cp polyglot-2.1.0-SNAPSHOT/images/browndog-small.gif /var/www/html/dap/images 
+  cp polyglot-2.1.0-SNAPSHOT/images/browndog-small-transparent.gif /var/www/html/dap/images 
   cp polyglot-2.1.0-SNAPSHOT/images/poweredby.gif /var/www/html/dap/images 
+  cp polyglot-2.1.0-SNAPSHOT/images/poweredby-transparent.gif /var/www/html/dap/images 
+  cp polyglot-2.1.0-SNAPSHOT/images/poweredby-borders.gif /var/www/html/dap/images 
 
   mkdir -p /var/www/html/dap/bookmarklet
   cp polyglot-2.1.0-SNAPSHOT/web/dap/bookmarklet/*.php /var/www/html/dap/bookmarklet

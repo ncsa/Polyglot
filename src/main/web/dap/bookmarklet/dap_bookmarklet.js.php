@@ -1,12 +1,13 @@
 //Set DAP server
-dap = "https://" + "<?php echo $_SERVER['SERVER_NAME']; ?>";
+protocol = 'https://';
+dap = "<?php echo $_SERVER['SERVER_NAME']; ?>";
 console.log(dap);
 
 //Load CSS
 var css = document.createElement('link');
 css.rel = 'stylesheet';
 css.type = 'text/css';
-css.href = dap + '/dap/bookmarklet/menu.css';
+css.href = protocol + dap + '/dap/bookmarklet/menu.css';
 document.getElementsByTagName('head')[0].appendChild(css);
 
 //Load JQuery
@@ -40,7 +41,7 @@ function addMenuToLinks() {
 		if(input){
 			console.log('Input: ' + input);
 
-			$.getJSON(dap + '/dap/bookmarklet/outputs.php?input=' + input, function(outputs) {
+			$.getJSON(protocol + dap + '/dap/bookmarklet/outputs.php?input=' + input, function(outputs) {
 				if(outputs.length > 0) {
 					console.log(outputs);
 
@@ -61,7 +62,7 @@ function addMenuToLinks() {
 							.appendTo(menu_list);
 
 						var a = $('<a/>')
-							.attr('href', dap + ':8184/convert/' + outputs[i] + '/' + encodeURIComponent(href))
+							.attr('href', 'http://' + dap + ':8184/convert/' + outputs[i] + '/' + encodeURIComponent(href))
 							.text(outputs[i])
 							.appendTo(li);
 					});
@@ -93,11 +94,11 @@ function scrollMenu(event) {
 
 function addGraphic() {
 	//Preload images
-	$.get(dap + '/dap/images/browndog-small-transparent.gif');
-	$.get(dap + '/dap/images/poweredby-transparent.gif');
+	//$.get(protocol + dap + '/dap/images/browndog-small-transparent.gif');
+	//$.get(protocol + dap + '/dap/images/poweredby-transparent.gif');
 
 	var graphic = $('<img>')
-		.attr('src', dap + '/dap/images/browndog-small-transparent.gif')
+		.attr('src', protocol + dap + '/dap/images/browndog-small-transparent.gif')
 		.attr('width', '25')
 		.attr('id', 'graphic')
 		.css('position', 'absolute')
@@ -115,11 +116,12 @@ function moveGraphicRight() {
 	if(parseInt(graphic.style.left) < $(window).width() - 50) {
 		setTimeout(moveGraphicRight, 10);
 	} else {
-		graphic.remove();
+		//graphic.remove();
+		graphic.parentNode.removeChild(graphic);
 
 		//Add powered by graphic
 		graphic = $('<img>')
-			.attr('src', dap + '/dap/images/poweredby-transparent.gif')
+			.attr('src', protocol + dap + '/dap/images/poweredby-transparent.gif')
 			.attr('width', '100');
 
 		var link = $('<a/>')
