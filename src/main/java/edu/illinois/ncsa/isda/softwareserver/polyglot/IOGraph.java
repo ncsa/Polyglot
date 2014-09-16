@@ -41,6 +41,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 		
 		for(int a=0; a<applications.size(); a++){
 			application = applications.get(a);
+			//System.out.println("Adding " + icr.toString() + " - " + application);
 			
 			for(int o=0; o<application.operations.size(); o++){
 				operation = application.operations.get(o);

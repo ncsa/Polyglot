@@ -22,10 +22,11 @@
 		<div class="container">
 			<div class="jumbotron">
     		<h1>DAP Tests</h1>
+				<input id="dap" type="text" class="form-control" value="<?php echo "http://" . $_SERVER['SERVER_NAME']; ?>">
 				<div id="failures" style="color:#999999;font-style:italic;font-size:90%;"></div>
 			</div>
 				
-			<input type="button" class="btn btn-lg btn-block btn-primary" value="Run Tests" onclick="run_tests()">
+			<input type="button" class="btn btn-lg btn-block btn-primary" value="Run Tests" onclick="start_tests()">
 			<!--
 			<div class="progress">
   			<div id="progress" class="progress-bar" role="progressbar" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100" style="width: 50%">50%</div>
@@ -36,7 +37,6 @@
 			<tr><th>#</th><th>Input</th><th>Output</th><th></th></tr>
 		
 			<?php
-			$dap = "http://" . $_SERVER['SERVER_NAME'];
 			$lines = file('tests.txt', FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
 			$json = array();
 			$count = 0;		//Row ID and unique prefix for output file
@@ -44,17 +44,21 @@
 			foreach($lines as $line) {
 				if($line[0] != '#') {
 					$parts = explode(' ', $line);
+					$input_filename = $parts[0];
 					$outputs = explode(',', $parts[1]);
-					$json[$parts[0]] = $outputs;
 
 					foreach($outputs as $output) {
-						$output_filename = basename($parts[0], pathinfo($parts[0], PATHINFO_EXTENSION)) . $output;
+						$count++;
+						$json[$count-1]["file"] = $input_filename;
+						$json[$count-1]["output"] = $output;
 
-						echo "<tr id=\"" . ++$count . "\">";
+						$output_filename = basename($input_filename, pathinfo($input_filename, PATHINFO_EXTENSION)) . $output;
+
+						echo "<tr id=\"" . $count . "\">";
 						echo "<td>" . $count . "</td>";
-						echo "<td><a href=\"" . $parts[0] . "\">" . $parts[0] . "</a></td>";
+						echo "<td><a href=\"" . $input_filename . "\">" . $input_filename . "</a></td>";
 						echo "<td><a href=\"tmp/" . $count . "_" . $output_filename . "\">" . $output_filename . "</a></td>";
-						echo "<td align=\"center\"><input type=\"button\" class=\"btn btn-xs btn-primary\" value=\"Run\" onclick=\"test(" . $count . ",'" . $parts[0] . "','" . $output . "')\"></td>";
+						echo "<td align=\"center\"><input type=\"button\" class=\"btn btn-xs btn-primary\" value=\"Run\" onclick=\"test(" . $count . ",'" . $input_filename . "','" . $output . "', false)\"></td>";
 						echo "</tr>\n";
 					}
 				}
@@ -71,38 +75,44 @@
     <script src="js/utils.js"></script>
 
 		<script>
-			<?php if(isset($_REQUEST['run'])) echo "run_tests();\n"; ?>
+			var tasks = $.parseJSON('<?php echo json_encode($json); ?>');
+			var total = <?php echo $count; ?>;
+			var task = 0;			//Row ID and unique prefix for output file
+			var successes = 0;
 
-			function run_tests() {
-				var tasks = $.parseJSON('<?php echo json_encode($json); ?>');
-				var count = 0;	//Row ID and unique prefix for output file
-				var successes = 0;
-				var total = <?php echo $count; ?>;
+			<?php if(isset($_REQUEST['run'])) echo "start_tests();\n"; ?>
 
-				$.each(tasks, function(task) {
-					$.each(tasks[task], function(i) {
-						successes += test(++count, task, tasks[task][i]);
-					});
-				});
-				
-				//Update progress
-				document.getElementById('failures').innerHTML = 'Failures: ' + (total - successes);
+			function start_tests() {
+				task = 1;
+				successes = 0;
+				test(task, tasks[task-1]["file"], tasks[task-1]["output"], true);
 			}
 
-			function test(id, file, output) {
+			function test(id, file, output, SPAWN_NEXT_TASK) {
 				var row = document.getElementById(id.toString());
 				$(row).addClass('info');
 
-				var url = 'test.php?dap=' + encodeURIComponent('<?php echo $dap; ?>') + '&file=' + encodeURIComponent(file) + '&output=' + output + '&prefix=' + id;
-				var size = AJAXCall(url);
+				var dap = document.getElementById('dap').value;
+				var url = 'test.php?dap=' + encodeURIComponent(dap) + '&file=' + encodeURIComponent(file) + '&output=' + output + '&prefix=' + id;
+				
+				$.get(url, function(size) {
+					//Check result
+					if(size > 0) {
+						$(row).attr('class', 'success');
+						successes++;
+					} else {
+						$(row).attr('class', 'danger');
+					}
+				
+					//Update progress
+					document.getElementById('failures').innerHTML = 'Failures: ' + (task - successes);
 
-				if(size > 0) {
-					$(row).attr('class', 'success');
-					return 1;
-				} else {
-					$(row).attr('class', 'danger');
-					return 0;
-				}
+					//Call next task
+					if(SPAWN_NEXT_TASK && task < total) {
+						task++;
+						test(task, tasks[task-1]["file"], tasks[task-1]["output"], true);
+					}
+				});
 			}
 		</script>
   </body>

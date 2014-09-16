@@ -793,6 +793,7 @@ public class SoftwareServerRestlet extends ServerResource
 
 						//return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head></html>", MediaType.TEXT_HTML);
 
+						//Hack to get Restlet to return a "DirectoryRepresentation"
 						file += "/" + part1;
 						Utility.save(file, "<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head></html>");
 						return new FileRepresentation(file, MediaType.TEXT_HTML);
