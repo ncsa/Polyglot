@@ -20,8 +20,35 @@
 		<url>https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty/</url>
 	</repository>
   </repositories>
+
+  <properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <resteasyVersion>3.0.9.Final</resteasyVersion>
+  </properties>
+
   
   <dependencies>
+    <dependency>
+        <groupId>org.jboss.resteasy</groupId>
+        <artifactId>resteasy-jaxrs</artifactId>
+        <version>${resteasyVersion}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.jboss.resteasy</groupId>
+        <artifactId>tjws</artifactId>
+        <version>${resteasyVersion}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.jboss.resteasy</groupId>
+        <artifactId>resteasy-multipart-provider</artifactId>
+        <version>${resteasyVersion}</version>
+    </dependency>
+	<dependency>
+	    <groupId>org.jboss.resteasy</groupId>
+	    <artifactId>resteasy-jackson-provider</artifactId>
+	    <version>${resteasyVersion}</version>
+	</dependency>
+
     <dependency>
   		<groupId>kgm</groupId>
   		<artifactId>Utilities</artifactId>
@@ -181,9 +208,6 @@
   	</dependency>
   </dependencies>
 
-  <properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
   
   <build>
   	<plugins>
