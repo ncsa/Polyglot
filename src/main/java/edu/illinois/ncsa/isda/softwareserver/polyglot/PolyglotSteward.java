@@ -6,7 +6,6 @@ import kgm.utility.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import sun.net.*;
 
 /**
  * A class that coordinates the use of several software reuse clients via I/O-graphs
@@ -405,6 +404,8 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		FileData input, output;
 		String file, tmps;
 		long t0, dt;
+		int responseCode = 0;
+		HttpURLConnection huc;
 				
 		if(conversions != null){
 			file = input_filename;
@@ -453,17 +454,30 @@ public class PolyglotSteward extends Polyglot implements Runnable
 				//Wait for result
 				t0 = System.currentTimeMillis();
 
-				while(!Utility.existsURL(file)){
-					Utility.pause(1000);
+				try{
+					final URL myUrl = new URL(file);
+					huc = (HttpURLConnection) myUrl.openConnection();
+					responseCode = huc.getResponseCode();
+	  			while(responseCode == 404){
+						Utility.pause(1000);
+						//Break if wait exceeds maximum wait time
+						dt = System.currentTimeMillis() - t0;
 
-					//Break if wait exceeds maximum wait time
-					dt = System.currentTimeMillis() - t0;
-
-					if(dt > max_task_time){
-						System.out.println(" Warning: maximum task wait time exceeded!");
-						break;
+						if(dt > max_task_time){
+							System.out.println(" Warning: maximum task wait time exceeded!");
+							break;
+						}
+						huc = (HttpURLConnection) myUrl.openConnection();
+						responseCode = huc.getResponseCode();
 					}
+	  			
+				}catch(MalformedURLException e){
+					e.printStackTrace();
+				}catch(IOException e){
+					e.printStackTrace();
 				}
+				
+				//while(!Utility.existsURL(file)){
 			}
 			
 			System.out.println("\n Output file - " + file);
@@ -472,7 +486,8 @@ public class PolyglotSteward extends Polyglot implements Runnable
 			Utility.downloadFile(output_path, Utility.getFilenameName(input_filename), file);
 		}
 	}
-
+	
+	
 	/**
 	 * Close all software server client connections.
 	 */
