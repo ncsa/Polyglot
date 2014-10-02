@@ -178,7 +178,7 @@
 	
 	<files>
 		<file>
-			<source>target/polyglot-${project.version}.jar</source>
+			<source>target/original-polyglot-${project.version}.jar</source>
 			<outputDirectory>.</outputDirectory>
 			<destName>polyglot.jar</destName>
 			<fileMode>0644</fileMode>

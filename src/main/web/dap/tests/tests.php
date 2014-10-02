@@ -104,13 +104,15 @@
 						$(row).attr('class', 'danger');
 					}
 				
-					//Update progress
-					document.getElementById('failures').innerHTML = 'Failures: ' + (task - successes);
-
 					//Call next task
-					if(SPAWN_NEXT_TASK && task < total) {
-						task++;
-						test(task, tasks[task-1]["file"], tasks[task-1]["output"], true);
+					if(SPAWN_NEXT_TASK) {
+						//Update progress
+						document.getElementById('failures').innerHTML = 'Failures: ' + (task - successes);
+
+						if(task < total) {
+							task++;
+							test(task, tasks[task-1]["file"], tasks[task-1]["output"], true);
+						}
 					}
 				});
 			}
