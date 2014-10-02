@@ -1,51 +1,25 @@
 package edu.illinois.ncsa.isda.softwareserver;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.lang.management.ManagementFactory;
-import java.util.TreeMap;
-import java.util.TreeSet;
-import java.util.Iterator;
-import java.util.Scanner;
-import java.util.Vector;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
-import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Application;
-import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.CachedFileData;
-import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Subtask;
-import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Task;
-import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.TaskInfo;
-import javax.ws.rs.core.UriInfo;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import kgm.image.ImageUtility;
 import kgm.utility.Utility;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.net.URLEncoder;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.FileUtils;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.*;
+import java.nio.channels.*;
+import java.nio.file.*;
+import java.util.*;
+import java.lang.management.ManagementFactory;
+import java.net.*;
+import org.apache.commons.io.*;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.Response.Status;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
-import java.util.List;
-import java.util.Map;
+import org.jboss.resteasy.plugins.server.tjws.TJWSEmbeddedJaxrsServer;
 import javax.ws.rs.core.MultivaluedMap;
 
-public class ResteasyResources extends SoftwareServerResteasy implements
-		ResteasyResourcesInterface
+public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 {
-
+	protected static TJWSEmbeddedJaxrsServer tjws;
 	private static SoftwareServer server;
 	private static Vector<Application> applications;
 	private static Vector<TreeSet<TaskInfo>> application_tasks;
@@ -53,47 +27,47 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 	private static String public_path = "./";
 	private static boolean ADMINISTRATORS_ENABLED = true;
 	private static String download_method = "";
-
-	// private static Component component;
-
-	public ResteasyResources()
+	
+	public SoftwareServerRESTEasy()
 	{
 		server = new SoftwareServer("SoftwareServer.conf");
 		applications = server.getApplications();
 		application_tasks = Task.getApplicationTasks(applications);
 		public_path = server.getTempPath() + "public/";
+		
 		if(!Utility.exists(public_path)){
 			new File(public_path).mkdir();
-		} // end if //
+		}
+		
 		// Build alias map
 		for(int i = 0; i < applications.size(); i++){
 			alias_map.put(applications.get(i).alias, applications.get(i));
 		}
+		
  		System.out.println("\nStarting distributed software restlet notification thread...\n");
-	} // end of Constructor //
+	}
 
 	public Response WelcomeToSoftwareServer()
 	{
 		return Response.ok(getApplicationStack()).build();
-	} // end of WelcomeMessage() //
+	}
 
 	public Response listApplications(UriInfo uriInfo, String Accept)
 	{
 		if(Accept.equals("text/plain")){
 			String response = getApplications();
+			
 			if (response.equals("")) {
 				return Response.status(Status.NO_CONTENT).type("text/plain").build();
 		  } else {
 				return Response.ok(response, "text/plain").build();
 		  }
 		}else{
-			String result = createHTMLList(getApplications(), uriInfo
-					.getAbsolutePath().toString().replaceAll("/$", "")
-					+ "/", true, "Software");
+			String result = createHTMLList(getApplications(), uriInfo.getAbsolutePath().toString().replaceAll("/$", "")	+ "/", true, "Software");
 			return Response.ok(result, "text/html").build();
 			// return Response.ok().entity(result).build();
 		}
-	} // end of listApplications() //
+	}
 
 	public Response listTasks(UriInfo uriInfo, String Accept, String app)
 	{
@@ -105,97 +79,90 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 				return Response.ok(response, "text/plain").build();
 		  }
 		}else{
-			String result = createHTMLList(getApplicationTasks(app), uriInfo
-					.getAbsolutePath().toString().replaceAll("/$", "")
-					+ "/", true, (uriInfo.getPath().toString()).substring(1));
+			String result = createHTMLList(getApplicationTasks(app), uriInfo.getAbsolutePath().toString().replaceAll("/$", "") + "/", true, (uriInfo.getPath().toString()).substring(1));
 			return Response.ok(result, "text/html").build();
 		}
-	} // end of listTasks() //
+	}
 
-	public Response listOutputFmts(UriInfo uriInfo, String Accept, String app,String tsk) {
-		
+	public Response listOutputFmts(UriInfo uriInfo, String Accept, String app,String tsk)
+	{	
 		if(Accept.equals("text/plain")){
 			String response=getApplicationTaskOutputs(app, tsk);
+			
 			if (response.equals("")) {
 				return Response.status(Status.NO_CONTENT).type("text/plain").build();
 		  } else {
 				return Response.ok(response, "text/plain").build();
 		  }
 		}else{
-			String result = createHTMLList(getApplicationTaskOutputs(app, tsk),
-					uriInfo.getAbsolutePath().toString().replaceAll("/$", "") + "/",
-					true, (uriInfo.getPath().toString()).substring(1));
+			String result = createHTMLList(getApplicationTaskOutputs(app, tsk), uriInfo.getAbsolutePath().toString().replaceAll("/$", "") + "/", true, (uriInfo.getPath().toString()).substring(1));
 			return Response.ok(result, "text/html").build();
 		}
-	} // end of listOutputFmts() //
+	}
 
 	public Response listInputAndOutputFormats(String app, String tsk)
 	{
 		return Response.ok().entity(getApplicationTaskInputsOutputs(app, tsk)).build();
-	} // end of listInputAndOutputFormats() //
+	}
 
 	public Response listInputFormats(UriInfo uriInfo, String Accept, String app, String tsk)
 	{
 		if(Accept.equals("text/plain")){
-			return Response.ok(getApplicationTaskInputs(app, tsk), "text/plain")
-					.build();
+			return Response.ok(getApplicationTaskInputs(app, tsk), "text/plain").build();
 		}else{
-			String result = createHTMLList(getApplicationTaskInputs(app, tsk),
-					uriInfo.getBaseUri().toString() + "form/post?application=" + app,
-					false, (uriInfo.getPath().toString()).substring(1));
+			String result = createHTMLList(getApplicationTaskInputs(app, tsk), uriInfo.getBaseUri().toString() + "form/post?application=" + app, false, (uriInfo.getPath().toString()).substring(1));
 			return Response.ok(result, "text/html").build();
 		}
-	} // end of listInputFormats() //
+	}
 
-	public Response listOutputFile(UriInfo uriInfo, String Accept, String app,
-			String tsk, String fmt, String file)
+	public Response listOutputFile(UriInfo uriInfo, String Accept, String app, String tsk, String fmt, String file)
 	{
 		if(Accept.equals("text/plain")){
-			return Response.ok(helper(app, tsk, file, fmt, uriInfo.getBaseUri().toString()),"text/plain").build();
+			return Response.ok(listOutputFileHelper(app, tsk, file, fmt, uriInfo.getBaseUri().toString()),"text/plain").build();
 		}else{
-			String result = helper(app, tsk, file, fmt, uriInfo.getBaseUri().toString());
+			String result = listOutputFileHelper(app, tsk, file, fmt, uriInfo.getBaseUri().toString());
+			
 			try{
 				result = URLDecoder.decode(result, "UTF-8");
 			}catch(UnsupportedEncodingException e){
 				e.printStackTrace();
 			}
 			
-			return Response.ok("<a href=\"" + result + "\">" + result + "</a>",
-					"text/html").build();
+			return Response.ok("<a href=\"" + result + "\">" + result + "</a>", "text/html").build();
 		}
-	} // end of listOutputFile() //
+	}
 
-	public String helper(String application, String task, String file, String format, String uri)	{
-
+	private String listOutputFileHelper(String application, String task, String file, String format, String uri)
+	{
 		int session = -1;
 		String result;
-		String fileName = FilenameUtils.removeExtension(Paths.get(file)
-				.getFileName().toString());
+		//String fileName = FilenameUtils.removeExtension(Paths.get(file).getFileName().toString());
+		String fileName = FilenameUtils.removeExtension(Utility.getFilename(file));
 
 		if(file.startsWith(uri)){ // Locally cached files already have session ids
 			session = SoftwareServer.getSession(file);
 			result = uri + "file/" + fileName + "." + format;
-		}else{ // Remote files must be assigned a session id
+		}else{ 										// Remote files must be assigned a session id
 			session = server.getSession();
-			result = Utility.endSlash(uri) + "file/" + session + "_" + fileName + "."
-					+ format;
+			result = Utility.endSlash(uri) + "file/" + session + "_" + fileName + "." + format;
 		}
+		
 		executeTaskLater(session, application, task, file, format, uri);
+		
 		return result;
-	} // end of helper() //
+	}
 
 	public Response form()
 	{
 		String result = "get\n";
 		result += "post\n";
 		result += "convert";
+		
 		return Response.ok(result).build();
-	} // end of form() //
+	}
 
-	public Response processGet(UriInfo uri, String application, String task,
-			String format, String file, String action)
+	public Response processGet(UriInfo uri, String application, String task, String format, String file, String action)
 	{
-
 		String url = null;
 		if(application.equals("")) application = null;
 		if(task.equals("")) task = null;
@@ -204,14 +171,12 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 		if(application != null && task != null && file != null && format != null){
 			try{
-				url = uri.getBaseUri().toString() + "software/" + application + "/"
-						+ task + "/" + format + "/" + URLEncoder.encode(file, "UTF-8");
+				url = uri.getBaseUri().toString() + "software/" + application + "/"	+ task + "/" + format + "/" + URLEncoder.encode(file, "UTF-8");
 			}catch(UnsupportedEncodingException e){
 				e.printStackTrace();
 			}
-			return Response.ok(
-					"<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url
-							+ "\"></head></html>").build();
+			
+			return Response.ok("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url	+ "\"></head></html>").build();
 		}else{
 			if(action.equals("get")){
 				return Response.ok(getForm(false, application, application != null)).build();
@@ -223,9 +188,10 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 				return printErrorMessage(action);
 			}
 		}
-	} // end of processGet() //
+	}
 
-	public Response fileOrDir(UriInfo uri, String fileOrDirName) throws IOException {
+	public Response fileOrDir(UriInfo uri, String fileOrDirName) throws IOException
+	{
 		File fileOrDir = new File(public_path + fileOrDirName);
 		String url;
 		String media_type = null;
@@ -244,29 +210,30 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 				// "\"></head></html>");
 
 				String myRes = "<html><body style=\"font-family: sans-serif;\">\n";
-				myRes += "<h2>Listing of \"" + "/file/" + fileOrDirName + "/"
-						+ "\"</h2>\n";
+				myRes += "<h2>Listing of \"" + "/file/" + fileOrDirName + "/"	+ "\"</h2>\n";
 				myRes += "<a href=\"" + url + "\">.</a><br>\n";
-				myRes += "<a href=\""
-						+ url.substring(0, url.lastIndexOf('/', url.length() - 2))
-						+ "\">..</a><br>\n";
+				myRes += "<a href=\""	+ url.substring(0, url.lastIndexOf('/', url.length() - 2)) + "\">..</a><br>\n";
 				File[] filesList = fileOrDir.listFiles();
+				
 				for(File files:filesList){
 					myRes += "<a href=\"" + url;
+					
 					if(files.isFile()){
 						myRes += files.getName() + "\">" + files.getName();
 					}else{
 						myRes += files.getName() + "/\">" + files.getName() + "/";
 					}
+					
 					myRes += "</a><br>\n";
 				}
+				
 				myRes += "</body></html>";
 
 				return Response.ok(myRes, "text/html").build();
-
 			}else{ // processing a file
 				Path path = Paths.get(public_path + fileOrDirName);
 				media_type = Files.probeContentType(path);
+				
 				if (Files.size(path) > 0 ) {
 					if(media_type != null){
 						return Response.ok(fileOrDir, media_type).build();
@@ -280,120 +247,122 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 		}else{
 			return Response.status(Status.NOT_FOUND).entity("File doesn't exist").type("text/plain").build();
 		}
-	} // end of fileOrDir() //
+	}
 
 	public Response appIcons(String fileName)
 	{
 		// String imgDefault = "images/polyglot.png";
 		String imgDefault = "images/browndog-small.gif";
+		
 		/*
 		 * // this is to look for image in images directory File file = new
 		 * File("images/" + fileName); if(!file.exists() || file.isDirectory()){
 		 * file = new File(imgDefault); } // end if // return
 		 * Response.ok().entity((Object)file).build();
 		 */
+		
 		String file = FilenameUtils.removeExtension(fileName);
+		
 		if(alias_map.containsKey(file)){
 			file = alias_map.get(file).icon;
 			if(file != null) return Response.ok((Object)new File(file)).build();
 		}
+		
 		return Response.ok((Object)new File(imgDefault)).build();
-	} // end of appIcons() //
+	}
 
 	public Response alive()
 	{
 		return Response.ok("yes").build();
-	} // end of alive() //
+	}
 
 	public Response busy()
 	{
 		return Response.ok("" + server.isBusy()).build();
-	} // end of busy() //
+	}
 
 	public Response processors()
 	{
 		return Response.ok("" + Runtime.getRuntime().availableProcessors()).build();
-	} // end of processors() //
+	}
 
 	public Response memory()
 	{
 		return Response.ok("" + Runtime.getRuntime().maxMemory()).build();
-	} // end of memory() //
+	}
 
 	public Response load()
 	{
 		return Response.ok("" + ManagementFactory.getOperatingSystemMXBean().getSystemLoadAverage()).build(); 
-	} // end of load() //
+	}
 
 	public Response tasks()
 	{
 		return Response.ok("" + server.getTaskCount()).build();
-	} // end of tasks() //
+	}
 
 	public Response kills()
 	{
 		return Response.ok("" + server.getKillCount()).build();
-	} // end of kills() //
+	}
 
 	public Response completedTasks()
 	{
 		return Response.ok("" + server.getCompletedTaskCount()).build();
-	} // end of kills() //
+	}
 
 	public Response screen()
-	{ // only if user is ADMINISTRATORS_ENABLED
+	{ 
+		// only if user is ADMINISTRATORS_ENABLED
 		if(ADMINISTRATORS_ENABLED){
 			ImageUtility.save(public_path + "screen.jpg", ImageUtility.getScreen());
-			return Response.ok((Object)new File(public_path + "screen.jpg"),
-					"image/jpg").build();
+			return Response.ok((Object)new File(public_path + "screen.jpg"), "image/jpg").build();
 		}else{
 			return printErrorMessage("screen");
 		}
-	} // end of screen() //
+	}
 
 	public Response reset()
-	{ // only if user is ADMINISTRATORS_ENABLED
+	{ 
+		// only if user is ADMINISTRATORS_ENABLED
 		if(ADMINISTRATORS_ENABLED){
 			server.resetCounts();
 			return Response.ok("ok").build();
 		}else{
 			return printErrorMessage("reset");
 		}
-	} // end of rest() //
+	}
 
 	public Response reboot()
-	{ // only if user is ADMINISTRATORS_ENABLED
+	{ 
+		// only if user is ADMINISTRATORS_ENABLED
 		if(ADMINISTRATORS_ENABLED){
 			server.rebootMachine();
 			return Response.ok("ok").build();
 		}else{
 			return printErrorMessage("reboot");
 		}
-	} // end of reboot() //
+	}
 
 	public Response printErrorMessage(String msg)
 	{
 		String result = "SoftwareServer message : " + msg + " is an invalid endpoint.";
 		//return Response.status(Status.BAD_REQUEST).entity(result).build();
 		return Response.status(Status.BAD_REQUEST).entity(result).type("text/plain").build();
-	} // end of printErrorMessage() //
+	}
 
-	public Response formPost(MultipartFormDataInput input, String mediaType,
-			String accept, UriInfo uri, String application, String task,String format, String file)	{
+	public Response formPost(MultipartFormDataInput input, String mediaType, String accept, UriInfo uri, String application, String task,String format, String file)	
+	{
 		return processPost(input, mediaType, accept, uri, application, task,format, file, true, false);
 	}
 
 	public Response taskPost(MultipartFormDataInput input, String mediaType,String accept, UriInfo uri, String application, String task, String format)
-			
 	{
 		return processPost (input,mediaType,accept,uri,application,task,format,"",false,true);
 	}
 
-	public Response processPost(MultipartFormDataInput input, String mediaType,
-			String accept, UriInfo uri, String application, String task,
-			String format, String file, boolean formPost, boolean taskPost)
+	public Response processPost(MultipartFormDataInput input, String mediaType, String accept, UriInfo uri, String application, String task, String format, String file, boolean formPost, boolean taskPost)
 	{
-
 		String searchFor = null, result="";
 		String fileName;
 		int session = server.getSession();
@@ -403,10 +372,7 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 		if(file.equals("")) file = null;
 		if(format.equals("")) format = null;
 
-		// in this method, TASK_POST will always be false
-		// need to ask about additional elements in path: !part2.isEmpty() &&
-		// !part3.isEmpty(); ????
-		
+		// in this method, TASK_POST will always be false, need to ask about additional elements in path: !part2.isEmpty() && !part3.isEmpty(); ????
 
 		Map<String,List<InputPart>> formParts = input.getFormDataMap();
 		TreeMap<String,String> parameters = new TreeMap<String,String>();
@@ -415,12 +381,15 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 			for(Map.Entry<String,List<InputPart>> entry:formParts.entrySet()){
 				searchFor = entry.getKey();
 				List<InputPart> inPart = formParts.get(searchFor);
+				
 				for(InputPart inputPart:inPart){
 					MultivaluedMap<String,String> headers = inputPart.getHeaders();
 					String[] contentDispositionHeader = headers.getFirst("Content-Disposition").split(";");
+					
 					if(contentDispositionHeader[1].equals(" name=\"file\"")){
 						fileName = contentDispositionHeader[2].substring(11,contentDispositionHeader[2].length() - 1);
 						file = uri.getBaseUri().toString() + "file/" + session + "_" + fileName;
+						
 						// Handle the body of that part with an InputStream
 						try{
 							InputStream istream = inputPart.getBody(InputStream.class, null);
@@ -448,12 +417,12 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 		}
 
 		if(application != null && task != null && file != null && format != null){
-			
 			try{
 				file = URLDecoder.decode(file,"UTF-8");
 			}catch(UnsupportedEncodingException e1){
 				e1.printStackTrace();
-			}			
+			}
+			
 			executeTaskLater(session, application, task, file, format, uri.getBaseUri().toString());
 			result = uri.getBaseUri().toString() + "file/" + Utility.getFilenameName(file) + "." + format;
 			
@@ -463,22 +432,22 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 				return Response.ok("<a href=\"" + result + "\">" + result + "</a>").build();
 			}
 		}
-		return processGet(uri, application, task, format, file, "post"); // this is
-																																			// temporal
+		
+		return processGet(uri, application, task, format, file, "post"); // this is temporal
 	}
 
-	// save uploaded file to a defined location on the server
 	private void saveFile(InputStream uploadedInputStream, String serverLocation)
 	{
+		// save uploaded file to a defined location on the server
 		try{
 			OutputStream outpuStream = new FileOutputStream(new File(serverLocation));
 			int read = 0;
 			byte[] bytes = new byte[1024];
-
-			outpuStream = new FileOutputStream(new File(serverLocation));
+			
 			while((read = uploadedInputStream.read(bytes)) != -1){
 				outpuStream.write(bytes, 0, read);
 			}
+			
 			outpuStream.flush();
 			outpuStream.close();
 		}catch(IOException e){
@@ -486,14 +455,12 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 		}
 	}
 
-	// ///////////////////////////////////////////////////////////////////////////////////////
-	// from now on all the methods were taken directly from
-	// SoftwareServerReslet.java //
-	// ///////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////
+	// From now on all the methods were taken directly from SoftwareServerReslet.java //
+	////////////////////////////////////////////////////////////////////////////////////
 
 	/**
 	 * Get an icon representation of the available software.
-	 * 
 	 * @return the HTML for the icon representation
 	 */
 	public String getApplicationStack()
@@ -504,10 +471,8 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 			buffer += "<div style=\"float:left\">\n";
 			buffer += "<table>\n";
 			buffer += "<tr><td align=\"center\">\n";
-			buffer += "<a href=\"form/get?application=" + applications.get(i).alias
-					+ "\">";
-			buffer += "<img src=\"image/" + applications.get(i).alias
-					+ ".jpg\" width=\"50\" border=\"0\">";
+			buffer += "<a href=\"form/get?application=" + applications.get(i).alias + "\">";
+			buffer += "<img src=\"image/" + applications.get(i).alias + ".jpg\" width=\"50\" border=\"0\">";
 			buffer += "</a>\n";
 			buffer += "</td></tr><tr><td align=\"center\">\n";
 			buffer += "<font size=\"-1\">" + applications.get(i).name + "</font>\n";
@@ -533,11 +498,8 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 			buffer += "    \n";
 			buffer += "    success: function(){\n";
 			buffer += "      window.endTime = new Date();\n";
-			// buffer +=
-			// "      document.getElementById('ping').innerHTML = window.endTime - window.startTime + \" ms\";\n";
-			buffer += "      document.getElementById('ping').innerHTML = \""
-					+ Runtime.getRuntime().availableProcessors()
-					+ " cores, \" + (window.endTime - window.startTime) + \" ms\";\n";
+			// buffer += "      document.getElementById('ping').innerHTML = window.endTime - window.startTime + \" ms\";\n";
+			buffer += "      document.getElementById('ping').innerHTML = \"" + Runtime.getRuntime().availableProcessors() + " cores, \" + (window.endTime - window.startTime) + \" ms\";\n";
 			buffer += "    }\n";
 			buffer += "  });\n";
 			buffer += "  \n";
@@ -553,7 +515,6 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 	/**
 	 * Get the applications available.
-	 * 
 	 * @return the applications
 	 */
 	public String getApplications()
@@ -561,65 +522,15 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 		String buffer = "";
 
 		for(int i = 0; i < applications.size(); i++){
-			buffer += applications.get(i).alias + " (" + applications.get(i).name
-					+ ")\n";
+			buffer += applications.get(i).alias + " (" + applications.get(i).name	+ ")\n";
 		}
 
-		return buffer;
-	}
-
-	/**
-	 * Convert a line separated list into an HTML list of links.
-	 * 
-	 * @param list
-	 *          the line separated list of items
-	 * @param link
-	 *          the URL base
-	 * @param APPEND
-	 *          true if list items should be appended to the end of link
-	 * @param title
-	 *          the title of the generated HTML page (can be null)
-	 * @return an HTML version of the given list
-	 */
-	public static String createHTMLList(String list, String link, boolean APPEND,
-			String title)
-	{
-		String buffer = "";
-		Scanner scanner = new Scanner(list);
-		String line, endpoint;
-		int tmpi;
-
-		if(title != null){
-			buffer += "<h1>" + title + "</h1>\n";
-		}
-
-		buffer += "<ul>\n";
-
-		while(scanner.hasNextLine()){
-			line = scanner.nextLine().trim();
-			endpoint = line;
-			tmpi = endpoint.indexOf('(');
-
-			if(tmpi >= 0){ // Remove full application name within parenthesis of
-											// software list
-				endpoint = endpoint.substring(0, tmpi).trim();
-			}
-
-			buffer += "<li><a href=\"" + link;
-			if(APPEND) buffer += endpoint;
-			buffer += "\">" + line + "</a></li>\n";
-		}
-
-		buffer += "</ul>\n";
-		scanner.close(); // added by Edgar Black
 		return buffer;
 	}
 
 	/**
 	 * Get the tasks available for the given application.
-	 * 
-	 * @param alias
-	 *          the application alias
+	 * @param alias the application alias
 	 * @return the application tasks
 	 */
 	public String getApplicationTasks(String alias)
@@ -628,8 +539,7 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 		for(int i = 0; i < applications.size(); i++){
 			if(applications.get(i).alias.equals(alias)){
-				for(Iterator<TaskInfo> itr = application_tasks.get(i).iterator(); itr
-						.hasNext();){
+				for(Iterator<TaskInfo> itr = application_tasks.get(i).iterator(); itr.hasNext();){
 					buffer += itr.next() + "\n";
 				}
 
@@ -642,11 +552,8 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 	/**
 	 * Get the output formats supported by the given task.
-	 * 
-	 * @param alias
-	 *          the application alias
-	 * @param task
-	 *          the application task
+	 * @param alias the application alias
+	 * @param task the application task
 	 * @return the output formats supported
 	 */
 	public String getApplicationTaskOutputs(String alias, String task)
@@ -656,13 +563,11 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 		for(int i = 0; i < applications.size(); i++){
 			if(applications.get(i).alias.equals(alias)){
-				for(Iterator<TaskInfo> itr1 = application_tasks.get(i).iterator(); itr1
-						.hasNext();){
+				for(Iterator<TaskInfo> itr1 = application_tasks.get(i).iterator(); itr1.hasNext();){
 					task_info = itr1.next();
 
 					if(task_info.name.equals(task)){
-						for(Iterator<String> itr2 = task_info.outputs.iterator(); itr2
-								.hasNext();){
+						for(Iterator<String> itr2 = task_info.outputs.iterator(); itr2.hasNext();){
 							buffer += itr2.next() + "\n";
 						}
 					}
@@ -677,11 +582,8 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 	/**
 	 * Get the input and output formats supported by the given task.
-	 * 
-	 * @param alias
-	 *          the application alias
-	 * @param task
-	 *          the application task
+	 * @param alias the application alias
+	 * @param task the application task
 	 * @return the input and output formats supported
 	 */
 	public String getApplicationTaskInputsOutputs(String alias, String task)
@@ -692,31 +594,30 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 		for(int i = 0; i < applications.size(); i++){
 			if(applications.get(i).alias.equals(alias)){
-				for(Iterator<TaskInfo> itr1 = application_tasks.get(i).iterator(); itr1
-						.hasNext();){
+				for(Iterator<TaskInfo> itr1 = application_tasks.get(i).iterator(); itr1.hasNext();){
 					task_info = itr1.next();
 
 					if(task_info.name.equals(task)){
 						FIRST_VALUE = true;
 
-						for(Iterator<String> itr2 = task_info.inputs.iterator(); itr2
-								.hasNext();){
+						for(Iterator<String> itr2 = task_info.inputs.iterator(); itr2.hasNext();){
 							if(FIRST_VALUE)
 								FIRST_VALUE = false;
 							else
 								buffer += ", ";
+							
 							buffer += itr2.next();
 						}
 
 						buffer += "\n";
 						FIRST_VALUE = true;
 
-						for(Iterator<String> itr2 = task_info.outputs.iterator(); itr2
-								.hasNext();){
+						for(Iterator<String> itr2 = task_info.outputs.iterator(); itr2.hasNext();){
 							if(FIRST_VALUE)
 								FIRST_VALUE = false;
 							else
 								buffer += ", ";
+							
 							buffer += itr2.next();
 						}
 					}
@@ -731,11 +632,8 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 	/**
 	 * Get the input formats supported by the given task.
-	 * 
-	 * @param alias
-	 *          the application alias
-	 * @param task
-	 *          the application task
+	 * @param alias the application alias
+	 * @param task the application task
 	 * @return the input formats supported
 	 */
 	public String getApplicationTaskInputs(String alias, String task)
@@ -745,13 +643,11 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 		for(int i = 0; i < applications.size(); i++){
 			if(applications.get(i).alias.equals(alias)){
-				for(Iterator<TaskInfo> itr1 = application_tasks.get(i).iterator(); itr1
-						.hasNext();){
+				for(Iterator<TaskInfo> itr1 = application_tasks.get(i).iterator(); itr1.hasNext();){
 					task_info = itr1.next();
 
 					if(task_info.name.equals(task)){
-						for(Iterator<String> itr2 = task_info.inputs.iterator(); itr2
-								.hasNext();){
+						for(Iterator<String> itr2 = task_info.inputs.iterator(); itr2.hasNext();){
 							buffer += itr2.next() + "\n";
 						}
 					}
@@ -765,50 +661,32 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 	}
 
 	/**
-	 * Get the task involved in using the given applications to convert the given
-	 * file to the specified output format.
-	 * 
-	 * @param application_alias
-	 *          the alias of the application to use.
-	 * @param task_string
-	 *          the task to perform
-	 * @param filename
-	 *          the file name of the cached file to convert
-	 * @param output_format
-	 *          the output format
+	 * Get the task involved in using the given applications to convert the given file to the specified output format.
+	 * @param application_alias the alias of the application to use.
+	 * @param task_string the task to perform
+	 * @param filename the file name of the cached file to convert
+	 * @param output_format the output format
 	 * @return the task to perform the conversion
 	 */
-	public Vector<Subtask> getTask(String application_alias, String task_string,
-			String filename, String output_format)
+	public Vector<Subtask> getTask(String application_alias, String task_string, String filename, String output_format)
 	{
 		Task task = new Task(applications);
-		task.addSubtasks(task.getApplicationString(application_alias), task_string,
-				new CachedFileData(filename), new CachedFileData(filename,
-						output_format));
+		task.addSubtasks(task.getApplicationString(application_alias), task_string, new CachedFileData(filename), new CachedFileData(filename, output_format));
 
 		return task.getSubtasks();
 	}
 
 	/**
 	 * Execute a task.
-	 * 
-	 * @param session
-	 *          the session id to use while executing the task
-	 * @param application_alias
-	 *          the application to use
-	 * @param task_string
-	 *          the task to perform (nothing assumed to be a conversion)
-	 * @param file
-	 *          the URL of the file to convert
-	 * @param format
-	 *          the output format
+	 * @param session the session id to use while executing the task
+	 * @param application_alias the application to use
+	 * @param task_string the task to perform (nothing assumed to be a conversion)
+	 * @param file the URL of the file to convert
+	 * @param format the output format
 	 */
-	// this is the new executeTask //
-	// have to make it work //
-
-	public synchronized void executeTask(int session, String application_alias,
-			String task_string, String file, String format, String url)
+	public synchronized void executeTask(int session, String application_alias, String task_string, String file, String format, String url)
 	{
+		// this is the new executeTask, have to make it work //
 		Vector<Subtask> task;
 		String result;
 		String extension = removeParameters(Utility.getFilenameExtension(file));
@@ -816,11 +694,9 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 		String fileName = Utility.getFilenameName(file);
 
 		if(session >= 0){
-
-			if(file.startsWith(url + "file/")){ // Remove session id from filenames of
-																					// locally cached files
+			if(file.startsWith(url + "file/")){ // Remove session id from filenames of locally cached files
 				file = SoftwareServer.getFilename(Utility.getFilename(file));
-			}else{ // Download remote files
+			}else{ 															// Download remote files
 				String inFilename = "/" + session + "_" + fileName + "." + extension;
 				if(download_method.equals("wget")){
 					try{
@@ -832,8 +708,7 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 					try{
 						URL website = new URL(file);
 						ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-						FileOutputStream fos = new FileOutputStream(server.getCachePath()
-								+ inFilename);
+						FileOutputStream fos = new FileOutputStream(server.getCachePath()	+ inFilename);
 						fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 						fos.close(); // added by Edgar Black
 					}catch(Exception e){
@@ -841,7 +716,6 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 					}
 				}else{
 					try{
-
 						inFilename = inFilename.substring(1);
 						inFilename = URLDecoder.decode(inFilename, "UTF-8");
 
@@ -850,7 +724,6 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 						inFilename = file.substring(file.lastIndexOf('/') + 1);
 						inFilename = URLDecoder.decode(inFilename, "UTF-8");
 						inFilename = URLEncoder.encode(inFilename, "UTF-8").replace("+","%20");
-								
 
 						file = file.substring(0, file.lastIndexOf('/') + 1) + inFilename;
 						
@@ -867,9 +740,9 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 						e.printStackTrace();
 					}
 					
-					
 					// Utility.downloadFile(server.getCachePath(), inFilename , file);
 				}
+				
 				// file = removeParameters(Utility.getFilename(file));
 				try{
 					file = URLDecoder.decode(inFilename, "UTF-8");
@@ -883,8 +756,7 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 			result = server.executeTask("localhost", session, task);
 
-			// Create empty output if not created (e.g. when no conversion path was
-			// found)
+			// Create empty output if not created (e.g. when no conversion path was found)
 			if(result == null){
 				result = server.getCachePath() + session + "_"
 						+ Utility.getFilenameName(file) + "." + format;
@@ -892,83 +764,35 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 			}
 
 			// Move result to public folder
-
 			if(!Utility.isDirectory(result)){
 				Utility.copyFile(result, public_path + Utility.getFilename(result));
 			}else{
 				try{
-					FileUtils.copyDirectory(new File(result), new File(public_path
-							+ Utility.getFilename(result)));
+					FileUtils.copyDirectory(new File(result), new File(public_path + Utility.getFilename(result)));
 				}catch(Exception e){
 					e.printStackTrace();
 				}
 
-				// This was commented out by Edgar Black
-				// Is this ok?
-				// It seems to be working.....
+				// This was commented out by Edgar Black. Is this ok? It seems to be working.....
 				// Attach directory as a new endpoint
 				// Directory directory = new Directory(getContext(), "file://" +
 				// Utility.absolutePath(public_path + Utility.getFilename(result)));
 				// directory.setListingAllowed(true);
 				// component.getDefaultHost().attach("/file/" +
 				// Utility.getFilename(result) + "/", directory);
-
 			}
-
 		}
 	}
 
 	/**
-	 * Execute a task.
-	 * 
-	 * @param session
-	 *          the session id to use while executing the task
-	 * @param application_alias
-	 *          the application to use
-	 * @param task_string
-	 *          the task to perform (nothing assumed to be a conversion)
-	 * @param file
-	 *          the URL of the file to convert
-	 * @param format
-	 *          the output format
-	 */
-	/*
-	 * public synchronized void executeTask(int session, String
-	 * application_alias,String task_string, String file, String format, String
-	 * uri) { Vector<Subtask> task; String result; if(session >= 0) {
-	 * if(file.startsWith(Utility.endSlash( uri ) + "file/") ) { // Remove session
-	 * id from filenames of locally cached files file =
-	 * SoftwareServer.getFilename(Utility.getFilename(file)); } else { // Download
-	 * remote files Utility.downloadFile(server.getCachePath(),session + "_" +
-	 * Utility.getFilenameName(file), file); file = Utility.getFilename(file); }
-	 * task = getTask(application_alias, task_string, file, format); //
-	 * Task.print(task, applications); result = server.executeTask("localhost",
-	 * session, task); // Create empty output if not created (e.g. when no
-	 * conversion path was // found) if(result == null) { result =
-	 * server.getCachePath() + session + "_" + Utility.getFilenameName(file) + "."
-	 * + format; Utility.touch(result); } // Move result to public folder
-	 * if(!Utility.isDirectory(result)) { Utility.copyFile(result, public_path +
-	 * Utility.getFilename(result)); } else { try{ FileUtils.copyDirectory(new
-	 * File(result), new File(public_path + Utility.getFilename(result)));
-	 * }catch(Exception e) { e.printStackTrace(); } } } }
-	 */
-
-	/**
 	 * Execute a task asynchronously.
-	 * 
-	 * @param session
-	 *          the session id to use while executing the task
-	 * @param application_alias
-	 *          the application to use
-	 * @param task_string
-	 *          the task to perform (nothing assumed to be a conversion)
-	 * @param file
-	 *          the URL of the input file
-	 * @param format
-	 *          the output format
+	 * @param session the session id to use while executing the task
+	 * @param application_alias the application to use
+	 * @param task_string the task to perform (nothing assumed to be a conversion)
+	 * @param file the URL of the input file
+	 * @param format the output format
 	 */
-	public void executeTaskLater(int session, String application_alias,
-			String task_string, String file, String format, String uri)
+	public void executeTaskLater(int session, String application_alias, String task_string, String file, String format, String uri)
 	{
 		final int session_final = session;
 		final String application_alias_final = application_alias;
@@ -978,24 +802,17 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 		final String uri_final = uri;
 
 		new Thread() {
-			public void run()
-			{
-				executeTask(session_final, application_alias_final, task_string_final,
-						file_final, format_final, uri_final);
+			public void run() {
+				executeTask(session_final, application_alias_final, task_string_final, file_final, format_final, uri_final);
 			}
 		}.start();
 	}
 
 	/**
 	 * Get a web form interface for this restful service.
-	 * 
-	 * @param POST_UPLOADS
-	 *          true if this form should use POST rather than GET for uploading
-	 *          files
-	 * @param selected_application
-	 *          the default application
-	 * @param HIDE_APPLICATIONS
-	 *          true if applications menu should be hidden
+	 * @param POST_UPLOADS true if this form should use POST rather than GET for uploading files
+	 * @param selected_application the default application
+	 * @param HIDE_APPLICATIONS true if applications menu should be hidden
 	 * @return the form
 	 */
 	public String getForm(boolean POST_UPLOADS, String selected_application, boolean HIDE_APPLICATIONS)
@@ -1022,12 +839,9 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 			buffer += "  if(application == \"" + applications.get(i).alias + "\"){\n";
 			count = 0;
 
-			for(Iterator<TaskInfo> itr = application_tasks.get(i).iterator(); itr
-					.hasNext();){
+			for(Iterator<TaskInfo> itr = application_tasks.get(i).iterator(); itr.hasNext();){
 				task_info = itr.next();
-				buffer += "    tasks.options[" + count + "] = new Option(\""
-						+ task_info.name + "\", \"" + task_info.name + "\", "
-						+ (count == 0) + ", " + (count == 0) + ");\n";
+				buffer += "    tasks.options[" + count + "] = new Option(\"" + task_info.name + "\", \"" + task_info.name + "\", " + (count == 0) + ", " + (count == 0) + ");\n";
 				count++;
 			}
 
@@ -1053,15 +867,14 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 		FIRST_BLOCK = true;
 
 		for(int i = 0; i < applications.size(); i++){
-			for(Iterator<TaskInfo> itr1 = application_tasks.get(i).iterator(); itr1
-					.hasNext();){
+			for(Iterator<TaskInfo> itr1 = application_tasks.get(i).iterator(); itr1.hasNext();){
 				task_info = itr1.next();
 				if(FIRST_BLOCK)
 					FIRST_BLOCK = false;
 				else
 					buffer += "\n";
-				buffer += "  if(application == \"" + applications.get(i).alias
-						+ "\" && task == \"" + task_info.name + "\"){\n";
+				
+				buffer += "  if(application == \"" + applications.get(i).alias + "\" && task == \"" + task_info.name + "\"){\n";
 				buffer += "    inputs.innerHTML = \"";
 				FIRST_VALUE = true;
 
@@ -1070,17 +883,16 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 						FIRST_VALUE = false;
 					else
 						buffer += ", ";
+					
 					buffer += itr2.next();
 				}
 
 				buffer += "\";\n";
 				count = 0;
 
-				for(Iterator<String> itr2 = task_info.outputs.iterator(); itr2
-						.hasNext();){
+				for(Iterator<String> itr2 = task_info.outputs.iterator(); itr2.hasNext();){
 					format = itr2.next();
-					buffer += "    outputs.options[" + count + "] = new Option(\""
-							+ format + "\", \"" + format + "\", false, false);\n";
+					buffer += "    outputs.options[" + count + "] = new Option(\"" + format + "\", \"" + format + "\", false, false);\n";
 					count++;
 				}
 
@@ -1125,11 +937,8 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 		if(selected_application != null && HIDE_APPLICATIONS){
 			application = alias_map.get(selected_application);
-
 			buffer += "<tr><td>";
-			if(application.icon != null)
-				buffer += "<img src=\"../image/" + application.alias
-						+ ".jpg\" width=\"50\" border=\"0\">";
+			if(application.icon != null) buffer += "<img src=\"../image/" + application.alias + ".jpg\" width=\"50\" border=\"0\">";
 			buffer += "</td><td><h2>" + application.name + "</h2></td></tr>\n";
 		}
 
@@ -1143,8 +952,7 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 		for(int i = 0; i < applications.size(); i++){
 			buffer += "<option value=\"" + applications.get(i).alias + "\"";
 
-			if(selected_application != null
-					&& selected_application.equals(applications.get(i).alias)){
+			if(selected_application != null && selected_application.equals(applications.get(i).alias)){
 				buffer += " selected";
 			}
 
@@ -1155,23 +963,21 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 		buffer += "<tr><td><b>Task:</b></td>\n";
 		buffer += "<td><select name=\"task\" id=\"task\" onchange=\"setFormats();\">\n";
 
-		for(Iterator<TaskInfo> itr = application_tasks.get(0).iterator(); itr
-				.hasNext();){
+		for(Iterator<TaskInfo> itr = application_tasks.get(0).iterator(); itr.hasNext();){
 			task_info = itr.next();
-			buffer += "<option value=\"" + task_info.name + "\">" + task_info.name
-					+ "</option>\n";
+			buffer += "<option value=\"" + task_info.name + "\">" + task_info.name + "</option>\n";
 		}
 
 		buffer += "</select></td></tr>\n";
 		buffer += "<tr><td><td width=\"100\"><i><font size=\"-1\"><div id=\"inputs\">";
 		FIRST_VALUE = true;
 
-		for(Iterator<String> itr = application_tasks.get(0).first().inputs
-				.iterator(); itr.hasNext();){
+		for(Iterator<String> itr = application_tasks.get(0).first().inputs.iterator(); itr.hasNext();){
 			if(FIRST_VALUE)
 				FIRST_VALUE = false;
 			else
 				buffer += ", ";
+			
 			buffer += itr.next();
 		}
 
@@ -1186,8 +992,7 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 		buffer += "<tr><td><b>Format:</b></td>\n";
 		buffer += "<td><select name=\"format\" id=\"format\">\n";
 
-		for(Iterator<String> itr = application_tasks.get(0).first().outputs
-				.iterator(); itr.hasNext();){
+		for(Iterator<String> itr = application_tasks.get(0).first().outputs.iterator(); itr.hasNext();){
 			format = itr.next();
 			buffer += "<option value=\"" + format + "\">" + format + "</option>\n";
 		}
@@ -1211,7 +1016,6 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 	/**
 	 * Get a web form interface for this restful service.
-	 * 
 	 * @return the form
 	 */
 	public String getForm()
@@ -1221,7 +1025,6 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 	/**
 	 * Get a web form interface for converting via this restful service.
-	 * 
 	 * @return the form
 	 */
 	public String getConvertForm()
@@ -1248,28 +1051,25 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 
 			if(convert_task != null){
 				if(i > 0) buffer += "\n";
-				buffer += "  if(application == \"" + applications.get(i).alias
-						+ "\"){\n";
+				buffer += "  if(application == \"" + applications.get(i).alias + "\"){\n";
 				buffer += "    inputs.innerHTML = \"";
 				FIRST_VALUE = true;
 
-				for(Iterator<String> itr = convert_task.inputs.iterator(); itr
-						.hasNext();){
+				for(Iterator<String> itr = convert_task.inputs.iterator(); itr.hasNext();){
 					if(FIRST_VALUE)
 						FIRST_VALUE = false;
 					else
 						buffer += ", ";
+					
 					buffer += itr.next();
 				}
 
 				buffer += "\";\n";
 				count = 0;
 
-				for(Iterator<String> itr = convert_task.outputs.iterator(); itr
-						.hasNext();){
+				for(Iterator<String> itr = convert_task.outputs.iterator(); itr.hasNext();){
 					format = itr.next();
-					buffer += "    outputs.options[" + count + "] = new Option(\""
-							+ format + "\", \"" + format + "\", false, false);\n";
+					buffer += "    outputs.options[" + count + "] = new Option(\"" + format + "\", \"" + format + "\", false, false);\n";
 					count++;
 				}
 
@@ -1287,8 +1087,7 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 		buffer += "<td><select name=\"application\" id=\"application\" onchange=\"setFormats();\">\n";
 
 		for(int i = 0; i < applications.size(); i++){
-			buffer += "<option value=\"" + applications.get(i).alias + "\">"
-					+ applications.get(i) + "</option>\n";
+			buffer += "<option value=\"" + applications.get(i).alias + "\">" + applications.get(i) + "</option>\n";
 		}
 
 		buffer += "</select></td></tr>\n";
@@ -1304,6 +1103,7 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 					FIRST_VALUE = false;
 				else
 					buffer += ", ";
+				
 				buffer += itr.next();
 			}
 		}
@@ -1329,10 +1129,48 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 	}
 
 	/**
+	 * Convert a line separated list into an HTML list of links.
+	 * @param list the line separated list of items
+	 * @param link the URL base
+	 * @param APPEND true if list items should be appended to the end of link
+	 * @param title the title of the generated HTML page (can be null)
+	 * @return an HTML version of the given list
+	 */
+	public static String createHTMLList(String list, String link, boolean APPEND,	String title)
+	{
+		String buffer = "";
+		Scanner scanner = new Scanner(list);
+		String line, endpoint;
+		int tmpi;
+	
+		if(title != null){
+			buffer += "<h1>" + title + "</h1>\n";
+		}
+	
+		buffer += "<ul>\n";
+	
+		while(scanner.hasNextLine()){
+			line = scanner.nextLine().trim();
+			endpoint = line;
+			tmpi = endpoint.indexOf('(');
+	
+			if(tmpi >= 0){ // Remove full application name within parenthesis of software list
+				endpoint = endpoint.substring(0, tmpi).trim();
+			}
+	
+			buffer += "<li><a href=\"" + link;
+			if(APPEND) buffer += endpoint;
+			buffer += "\">" + line + "</a></li>\n";
+		}
+	
+		buffer += "</ul>\n";
+		scanner.close(); // added by Edgar Black
+		return buffer;
+	}
+
+	/**
 	 * Remove parameters from a URL.
-	 * 
-	 * @param url
-	 *          the URL of a file
+	 * @param url the URL of a file
 	 * @return the URL of a file without parameters
 	 */
 	public static String removeParameters(String url)
@@ -1363,7 +1201,7 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 			  			
 	  try{
 	    conn = (HttpURLConnection)new URL(url).openConnection();
-      	conn.setRequestProperty("Accept", "text/plain");
+      conn.setRequestProperty("Accept", "text/plain");
 	    conn.connect();
 	    ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
 	    
@@ -1382,17 +1220,20 @@ public class ResteasyResources extends SoftwareServerResteasy implements
 	  
 	  return text;
 	}
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-} // end of class ResteasyResources //
 
+	public static void stop()
+	{
+	  try{
+	  	tjws.stop();
+	  }catch(Exception e) {e.printStackTrace();}
+	}
 
-
+	public static void main(String[] args)
+	{
+		tjws = new TJWSEmbeddedJaxrsServer();
+		tjws.setPort(8182);
+		tjws.start();
+		//tjws.getDeployment().getRegistry().addPerRequestResource(ResteasyResources.class);
+		tjws.getDeployment().getRegistry().addSingletonResource(new SoftwareServerRESTEasy());
+	}
+}
