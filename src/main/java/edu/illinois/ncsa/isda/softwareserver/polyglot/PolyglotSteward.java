@@ -404,8 +404,6 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		FileData input, output;
 		String file, tmps;
 		long t0, dt;
-		int responseCode = 0;
-		HttpURLConnection huc;
 				
 		if(conversions != null){
 			file = input_filename;
@@ -453,39 +451,40 @@ public class PolyglotSteward extends Polyglot implements Runnable
 
 				//Wait for result
 				t0 = System.currentTimeMillis();
+				while(!existsURL(file)){
+					Utility.pause(1000);
 
-				try{
-					final URL myUrl = new URL(file);
-					huc = (HttpURLConnection) myUrl.openConnection();
-					responseCode = huc.getResponseCode();
-	  			while(responseCode == 404){
-						Utility.pause(1000);
-						//Break if wait exceeds maximum wait time
-						dt = System.currentTimeMillis() - t0;
-
-						if(dt > max_task_time){
-							System.out.println(" Warning: maximum task wait time exceeded!");
-							break;
-						}
-						huc = (HttpURLConnection) myUrl.openConnection();
-						responseCode = huc.getResponseCode();
+					//Break if wait exceeds maximum wait time
+					dt = System.currentTimeMillis() - t0;
+					if(dt > max_task_time){
+						System.out.println(" Warning: maximum task wait time exceeded!");
+						break;					
 					}
-	  			
-				}catch(MalformedURLException e){
-					e.printStackTrace();
-				}catch(IOException e){
-					e.printStackTrace();
 				}
-				
-				//while(!Utility.existsURL(file)){
 			}
-			
 			System.out.println("\n Output file - " + file);
-
 			//Download output file
 			Utility.downloadFile(output_path, Utility.getFilenameName(input_filename), file);
 		}
 	}
+
+  /**
+   * Check if the specified URL exists.
+   *  @param url the URL to check
+   *  @return true if the URL exists
+   */	
+  public static boolean existsURL(String url){
+    try {
+      HttpURLConnection.setFollowRedirects(false);
+      HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+      connection.setRequestMethod("HEAD");
+      return (connection.getResponseCode() == HttpURLConnection.HTTP_OK);
+    }
+    catch (Exception e) {
+       e.printStackTrace();
+       return false;
+    }
+  }
 	
 	
 	/**
