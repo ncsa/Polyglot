@@ -238,7 +238,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	/**
 	 * Method: processGet.
 	 * Returns a link to the produced file
-	 * @param uriInfo Basic URL information
+	 * @param uri Basic URL information
 	 * @param application application's name
 	 * @param task task to be performed
 	 * @param format requested output format
@@ -553,7 +553,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client
-	 * @param uriInfo Basic URL information
+	 * @param uri Basic URL information
 	 * @param application application's name
 	 * @param task task to be performed
 	 * @param format requested output format
