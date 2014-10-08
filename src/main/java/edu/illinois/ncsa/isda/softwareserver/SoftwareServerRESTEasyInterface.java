@@ -8,16 +8,17 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 public interface SoftwareServerRESTEasyInterface
 {
 	/**
-	 * Welcome method.
-	 * @return SoftwareServer greetings
+	 * Method:   Welcome.
+	 * @returns: SoftwareServer greetings
 	 */
 	@GET
 	@Produces("text/html,text/plain")
-   public Response WelcomeToSoftwareServer();
+	public Response WelcomeToSoftwareServer();
 
 	/**
 	 * Method: listApplications.
-	 * @param uriInfo Basic information about request URL
+	 * Returns a list of applications available in software server
+	 * @param uriInfo Basic URL information
 	 * @param produces content type accepted by client
 	 * @return list of applications available in software server
 	 */
@@ -29,10 +30,11 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: listTasks.
-	 * @param uriInfo Basic information about request URL
+	 * Returns a list of tasks performed by a particular application
+	 * @param uriInfo Basic URL information
 	 * @param produces content type accepted by client
-	 * @param app application
-	 * @return list of tasks related to application
+	 * @param app application's name
+	 * @return list of tasks performed by a particular application
 	 */
 	@GET
 	@Path("software/{app}")
@@ -42,11 +44,12 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: listOutputFmts.
-	 * @param uriInfo  URL information
+	 * Return a list of the file formats produced by the application
+	 * @param uriInfo: Basic URL information
 	 * @param produces content type accepted by client
-	 * @param app application
-	 * @param tsk requested task
-	 * @return list of output formats available per application per task
+	 * @param app application's name
+	 * @param tsk task to be performed
+	 * @return list of the file formats produced by the application
 	 */
 	@GET
 	@Path("software/{app}/{tsk}")
@@ -57,9 +60,10 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: listInputAndOutputFormats.
-	 * @param app application
-	 * @param tsk requested task
-	 * @return list of input and output formats available per application per task
+	 * Returns a list of input and output file formats accepted and produced by the application
+	 * @param app application's name
+	 * @param tsk task to be performed
+	 * @return list of input and output file formats accepted and produced by the application
 	 */
 	@GET
 	@Path("software/{app}/{tsk}/*")
@@ -69,11 +73,12 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: listInputFormats.
-	 * @param uriInfo  URL information
+	 * Returns a list of input file formats accepted by the application
+	 * @param uriInfo Basic URL information
 	 * @param produces content type accepted by client
-	 * @param app application
-	 * @param tsk requested task
-	 * @return list of input formats available per application per task
+	 * @param app application's name
+	 * @param tsk task to be performed
+	 * @return list of input file formats accepted by the application
 	 */
 	@GET
 	@Path("software/{app}/{tsk}/{fmt: [^*]+}")
@@ -84,13 +89,14 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: listOutputFile.
-	 * @param uriInfo  URL information
+	 * Returns a link to the produced file
+	 * @param uriInfo Basic URL information
 	 * @param produces content type accepted by client
-	 * @param app application
-	 * @param tsk requested task
+	 * @param app application's name
+	 * @param tsk task to be performed
 	 * @param fmt requested output format
-	 * @param file input file 
-	 * @return a link to the converted file
+	 * @param file input file to be processed 
+	 * @return link to the produced file
 	 */
 	@GET
 	@Path("software/{app}/{tsk}/{fmt}/{file}")
@@ -102,7 +108,8 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: form.
-	 * @return list of actions (get or post or convert)
+	 * Returns a list of actions that can be performed (get or post or convert) 
+	 * @return list of actions that can be performed
 	 */
 	@GET
 	@Path("/form")
@@ -111,14 +118,15 @@ public interface SoftwareServerRESTEasyInterface
 	public Response form();
 
 	/**
-	 * processGet method.
-	 * @param uri  URI information
-	 * @param app application
-	 * @param tsk requested task
+	 * Method: processGet.
+	 * Returns a link to the produced file
+	 * @param uriInfo Basic URL information
+	 * @param app application's name
+	 * @param tsk task to be performed
 	 * @param fmt requested output format
-	 * @param file input file 
+	 * @param file input file to be processed 
 	 * @param action (get or post or convert)
-	 * @return a link to the converted file
+	 * @return a link to the produced file
 	 */
 	@GET
 	@Path("/form/{action}")
@@ -130,9 +138,10 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: fileOrDir.
-	 * @param uri  URI information
+	 * Returns a link to either a produced file or to a directory tree
+	 * @param uriInfo Basic URL information
 	 * @param fileOrDirName input file or directory
-	 * @return a link to the converted file or link to directory
+	 * @return a link to either a produced file or to a directory tree
 	 */
 	@GET
 	@Path("/file/{name: .+}")
@@ -142,8 +151,9 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: appIcons.
-	 * @param fileName icon file name
-	 * @return the requested icon
+	 * Returns the requested icon file if available. If not, a default icon file is return instead.
+	 * @param fileName file name of icon
+	 * @return the requested icon file if available, default icon icon if not
 	 */
 	@GET
 	@Path("/image/{icon}")
@@ -153,17 +163,19 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: alive.
+	 * Used to verify if the server is responding
 	 * @return yes if the server is alive 
 	 */
-  @GET
+	@GET
 	@Path("/alive")
 	@Consumes("text/*")
 	@Produces("text/plain")
 	public Response alive();
 
 	/**
-	 * busy method.
-	 * @return true if the server is processing a request, false if not. 
+	 * Method: busy.
+	 * Used to verify if the server is busy
+	 * @return true if the server is processing at least one request, false if not. 
 	 */
 	@GET
 	@Path("/busy")
@@ -173,6 +185,7 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: processors.
+	 * Used to know the number of processor available to the server 
 	 * @return number of processors available to the server 
 	 */
 	@GET
@@ -183,6 +196,7 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: memory.
+	 * Used to know the memory available to the server 
 	 * @return memory available to the server (is this right????)  
 	 */
 	@GET
@@ -193,6 +207,7 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: load.
+	 * Used to get a measure of the server load
 	 * @return measure of the server load  
 	 */
 	@GET
@@ -203,6 +218,7 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: tasks.
+	 * Used to know the number of task processed since the server starts
 	 * @return number of task since the server starts
 	 */
 	@GET
@@ -213,6 +229,7 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: kills.
+	 * Used to know the number of task killed since the server starts
 	 * @return number of task killed since the server starts
 	 */
 	@GET
@@ -223,6 +240,7 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: completedTasks.
+	 * Used to know the number of task completed since the server starts
 	 * @return number of task completed since the server starts
 	 */
 	@GET
@@ -233,6 +251,8 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: screen.
+	 * Used to have a look at the server screen and determine if the
+	 * server must be restarted due to hang application.
 	 * @return number an image of the server screen (only authorized users)
 	 */
 	@GET
@@ -243,6 +263,7 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: reset.
+	 * Used to reset the server remotely in case it is necessary
 	 * @return ok after reseting the server. (only authorized users)
 	 */
 	@GET
@@ -253,6 +274,7 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: reboot.
+	 * Used to reboot the server remotely in case it is necessary
 	 * @return ok after rebooting the server. (only authorized users)
 	 */
 	@GET
@@ -263,7 +285,8 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: printErrorMessage.
-	 * @param msg Error message to be returned
+	 * Returns an error message 
+	 * @param msg String to be returned within the error message
 	 * @return error message
 	 */
 	@GET
@@ -274,15 +297,16 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: formPost.
-	 * @param input MultipartFormDataInput
+	 * Returns a link to the produced file
+	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client
-	 * @param uri  URL information
-	 * @param app application
-	 * @param tsk requested task
+	 * @param uriInfo Basic URL information
+	 * @param app application's name
+	 * @param tsk task to be performed
 	 * @param fmt requested output format
-	 * @param file input file 
-	 * @return a link to the converted file
+	 * @param file name of the input file to be processed 
+	 * @return a link to the produced file
 	 */
 	@POST
 	@Path("/form/{action}")
@@ -295,17 +319,17 @@ public interface SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: taskPost.
-	 * @param input MultipartFormDataInput
+	 * Returns a link to the produced file
+	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client
-	 * @param uri  URL information
-	 * @param app application
-	 * @param tsk requested task
+	 * @param uriInfo Basic URL information
+	 * @param app application's name
+	 * @param tsk task to be performed
 	 * @param fmt requested output format
-	 * @param file input file 
-	 * @return a link to the converted file
+	 * @return a link to the produced file
 	 */
-@POST
+	@POST
 	@Path("/{softOrForm}/{app}/{tsk}/{fmt}")
 	// @Consumes("multipart/form-data")
 	@Produces("text/plain")

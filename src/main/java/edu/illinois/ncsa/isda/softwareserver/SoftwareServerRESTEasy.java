@@ -28,6 +28,9 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	private static boolean ADMINISTRATORS_ENABLED = true;
 	private static String download_method = "";
 	
+	/**
+	 * Constructor:   SoftwareServerRESTEasy.
+	 */
 	public SoftwareServerRESTEasy()
 	{
 		server = new SoftwareServer("SoftwareServer.conf");
@@ -48,8 +51,8 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: Welcome.
-	 * @return SoftwareServer greetings
+	 * Method:   Welcome.
+	 * @returns: SoftwareServer greetings
 	 */
 	public Response WelcomeToSoftwareServer()
 	{
@@ -57,11 +60,12 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method:listApplications.
-	 * @param uriInfo Basic information about request URL
-	 * @param produces content type accepted by client
+	 * Method: listApplications.
+	 * Returns a list of applications available in software server
+	 * @param uriInfo Basic URL information
+	 * @param Accept content type accepted by client
 	 * @return list of applications available in software server
-	 */	
+	 */
 	public Response listApplications(UriInfo uriInfo, String Accept)
 	{
 		if(Accept.equals("text/plain")){
@@ -81,10 +85,11 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: listTasks.
-	 * @param uriInfo  URL information
-	 * @param produces content type accepted by client
-	 * @param app application
-	 * @return list of tasks related to application
+	 * Returns a list of tasks performed by a particular application
+	 * @param uriInfo Basic URL information
+	 * @param Accept content type accepted by client
+	 * @param app application's name
+	 * @return list of tasks performed by a particular application
 	 */
 	public Response listTasks(UriInfo uriInfo, String Accept, String app)
 	{
@@ -100,13 +105,15 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 			return Response.ok(result, "text/html").build();
 		}
 	}
+	
 	/**
 	 * Method: listOutputFmts.
-	 * @param uriInfo  URL information
-	 * @param produces content type accepted by client
-	 * @param app application
-	 * @param tsk requested task
-	 * @return list of output formats available per application per task
+	 * Return a list of the file formats produced by the application
+	 * @param uriInfo: Basic URL information
+	 * @param Accept content type accepted by client
+	 * @param app application's name
+	 * @param tsk task to be performed
+	 * @return list of the file formats produced by the application
 	 */
 	public Response listOutputFmts(UriInfo uriInfo, String Accept, String app,String tsk)
 	{	
@@ -126,9 +133,10 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: listInputAndOutputFormats.
-	 * @param app application
-	 * @param tsk requested task
-	 * @return list of input and output formats available per application per task
+	 * Returns a list of input and output file formats accepted and produced by the application
+	 * @param app application's name
+	 * @param tsk task to be performed
+	 * @return list of input and output file formats accepted and produced by the application
 	 */
 	public Response listInputAndOutputFormats(String app, String tsk)
 	{
@@ -137,11 +145,12 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: listInputFormats.
-	 * @param uriInfo  URL information
-	 * @param produces content type accepted by client
-	 * @param app application
-	 * @param tsk requested task
-	 * @return list of input formats available per application per task
+	 * Returns a list of input file formats accepted by the application
+	 * @param uriInfo Basic URL information
+	 * @param Accept content type accepted by client
+	 * @param app application's name
+	 * @param tsk task to be performed
+	 * @return list of input file formats accepted by the application
 	 */
 	public Response listInputFormats(UriInfo uriInfo, String Accept, String app, String tsk)
 	{
@@ -155,13 +164,14 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: listOutputFile.
-	 * @param uriInfo  URL information
+	 * Returns a link to the produced file
+	 * @param uriInfo Basic URL information
 	 * @param produces content type accepted by client
-	 * @param app application
-	 * @param tsk requested task
+	 * @param app application's name
+	 * @param tsk task to be performed
 	 * @param fmt requested output format
-	 * @param file input file 
-	 * @return a link to the converted file
+	 * @param file input file to be processed 
+	 * @return link to the produced file
 	 */
 	public Response listOutputFile(UriInfo uriInfo, String Accept, String app, String tsk, String fmt, String file)
 	{
@@ -182,12 +192,14 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: listOutputFileHelper.
-	 * @param application application
-	 * @param task requested task
-	 * @param file input file 
-	 * @param format requested output format
-	 * @param uri base uri of request
-	 * @return a link to the converted file
+	 * This is an auxiliary method.
+	 * Returns a string with the name of the produced file
+	 * @param application application's name
+	 * @param fmt requested output format
+	 * @param task task to be performed
+	 * @param file input file to be processed 
+	 * @param uri URL base information
+	 * @return name of the produced file
 	 */
 	private String listOutputFileHelper(String application, String task, String file, String format, String uri)
 	{
@@ -211,7 +223,8 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: form.
-	 * @return list of actions (get or post or convert)
+	 * Returns a list of actions that can be performed (get or post or convert) 
+	 * @return list of actions that can be performed
 	 */
 	public Response form()
 	{
@@ -224,13 +237,14 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: processGet.
-	 * @param uri  URI information
-	 * @param application application
-	 * @param task requested task
+	 * Returns a link to the produced file
+	 * @param uriInfo Basic URL information
+	 * @param application application's name
+	 * @param task task to be performed
 	 * @param format requested output format
-	 * @param file input file 
+	 * @param file input file to be processed 
 	 * @param action (get or post or convert)
-	 * @return a link to the converted file
+	 * @return a link to the produced file
 	 */
 	public Response processGet(UriInfo uri, String application, String task, String format, String file, String action)
 	{
@@ -263,9 +277,10 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: fileOrDir.
-	 * @param uri  URI information
+	 * Returns a link to either a produced file or to a directory tree
+	 * @param uri Basic URL information
 	 * @param fileOrDirName input file or directory
-	 * @return a link to the converted file or link to directory
+	 * @return a link to either a produced file or to a directory tree
 	 */
 	public Response fileOrDir(UriInfo uri, String fileOrDirName) throws IOException
 	{
@@ -328,8 +343,9 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: appIcons.
-	 * @param fileName icon file name
-	 * @return the requested icon
+	 * Returns the requested icon file if available. If not, a default icon file is return instead.
+	 * @param fileName file name of icon
+	 * @return the requested icon file if available, default icon icon if not
 	 */
 	public Response appIcons(String fileName)
 	{
@@ -355,6 +371,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: alive.
+	 * Used to verify if the server is responding
 	 * @return yes if the server is alive 
 	 */
 	public Response alive()
@@ -364,7 +381,8 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: busy.
-	 * @return true if the server is processing a request, false if not. 
+	 * Used to verify if the server is busy
+	 * @return true if the server is processing at least one request, false if not. 
 	 */
 	public Response busy()
 	{
@@ -373,6 +391,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: processors.
+	 * Used to know the number of processor available to the server 
 	 * @return number of processors available to the server 
 	 */
 	public Response processors()
@@ -382,6 +401,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: memory.
+	 * Used to know the memory available to the server 
 	 * @return memory available to the server (is this right????)  
 	 */
 	public Response memory()
@@ -391,6 +411,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: load.
+	 * Used to get a measure of the server load
 	 * @return measure of the server load  
 	 */
 	public Response load()
@@ -400,6 +421,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: tasks.
+	 * Used to know the number of task processed since the server starts
 	 * @return number of task since the server starts
 	 */
 	public Response tasks()
@@ -409,15 +431,17 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: kills.
+	 * Used to know the number of task killed since the server starts
 	 * @return number of task killed since the server starts
 	 */
-  public Response kills()
+    public Response kills()
 	{
 		return Response.ok("" + server.getKillCount()).build();
 	}
 
 	/**
 	 * Method: completedTasks.
+	 * Used to know the number of task completed since the server starts
 	 * @return number of task completed since the server starts
 	 */
 	public Response completedTasks()
@@ -427,6 +451,8 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: screen.
+	 * Used to have a look at the server screen and determine if the
+	 * server must be restarted due to hang application.
 	 * @return number an image of the server screen (only authorized users)
 	 */
 	public Response screen()
@@ -442,6 +468,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: reset.
+	 * Used to reset the server remotely in case it is necessary
 	 * @return ok after reseting the server. (only authorized users)
 	 */
 	public Response reset()
@@ -457,6 +484,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: reboot.
+	 * Used to reboot the server remotely in case it is necessary
 	 * @return ok after rebooting the server. (only authorized users)
 	 */
 	public Response reboot()
@@ -472,7 +500,8 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: printErrorMessage.
-	 * @param msg Error message to be returned
+	 * Returns an error message 
+	 * @param msg String to be returned within the error message
 	 * @return error message
 	 */
 	public Response printErrorMessage(String msg)
@@ -484,51 +513,55 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Method: formPost.
-	 * @param input MultipartFormDataInput
+	 * Returns a link to the produced file
+	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client
-	 * @param uri  URL information
-	 * @param application application
-	 * @param task requested task
+	 * @param uri Basic URL information
+	 * @param application application's name
+	 * @param task task to be performed
 	 * @param format requested output format
-	 * @param file input file 
-	 * @return a link to the converted file
+	 * @param file name of the input file to be processed 
+	 * @return a link to the produced file
 	 */
 	public Response formPost(MultipartFormDataInput input, String mediaType, String accept, UriInfo uri, String application, String task,String format, String file)	
 	{
-		return processPost(input, mediaType, accept, uri, application, task,format, file, true, false);
+		return processPost(input, mediaType, accept, uri, application, task,format, file, true);
 	}
 
 	/**
 	 * Method: taskPost.
-	 * @param input MultipartFormDataInput
+	 * Returns a link to the produced file
+	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client
-	 * @param uri  URL information
-	 * @param application application
-	 * @param task requested task
+	 * @param uri Basic URL information
+	 * @param application application's name
+	 * @param task task to be performed
 	 * @param format requested output format
-	 * @param file input file 
-	 * @return a link to the converted file
+	 * @return a link to the produced file
 	 */
 	public Response taskPost(MultipartFormDataInput input, String mediaType,String accept, UriInfo uri, String application, String task, String format)
 	{
-		return processPost (input,mediaType,accept,uri,application,task,format,"",false,true);
+		return processPost (input,mediaType,accept,uri,application,task,format,"",false);
 	}
 
 	/**
-	 * Method: processPost. This method is the one actually doing the job for formPost() and taskPost()
-	 * @param input MultipartFormDataInput
+	 * Method: processPost.
+	 * This is an auxiliary method working for the formPost() and the taskPost() methods.
+	 * Returns the produced file
+	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client
-	 * @param uri  URL information
-	 * @param application application
-	 * @param task requested task
+	 * @param uriInfo Basic URL information
+	 * @param application application's name
+	 * @param task task to be performed
 	 * @param format requested output format
-	 * @param file input file 
-	 * @return a link to the converted file
+	 * @param file name of the input file to be processed 
+	 * @param fromPost true if message comes from formPost; false otherwise
+	 * @return the produced file
 	 */
-	public Response processPost(MultipartFormDataInput input, String mediaType, String accept, UriInfo uri, String application, String task, String format, String file, boolean formPost, boolean taskPost)
+	public Response processPost(MultipartFormDataInput input, String mediaType, String accept, UriInfo uri, String application, String task, String format, String file, boolean formPost)
 	{
 		String searchFor = null, result="";
 		String fileName;
@@ -604,7 +637,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: saveFile. auxiliary method working for the processPost() method.
+	 * Method: saveFile. This is an auxiliary method working for the processPost() method.
 	 * @param uploadedInputStream input stream
 	 * @param serverLocation filename
 	 * @return void
