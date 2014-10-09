@@ -542,8 +542,7 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 
 	/**
-	 * This is an auxiliary method working for the formPost() and the taskPost() methods.
-	 * Returns the produced file
+	 * This is an auxiliary method working for the formPost() and the taskPost() methods. Returns the produced file
 	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client

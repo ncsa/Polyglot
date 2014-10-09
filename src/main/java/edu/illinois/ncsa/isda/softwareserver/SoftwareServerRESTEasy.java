@@ -17,6 +17,13 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.plugins.server.tjws.TJWSEmbeddedJaxrsServer;
 import javax.ws.rs.core.MultivaluedMap;
 
+
+/**
+ * A restful interface for a software server.
+ * Think of this as an extended software server.
+ * RESTeasy version
+ * @author Kenton McHenry
+ */
 public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 {
 	protected static TJWSEmbeddedJaxrsServer tjws;
@@ -29,7 +36,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	private static String download_method = "";
 	
 	/**
-	 * Constructor:   SoftwareServerRESTEasy.
+	 * Initialize.
 	 */
 	public SoftwareServerRESTEasy()
 	{
@@ -51,7 +58,8 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * @returns: SoftwareServer greetings
+	 * Returns SoftwareServer greetings
+	 * @return: SoftwareServer greetings
 	 */
 	public Response WelcomeToSoftwareServer()
 	{
@@ -521,8 +529,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * This is an auxiliary method working for the formPost() and the taskPost() methods.
-	 * Returns the produced file
+	 * This is an auxiliary method working for the formPost() and the taskPost() methods. Returns the produced file
 	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client
@@ -610,6 +617,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
+	 * This is an auxiliary method working for the processPost() method
 	 * @param uploadedInputStream input stream
 	 * @param serverLocation filename
 	 * @return void
@@ -1399,6 +1407,9 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	  return text;
 	}
 
+	/**
+	 * Used to stop the servlet server
+	 */
 	public static void stop()
 	{
 	  try{
@@ -1406,6 +1417,10 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	  }catch(Exception e) {e.printStackTrace();}
 	}
 
+	/**
+	 * Used to initialize and start the servlet server called
+	 * the Tiny Java Web Server and Servlet (TJWS) Container
+	 */
 	public static void main(String[] args)
 	{
 		tjws = new TJWSEmbeddedJaxrsServer();
