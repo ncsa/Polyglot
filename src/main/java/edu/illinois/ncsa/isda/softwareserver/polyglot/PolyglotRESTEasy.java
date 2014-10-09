@@ -172,7 +172,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Method: Endpoints.
 	 * Used to list the of endpoints in the polyglot server
 	 * @param uriInfo Basic URL information
 	 * @param accept content type accepted by client
@@ -199,7 +198,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 
 	/**
-	 * Method: Convert.
 	 * Used to list all the output formats produced by the polyglot server
 	 * @param uriInfo Basic URL information
 	 * @param accept content type accepted by client
@@ -222,7 +220,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Method: ConvertFmt.
 	 * Used to obtain a list the input formats associated with the output format
 	 * @param outFmt the output format
 	 * @return list the input formats associated with the output format
@@ -233,7 +230,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 
 	/**
-	 * Method: ConvertFile.
 	 * Used to post a conversion request to the softwareserver
 	 * @param uriInfo Basic URL information
 	 * @param accept content type accepted by client
@@ -325,7 +321,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Method: Form.
 	 * Used to obtain a list of actions that can be performed (get, post)
 	 * @param uriInfo Basic URL information
 	 * @param accept content type accepted by client
@@ -343,7 +338,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Method: Forms.
 	 * Used to obtain 
 	 * @param uriInfo Basic URL information
 	 * @param output the default output format
@@ -378,7 +372,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Method: File.
 	 * Used to download a file form polyglot server
 	 * @param uri Basic URL information
 	 * @param fileName file to be downloaded polyglot server
@@ -409,7 +402,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Method: appIcons.
 	 * Returns the requested icon file if available. If not, a default icon file is return instead.
 	 * @param fileName file name of icon
 	 * @return the requested icon file if available, default icon icon if not
@@ -427,7 +419,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Method: alive.
 	 * Used to verify if the server is responding
 	 * @return yes if the server is alive 
 	 */
@@ -437,7 +428,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Method: Servers.
 	 * Used to list the software servers connected to polyglot server
 	 * @return list the software servers connected to polyglot server
 	 */
@@ -447,7 +437,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Method: Software.
 	 * Used to list the applications available in polyglot server
 	 * @return list of applications available in software server
 	 */
@@ -457,7 +446,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 
 	/**
-	 * Method: Inputs.
 	 * Used to list all the input formats the polyglot server is able to serve
 	 * @return list of input formats 
 	 */
@@ -472,7 +460,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 
 	/**
-	 * Method: InputsOut.
 	 * Used to list all the input formats that can be converted to output format
 	 * @param uriInfo Basic URL information
 	 * @param accept content type accepted by client
@@ -489,7 +476,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Method: Outputs.
 	 * Used to list all the file formats the polyglot server is able to produce
 	 * @return list of output formats 
 	 */
@@ -499,7 +485,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 
 	/**
-	 * Method: Requests.
 	 * Used to obtain of a list of the processed task since startup
 	 * @return list of the processed task since startup
 	 */
@@ -516,7 +501,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Method: printErrorMessage.
 	 * Returns an error message 
 	 * @param msg String to be returned within the error message
 	 * @return error message
@@ -528,7 +512,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Method: formPost.
 	 * Returns a link to the produced file
 	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
@@ -544,7 +527,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 
 	/**
-	 * Method: taskPost.
 	 * Returns a link to the produced file
 	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
@@ -560,7 +542,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 
 	/**
-	 * Method: processPost.
 	 * This is an auxiliary method working for the formPost() and the taskPost() methods.
 	 * Returns the produced file
 	 * @param input Form containing Input Data

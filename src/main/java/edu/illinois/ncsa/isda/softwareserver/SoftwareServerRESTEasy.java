@@ -51,7 +51,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method:   Welcome.
 	 * @returns: SoftwareServer greetings
 	 */
 	public Response WelcomeToSoftwareServer()
@@ -60,7 +59,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: listApplications.
 	 * Returns a list of applications available in software server
 	 * @param uriInfo Basic URL information
 	 * @param Accept content type accepted by client
@@ -84,7 +82,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: listTasks.
 	 * Returns a list of tasks performed by a particular application
 	 * @param uriInfo Basic URL information
 	 * @param Accept content type accepted by client
@@ -107,7 +104,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 	
 	/**
-	 * Method: listOutputFmts.
 	 * Return a list of the file formats produced by the application
 	 * @param uriInfo: Basic URL information
 	 * @param Accept content type accepted by client
@@ -132,7 +128,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: listInputAndOutputFormats.
 	 * Returns a list of input and output file formats accepted and produced by the application
 	 * @param app application's name
 	 * @param tsk task to be performed
@@ -144,7 +139,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: listInputFormats.
 	 * Returns a list of input file formats accepted by the application
 	 * @param uriInfo Basic URL information
 	 * @param Accept content type accepted by client
@@ -163,7 +157,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: listOutputFile.
 	 * Returns a link to the produced file
 	 * @param uriInfo Basic URL information
 	 * @param produces content type accepted by client
@@ -191,7 +184,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: listOutputFileHelper.
 	 * This is an auxiliary method.
 	 * Returns a string with the name of the produced file
 	 * @param application application's name
@@ -222,7 +214,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: form.
 	 * Returns a list of actions that can be performed (get or post or convert) 
 	 * @return list of actions that can be performed
 	 */
@@ -236,7 +227,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: processGet.
 	 * Returns a link to the produced file
 	 * @param uri Basic URL information
 	 * @param application application's name
@@ -276,7 +266,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: fileOrDir.
 	 * Returns a link to either a produced file or to a directory tree
 	 * @param uri Basic URL information
 	 * @param fileOrDirName input file or directory
@@ -342,7 +331,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: appIcons.
 	 * Returns the requested icon file if available. If not, a default icon file is return instead.
 	 * @param fileName file name of icon
 	 * @return the requested icon file if available, default icon icon if not
@@ -370,7 +358,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: alive.
 	 * Used to verify if the server is responding
 	 * @return yes if the server is alive 
 	 */
@@ -380,7 +367,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: busy.
 	 * Used to verify if the server is busy
 	 * @return true if the server is processing at least one request, false if not. 
 	 */
@@ -390,7 +376,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: processors.
 	 * Used to know the number of processor available to the server 
 	 * @return number of processors available to the server 
 	 */
@@ -400,7 +385,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: memory.
 	 * Used to know the memory available to the server 
 	 * @return memory available to the server (is this right????)  
 	 */
@@ -410,7 +394,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: load.
 	 * Used to get a measure of the server load
 	 * @return measure of the server load  
 	 */
@@ -420,7 +403,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: tasks.
 	 * Used to know the number of task processed since the server starts
 	 * @return number of task since the server starts
 	 */
@@ -430,7 +412,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: kills.
 	 * Used to know the number of task killed since the server starts
 	 * @return number of task killed since the server starts
 	 */
@@ -440,7 +421,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: completedTasks.
 	 * Used to know the number of task completed since the server starts
 	 * @return number of task completed since the server starts
 	 */
@@ -450,7 +430,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: screen.
 	 * Used to have a look at the server screen and determine if the
 	 * server must be restarted due to hang application.
 	 * @return number an image of the server screen (only authorized users)
@@ -467,7 +446,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: reset.
 	 * Used to reset the server remotely in case it is necessary
 	 * @return ok after reseting the server. (only authorized users)
 	 */
@@ -483,7 +461,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: reboot.
 	 * Used to reboot the server remotely in case it is necessary
 	 * @return ok after rebooting the server. (only authorized users)
 	 */
@@ -499,7 +476,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: printErrorMessage.
 	 * Returns an error message 
 	 * @param msg String to be returned within the error message
 	 * @return error message
@@ -512,7 +488,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: formPost.
 	 * Returns a link to the produced file
 	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
@@ -530,7 +505,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: taskPost.
 	 * Returns a link to the produced file
 	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
@@ -547,7 +521,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: processPost.
 	 * This is an auxiliary method working for the formPost() and the taskPost() methods.
 	 * Returns the produced file
 	 * @param input Form containing Input Data
@@ -637,7 +610,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Method: saveFile. This is an auxiliary method working for the processPost() method.
 	 * @param uploadedInputStream input stream
 	 * @param serverLocation filename
 	 * @return void
