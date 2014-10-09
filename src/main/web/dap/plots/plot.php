@@ -26,11 +26,11 @@ foreach($cursor as $document) {
 	$timestamp = round($document["start_time"] / $time_unit);
 	//echo $timestamp . "<br>\n";
 
-	//if(!array_key_exists($timestamp, $tasks_per_x)) $tasks_per_x[$timestamp] = 0;	//ToDo: Why is this always true now?
+	if(!array_key_exists($timestamp, $tasks_per_x)) $tasks_per_x[$timestamp] = 0;	//ToDo: Why is this always true now?
 	$tasks_per_x[$timestamp]++;
 
 	if(!$document["success"]){
-		//if(!array_key_exists($timestamp, $failures_per_x)) $failures_per_x[$timestamp] = 0;	//ToDo: Why is this always true now?
+		if(!array_key_exists($timestamp, $failures_per_x)) $failures_per_x[$timestamp] = 0;	//ToDo: Why is this always true now?
 		$failures_per_x[$timestamp]++;
 	}
 }
