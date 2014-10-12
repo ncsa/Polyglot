@@ -451,33 +451,39 @@ public class PolyglotSteward extends Polyglot implements Runnable
 
 				//Wait for result
 				t0 = System.currentTimeMillis();
+				
 				while(!existsURL(file)){
 					Utility.pause(1000);
 
 					//Break if wait exceeds maximum wait time
 					dt = System.currentTimeMillis() - t0;
+					
 					if(dt > max_task_time){
 						System.out.println(" Warning: maximum task wait time exceeded!");
 						break;					
 					}
 				}
 			}
+			
 			System.out.println("\n Output file - " + file);
+			
 			//Download output file
 			Utility.downloadFile(output_path, Utility.getFilenameName(input_filename), file);
 		}
 	}
 
   /**
-   * Check if the specified URL exists.
-   *  @param url the URL to check
-   *  @return true if the URL exists
+   * Check if the specified URL exists.  TODO: update kgm.utility.Utilities?
+   * @param url the URL to check
+   * @return true if the URL exists
    */	
-  public static boolean existsURL(String url){
+  public static boolean existsURL(String url)
+  {
     try {
       HttpURLConnection.setFollowRedirects(false);
       HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
       connection.setRequestMethod("HEAD");
+      
       return (connection.getResponseCode() == HttpURLConnection.HTTP_OK);
     }
     catch (Exception e) {
@@ -485,7 +491,6 @@ public class PolyglotSteward extends Polyglot implements Runnable
        return false;
     }
   }
-	
 	
 	/**
 	 * Close all software server client connections.

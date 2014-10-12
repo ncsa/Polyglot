@@ -12,13 +12,17 @@ import org.apache.commons.io.FilenameUtils;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.*;
 import javax.ws.rs.core.Response.Status;
-import javax.ws.rs.core.MultivaluedMap;
 import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.plugins.providers.multipart.InputPart;
 import org.jboss.resteasy.plugins.server.tjws.TJWSEmbeddedJaxrsServer;
 import org.json.JSONArray;
 import com.mongodb.*;
 
+/**
+ * A restful interface for a polyglot steward.
+ * Think of this as an extended polyglot steward.
+ * @author Edgar Black
+ */
 public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 {
 	protected static TJWSEmbeddedJaxrsServer tjws;
@@ -41,24 +45,9 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
   private static MongoClient mongo;
 	private static DB db;
 		
-	public static void main(String[] args)
-	{
-		tjws = new TJWSEmbeddedJaxrsServer();
-		tjws.setPort(8184);
-		tjws.start();
-		// tjws.getDeployment().getRegistry().addPerRequestResource(ResteasyResources.class);
-		tjws.getDeployment().getRegistry().addSingletonResource(new PolyglotRESTEasy());
-	}
-	
-	public static void stop()
-	{
-		try{
-			tjws.stop();
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-	}	
-	
+	/**
+	 * Class constructor.
+	 */
 	public PolyglotRESTEasy()
 	{
 		//Load configuration file
@@ -512,7 +501,7 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Process a file posted in the web form and return a link to the produced file
+	 * Process a file submitted via the web form and return a link to the produced file
 	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client
@@ -527,7 +516,7 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 
 	/**
-	 * Returns a link to the produced file
+	 * Process a file submitted to Polyglot and return a link to the produced file
 	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client
@@ -660,41 +649,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		return null;
 	}
 
-	private void saveFile(InputStream uploadedInputStream, String serverLocation)
-	{
-		try{
-			OutputStream outpuStream = new FileOutputStream(new File(serverLocation));
-			int read = 0;
-			byte[] bytes = new byte[1024];
-
-			outpuStream = new FileOutputStream(new File(serverLocation));
-			while((read = uploadedInputStream.read(bytes)) != -1){
-				outpuStream.write(bytes, 0, read);
-			}
-			outpuStream.flush();
-			outpuStream.close();
-		}catch(IOException e){
-			e.printStackTrace();
-		}
-	}
-	
-	//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-	/**
-	 * Convert a Collection of strings to a line separated list of strings.
-	 * @param strings a Collection of strings
-	 * @return the resulting string representation
-	 */
-	public static String toString(Collection<String> strings)
-	{
-		String string = "";
-		
-		for(Iterator<String> itr=strings.iterator(); itr.hasNext();){
-			string += itr.next() + "\n";
-		}
-		
-		return string;
-	}
-	
 	/**
 	 * Get a web form interface for this restful service.
 	 * @param POST_UPLOADS true if this form should use POST rather than GET for uploading files
@@ -800,6 +754,47 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		
 		return buffer;
 	}
+
+	/**
+	 * Save an uploaded file to the local file system.
+	 * @param uploadedInputStream the uploaded file stream
+	 * @param serverLocation the location to save the file
+	 */
+	private void saveFile(InputStream uploadedInputStream, String serverLocation)
+	{
+		try{
+			OutputStream outpuStream = new FileOutputStream(new File(serverLocation));
+			int read = 0;
+			byte[] bytes = new byte[1024];
+
+			outpuStream = new FileOutputStream(new File(serverLocation));
+			
+			while((read = uploadedInputStream.read(bytes)) != -1){
+				outpuStream.write(bytes, 0, read);
+			}
+			
+			outpuStream.flush();
+			outpuStream.close();
+		}catch(IOException e){
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Convert a Collection of strings to a line separated list of strings.
+	 * @param strings a Collection of strings
+	 * @return the resulting string representation
+	 */
+	public static String toString(Collection<String> strings)
+	{
+		String string = "";
+		
+		for(Iterator<String> itr=strings.iterator(); itr.hasNext();){
+			string += itr.next() + "\n";
+		}
+		
+		return string;
+	}
 	
 	/**
 	 * Push logged information to mongo.
@@ -862,5 +857,30 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		document.append("end_time", request.end_time);
 		document.append("success", request.success);
 		collection.insert(document);
+	}
+
+	/**
+	 * Stop the REST interface.
+	 */
+	public static void stop()
+	{
+		try{
+			tjws.stop();
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Start the Polyglot REST interface.
+	 * @param args command line arguments
+	 */
+	public static void main(String[] args)
+	{
+		tjws = new TJWSEmbeddedJaxrsServer();
+		tjws.setPort(8184);
+		tjws.start();
+		// tjws.getDeployment().getRegistry().addPerRequestResource(ResteasyResources.class);
+		tjws.getDeployment().getRegistry().addSingletonResource(new PolyglotRESTEasy());
 	}
 }

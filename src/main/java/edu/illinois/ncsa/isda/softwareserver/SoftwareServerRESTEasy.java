@@ -19,10 +19,8 @@ import javax.ws.rs.core.MultivaluedMap;
 
 
 /**
- * A restful interface for a software server.
- * Think of this as an extended software server.
- * RESTeasy version
- * @author Kenton McHenry
+ * A restful interface for a software server. Think of this as an extended software server.
+ * @author Edgar Black
  */
 public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 {
@@ -36,7 +34,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	private static String download_method = "";
 	
 	/**
-	 * Initialize.
+	 * Class constructor.
 	 */
 	public SoftwareServerRESTEasy()
 	{
@@ -59,7 +57,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 
 	/**
 	 * Returns SoftwareServer greetings
-	 * @return: SoftwareServer greetings
+	 * @return SoftwareServer greetings
 	 */
 	public Response WelcomeToSoftwareServer()
 	{
@@ -496,7 +494,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Returns a link to the produced file
+	 * Process a file submitted via the web form and return a link to the produced file
 	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client
@@ -513,7 +511,7 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Returns a link to the produced file
+	 * Process a file submitted to the Software Server and return a link to the produced file
 	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client
@@ -620,7 +618,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	 * This is an auxiliary method working for the processPost() method
 	 * @param uploadedInputStream input stream
 	 * @param serverLocation filename
-	 * @return void
 	 */
 	private void saveFile(InputStream uploadedInputStream, String serverLocation)
 	{
@@ -1418,8 +1415,8 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
-	 * Used to initialize and start the servlet server called
-	 * the Tiny Java Web Server and Servlet (TJWS) Container
+	 * Used to initialize and start the servlet server called the Tiny Java Web Server and Servlet (TJWS) Container.
+	 * @param args the input arguments
 	 */
 	public static void main(String[] args)
 	{
