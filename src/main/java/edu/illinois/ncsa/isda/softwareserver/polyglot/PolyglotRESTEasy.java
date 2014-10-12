@@ -338,12 +338,12 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Used to obtain 
-	 * @param uriInfo Basic URL information
+	 * Return a web form to interact with the Software Server
+	 * @param uriInfo basic URL information
 	 * @param output the default output format
 	 * @param file input file to be processed 
 	 * @param action either get or post
-	 * @return 
+	 * @return a response containing either a link to the form or an error message
 	 */
 	public Response Forms(UriInfo uri, String output, String file, String action)
 	{
@@ -512,7 +512,7 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 	
 	/**
-	 * Returns a link to the produced file
+	 * Process a file posted in the web form and return a link to the produced file
 	 * @param input Form containing Input Data
 	 * @param mediaType media type being processed 
 	 * @param accept content type accepted by client
@@ -536,9 +536,9 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	 * @param output the output format
 	 * @return a link to the produced file
 	 */
-	public Response taskPost(MultipartFormDataInput input, String mediaType,String accept, UriInfo uri, HttpServletRequest req, String output) 
+	public Response taskPost(MultipartFormDataInput input, String mediaType, String accept, UriInfo uri, HttpServletRequest req, String output) 
 	{
-		return processPost (input, mediaType, accept, uri, req, output,false);
+		return processPost(input, mediaType, accept, uri, req, output, false);
 	}
 
 	/**
