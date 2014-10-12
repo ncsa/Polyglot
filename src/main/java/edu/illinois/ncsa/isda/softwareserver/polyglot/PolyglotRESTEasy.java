@@ -171,6 +171,12 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		System.out.println("\nPolyglot resteasy is running...");
 	}
 	
+	/**
+	 * Used to list the of endpoints in the polyglot server
+	 * @param uriInfo Basic URL information
+	 * @param accept content type accepted by client
+	 * @return list of endpoints in the polyglot server
+	 */
 	public Response Endpoints(UriInfo uriInfo, String accept)
 	{
 		String buffer = "";
@@ -191,6 +197,12 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		}
 	}
 
+	/**
+	 * Used to list all the output formats produced by the polyglot server
+	 * @param uriInfo Basic URL information
+	 * @param accept content type accepted by client
+	 * @return list all the output formats produced by the polyglot server
+	 */
 	public Response Convert(UriInfo uriInfo, String accept)
 	{
     String temp =toString(polyglot.getOutputs());
@@ -207,11 +219,25 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		}
 	}
 	
+	/**
+	 * Used to obtain a list the input formats associated with the output format
+	 * @param outFmt the output format
+	 * @return list the input formats associated with the output format
+	 */
 	public Response ConvertFmt(String outFmt)
 	{		
 		return Response.ok(toString(polyglot.getInputs(outFmt))).build();
 	}
 
+	/**
+	 * Used to post a conversion request to the softwareserver
+	 * @param uriInfo Basic URL information
+	 * @param accept content type accepted by client
+	 * @param req used to obtain the ip address of the client
+	 * @param outFmt the output format
+	 * @param file input file to be processed 
+	 * @return the produced file
+	 */
 	public Response ConvertFile(UriInfo uriInfo, String accept, HttpServletRequest req,  String outFmt, String file) throws IOException
 	{		
 		RequestInformation request;
@@ -294,6 +320,12 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		}
 	}
 	
+	/**
+	 * Used to obtain a list of actions that can be performed (get, post)
+	 * @param uriInfo Basic URL information
+	 * @param accept content type accepted by client
+	 * @return list of actions that can be performed
+	 */
 	public Response Form(UriInfo uriInfo, String accept)
 	{
 		String buffer = "get\npost\n";
@@ -305,6 +337,14 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		}
 	}
 	
+	/**
+	 * Used to obtain 
+	 * @param uriInfo Basic URL information
+	 * @param output the default output format
+	 * @param file input file to be processed 
+	 * @param action either get or post
+	 * @return 
+	 */
 	public Response Forms(UriInfo uri, String output, String file, String action)
 	{
 		String url = null;
@@ -331,6 +371,12 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		}
 	}
 	
+	/**
+	 * Used to download a file form polyglot server
+	 * @param uri Basic URL information
+	 * @param fileName file to be downloaded polyglot server
+	 * @return file form polyglot server
+	 */
 	public Response File(UriInfo uri, String fileName) throws IOException
 	{
 		String media_type = null;
@@ -355,6 +401,11 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		}
 	}
 	
+	/**
+	 * Returns the requested icon file if available. If not, a default icon file is return instead.
+	 * @param fileName file name of icon
+	 * @return the requested icon file if available, default icon icon if not
+	 */
 	public Response appIcons(String fileName)
 	{
 		// String imgDefault = "images/polyglot.png";
@@ -367,21 +418,37 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		return Response.ok((Object)new File(imgDefault)).build();
 	}
 	
+	/**
+	 * Used to verify if the server is responding
+	 * @return yes if the server is alive 
+	 */
 	public Response Alive()
 	{		
 	  return Response.ok("yes").build();		
 	}
 	
+	/**
+	 * Used to list the software servers connected to polyglot server
+	 * @return list the software servers connected to polyglot server
+	 */
 	public Response Servers()
 	{		
 	  return Response.ok(toString(polyglot.getServers())).build();		
 	}
 	
+	/**
+	 * Used to list the applications available in polyglot server
+	 * @return list of applications available in software server
+	 */
 	public Response Software()
 	{		
 	  return Response.ok(toString(polyglot.getSoftware())).build();		
 	}
 
+	/**
+	 * Used to list all the input formats the polyglot server is able to serve
+	 * @return list of input formats 
+	 */
 	public Response Inputs(UriInfo uriInfo, String accept)
 	{
 		if(accept.equals("text/plain")){
@@ -392,6 +459,13 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		}
 	}
 
+	/**
+	 * Used to list all the input formats that can be converted to output format
+	 * @param uriInfo Basic URL information
+	 * @param accept content type accepted by client
+	 * @param out output format
+	 * @return list all the input formats that can be converted to output format
+	 */
 	public Response InputsOut(UriInfo uriInfo, String accept, String out)
 	{
     if(accept !=null && accept.equals("application/json")) {
@@ -401,11 +475,19 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		}
 	}
 	
+	/**
+	 * Used to list all the file formats the polyglot server is able to produce
+	 * @return list of output formats 
+	 */
 	public Response Outputs()
 	{		
 	  return Response.ok(toString(polyglot.getOutputs())).build();		
 	}
 
+	/**
+	 * Used to obtain of a list of the processed task since startup
+	 * @return list of the processed task since startup
+	 */
 	public Response Requests()
 	{		
 		String buffer;
@@ -418,23 +500,59 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		return Response.ok(buffer).build();
 	}
 	
+	/**
+	 * Returns an error message 
+	 * @param msg String to be returned within the error message
+	 * @return error message
+	 */
 	public Response printErrorMessage(String msg)
 	{
 		String result = "PolyglotResteasy message : " + msg + " is an invalid endpoint.";
 		return Response.status(Status.BAD_REQUEST).entity(result).type("text/plain").build();
 	}
 	
+	/**
+	 * Returns a link to the produced file
+	 * @param input Form containing Input Data
+	 * @param mediaType media type being processed 
+	 * @param accept content type accepted by client
+	 * @param uri Basic URL information
+	 * @param req used to obtain the ip address of the client
+	 * @param output the output format
+	 * @return a link to the produced file
+	 */
 	public Response formPost(MultipartFormDataInput input, String mediaType, String accept, UriInfo uri, HttpServletRequest req, String  output)
 	{
-		return processPost(input, mediaType, accept, uri,req, output, true, false);
+		return processPost(input, mediaType, accept, uri,req, output, true);
 	}
 
+	/**
+	 * Returns a link to the produced file
+	 * @param input Form containing Input Data
+	 * @param mediaType media type being processed 
+	 * @param accept content type accepted by client
+	 * @param uri Basic URL information
+	 * @param req used to obtain the ip address of the client
+	 * @param output the output format
+	 * @return a link to the produced file
+	 */
 	public Response taskPost(MultipartFormDataInput input, String mediaType,String accept, UriInfo uri, HttpServletRequest req, String output) 
 	{
-		return processPost (input, mediaType, accept, uri, req, output,false,true);
+		return processPost (input, mediaType, accept, uri, req, output,false);
 	}
 
-	public Response processPost(MultipartFormDataInput input, String mediaType, String accept, UriInfo uri,  HttpServletRequest req, String output, boolean formPost, boolean taskPost) 
+	/**
+	 * This is an auxiliary method working for the formPost() and the taskPost() methods. Returns the produced file
+	 * @param input Form containing Input Data
+	 * @param mediaType media type being processed 
+	 * @param accept content type accepted by client
+	 * @param uri Basic URL information
+	 * @param req used to obtain the ip address of the client
+	 * @param output the output format
+	 * @param fromPost true if message comes from formPost; false otherwise
+	 * @return the produced file
+	 */
+	public Response processPost(MultipartFormDataInput input, String mediaType, String accept, UriInfo uri,  HttpServletRequest req, String output, boolean formPost) 
 	{
 		String client, file=null, result_file, result_url;
 		String searchFor = null;

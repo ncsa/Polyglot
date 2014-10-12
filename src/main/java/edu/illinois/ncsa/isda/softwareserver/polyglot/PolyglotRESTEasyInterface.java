@@ -11,7 +11,7 @@ public interface PolyglotRESTEasyInterface
 	@GET
 	@Consumes("text/html,text/plain")
 	@Produces("text/html,text/plain")
-	public Response Endpoints(@Context UriInfo uriInfo, @HeaderParam("Accept") String produces);
+	public Response Endpoints(@Context UriInfo uriInfo, @HeaderParam("Accept") String accept);
 
 	@GET
 	@Path("convert")
