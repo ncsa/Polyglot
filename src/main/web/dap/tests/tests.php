@@ -72,15 +72,20 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
-    <script src="js/utils.js"></script>
 
 		<script>
 			var tasks = $.parseJSON('<?php echo json_encode($json); ?>');
 			var total = <?php echo $count; ?>;
 			var task = 0;			//Row ID and unique prefix for output file
 			var successes = 0;
+			var run = true;
+			var mail = false;
 
-			<?php if(isset($_REQUEST['run'])) echo "start_tests();\n"; ?>
+			<?php
+			if(isset($_REQUEST['run'])) echo "run = " . $_REQUEST['run'] . ";\n";
+      if(isset($_REQUEST['mail'])) echo "mail = " . $_REQUEST['mail'] . ";\n";
+			if(isset($_REQUEST['start'])) echo "start_tests();\n";
+			?>
 
 			function start_tests() {
 				task = 1;
@@ -91,13 +96,14 @@
 			function test(id, file, output, SPAWN_NEXT_TASK) {
 				var row = document.getElementById(id.toString());
 				$(row).addClass('info');
+				$(row).attr('class', 'info');		//Set it again in case this is a second attempt
 
 				var dap = document.getElementById('dap').value;
-				var url = 'test.php?dap=' + encodeURIComponent(dap) + '&file=' + encodeURIComponent(file) + '&output=' + output + '&prefix=' + id;
+				var url = 'test.php?dap=' + encodeURIComponent(dap) + '&file=' + encodeURIComponent(file) + '&output=' + output + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
 				
-				$.get(url, function(size) {
+				$.get(url, function(success) {
 					//Check result
-					if(size > 0) {
+					if(success > 0) {
 						$(row).attr('class', 'success');
 						successes++;
 					} else {
