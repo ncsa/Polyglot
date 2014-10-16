@@ -1,13 +1,15 @@
 <?php
 $bins = isset($_REQUEST["bins"]) ? $_REQUEST["bins"] : "minutes";
-$time_unit = 60*1000;				//Milli-seconds in a minute
-$time_window = 24*60*60;		//Seconds in one day
+$time_unit = 60*1000;						//Milli-seconds in a minute
+$time_window = 24*60*60;				//Seconds in one day
 
 if($bins == "hours"){
 	$time_unit = 60*60*1000;
 }else if($bins == "days"){
 	$time_unit = 24*60*60*1000;
 	$time_window = 7*24*60*60;
+}else if($bins != "minutes"){   //Make sure a bins is one of these 3 values, default to minutes
+  $bins = "minutes";
 }
 
 $tasks_per_x = array();
@@ -26,11 +28,11 @@ foreach($cursor as $document) {
 	$timestamp = round($document["start_time"] / $time_unit);
 	//echo $timestamp . "<br>\n";
 
-	if(!array_key_exists($timestamp, $tasks_per_x)) $tasks_per_x[$timestamp] = 0;	//ToDo: Why is this always true now?
+	//if(!array_key_exists($timestamp, $tasks_per_x)) $tasks_per_x[$timestamp] = 0;	//ToDo: Why is this always true now?  Result is a reset to 0.
 	$tasks_per_x[$timestamp]++;
 
 	if(!$document["success"]){
-		if(!array_key_exists($timestamp, $failures_per_x)) $failures_per_x[$timestamp] = 0;	//ToDo: Why is this always true now?
+		//if(!array_key_exists($timestamp, $failures_per_x)) $failures_per_x[$timestamp] = 0;	//ToDo: Why is this always true now? Result is a reset to 0.
 		$failures_per_x[$timestamp]++;
 	}
 }

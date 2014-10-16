@@ -18,6 +18,7 @@ def main():
 		lines = tests_file.readlines()
 		count = 0;
 		mailserver = smtplib.SMTP('localhost')
+		t0 = time.time()
 
 		for line in lines:
 			if not line.startswith('#'):
@@ -33,11 +34,13 @@ def main():
 
 					#Run test
 					output_filename = 'tmp/' + str(count) + '_' + os.path.splitext(basename(input_filename))[0] + '.' + output
-					download_file(host + ':8184/convert/' + output + '/' + urllib.quote_plus(input_filename), output_filename);
+					download_file(host + ':8184/convert/' + output + '/' + urllib.quote_plus(input_filename), output_filename)
 
 					#Check for expected output
 					if os.path.isfile(output_filename) and os.stat(output_filename).st_size > 0:
 						print '\t\033[92m[OK]\033[0m'
+
+						os.chmod(output_filename, 0776)		#Give web application permission to overwrite
 					else:
 						print '\t\033[91m[Failed]\033[0m'
 
@@ -54,6 +57,7 @@ def main():
 								
 								mailserver.sendmail('', watcher, message)
 
+		print 'Elapsed time: ' + timeToString(time.time() - t0)
 		mailserver.quit()
 
 def download_file(url, filename):
@@ -71,6 +75,19 @@ def download_file(url, filename):
 					f.flush()
 	
 	return filename
+
+def timeToString(t):
+  """Return a string represntation of the give elapsed time"""
+  h = int(t / 3600);
+  m = int((t % 3600) / 60);
+  s = int((t % 3600) % 60);
+
+  if h > 0:
+    return str(round(h + m / 60.0, 2)) + ' hours';
+  elif m > 0:
+    return str(round(m + s / 60.0, 2)) + ' minutes';
+  else:
+    return str(s) + ' seconds';
 
 if __name__ == '__main__':
 	main()
