@@ -610,7 +610,7 @@ public class SoftwareServerRestlet extends ServerResource
 			task = getTask(application_alias, task_string, file, format);
 			//Task.print(task, applications);
 			
-			result = server.executeTask("localhost", session, task);
+			result = server.executeTaskAtomically("localhost", session, task);
 			
 			//Create empty output if not created (e.g. when no conversion path was found)
 			if(result == null){

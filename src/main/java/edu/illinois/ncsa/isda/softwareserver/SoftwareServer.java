@@ -1,4 +1,5 @@
 package edu.illinois.ncsa.isda.softwareserver;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Subtask;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import kgm.utility.*;
 import java.io.*;
@@ -35,6 +36,7 @@ public class SoftwareServer implements Runnable
 	private boolean SHOW_OPERATION_OUTPUT = false;
 	private boolean ENABLE_MONITORS = false;
 	private boolean ATTEMPT_AUTO_KILL = false;
+	private boolean ATOMIC_EXECUTION = true;
 	private boolean WINDOWS = false;
 	private boolean STARTED_MONITORS = false;
 	private boolean RUNNING;
@@ -136,6 +138,8 @@ public class SoftwareServer implements Runnable
 	          	ENABLE_MONITORS = Boolean.valueOf(value);
 	          }else if(key.equals("AttemptAutoKill")){
 	          	ATTEMPT_AUTO_KILL = Boolean.valueOf(value);
+	          }else if(key.equals("AtomicExecution")){
+	          	ATOMIC_EXECUTION = Boolean.valueOf(value);
 	          }else if(key.equals("PolyglotSteward")){
 	        		tmpi = value.lastIndexOf(':');
 	        		
@@ -354,7 +358,7 @@ public class SoftwareServer implements Runnable
    * @param task a list of subtasks to execute
    * @return the result (i.e. the last output file)
    */
-  public synchronized String executeTask(String host, int session, Vector<Subtask> task)
+  public String executeTask(String host, int session, Vector<Subtask> task)
   {
   	Subtask subtask;
   	Application application;
@@ -481,6 +485,18 @@ public class SoftwareServer implements Runnable
   }
   
   /**
+	 * Execute the given task (synchronized version).
+	 * @param host the host requesting this task execution
+	 * @param session the session id
+	 * @param task a list of subtasks to execute
+	 * @return the result (i.e. the last output file)
+	 */
+	public synchronized String executeTaskAtomically(String host, int session, Vector<Subtask> task)
+	{
+		return executeTask(host, session, task);
+	}
+
+	/**
 	 * Is the server busy executing a task?
 	 * @return true if the server is busy
 	 */
@@ -648,7 +664,13 @@ public class SoftwareServer implements Runnable
 				}else if(message.equals("execute")){
 					task = (Vector<Subtask>)Utility.readObject(ins);
 					System.out.println("[" + host + "](" + session + "): requested task execution ...");
-					executeTask(host, session, task);
+					
+					if(ATOMIC_EXECUTION){
+						executeTaskAtomically(host, session, task);
+					}else{
+						executeTask(host, session, task);
+					}
+					
 					Utility.writeObject(outs, new Integer(0));
 					System.out.println("[" + host + "](" + session + "): executed " + task.size() + " task(s)");
 				}else if(message.equals("new_session")){
@@ -873,7 +895,7 @@ public class SoftwareServer implements Runnable
 							task.add(new Subtask(i, output_operation, new Data(), output_file));
 						}
 						
-						server.executeTask("localhost", i, task);	//Use application index as the session
+						server.executeTaskAtomically("localhost", i, task);	//Use application index as the session
 						
 						if(output_file.exists(i, server.cache_path)){
 							results += " -> [OK]\n";
