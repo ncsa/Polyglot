@@ -650,6 +650,43 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 
 	/**
+	 * Save an uploaded file to the local file system.
+	 * @param uploadedInputStream the uploaded file stream
+	 * @param serverLocation the location to save the file
+	 */
+	private void saveFile(InputStream uploadedInputStream, String serverLocation)
+	{
+		try{
+			OutputStream outpuStream = new FileOutputStream(new File(serverLocation));
+			int read = 0;
+			byte[] bytes = new byte[1024];
+
+			outpuStream = new FileOutputStream(new File(serverLocation));
+			
+			while((read = uploadedInputStream.read(bytes)) != -1){
+				outpuStream.write(bytes, 0, read);
+			}
+			
+			outpuStream.flush();
+			outpuStream.close();
+		}catch(IOException e){
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Stop the REST interface.
+	 */
+	public void stop()
+	{
+		try{
+			tjws.stop();
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+	}
+
+	/**
 	 * Get a web form interface for this restful service.
 	 * @param POST_UPLOADS true if this form should use POST rather than GET for uploading files
 	 * @param selected_output the default output format
@@ -756,47 +793,6 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 
 	/**
-	 * Save an uploaded file to the local file system.
-	 * @param uploadedInputStream the uploaded file stream
-	 * @param serverLocation the location to save the file
-	 */
-	private void saveFile(InputStream uploadedInputStream, String serverLocation)
-	{
-		try{
-			OutputStream outpuStream = new FileOutputStream(new File(serverLocation));
-			int read = 0;
-			byte[] bytes = new byte[1024];
-
-			outpuStream = new FileOutputStream(new File(serverLocation));
-			
-			while((read = uploadedInputStream.read(bytes)) != -1){
-				outpuStream.write(bytes, 0, read);
-			}
-			
-			outpuStream.flush();
-			outpuStream.close();
-		}catch(IOException e){
-			e.printStackTrace();
-		}
-	}
-	
-	/**
-	 * Convert a Collection of strings to a line separated list of strings.
-	 * @param strings a Collection of strings
-	 * @return the resulting string representation
-	 */
-	public static String toString(Collection<String> strings)
-	{
-		String string = "";
-		
-		for(Iterator<String> itr=strings.iterator(); itr.hasNext();){
-			string += itr.next() + "\n";
-		}
-		
-		return string;
-	}
-	
-	/**
 	 * Push logged information to mongo.
 	 */
 	public static void updateMongo()
@@ -860,15 +856,19 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 	}
 
 	/**
-	 * Stop the REST interface.
+	 * Convert a Collection of strings to a line separated list of strings.
+	 * @param strings a Collection of strings
+	 * @return the resulting string representation
 	 */
-	public static void stop()
+	public static String toString(Collection<String> strings)
 	{
-		try{
-			tjws.stop();
-		}catch(Exception e){
-			e.printStackTrace();
+		String string = "";
+		
+		for(Iterator<String> itr=strings.iterator(); itr.hasNext();){
+			string += itr.next() + "\n";
 		}
+		
+		return string;
 	}
 
 	/**

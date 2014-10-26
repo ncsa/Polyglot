@@ -17,7 +17,6 @@ import org.jboss.resteasy.plugins.providers.multipart.MultipartFormDataInput;
 import org.jboss.resteasy.plugins.server.tjws.TJWSEmbeddedJaxrsServer;
 import javax.ws.rs.core.MultivaluedMap;
 
-
 /**
  * A restful interface for a software server. Think of this as an extended software server.
  * @author Edgar Black
@@ -643,60 +642,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	////////////////////////////////////////////////////////////////////////////////////
 
 	/**
-	 * Get an icon representation of the available software.
-	 * @return the HTML for the icon representation
-	 */
-	public String getApplicationStack()
-	{
-		String buffer = "";
-
-		for(int i = 0; i < applications.size(); i++){
-			buffer += "<div style=\"float:left\">\n";
-			buffer += "<table>\n";
-			buffer += "<tr><td align=\"center\">\n";
-			buffer += "<a href=\"form/get?application=" + applications.get(i).alias + "\">";
-			buffer += "<img src=\"image/" + applications.get(i).alias + ".jpg\" width=\"50\" border=\"0\">";
-			buffer += "</a>\n";
-			buffer += "</td></tr><tr><td align=\"center\">\n";
-			buffer += "<font size=\"-1\">" + applications.get(i).name + "</font>\n";
-			buffer += "</td></tr>\n";
-			buffer += "</table>\n";
-			buffer += "</div>\n";
-			buffer += "\n";
-		}
-
-		// Add ping
-		if(true){
-			buffer += "<i><font size=\"-1\" color=\"#777777\"><div name=\"ping\" id=\"ping\" style=\"position:absolute;bottom:0\"></div></font></i>\n";
-			buffer += "\n";
-			buffer += "<script type=\"text/javascript\" src=\"https://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js\"></script>\n";
-			buffer += "<script type=\"text/javascript\">\n";
-			buffer += "function refreshPing(){\n";
-			buffer += "  $.ajax({\n";
-			buffer += "    beforeSend: function(){\n";
-			buffer += "      window.startTime = new Date();\n";
-			buffer += "    },\n";
-			buffer += "    \n";
-			buffer += "    url: '/',\n";
-			buffer += "    \n";
-			buffer += "    success: function(){\n";
-			buffer += "      window.endTime = new Date();\n";
-			// buffer += "      document.getElementById('ping').innerHTML = window.endTime - window.startTime + \" ms\";\n";
-			buffer += "      document.getElementById('ping').innerHTML = \"" + Runtime.getRuntime().availableProcessors() + " cores, \" + (window.endTime - window.startTime) + \" ms\";\n";
-			buffer += "    }\n";
-			buffer += "  });\n";
-			buffer += "  \n";
-			buffer += "  setTimeout('refreshPing()', 1000);\n";
-			buffer += "}\n";
-			buffer += "\n";
-			buffer += "refreshPing();\n";
-			buffer += "</script>\n";
-		}
-
-		return buffer;
-	}
-
-	/**
 	 * Get the applications available.
 	 * @return the applications
 	 */
@@ -989,6 +934,74 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 				executeTask(session_final, application_alias_final, task_string_final, file_final, format_final, uri_final);
 			}
 		}.start();
+	}
+
+	////////////////////////////////////////////////////////////////////////////////////
+	// From now on all the methods were taken directly from SoftwareServerReslet.java //
+	////////////////////////////////////////////////////////////////////////////////////
+	
+	/**
+	 * Used to stop the servlet server
+	 */
+	public void stop()
+	{
+	  try{
+	  	tjws.stop();
+	  }catch(Exception e) {e.printStackTrace();}
+	}
+
+	/**
+	 * Get an icon representation of the available software.
+	 * @return the HTML for the icon representation
+	 */
+	public String getApplicationStack()
+	{
+		String buffer = "";
+	
+		for(int i = 0; i < applications.size(); i++){
+			buffer += "<div style=\"float:left\">\n";
+			buffer += "<table>\n";
+			buffer += "<tr><td align=\"center\">\n";
+			buffer += "<a href=\"form/get?application=" + applications.get(i).alias + "\">";
+			buffer += "<img src=\"image/" + applications.get(i).alias + ".jpg\" width=\"50\" border=\"0\">";
+			buffer += "</a>\n";
+			buffer += "</td></tr><tr><td align=\"center\">\n";
+			buffer += "<font size=\"-1\">" + applications.get(i).name + "</font>\n";
+			buffer += "</td></tr>\n";
+			buffer += "</table>\n";
+			buffer += "</div>\n";
+			buffer += "\n";
+		}
+	
+		// Add ping
+		if(true){
+			buffer += "<i><font size=\"-1\" color=\"#777777\"><div name=\"ping\" id=\"ping\" style=\"position:absolute;bottom:0\"></div></font></i>\n";
+			buffer += "\n";
+			buffer += "<script type=\"text/javascript\" src=\"https://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.js\"></script>\n";
+			buffer += "<script type=\"text/javascript\">\n";
+			buffer += "function refreshPing(){\n";
+			buffer += "  $.ajax({\n";
+			buffer += "    beforeSend: function(){\n";
+			buffer += "      window.startTime = new Date();\n";
+			buffer += "    },\n";
+			buffer += "    \n";
+			buffer += "    url: '/',\n";
+			buffer += "    \n";
+			buffer += "    success: function(){\n";
+			buffer += "      window.endTime = new Date();\n";
+			// buffer += "      document.getElementById('ping').innerHTML = window.endTime - window.startTime + \" ms\";\n";
+			buffer += "      document.getElementById('ping').innerHTML = \"" + Runtime.getRuntime().availableProcessors() + " cores, \" + (window.endTime - window.startTime) + \" ms\";\n";
+			buffer += "    }\n";
+			buffer += "  });\n";
+			buffer += "  \n";
+			buffer += "  setTimeout('refreshPing()', 1000);\n";
+			buffer += "}\n";
+			buffer += "\n";
+			buffer += "refreshPing();\n";
+			buffer += "</script>\n";
+		}
+	
+		return buffer;
 	}
 
 	/**
@@ -1312,6 +1325,59 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 	}
 
 	/**
+	 * Query an endpoint.
+	 * @param url the URL of the endpoint
+	 * @return the text obtained from the endpoint
+	 */
+	public static String queryEndpoint(String url)
+	{
+		HttpURLConnection.setFollowRedirects(false);
+	  HttpURLConnection conn = null;
+	  BufferedReader ins;
+	  StringBuilder outs = new StringBuilder();
+	  char[] buffer = new char[1024];
+	  String text = null;
+	  int tmpi;
+			  			
+	  try{
+	    conn = (HttpURLConnection)new URL(url).openConnection();
+	    conn.setRequestProperty("Accept", "text/plain");
+	    conn.connect();
+	    ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+	    
+	    do{
+	      tmpi = ins.read(buffer, 0, buffer.length);
+	      if(tmpi>0) outs.append(buffer, 0, tmpi);
+	    }while(tmpi >= 0);
+	    
+	    text = outs.toString();
+	    conn.disconnect();
+	  }catch(Exception e){
+	    //e.printStackTrace();
+	  }finally{
+	    if(conn != null) conn.disconnect();
+	  }
+	  
+	  return text;
+	}
+
+	/**
+	 * Remove parameters from a URL.
+	 * @param url the URL of a file
+	 * @return the URL of a file without parameters
+	 */
+	public static String removeParameters(String url)
+	{
+		int tmpi = url.lastIndexOf('?');
+	
+		if(tmpi >= 0){
+			return url.substring(0, tmpi);
+		}else{
+			return url;
+		}
+	}
+
+	/**
 	 * Convert a line separated list into an HTML list of links.
 	 * @param list the line separated list of items
 	 * @param link the URL base
@@ -1349,69 +1415,6 @@ public class SoftwareServerRESTEasy implements SoftwareServerRESTEasyInterface
 		buffer += "</ul>\n";
 		scanner.close(); // added by Edgar Black
 		return buffer;
-	}
-
-	/**
-	 * Remove parameters from a URL.
-	 * @param url the URL of a file
-	 * @return the URL of a file without parameters
-	 */
-	public static String removeParameters(String url)
-	{
-		int tmpi = url.lastIndexOf('?');
-
-		if(tmpi >= 0){
-			return url.substring(0, tmpi);
-		}else{
-			return url;
-		}
-	}
-
-	/**
-	 * Query an endpoint.
-	 * @param url the URL of the endpoint
-	 * @return the text obtained from the endpoint
-	 */
-	public static String queryEndpoint(String url)
-	{
-		HttpURLConnection.setFollowRedirects(false);
-	  HttpURLConnection conn = null;
-	  BufferedReader ins;
-	  StringBuilder outs = new StringBuilder();
-	  char[] buffer = new char[1024];
-	  String text = null;
-	  int tmpi;
-			  			
-	  try{
-	    conn = (HttpURLConnection)new URL(url).openConnection();
-      conn.setRequestProperty("Accept", "text/plain");
-	    conn.connect();
-	    ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-	    
-	    do{
-	      tmpi = ins.read(buffer, 0, buffer.length);
-	      if(tmpi>0) outs.append(buffer, 0, tmpi);
-	    }while(tmpi >= 0);
-	    
-	    text = outs.toString();
-	    conn.disconnect();
-	  }catch(Exception e){
-	    //e.printStackTrace();
-	  }finally{
-	    if(conn != null) conn.disconnect();
-	  }
-	  
-	  return text;
-	}
-
-	/**
-	 * Used to stop the servlet server
-	 */
-	public static void stop()
-	{
-	  try{
-	  	tjws.stop();
-	  }catch(Exception e) {e.printStackTrace();}
 	}
 
 	/**

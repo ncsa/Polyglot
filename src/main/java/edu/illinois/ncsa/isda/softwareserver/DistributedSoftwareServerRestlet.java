@@ -1,5 +1,6 @@
 package edu.illinois.ncsa.isda.softwareserver;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerRESTUtilities.*;
 import kgm.utility.*;
 import java.io.*;
 import java.net.*;
@@ -39,7 +40,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		String application_name;
 		int tmpi;
 		
-		if(SoftwareServerRestlet.queryEndpoint(server_url + "alive") != null){
+		if(SoftwareServerRESTUtilities.queryEndpoint(server_url + "alive") != null){
 			System.out.print("Adding server: " + server + " ");
 			servers.add(server);
 			server_applications = getEndpointValues(server_url + "software");
@@ -99,7 +100,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 		for(Iterator<String> itr1=servers.iterator(); itr1.hasNext();){
 			server = itr1.next();
 			
-			if(SoftwareServerRestlet.queryEndpoint("http://" + server + "/alive") == null){
+			if(SoftwareServerRESTUtilities.queryEndpoint("http://" + server + "/alive") == null){
 				System.out.println("Dropping: " + server);
 				itr1.remove();
 				SERVER_DROPPED = true;
@@ -569,7 +570,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 	 */
 	private boolean isServerBusy(String server)
 	{		
-		return SoftwareServerRestlet.queryEndpoint("http://" + server + "/busy").equals("true");
+		return SoftwareServerRESTUtilities.queryEndpoint("http://" + server + "/busy").equals("true");
 	}
 
 	/**
@@ -632,21 +633,21 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 				if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
 					return new StringRepresentation(getApplications(), MediaType.TEXT_PLAIN);
 				}else{
-					return new StringRepresentation(SoftwareServerRestlet.createHTMLList(getApplications(), Utility.endSlash(getReference().toString()), true, "Software"), MediaType.TEXT_HTML);
+					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(getApplications(), Utility.endSlash(getReference().toString()), true, "Software"), MediaType.TEXT_HTML);
 				}
 			}else{
 				if(part2.isEmpty()){
 					if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
 						return new StringRepresentation(getApplicationTasks(part1), MediaType.TEXT_PLAIN);
 					}else{
-						return new StringRepresentation(SoftwareServerRestlet.createHTMLList(getApplicationTasks(part1), Utility.endSlash(getReference().toString()), true, "software/" + part1), MediaType.TEXT_HTML);
+						return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(getApplicationTasks(part1), Utility.endSlash(getReference().toString()), true, "software/" + part1), MediaType.TEXT_HTML);
 					}
 				}else{
 					if(part3.isEmpty()){
 						if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
 							return new StringRepresentation(getApplicationTaskOutputs(part1, part2), MediaType.TEXT_PLAIN);
 						}else{
-							return new StringRepresentation(SoftwareServerRestlet.createHTMLList(getApplicationTaskOutputs(part1, part2), Utility.endSlash(getReference().toString()), true, "software/" + part1 + "/" + part2), MediaType.TEXT_HTML);
+							return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(getApplicationTaskOutputs(part1, part2), Utility.endSlash(getReference().toString()), true, "software/" + part1 + "/" + part2), MediaType.TEXT_HTML);
 						}
 					}else{
 						if(part3.equals("*")){
@@ -655,7 +656,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 							if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
 								return new StringRepresentation(getApplicationTaskInputs(part1, part2), MediaType.TEXT_PLAIN);
 							}else{
-								return new StringRepresentation(SoftwareServerRestlet.createHTMLList(getApplicationTaskInputs(part1, part2), Utility.endSlash(getReference().getBaseRef().toString()) + "form/post?application=" + part1, false, "software/" + part1 + "/" + part2 + "/" + part3), MediaType.TEXT_HTML);
+								return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(getApplicationTaskInputs(part1, part2), Utility.endSlash(getReference().getBaseRef().toString()) + "form/post?application=" + part1, false, "software/" + part1 + "/" + part2 + "/" + part3), MediaType.TEXT_HTML);
 							}
 						}else{
 							application = part1;
@@ -828,7 +829,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 	public static Vector<String> getEndpointValues(String url)
 	{
 		Vector<String> values = new Vector<String>();
-		String text = SoftwareServerRestlet.queryEndpoint(url);
+		String text = SoftwareServerRESTUtilities.queryEndpoint(url);
 		Scanner scanner = new Scanner(text);
 				
 		while(scanner.hasNextLine()){
@@ -846,7 +847,7 @@ public class DistributedSoftwareServerRestlet extends ServerResource
 	public static Vector<Vector<String>> getEndpointCommaSeparatedValues(String url)
 	{
 		Vector<Vector<String>> values = new Vector<Vector<String>>();
-		String text = SoftwareServerRestlet.queryEndpoint(url);
+		String text = SoftwareServerRESTUtilities.queryEndpoint(url);
 		String line;
 		Scanner scanner = new Scanner(text);
 
