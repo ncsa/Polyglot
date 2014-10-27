@@ -1,6 +1,6 @@
 package edu.illinois.ncsa.isda.softwareserver.polyglot;
 import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.*;
-import edu.illinois.ncsa.isda.softwareserver.SoftwareServerRESTEasy;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerRESTUtilities;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Application;
 import kgm.utility.Utility;
 import java.io.*;
@@ -181,7 +181,7 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		if(accept.equals("text/plain")){
 			return Response.ok(buffer).build();
 		} else {
-			String result = SoftwareServerRESTEasy.createHTMLList(buffer, uriInfo.getAbsolutePath().toString().replaceAll("/$", "")+ "/", true, "Endpoints");
+			String result = SoftwareServerRESTUtilities.createHTMLList(buffer, uriInfo.getAbsolutePath().toString().replaceAll("/$", "")+ "/", true, "Endpoints");
 			return Response.ok(result, "text/html").build();		
 		}
 	}
@@ -203,7 +203,7 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 				return Response.ok(temp, accept).build();
 			}
 		} else {
-			String result = SoftwareServerRESTEasy.createHTMLList(temp, uriInfo.getAbsolutePath().toString().replaceAll("/$", "")+ "/", true, "Outputs");
+			String result = SoftwareServerRESTUtilities.createHTMLList(temp, uriInfo.getAbsolutePath().toString().replaceAll("/$", "")+ "/", true, "Outputs");
 			return Response.ok(result, "text/html").build();		
 		}
 	}
@@ -244,24 +244,24 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		
 		if(download_method.equals("wget")){
 			try{
-				String[] command = {"wget", "-O", temp_path +  Utility.getFilenameName(file) + "." + SoftwareServerRESTEasy.removeParameters(Utility.getFilenameExtension(file)),  file  };
+				String[] command = {"wget", "-O", temp_path +  Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)),  file  };
 				Runtime.getRuntime().exec(command).waitFor();
 			}catch(Exception e){e.printStackTrace();}
 		}else if(download_method.equals("nio")){
 			try{
 				URL website = new URL(file);
 				ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-				FileOutputStream fos = new FileOutputStream(temp_path + "/" + Utility.getFilenameName(file) + "." + SoftwareServerRESTEasy.removeParameters(Utility.getFilenameExtension(file)));
+				FileOutputStream fos = new FileOutputStream(temp_path + "/" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)));
 				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 				fos.close();
 			}catch(Exception e){e.printStackTrace();}
 		}else{
 			//Utility.downloadFile(temp_path, file);
-			Utility.downloadFile(temp_path, Utility.getFilenameName(file) + "." + SoftwareServerRESTEasy.removeParameters(Utility.getFilenameExtension(file)), file);
+			Utility.downloadFile(temp_path, Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)), file);
 		}
 		
 		//file = temp_path + Utility.getFilename(file);
-		file = temp_path + SoftwareServerRESTEasy.removeParameters(Utility.getFilename(file));
+		file = temp_path + SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(file));
 		
 		request = new RequestInformation(client, file, outFmt);
 		if(SOFTWARE_SERVER_REST_INTERFACE){
@@ -321,7 +321,7 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		if(accept.equals("text/plain")){
 			return Response.ok(buffer, "text/plain").build();
 		} else {
-			String result = SoftwareServerRESTEasy.createHTMLList(buffer, uriInfo.getAbsolutePath().toString().replaceAll("/$", "")+ "/", true, "Forms");
+			String result = SoftwareServerRESTUtilities.createHTMLList(buffer, uriInfo.getAbsolutePath().toString().replaceAll("/$", "")+ "/", true, "Forms");
 			return Response.ok(result, "text/html").build();		
 		}
 	}
@@ -443,7 +443,7 @@ public class PolyglotRESTEasy implements PolyglotRESTEasyInterface
 		if(accept.equals("text/plain")){
 			return Response.ok(toString(polyglot.getInputs()), accept).build();
 		} else {
-			String result = SoftwareServerRESTEasy.createHTMLList(toString(polyglot.getInputs()), uriInfo.getAbsolutePath().toString().replaceAll("/$", "")+ "/", true, "Inputs");
+			String result = SoftwareServerRESTUtilities.createHTMLList(toString(polyglot.getInputs()), uriInfo.getAbsolutePath().toString().replaceAll("/$", "")+ "/", true, "Inputs");
 			return Response.ok(result, "text/html").build();		
 		}
 	}

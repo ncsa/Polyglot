@@ -451,7 +451,7 @@ public class SoftwareServerRESTUtilities
 		}
 		
 		buffer += "</ul>\n";
-		
+		scanner.close(); // added by Edgar Black
 		return buffer;
 	}
 }
