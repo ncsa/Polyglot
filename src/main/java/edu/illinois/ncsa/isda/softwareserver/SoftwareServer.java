@@ -59,11 +59,13 @@ public class SoftwareServer implements Runnable
 		if(filename != null) loadConfiguration(filename);
 		WINDOWS = System.getProperty("os.name").contains("Windows");
 		
-		try{
-			server_socket = new ServerSocket(port);
-		}catch(Exception e) {e.printStackTrace();}
-		
-		new Thread(this).start();
+		if(port >= 0){
+			try{
+				server_socket = new ServerSocket(port);
+			}catch(Exception e) {e.printStackTrace();}
+			
+			new Thread(this).start();
+		}
 	}
 	
 	/**
@@ -163,6 +165,20 @@ public class SoftwareServer implements Runnable
 	  }catch(Exception e) {}
 	  
 		//Application.print(applications);
+	  
+  	//Display software being used
+  	System.out.println("\nAvailable Software:");
+  	
+  	for(int i=0; i<applications.size(); i++){
+  		System.out.println("  " + applications.get(i).name + " (" + applications.get(i).alias + ")");
+  		
+  		//Show associated executables
+  		if(SHOW_EXECUTABLES){
+  			for(String executable : applications.get(i).executables){
+  				System.out.println("    " + executable);
+  			}
+  		}
+  	}
 	}
 
 	/**
@@ -512,20 +528,6 @@ public class SoftwareServer implements Runnable
   {				
   	Socket client_socket = null;
   	
-  	//Display software being used
-  	System.out.println("\nAvailable Software:");
-  	
-  	for(int i=0; i<applications.size(); i++){
-  		System.out.println("  " + applications.get(i).name + " (" + applications.get(i).alias + ")");
-  		
-  		//Show associated executables
-  		if(SHOW_EXECUTABLES){
-  			for(String executable : applications.get(i).executables){
-  				System.out.println("    " + executable);
-  			}
-  		}
-  	}
-  	
   	//Notify a Polyglot steward
   	if(steward_server != null){
   		System.out.println("\nStarting steward notification thread...");
@@ -733,16 +735,18 @@ public class SoftwareServer implements Runnable
 	 */
 	public void stop()
 	{
-		try{
-			server_socket.close();
-		}catch(Exception e) {
-			e.printStackTrace();
+		if(port >= 0){
+			try{
+				server_socket.close();
+			}catch(Exception e) {
+				e.printStackTrace();
+				
+				//No need to wait in case of null pointer exception
+				if(e instanceof NullPointerException) return;
+			}
 			
-			//No need to wait in case of null pointer exception
-			if(e instanceof NullPointerException) return;
+			waitUntilStopped();
 		}
-		
-		waitUntilStopped();
 	}
 
 	/**

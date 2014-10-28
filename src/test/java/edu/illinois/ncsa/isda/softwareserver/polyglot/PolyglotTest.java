@@ -36,6 +36,7 @@ public class PolyglotTest
 			System.out.println("Conversion OK");
 		}catch(AssertionError e){
 			System.out.println(e.getMessage());
+			throw e;
 		}finally{
 			pclient.close();
 			pserver.stop();
@@ -71,6 +72,7 @@ public class PolyglotTest
 			System.out.println("Endpoint OK");
 		}catch(AssertionError e){
 			System.out.println(e.getMessage());
+			throw e;
 		}
 		
 		//Download the output of the conversion
@@ -81,6 +83,7 @@ public class PolyglotTest
 			System.out.println("Conversion OK");
 		}catch(AssertionError e){
 			System.out.println(e.getMessage());
+			throw e;
 		}finally{
 			prestlet.stop();
 			sserver.stop();

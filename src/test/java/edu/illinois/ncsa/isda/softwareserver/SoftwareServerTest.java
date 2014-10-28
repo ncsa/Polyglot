@@ -46,7 +46,7 @@ public class SoftwareServerTest
 	}
 	
 	/**
-	 * Test configuration and basic connection.
+	 * Test configuration.
 	 */
 	@Test
 	public void test1()
@@ -59,25 +59,28 @@ public class SoftwareServerTest
 			System.out.println("Script configuration OK");
 		}catch(AssertionError e){
 			System.out.println(e.getMessage());
+			throw e;
 		}
-				
+	}
+	
+	/**
+	 * Check SoftwareServer client connection and available applications.
+	 */	
+	@Test
+	public void test2()
+	{    
+		System.out.println("\n=== Software Server: Test 2 (client connectivity) ===");
+	  
 		//Check Software Server client connection		
 		try{
 			assertTrue("Error: SoftwareServerClient not connected", client.isAlive());
 			System.out.println("SoftwareServerClient connection OK");
 		}catch(AssertionError e){
 			System.out.println(e.getMessage());
+			throw e;
 		}
-	}
-	
-	/**
-	 * Check SoftwareServer applications.
-	 */	
-	@Test
-	public void test2()
-	{    
-		System.out.println("\n=== Software Server: Test 2 (applications) ===");
-	  
+		
+		//Check available applications
     Vector<Application> applications = client.getApplications();
     boolean FOUND_IMAGEMAGICK = false;
     
@@ -93,6 +96,7 @@ public class SoftwareServerTest
     	System.out.println("ImageMagick OK");
     }catch(AssertionError e){
 			System.out.println(e.getMessage());
+			throw e;
 		}
 	}
 	
@@ -104,6 +108,16 @@ public class SoftwareServerTest
 	{  		
 		System.out.println("\n=== Software Server: Test 3 (task) ===");
 
+		//Check Software Server client connection here again to prevent failures in the conversion test if the client is not alive.
+		try{
+			assertTrue("Error: SoftwareServerClient not connected", client.isAlive());
+			System.out.println("SoftwareServerClient connection OK");
+		}catch(AssertionError e){
+			System.out.println(e.getMessage());
+			throw e;
+		}
+		
+		//Test a conversion task
     client.sendData(new FileData("data/demo/Lenna.png", true));
 		
 		Task task = new Task(client);
@@ -115,6 +129,7 @@ public class SoftwareServerTest
 			System.out.println("Conversion task OK");
 		}catch(AssertionError e){
 			System.out.println(e.getMessage());
+			throw e;
 		}
 	}
 	
@@ -136,6 +151,7 @@ public class SoftwareServerTest
 			System.out.println("Endpoint OK");
 		}catch(AssertionError e){
 			System.out.println(e.getMessage());
+			throw e;
 		}
 	
 		//Carry out the conversion
@@ -146,6 +162,7 @@ public class SoftwareServerTest
 			System.out.println("Conversion OK");
 		}catch(AssertionError e){
 			System.out.println(e.getMessage());
+			throw e;
 		}
 	}
 	
@@ -168,6 +185,7 @@ public class SoftwareServerTest
 			System.out.println("Endpoint OK");
 		}catch(AssertionError e){
 			System.out.println(e.getMessage());
+			throw e;
 		}
 				
 		//Carry out the conversion
@@ -178,6 +196,7 @@ public class SoftwareServerTest
 			System.out.println("Conversion OK");
 		}catch(AssertionError e){
 			System.out.println(e.getMessage());
+			throw e;
 		}
 	}
 
