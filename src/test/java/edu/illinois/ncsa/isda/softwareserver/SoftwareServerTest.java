@@ -54,12 +54,16 @@ public class SoftwareServerTest
 		System.out.println("\n=== Software Server: Test 1 (configuration and connection) ===");
 		
 		//Check script configuration
-		try{
-			assertTrue("Error: Script not configured", Utility.existsNotEmptyAndRecent("scripts/ahk-configured/" + script_name, 10000));
-			System.out.println("Script configuration OK");
-		}catch(AssertionError e){
-			System.out.println(e.getMessage());
-			throw e;
+		if(System.getProperty("os.name").contains("Windows")){
+			try{
+				assertTrue("Error: Script not configured", Utility.existsNotEmptyAndRecent("scripts/ahk-configured/" + script_name, 10000));
+				System.out.println("Script configuration OK");
+			}catch(AssertionError e){
+				System.out.println(e.getMessage());
+				throw e;
+			}
+		}else{
+			System.out.println("Script configuration skipped ...");
 		}
 	}
 	
