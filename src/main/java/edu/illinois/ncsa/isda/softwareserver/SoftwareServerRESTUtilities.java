@@ -3,6 +3,13 @@ import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import kgm.utility.Utility;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rabbitmq.client.Channel;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.QueueingConsumer;
 
 /**
  * Software Server REST interface utility functions.
@@ -453,5 +460,91 @@ public class SoftwareServerRESTUtilities
 		buffer += "</ul>\n";
 		scanner.close(); // added by Edgar Black
 		return buffer;
+	}
+	
+	/**
+	 * Have a Software Server listen to a RabbitMQ bus for jobs.
+	 * @param softwareserver_port the Software Server port
+	 * @param softwareserver_applications the available applications
+	 * @param rabbitmq_server the rabbitmq server
+	 * @param rabbitmq_username the rabbitmq user
+	 * @param rabbitmq_password the rabbitmq user password
+	 */
+	public static void rabbitMQHandler(int softwareserver_port, Vector<Application> softwareserver_applications, String rabbitmq_server, String rabbitmq_username, String rabbitmq_password)
+	{
+ 		System.out.println("\nConnecting to RabbitMQ server and starting consumer thread ...\n");
+		
+	  ConnectionFactory factory = new ConnectionFactory();
+	  factory.setHost(rabbitmq_server);
+	  
+	  if((rabbitmq_username != null) && (rabbitmq_password != null)){
+	  	factory.setUsername(rabbitmq_username);
+	  	factory.setPassword(rabbitmq_password);
+	  }
+	  
+	  try{
+	    Connection connection = factory.newConnection();
+	    final Channel channel = connection.createChannel();
+	    final QueueingConsumer consumer = new QueueingConsumer(channel);
+	    
+	    //Create queues if not yet created
+			for(int i=0; i<softwareserver_applications.size(); i++){
+				channel.queueDeclare(softwareserver_applications.get(i).alias, true, false, false, null);
+			}
+			
+	    channel.basicQos(1);	//Fetch only one message at a time
+			
+	    //Bind to needed queues
+			for(int i=0; i<softwareserver_applications.size(); i++){
+		    channel.basicConsume(softwareserver_applications.get(i).alias, false, consumer);
+			}
+			
+			final int port = softwareserver_port;
+	
+	  	new Thread(){
+	  		public void run(){
+	  			ObjectMapper mapper = new ObjectMapper();
+	  			JsonNode message;
+	  			int job_id;
+	  			String polyglot_ip, input, application, output_format;
+	  			String api_call, result, checkin_call;
+	  			
+	  	    while(true){
+	  	    	try{
+	  	    		//Wait for next message
+		  	    	QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+		  	    	
+		  	    	//Process message
+		  				message = mapper.readValue(delivery.getBody(), JsonNode.class);
+		  				polyglot_ip = message.get("polyglot_ip").asText();
+		  				job_id = Integer.parseInt(message.get("job_id").asText());
+		  	    	input = message.get("input").asText();
+		  	    	application = message.get("application").asText();
+		  	    	output_format = message.get("output_format").asText();
+		  	    	
+		  	    	//Execute job using Software Server REST interface (leverage implementation)
+		  	    	api_call = "http://localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + Utility.urlEncode(input);
+		  	    	result = Utility.readURL(api_call, "text/plain");
+		  	    	
+		  	    	System.out.println("ok0: " + api_call);
+		  	    	System.out.println("ok1: " + result);
+		  	    	
+		  	    	while(!Utility.existsURL(result)){
+		  	    		Utility.pause(1000);
+		  	    	}
+									  	    	
+		  	    	checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
+		  	    	System.out.println("ok2: " + checkin_call);
+		  	    	
+		  	    	if(Utility.readURL(checkin_call).equals("ok")){
+		  	    		channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+		  	    	}
+		  	    	
+		  	    	System.out.println("ok3");
+	  	    	}catch(Exception e) {e.printStackTrace();}
+	  	    }
+	  		}
+	  	}.start();
+	  }catch(Exception e) {e.printStackTrace();}	
 	}
 }

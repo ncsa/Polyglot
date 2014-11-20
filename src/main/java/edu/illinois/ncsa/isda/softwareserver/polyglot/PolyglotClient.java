@@ -39,22 +39,6 @@ public class PolyglotClient extends Polyglot
 	}
 	
 	/**
-	 * Get a list of connected software reuse servers.
-	 * @return a list of connected software reuse servers
-	 */
-	public synchronized Vector<String> getServers()
-	{
-		Vector<String> servers = null;
-		
-		try{		
-			Utility.writeObject(outs, "servers");
-			servers = (Vector<String>)Utility.readObject(ins);
-		}catch(Exception e) {e.printStackTrace();}
-		
-		return servers;
-	}
-	
-	/**
 	 * Get a list of connected client machines.
 	 * @return a list of connected client machines
 	 */
@@ -68,6 +52,15 @@ public class PolyglotClient extends Polyglot
 		}catch(Exception e) {e.printStackTrace();}
 		
 		return clients;
+	}
+	
+	/**
+	 * Get the software available.
+	 * @return the list of software
+	 */
+	public TreeSet<String> getSoftware()
+	{
+		return null;	//TODO: not required by current applications but need to implement at some point
 	}
 	
 	/**
@@ -123,6 +116,25 @@ public class PolyglotClient extends Polyglot
 	}
 	
 	/**
+	 * Get the inputs available.
+	 * @return the list of inputs
+	 */
+	public TreeSet<String> getInputs()
+	{
+		return null;	//TODO: not required by current applications but need to implement at some point
+	}
+	
+	/**
+	 * Get the inputs available for the given output type.
+	 * @param output the output type
+	 * @return the list of inputs
+	 */
+	public TreeSet<String> getInputs(String output)
+	{
+		return null;	//TODO: not required by current applications but need to implement at some point
+	}
+	
+	/**
 	 * Get the available inputs, outputs, and conversions.
 	 * @return an IOGraph containing the information as strings
 	 */
@@ -138,6 +150,22 @@ public class PolyglotClient extends Polyglot
 		return iograph;
 	}
 	
+	/**
+	 * Get a list of connected software reuse servers.
+	 * @return a list of connected software reuse servers
+	 */
+	public synchronized Vector<String> getServers()
+	{
+		Vector<String> servers = null;
+		
+		try{		
+			Utility.writeObject(outs, "servers");
+			servers = (Vector<String>)Utility.readObject(ins);
+		}catch(Exception e) {e.printStackTrace();}
+		
+		return servers;
+	}
+
 	/**
 	 * Get a string only version of this IOGraph encoded with host machines.
 	 * @return an IOGraph containing the information as strings
@@ -159,8 +187,9 @@ public class PolyglotClient extends Polyglot
 	 * @param input_filename the absolute name of the input file
 	 * @param output_path the output path
 	 * @param output_type the name of the output type
+	 * @return the output file name (if changed, null otherwise)
 	 */
-	public synchronized void convert(String input_filename, String output_path, String output_type)
+	public synchronized String convert(String input_filename, String output_path, String output_type)
 	{
 		FileData input_file_data = new FileData(input_filename, true);
 		FileData output_file_data;
@@ -172,6 +201,8 @@ public class PolyglotClient extends Polyglot
 			output_file_data = (FileData)Utility.readObject(ins);
 			if(output_file_data != null) output_file_data.save(output_path, null);
 		}catch(Exception e) {e.printStackTrace();}
+		
+		return null;
 	}
 	
 	/**

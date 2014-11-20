@@ -42,7 +42,7 @@ public class SoftwareServerClient implements Comparable
 			
 			//Set client entry in applications
 			for(int i=0; i<applications.size(); i++){
-				applications.get(i).icr = this;
+				applications.get(i).ssc = this;
 			}
 			
 			//System.out.println("Connected (session=" + session + ")...\n");

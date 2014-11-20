@@ -2,6 +2,7 @@ package edu.illinois.ncsa.isda.softwareserver.polyglot;
 import kgm.utility.*;
 import java.io.*;
 import java.util.*;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Application;
 
 /**
  * Helper classes for the polyglot package.
@@ -207,5 +208,54 @@ public class PolyglotAuxiliary
 		{
 			return address + ", " + filename + ", " + filesize + ", " + input + ", " + output + ", " + start_time + ", " + end_time + ", " + success;
 		}
+	}
+	
+	/**
+	 * A structure to store information about applications on a Software Server.
+	 */
+	public static class SoftwareServerApplication implements Comparable
+	{
+		public String name = "";
+		public String host = "";
+		
+    /**
+     * Class constructor.
+     * @param name the name of the application
+     * @param host the host
+     */
+    public SoftwareServerApplication(String name, String host)
+    {
+    	this.name = name;
+      this.host = host;
+    }
+    
+    /**
+     * Return a string representation.
+     */
+    public String toString()
+    {
+    	//return name + "-" + host;
+    	return name;
+    }
+    
+		/**
+  	 * Compare this object to another object.
+  	 * @param object the object to compare to
+  	 * @return 0 if the same, -1 if less, and 1 if greater
+  	 */
+  	public int compareTo(Object object)
+  	{
+  		if(this == object){
+  			return 0;
+  		}else if(object instanceof SoftwareServerApplication){
+  			if(((SoftwareServerApplication)object).name.equals(name) && ((SoftwareServerApplication)object).host.equals(host)){
+  				return 0;
+  			}else{
+  				return -1;
+  			}
+  		}else{
+  			return -1;
+  		}
+  	}
 	}
 }

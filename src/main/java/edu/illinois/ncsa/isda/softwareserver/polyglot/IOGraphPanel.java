@@ -935,13 +935,13 @@ public class IOGraphPanel<V extends Comparable,E> extends JPanel implements Tree
 		String server;
 		int port, tmpi;  
 		
-		//args = new String[]{"-file", "data/weights.txt"};
+		args = new String[]{"-file", "tmp/iograph.txt"};
 		
   	if(args.length > 0){
   		if(args[0].equals("-file")){
   			iograph = new IOGraph<String,String>();
   			iograph.load(args[1]);
-  			iograph.loadEdgeWeights(args[1], 0.0);
+  			//iograph.loadEdgeWeights(args[1], 0.0);
   			iograph.printEdgeInformation();
   			
   			iograph_panel = new IOGraphPanel<String,String>(iograph, 2);

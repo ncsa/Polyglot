@@ -12,6 +12,7 @@ import java.net.*;
 import java.lang.management.*;
 import java.net.*;
 import javax.servlet.*;
+import org.json.JSONArray;
 import org.restlet.*;
 import org.restlet.resource.*;
 import org.restlet.data.*;
@@ -19,10 +20,17 @@ import org.restlet.representation.*;
 import org.restlet.routing.*;
 import org.restlet.security.*;
 import org.restlet.ext.fileupload.*;
+import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.service.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
 import org.apache.commons.io.*;
+import org.apache.http.util.EntityUtils;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.rabbitmq.client.*;
+import com.rabbitmq.client.Channel;
+import org.json.*;
 
 /**
  * A restful interface for a software server.
@@ -35,6 +43,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static Vector<Application> applications;
 	private static Vector<TreeSet<TaskInfo>> application_tasks;
 	private static TreeMap<String,Application> alias_map = new TreeMap<String,Application>();
+	private static long initialization_time = -1;
 	private static String public_path = "./";
 	private static boolean ADMINISTRATORS_ENABLED = false;
 	private static String download_method = "";
@@ -60,6 +69,8 @@ public class SoftwareServerRestlet extends ServerResource
 		if(!Utility.exists(public_path)){
 			new File(public_path).mkdir();
 		}
+		
+		initialization_time = System.currentTimeMillis();
 	}
 
 	/**
@@ -264,7 +275,7 @@ public class SoftwareServerRestlet extends ServerResource
 	 * @param file the URL of the file to convert
 	 * @param format the output format
 	 */
-	public synchronized void executeTask(int session, String application_alias, String task_string, String file, String format)
+	public void executeTask(int session, String application_alias, String task_string, String file, String format)
 	{
 		Vector<Subtask> task;
 		String result;
@@ -319,6 +330,19 @@ public class SoftwareServerRestlet extends ServerResource
 	}
 	
 	/**
+	 * Execute a task (synchronized version).
+	 * @param session the session id to use while executing the task
+	 * @param application_alias the application to use
+	 * @param task_string the task to perform (nothing assumed to be a conversion)
+	 * @param file the URL of the file to convert
+	 * @param format the output format
+	 */
+	public synchronized void executeTaskAtomically(int session, String application_alias, String task_string, String file, String format)
+	{
+		executeTask(session, application_alias, task_string, file, format);
+	}
+	
+	/**
 	 * Execute a task asynchronously.
 	 * @param session the session id to use while executing the task
 	 * @param application_alias the application to use
@@ -336,7 +360,7 @@ public class SoftwareServerRestlet extends ServerResource
 		
 		new Thread(){
 			public void run(){
-				executeTask(session_final, application_alias_final, task_string_final, file_final, format_final);
+				executeTaskAtomically(session_final, application_alias_final, task_string_final, file_final, format_final);
 			}
 		}.start();
 	}
@@ -371,7 +395,7 @@ public class SoftwareServerRestlet extends ServerResource
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
 		String part3 = (parts.size() > 3) ? parts.get(3) : "";
 		String part4 = (parts.size() > 4) ? parts.get(4) : "";
-		String application = null, task = null, file = null, format = null, result, url;
+		String application_alias = null, task = null, file = null, format = null, result, url;
 		String buffer;
 		Form form;
 		Parameter p;
@@ -410,7 +434,7 @@ public class SoftwareServerRestlet extends ServerResource
 								return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(getApplicationTaskInputs(part1, part2), Utility.endSlash(getReference().getBaseRef().toString()) + "form/post?application=" + part1, false, "software/" + part1 + "/" + part2 + "/" + part3), MediaType.TEXT_HTML);
 							}
 						}else{
-							application = part1;
+							application_alias = part1;
 							task = part2;
 							format = part3;
 							file = URLDecoder.decode(part4);
@@ -425,7 +449,7 @@ public class SoftwareServerRestlet extends ServerResource
 								result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + session + "_" + Utility.getFilenameName(file) + "." + format;
 							}
 														
-							executeTaskLater(session, application, task, file, format);
+							executeTaskLater(session, application_alias, task, file, format);
 							
 							if(isPlainRequest(Request.getCurrent())){
 								return new StringRepresentation(result, MediaType.TEXT_PLAIN);
@@ -446,20 +470,20 @@ public class SoftwareServerRestlet extends ServerResource
 				return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
 			}else{				
 				form = getRequest().getResourceRef().getQueryAsForm();
-				p = form.getFirst("application"); if(p != null) application = p.getValue();
+				p = form.getFirst("application"); if(p != null) application_alias = p.getValue();
 				p = form.getFirst("task"); if(p != null) task = p.getValue();
 				p = form.getFirst("file"); if(p != null) file = p.getValue();
 				p = form.getFirst("format"); if(p != null) format = p.getValue();
 								
-				if(application != null && task != null && file != null && format != null){
-					url = Utility.endSlash(getRootRef().toString()) + "software/" + application + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
+				if(application_alias != null && task != null && file != null && format != null){
+					url = Utility.endSlash(getRootRef().toString()) + "software/" + application_alias + "/" + task + "/" + format + "/" + URLEncoder.encode(file);
 
 					return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head></html>", MediaType.TEXT_HTML);
 				}else{
 					if(part1.startsWith("get")){
-						return new StringRepresentation(getForm(false, application, application!=null), MediaType.TEXT_HTML);
+						return new StringRepresentation(getForm(false, application_alias, application_alias!=null), MediaType.TEXT_HTML);
 					}else if(part1.startsWith("post")){
-						return new StringRepresentation(getForm(true, application, application!=null), MediaType.TEXT_HTML);
+						return new StringRepresentation(getForm(true, application_alias, application_alias!=null), MediaType.TEXT_HTML);
 					}else if(part1.equals("convert")){
 						return new StringRepresentation(getConvertForm(), MediaType.TEXT_HTML);
 					}else{
@@ -512,7 +536,43 @@ public class SoftwareServerRestlet extends ServerResource
 				return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
 			}
 		}else if(part0.equals("alive")){
-			return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
+			//return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
+			return new StringRepresentation(Long.toString(initialization_time), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("applications")){
+			JSONArray json = new JSONArray();
+			JSONObject application;
+			JSONArray inputs, outputs;
+			TaskInfo task_info;
+			
+			for(int i=0; i<applications.size(); i++){
+				application = new JSONObject();
+				inputs = new JSONArray();
+				outputs = new JSONArray();
+				
+				try{
+					application.put("alias", applications.get(i).alias);
+
+					for(Iterator<TaskInfo> itr1=application_tasks.get(i).iterator(); itr1.hasNext();){
+						task_info = itr1.next();
+						
+						if(task_info.name.equals("convert")){	
+							for(Iterator<String> itr2=task_info.inputs.iterator(); itr2.hasNext();){
+								inputs.put(itr2.next());
+							}
+							
+							for(Iterator<String> itr2=task_info.outputs.iterator(); itr2.hasNext();){
+								outputs.put(itr2.next());
+							}
+							
+							application.put("inputs", inputs);
+							application.put("outputs", outputs);
+							json.put(application);
+						}
+					}					
+				}catch(Exception e) {e.printStackTrace();}
+			}
+			
+			return new JsonRepresentation(json);
 		}else if(part0.equals("busy")){
 			return new StringRepresentation("" + server.isBusy(), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("processors")){
@@ -626,7 +686,7 @@ public class SoftwareServerRestlet extends ServerResource
 		//Stop the Software Server
 		server.stop();
 	}
-	
+
 	/**
 	 * Check if the given request is for plain text only.
 	 * @param request the request
@@ -667,6 +727,9 @@ public class SoftwareServerRestlet extends ServerResource
 	{		
 		int port = 8182;		
 		String distributed_server = null;
+		String rabbitmq_server = null;
+		String rabbitmq_username = null;
+		String rabbitmq_password = null;
 		TreeMap<String,String> accounts = new TreeMap<String,String>();	
 		
 		//Load configuration file
@@ -685,6 +748,12 @@ public class SoftwareServerRestlet extends ServerResource
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("DistributedServer")){
 	          	distributed_server = value;
+	          }else if(key.equals("RabbitMQServer")){
+	          	rabbitmq_server = value;
+	          }else if(key.equals("RabbitMQUsername")){
+	          	rabbitmq_username = value;
+	          }else if(key.equals("RabbitMQPassword")){
+	          	rabbitmq_password = value;
 	          }else if(key.equals("Authentication")){
 	  	        username = value.substring(0, value.indexOf(':')).trim();
 	  	        password = value.substring(value.indexOf(':')+1).trim();
@@ -778,5 +847,10 @@ public class SoftwareServerRestlet extends ServerResource
 	  		}
 	  	}.start();
 	 	}
+	 	
+	 	//Connect to RabbitMQ bus
+	 	if(rabbitmq_server != null){
+	 		SoftwareServerRESTUtilities.rabbitMQHandler(port, applications, rabbitmq_server, rabbitmq_username, rabbitmq_password);
+		}
 	}
 }

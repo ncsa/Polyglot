@@ -11,6 +11,7 @@ import java.util.zip.*;
 import kgm.utility.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import com.fasterxml.jackson.databind.*;
 
 public class IOGraph<V extends Comparable,E> implements Serializable
 {
@@ -30,18 +31,18 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 	
 	/**
 	 * Class constructor.
-	 * @param icr an ICR client
+	 * @param ss_client a Software Server client
 	 */
-	public IOGraph(SoftwareServerClient icr)
+	public IOGraph(SoftwareServerClient ss_client)
 	{
-		Vector<Application> applications = icr.getApplications();
+		Vector<Application> applications = ss_client.getApplications();
 		Application application;
 		Operation operation;
 		Data input, output;
 		
 		for(int a=0; a<applications.size(); a++){
 			application = applications.get(a);
-			//System.out.println("Adding " + icr.toString() + " - " + application);
+			//System.out.println("Adding " + ss_client.toString() + " - " + application);
 			
 			for(int o=0; o<application.operations.size(); o++){
 				operation = application.operations.get(o);
@@ -70,6 +71,30 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 							}
 						}
 					}
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Class constructor.
+	 * @param applications json encoded application information from a Software Server
+	 * @param host the Software Server host
+	 */
+	public IOGraph(JsonNode applications, String host)
+	{
+		SoftwareServerApplication application;
+		String input, output;
+		
+		for(int i=0; i<applications.size(); i++){
+			application = new SoftwareServerApplication(applications.get(i).get("alias").asText(), host);
+			
+			for(int j=0; j<applications.get(i).get("inputs").size(); j++){
+				input = applications.get(i).get("inputs").get(j).asText();
+				
+				for(int k=0; k<applications.get(i).get("outputs").size(); k++){
+					output = applications.get(i).get("outputs").get(k).asText();
+					addEdge((V)input, (V)output, (E)application);
 				}
 			}
 		}
@@ -279,7 +304,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 			}
 		}
 		
-		//Add all edges (should not add same ICR twice!)
+		//Add all edges (should not add same Software Server twice!)
 		for(int i=0; i<iograph.adjacency_list.size(); i++){
 			v0 = iograph.vertices.get(i);
 
@@ -610,6 +635,29 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 			}
 		}
 		return Double.NaN;
+	}
+	
+	/**
+	 * Save graph to the given file.
+	 * @param filename a file to contain the graph as lines of: edge source target weight
+	 */
+	public void save(String filename)
+	{
+		int v0, v1;
+		
+	  try{
+	    BufferedWriter outs = new BufferedWriter(new FileWriter(filename, false));
+	    
+			for(v0=0; v0<adjacency_list.size(); v0++){
+				for(int i=0; i<adjacency_list.get(v0).size(); i++){
+					v1 = adjacency_list.get(v0).get(i);
+			    outs.write(edges.get(v0).get(i) + " " + vertices.get(v0) + " " + vertices.get(v1) + " " + weights.get(v0).get(i));
+			    outs.newLine();
+				}
+			}
+	    
+	    outs.close();
+	  }catch(Exception e) {e.printStackTrace();}
 	}
 	
 	/**
@@ -1672,7 +1720,11 @@ public class IOGraph<V extends Comparable,E> implements Serializable
   	}
   }
   
-  public void complexity() {
+  /**
+   * Display information regarding the complexity of the graph.
+   */
+  public void complexity() 
+  {
   	int total_edges = 0;
   	Set<E> edge_names = new HashSet<E>();
   	
@@ -1697,7 +1749,14 @@ public class IOGraph<V extends Comparable,E> implements Serializable
   	System.out.println("AVERAGE NEIGHBORS : " + (x / adjacency_list.size()));
   }
   
-	public static void timings(int edges, int formats, int software) {
+  /**
+   * Compare time of various algorithms to find a shortest path in random graph.
+   * @param edges the number of edges
+   * @param formats the number of vertices
+   * @param software the number of applications
+   */
+	public static void timings(int edges, int formats, int software) 
+	{
 		long l;
 		IOGraph<String,String> iograph = new IOGraph<String,String>();
 
@@ -1740,7 +1799,10 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 		System.out.println("BELLMAN  : " + l);
 	}
 	
-	public static void main(String... args)
+	/**
+	 * Debug shortest paths.
+	 */
+	public static void debug1()
 	{
 		String string1 = new String("<BB>");
 		String string2 = new String("<Aa>");
@@ -1755,8 +1817,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 		iograph.addEdge("b", "c", "A", 1.0);
 		iograph.addEdge("c", "a", "A", -4.0);
 
-		Pair<Vector<Integer>,Vector<Double>> path = iograph
-				.getShortestWeightedPaths(0);
+		Pair<Vector<Integer>,Vector<Double>> path = iograph.getShortestWeightedPaths(0);
 		int u = 2;
 
 		System.out.print(path.second.get(u) + " ");
@@ -1815,7 +1876,7 @@ public class IOGraph<V extends Comparable,E> implements Serializable
    * A main for debug purposes.
    * @param args command line arguments
    */
-  public static void mainOriginal(String args[])
+  public static void main(String args[])
   {  
   	IOGraph iograph = null;
   	Vector<String> vector;
@@ -1827,9 +1888,9 @@ public class IOGraph<V extends Comparable,E> implements Serializable
     int count = 0;
     
     if(true){
-    	SoftwareServerClient icr = new SoftwareServerClient("localhost", 30);
-    	iograph = new IOGraph<Data,Application>(icr);
-    	icr.close();
+    	SoftwareServerClient ss_client = new SoftwareServerClient("localhost", 30);
+    	iograph = new IOGraph<Data,Application>(ss_client);
+    	ss_client.close();
     }else{
     	iograph = new IOGraph<String,String>("jdbc:mysql://isda.ncsa.uiuc.edu/csr", "demo", "demo");
     }

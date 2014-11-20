@@ -13,11 +13,14 @@ public abstract class Polyglot
 {
 	private AtomicInteger pending_asynchronous_calls = new AtomicInteger();
 	
+	public abstract TreeSet<String> getSoftware();
 	public abstract TreeSet<String> getOutputs();
-	public abstract TreeSet<String> getOutputs(String string);
-	public abstract TreeSet<String> getOutputs(TreeSet<String> set);
+	public abstract TreeSet<String> getOutputs(String input);
+	public abstract TreeSet<String> getOutputs(TreeSet<String> inputs);
+	public abstract TreeSet<String> getInputs();
+	public abstract TreeSet<String> getInputs(String output);
 	public abstract IOGraph<String,String> getInputOutputGraph();
-	public abstract void convert(String input_filename, String output_path, String output_type);
+	public abstract String convert(String input_filename, String output_path, String output_type);
 	
 	public abstract Vector<String> getServers();
 	public abstract IOGraph<String,String> getDistributedInputOutputGraph();

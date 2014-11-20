@@ -11,11 +11,12 @@ public class PolyglotRESTUtilities
 {
 	/**
 	 * Get a web form interface for this restful service.
+	 * @param polylgot the polyglot steward
 	 * @param POST_UPLOADS true if this form should use POST rather than GET for uploading files
 	 * @param selected_output the default output format
 	 * @return the form
 	 */
-	public static String getForm(PolyglotSteward polyglot, boolean POST_UPLOADS, String selected_output)
+	public static String getForm(Polyglot polyglot, boolean POST_UPLOADS, String selected_output)
 	{
 		String buffer = "";
 		String output;
@@ -120,7 +121,7 @@ public class PolyglotRESTUtilities
 	 * @param db a mongo database
 	 * @param polyglot the polyglot steward
 	 */
-	public static void updateMongo(DB db, PolyglotSteward polyglot)
+	public static void updateMongo(DB db, Polyglot polyglot)
 	{
 	  DBCollection collection;
 		

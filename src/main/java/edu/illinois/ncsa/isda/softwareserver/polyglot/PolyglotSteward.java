@@ -8,14 +8,14 @@ import java.net.*;
 import java.util.*;
 
 /**
- * A class that coordinates the use of several software reuse clients via I/O-graphs
+ * A class that coordinates the use of several software server clients via I/O-graphs
  * to perform file format conversions.
  * @author Kenton McHenry
  */
 public class PolyglotSteward extends Polyglot implements Runnable
 {
-	private Vector<SoftwareServerClient> sr_clients = new Vector<SoftwareServerClient>();
-	private TreeSet<String> sr_client_strings = new TreeSet<String>();
+	private Vector<SoftwareServerClient> ss_clients = new Vector<SoftwareServerClient>();
+	private TreeSet<String> ss_client_strings = new TreeSet<String>();
 	private IOGraph<Data,Application> iograph = new IOGraph<Data,Application>();
 	private int application_flexibility = 0;
 	private int software_server_rest_port = 8182;
@@ -42,31 +42,31 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		
 		application_flexibility = polyglot.application_flexibility;
 		
-		for(int i=0; i<polyglot.sr_clients.size(); i++){
-			add(new SoftwareServerClient(polyglot.sr_clients.get(i)));
+		for(int i=0; i<polyglot.ss_clients.size(); i++){
+			add(new SoftwareServerClient(polyglot.ss_clients.get(i)));
 		}
 	}
 	
 	/**
-	 * Get the number of software reuse clients being used.
-	 * @return the number of software reuse clients
+	 * Get the number of software server clients being used.
+	 * @return the number of software server clients
 	 */
 	public int size()
 	{
-		return sr_clients.size();
+		return ss_clients.size();
 	}
 
 	/**
-	 * Add a software reuse client.
-	 * @param icr a software reuse client
+	 * Add a software server client.
+	 * @param ssc a software server client
 	 * @return true if successfully added
 	 */
-	public synchronized boolean add(SoftwareServerClient icr)
+	public synchronized boolean add(SoftwareServerClient ssc)
 	{
-		if(!sr_client_strings.contains(icr.toString())){
-			sr_client_strings.add(icr.toString());
-			sr_clients.add(icr);
-			iograph.addGraph(new IOGraph<Data,Application>(icr));
+		if(!ss_client_strings.contains(ssc.toString())){
+			ss_client_strings.add(ssc.toString());
+			ss_clients.add(ssc);
+			iograph.addGraph(new IOGraph<Data,Application>(ssc));
 			
 			return true;
 		}else{
@@ -75,14 +75,14 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	}
 	
 	/**
-	 * Add a software reuse client.
+	 * Add a software server client.
 	 * @param server the server name
 	 * @param port the port number
 	 * @return true if successfully added
 	 */
 	public boolean add(String server, int port)
 	{
-		if(!sr_client_strings.contains(server + ":" + port)){		//Avoid creating a SoftwareServerClient which would initiate a connection!
+		if(!ss_client_strings.contains(server + ":" + port)){		//Avoid creating a SoftwareServerClient which would initiate a connection!
 			return add(new SoftwareServerClient(server, port));
 		}else{
 			return false;
@@ -90,28 +90,13 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	}
 	
 	/**
-	 * Retrieve the specified software reuse client.
+	 * Retrieve the specified software server client.
 	 * @param index the index of the desired client
-	 * @return the software reuse client
+	 * @return the software server client
 	 */
 	public SoftwareServerClient get(int index)
 	{
-		return sr_clients.get(index);
-	}
-	
-	/**
-	 * Get a list of connected software reuse servers.
-	 * @return a list of connected software reuse servers
-	 */
-	public Vector<String> getServers()
-	{
-		Vector<String> servers = new Vector<String>();
-		
-		for(int i=0; i<sr_clients.size(); i++){
-			servers.add(sr_clients.get(i).toString());
-		}
-		
-		return servers;
+		return ss_clients.get(index);
 	}
 	
 	/**
@@ -190,6 +175,21 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	}
 	
 	/**
+	 * Get a list of connected software servers.
+	 * @return a list of connected software servers
+	 */
+	public Vector<String> getServers()
+	{
+		Vector<String> servers = new Vector<String>();
+		
+		for(int i=0; i<ss_clients.size(); i++){
+			servers.add(ss_clients.get(i).toString());
+		}
+		
+		return servers;
+	}
+
+	/**
 	 * Get a string only version of this IOGraph encoded with host machines.
 	 * @return a string version of this IOGraph
 	 */
@@ -208,7 +208,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
   	for(int i=0; i<adjacency_list.size(); i++){
   		for(int j=0; j<adjacency_list.get(i).size(); j++){
   			string = edges.get(i).get(j).toString();
-  			string += " [" + edges.get(i).get(j).icr.getServer() + "]";
+  			string += " [" + edges.get(i).get(j).ssc.getServer() + "]";
   			iograph_strings.addEdge(vertices.get(i).toString(), vertices.get(adjacency_list.get(i).get(j)).toString(), string);
   		}
   	}
@@ -218,7 +218,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 
 	/**
 	 * Set the flexibility when choosing an application where 0=none (default), 1=allow parallel applications with
-	 * the same name (different software reuse servers), 2=allow all parallel applications.  The higher the value the more 
+	 * the same name (different software servers), 2=allow all parallel applications.  The higher the value the more 
 	 * parallelism can be taken advantage of.
 	 * @param value the flexibility value
 	 */
@@ -259,7 +259,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		Vector<Application> application_options = null;
 		FileData input, output;
 		Data data_last, data_next;
-		SoftwareServerClient icr = null;
+		SoftwareServerClient ssc = null;
 		String tmps;
 				
 		if(conversions != null){
@@ -271,9 +271,9 @@ public class PolyglotSteward extends Polyglot implements Runnable
 				output = (FileData)conversions.get(i).output;
 				data_next = new CachedFileData(input_file_data, output.getFormat());
 	
-				//Attempt to avoid busy software reuse servers
-				if(application_flexibility > 0 && application.icr.isBusy()){
-					tmps = application.icr.toString();
+				//Attempt to avoid busy software servers
+				if(application_flexibility > 0 && application.ssc.isBusy()){
+					tmps = application.ssc.toString();
 					
 					if(application_flexibility == 1){
 						application_options = iograph.getParallelEdges(input, output, application);
@@ -283,19 +283,19 @@ public class PolyglotSteward extends Polyglot implements Runnable
 					
 					for(int j=0; j<application_options.size(); j++){
 						application = application_options.get(j);
-						if(!application.icr.isBusy()) break;
+						if(!application.ssc.isBusy()) break;
 					}
 					
 					if(false){
-						if(!application.icr.toString().equals(tmps)){
-							System.out.println("[Steward]: " + tmps + " is busy, switching to " + application.icr.toString());
+						if(!application.ssc.toString().equals(tmps)){
+							System.out.println("[Steward]: " + tmps + " is busy, switching to " + application.ssc.toString());
 						}else{
-							System.out.println("[Steward]: " + tmps + " is busy, remaining with " + application.icr.toString());
+							System.out.println("[Steward]: " + tmps + " is busy, remaining with " + application.ssc.toString());
 						}
 					}
 				}
 				
-				if(application.icr == icr){
+				if(application.ssc == ssc){
 					task.addSubtasks(application.toString(), data_last, data_next);
 				}else{
 					if(task != null){		//Execute task list and retrieve result before proceeding
@@ -303,14 +303,14 @@ public class PolyglotSteward extends Polyglot implements Runnable
 						data_last = task.execute();
 						
 						if(data_last instanceof CachedFileData){
-							System.out.println("[Steward]: Retrieving intermediary result " + data_last.toString() + " from " + icr.toString());
-							data_last = icr.retrieveData((CachedFileData)data_last);
+							System.out.println("[Steward]: Retrieving intermediary result " + data_last.toString() + " from " + ssc.toString());
+							data_last = ssc.retrieveData((CachedFileData)data_last);
 						}
 					}
 					
-					icr = application.icr;
-					icr.requestNewSession();	//Request a new session to avoid using files with similar names (e.g. weights tool having a failed conversion after a good conversion on the same type)
-					task = new Task(icr, application.toString(), data_last, data_next);
+					ssc = application.ssc;
+					ssc.requestNewSession();	//Request a new session to avoid using files with similar names (e.g. weights tool having a failed conversion after a good conversion on the same type)
+					task = new Task(ssc, application.toString(), data_last, data_next);
 				}
 				
 				data_last = data_next;
@@ -376,8 +376,9 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	 * @param input_filename the absolute name of the input file
 	 * @param output_path the output path
 	 * @param output_type the name of the output type
+	 * @return the output file name (if changed, null otherwise)
 	 */
-	public void convert(String input_filename, String output_path, String output_type)
+	public String convert(String input_filename, String output_path, String output_type)
 	{				
 		FileData input_file_data;
 		FileData output_file_data;	
@@ -388,6 +389,8 @@ public class PolyglotSteward extends Polyglot implements Runnable
 		input_file_data = new FileData(input_filename, true);
 		output_file_data = convert(input_file_data, output_type);
 		output_file_data.save(output_path, null);
+		
+		return null;
 	}
 	
 	/**
@@ -413,9 +416,9 @@ public class PolyglotSteward extends Polyglot implements Runnable
 				input = (FileData)conversions.get(i).input;
 				output = (FileData)conversions.get(i).output;
 	
-				//Attempt to avoid busy software reuse servers
-				if(application_flexibility > 0 && application.icr.isBusy()){
-					tmps = application.icr.toString();
+				//Attempt to avoid busy software servers
+				if(application_flexibility > 0 && application.ssc.isBusy()){
+					tmps = application.ssc.toString();
 					
 					if(application_flexibility == 1){
 						application_options = iograph.getParallelEdges(input, output, application);
@@ -425,20 +428,20 @@ public class PolyglotSteward extends Polyglot implements Runnable
 					
 					for(int j=0; j<application_options.size(); j++){
 						application = application_options.get(j);
-						if(!application.icr.isBusy()) break;
+						if(!application.ssc.isBusy()) break;
 					}
 					
 					if(false){
-						if(!application.icr.toString().equals(tmps)){
-							System.out.println("[Steward]: " + tmps + " is busy, switching to " + application.icr.toString());
+						if(!application.ssc.toString().equals(tmps)){
+							System.out.println("[Steward]: " + tmps + " is busy, switching to " + application.ssc.toString());
 						}else{
-							System.out.println("[Steward]: " + tmps + " is busy, remaining with " + application.icr.toString());
+							System.out.println("[Steward]: " + tmps + " is busy, remaining with " + application.ssc.toString());
 						}
 					}
 				}
 			
 				//Execute task
-				String url = "http://" + application.icr.toString() + ":" + String.valueOf(software_server_rest_port) + "/software/" + application.toString() + "/convert/" + output.getFormat() + "/";
+				String url = "http://" + application.ssc.toString() + ":" + String.valueOf(software_server_rest_port) + "/software/" + application.toString() + "/convert/" + output.getFormat() + "/";
 				
 				System.out.println("\n Working file - " + file);
 				System.out.println(" Software Server REST Call - " + url + "...");
@@ -452,7 +455,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 				//Wait for result
 				t0 = System.currentTimeMillis();
 				
-				while(!existsURL(file)){
+				while(!Utility.existsURL(file)){
 					Utility.pause(1000);
 
 					//Break if wait exceeds maximum wait time
@@ -473,35 +476,25 @@ public class PolyglotSteward extends Polyglot implements Runnable
 	}
 
   /**
-   * Check if the specified URL exists.  TODO: update kgm.utility.Utilities?
-   * @param url the URL to check
-   * @return true if the URL exists
-   */	
-  public static boolean existsURL(String url)
-  {
-    try {
-      HttpURLConnection.setFollowRedirects(false);
-      HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-      connection.setRequestMethod("HEAD");
-      
-      return (connection.getResponseCode() == HttpURLConnection.HTTP_OK);
-    }
-    catch (Exception e) {
-       e.printStackTrace();
-       return false;
-    }
-  }
-	
-	/**
-	 * Close all software server client connections.
+	 * Close all software server client connections and stop the PolyglotSteward thread.
 	 */
 	public void close()
 	{
 		waitOnPending();
 		
-		for(int i=0; i<sr_clients.size(); i++){
-			sr_clients.get(i).close();
+		for(int i=0; i<ss_clients.size(); i++){
+			ss_clients.get(i).close();
 		}
+		
+		//Code that used to be in a separate stop() method
+		RUNNING = false;
+		
+		//Close the TCP listener socket
+		try{
+			tcp_listener_server_socket.close();
+		}catch(IOException e) {e.printStackTrace();}
+		
+		waitUntilStopped();
 	}
 	
   /**
@@ -513,22 +506,6 @@ public class PolyglotSteward extends Polyglot implements Runnable
   		Utility.pause(500);
   	}
   }
-	
-	/**
-	 * Stop the PolyglotSteward thread.
-	 */
-	public void stop()
-	{
-		close();
-		RUNNING = false;
-		
-		//Close the TCP listener socket
-		try{
-			tcp_listener_server_socket.close();
-		}catch(IOException e) {e.printStackTrace();}
-		
-		waitUntilStopped();
-	}
 
 	/**
 	 * Start listening for SoftwareServers.
@@ -627,11 +604,11 @@ public class PolyglotSteward extends Polyglot implements Runnable
 			int i = 0;
 			
 			synchronized(this){
-				while(i < sr_clients.size()){
-					if(!sr_clients.get(i).isAlive()){
-						System.out.println("[Steward]: Lost Software Server - " + sr_clients.get(i).toString());
-						sr_client_strings.remove(sr_clients.get(i).toString());
-						sr_clients.remove(i);
+				while(i < ss_clients.size()){
+					if(!ss_clients.get(i).isAlive()){
+						System.out.println("[Steward]: Lost Software Server - " + ss_clients.get(i).toString());
+						ss_client_strings.remove(ss_clients.get(i).toString());
+						ss_clients.remove(i);
 						DROPPED_CONNECTION = true;
 					}else{
 						i++;
@@ -642,8 +619,8 @@ public class PolyglotSteward extends Polyglot implements Runnable
 				if(DROPPED_CONNECTION){
 					iograph.clear();
 	
-					for(i=0; i<sr_clients.size(); i++){
-						iograph.addGraph(new IOGraph<Data,Application>(sr_clients.get(i)));
+					for(i=0; i<ss_clients.size(); i++){
+						iograph.addGraph(new IOGraph<Data,Application>(ss_clients.get(i)));
 					}
 				}
 			}
@@ -651,7 +628,7 @@ public class PolyglotSteward extends Polyglot implements Runnable
 			Utility.pause(1000);
 		}
 	}
-	
+
 	/**
 	 * Command line polyglot interface.
 	 * @param args command line arguments

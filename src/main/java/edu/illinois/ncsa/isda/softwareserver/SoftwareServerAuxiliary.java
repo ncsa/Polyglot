@@ -1063,7 +1063,7 @@ public class SoftwareServerAuxiliary
 		  execute(filename);
 		}
 	}
-
+	
 	/**
    * A structure to store information about applications.
    */
@@ -1078,7 +1078,7 @@ public class SoftwareServerAuxiliary
     public Operation exit_operation = null;
     public Operation kill_operation = null;
     public TreeSet<String> executables = new TreeSet<String>();
-  	public SoftwareServerClient icr = null;		//An application belongs to an software reuse server (set by the client)!
+  	public SoftwareServerClient ssc = null;		//An application belongs to an software server (set by the client)!
 
     /**
      * Class constructor.

@@ -242,7 +242,7 @@ public class PolyglotServer implements Runnable
 		
 		waitUntilStopped();
 		
-		polyglot.stop();
+		polyglot.close();
 	}
   
 	/**

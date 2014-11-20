@@ -10,9 +10,9 @@ import kgm.utility.*;
 import sun.net.*;
 
 /**
- * A class that coordinates the use of several software reuse clients via I/O-graphs
- * to perform file format conversions.
- * @author Kenton McHenry
+ * A class that coordinates the use of several software reuse clients via I/O-graphs to perform file format conversions.  
+ * This version is threaded so as balance the load on a number of Software Servers.
+ * @author Rob Kooper
  */
 public class PolyglotStewardThreaded extends Polyglot implements Runnable
 {
@@ -105,27 +105,21 @@ public class PolyglotStewardThreaded extends Polyglot implements Runnable
 	}
 	
 	/**
-	 * Get a list of connected software reuse servers.
-	 * @return a list of connected software reuse servers
-	 */
-	public Vector<String> getServers()
-	{
-		Vector<String> servers = new Vector<String>();
-		
-		for(int i=0; i<sr_clients.size(); i++){
-			servers.add(sr_clients.get(i).toString());
-		}
-		
-		return servers;
-	}
-	
-	/**
 	 * Get the I/O-graph.
 	 * @return the I/O-graph
 	 */
 	public IOGraph<Data,Application> getIOGraph()
 	{
 		return iograph;
+	}
+	
+	/**
+	 * Get the software available.
+	 * @return the list of software
+	 */
+	public TreeSet<String> getSoftware()
+	{
+		return iograph.getUniqueEdgeStrings();
 	}
 
 	/**
@@ -158,6 +152,25 @@ public class PolyglotStewardThreaded extends Polyglot implements Runnable
 	}
 	
 	/**
+	 * Get the inputs available.
+	 * @return the list of inputs
+	 */
+	public TreeSet<String> getInputs()
+	{
+		return iograph.getDomainStrings();
+	}
+	
+	/**
+	 * Get the inputs available for the given output type.
+	 * @param output the output type
+	 * @return the list of inputs
+	 */
+	public TreeSet<String> getInputs(String output)
+	{
+		return iograph.getDomainStrings(output);
+	}
+	
+	/**
 	 * Get the available inputs, outputs, and conversions.
 	 * @return an IOGraph containing the information as strings
 	 */
@@ -166,6 +179,21 @@ public class PolyglotStewardThreaded extends Polyglot implements Runnable
 		return iograph.getIOGraphStrings();
 	}
 	
+	/**
+	 * Get a list of connected software reuse servers.
+	 * @return a list of connected software reuse servers
+	 */
+	public Vector<String> getServers()
+	{
+		Vector<String> servers = new Vector<String>();
+		
+		for(int i=0; i<sr_clients.size(); i++){
+			servers.add(sr_clients.get(i).toString());
+		}
+		
+		return servers;
+	}
+
 	/**
 	 * Get a string only version of this IOGraph encoded with host machines.
 	 * @return a string version of this IOGraph
@@ -185,7 +213,7 @@ public class PolyglotStewardThreaded extends Polyglot implements Runnable
   	for(int i=0; i<adjacency_list.size(); i++){
   		for(int j=0; j<adjacency_list.get(i).size(); j++){
   			string = edges.get(i).get(j).toString();
-  			string += " [" + edges.get(i).get(j).icr.getServer() + "]";
+  			string += " [" + edges.get(i).get(j).ssc.getServer() + "]";
   			iograph_strings.addEdge(vertices.get(i).toString(), vertices.get(adjacency_list.get(i).get(j)).toString(), string);
   		}
   	}
@@ -274,8 +302,9 @@ public class PolyglotStewardThreaded extends Polyglot implements Runnable
 	 * @param input_filename the absolute name of the input file
 	 * @param output_path the output path
 	 * @param output_type the name of the output type
+	 * @return the output file name (if changed, null otherwise)
 	 */
-	public void convert(String input_filename, String output_path, String output_type)
+	public String convert(String input_filename, String output_path, String output_type)
 	{				
 		FileData input_file_data;
 		FileData output_file_data;	
@@ -286,6 +315,8 @@ public class PolyglotStewardThreaded extends Polyglot implements Runnable
 		input_file_data = new FileData(input_filename, true);
 		output_file_data = convert(input_file_data, output_type);
 		output_file_data.save(output_path, null);
+		
+		return null;
 	}
 
 	/**
@@ -334,7 +365,7 @@ public class PolyglotStewardThreaded extends Polyglot implements Runnable
 					CachedFileData output = new CachedFileData(tmp.input, ((FileData)conv.output).getFormat());
 					Application app = findApplication(conv.edge, tmp.last, output, null, tmp);
 					if (app != null) {
-						icr = app.icr;
+						icr = app.ssc;
 						fc = tmp;
 						servers.put(icr, fc);
 						break;
@@ -402,7 +433,7 @@ public class PolyglotStewardThreaded extends Polyglot implements Runnable
 	
 	private Application findApplication(Application app, Data input, Data output, SoftwareServerClient icr, FileConversion fc) {
 		// is the app ready to run on the requested server?
-		if (((icr == null) || (icr == app.icr)) && ((servers.get(app.icr) == null) || (servers.get(app.icr) == fc))) {
+		if (((icr == null) || (icr == app.ssc)) && ((servers.get(app.ssc) == null) || (servers.get(app.ssc) == fc))) {
 			return app;
 		}
 		
@@ -429,7 +460,7 @@ public class PolyglotStewardThreaded extends Polyglot implements Runnable
 		
 		// find empty server to launch app on
 		for(Application a : apps) {
-			if (((icr == null) || (a.icr == icr)) && ((servers.get(a.icr) == null) || (servers.get(a.icr) == fc))) {
+			if (((icr == null) || (a.ssc == icr)) && ((servers.get(a.ssc) == null) || (servers.get(a.ssc) == fc))) {
 				return a;
 			}
 		}

@@ -31,7 +31,7 @@ import com.mongodb.*;
  */
 public class PolyglotRestlet extends ServerResource
 {
-  private static PolyglotSteward polyglot = new PolyglotSteward();
+  private static Polyglot polyglot = new PolyglotStewardAMQ();
 	private static int steward_port = -1;
 	private static int port = 8184;
 	private static boolean RETURN_URL = false;
@@ -99,7 +99,7 @@ public class PolyglotRestlet extends ServerResource
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
-		String client, file = null, output = null, result_file, result_url, url, type;
+		String client, file = null, output = null, result_file = null, result_url, url, type;
 		String buffer;
 		Form form;
 		Parameter p;
@@ -122,34 +122,37 @@ public class PolyglotRestlet extends ServerResource
 					//Do the conversion
 					System.out.print("[" + client + "]: " + Utility.getFilename(file) + " -> " + output + "...");
 					
-					if(download_method.equals("wget")){
-						try{
-							Runtime.getRuntime().exec("wget -O " + temp_path + "/" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)) + " " + file).waitFor();
-						}catch(Exception e){e.printStackTrace();}
-					}else if(download_method.equals("nio")){
-						try{
-							URL website = new URL(file);
-							ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-							FileOutputStream fos = new FileOutputStream(temp_path + "/" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)));
-							fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-						}catch(Exception e){e.printStackTrace();}
-					}else{
-						//Utility.downloadFile(temp_path, file);
-						Utility.downloadFile(temp_path, Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)), file);
+					//Download URLs
+					if(!(polyglot instanceof PolyglotStewardAMQ)){
+						if(download_method.equals("wget")){
+							try{
+								Runtime.getRuntime().exec("wget -O " + temp_path + "/" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)) + " " + file).waitFor();
+							}catch(Exception e){e.printStackTrace();}
+						}else if(download_method.equals("nio")){
+							try{
+								URL website = new URL(file);
+								ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+								FileOutputStream fos = new FileOutputStream(temp_path + "/" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)));
+								fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+							}catch(Exception e){e.printStackTrace();}
+						}else{
+							//Utility.downloadFile(temp_path, file);
+							Utility.downloadFile(temp_path, Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)), file);
+						}
+	
+						//file = temp_path + Utility.getFilename(file);
+						file = temp_path + SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(file));
 					}
-
-					//file = temp_path + Utility.getFilename(file);
-					file = temp_path + SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(file));
 					
 					request = new RequestInformation(client, file, output);
 					
-					if(SOFTWARE_SERVER_REST_INTERFACE){
-						polyglot.convertOverREST(file, public_path, output);
+					if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
+						((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 					}else{
-						polyglot.convert(file, public_path, output);
+						result_file = polyglot.convert(file, public_path, output);
 					}
 
-					result_file = Utility.getFilenameName(file) + "." + output;
+					if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;
 					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 
 					if(Utility.existsAndNotEmpty(public_path + result_file)){
@@ -220,14 +223,18 @@ public class PolyglotRestlet extends ServerResource
 				}
 			}
 		}else if(part0.equals("file")){
-			if(!part1.isEmpty()){	
+			if(!part1.isEmpty()){
 				file = public_path + part1;
 				
 				if(Utility.exists(file)){
 					return new FileRepresentation(file, MediaType.MULTIPART_ALL);
 				}else{
-					setStatus(Status.CLIENT_ERROR_NOT_FOUND);
-					return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
+					if(Utility.exists(file + ".url")){
+						return new FileRepresentation(file, MediaType.MULTIPART_ALL);
+					}else{
+						setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
+					}
 				}
 			}else{
 				return new StringRepresentation("error: invalid endpoint", MediaType.TEXT_PLAIN);
@@ -254,6 +261,22 @@ public class PolyglotRestlet extends ServerResource
 			}
 		}else if(part0.equals("alive")){
 			return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
+		}else if(part0.equals("checkin") && polyglot instanceof PolyglotStewardAMQ){
+			if(!part1.isEmpty()){
+				try{
+					int job_id = Integer.parseInt(part1);
+				
+					if(!part2.isEmpty()){
+						return new StringRepresentation(((PolyglotStewardAMQ)polyglot).checkin(getClientInfo().getAddress(), job_id, part2), MediaType.TEXT_PLAIN);
+					}else{
+						return new StringRepresentation("error: invalid file", MediaType.TEXT_PLAIN);
+					}
+				}catch(NumberFormatException e){
+					return new StringRepresentation("error: invalid job id", MediaType.TEXT_PLAIN);
+				}
+			}else{
+				return new StringRepresentation("error: invalid job id", MediaType.TEXT_PLAIN);
+			}
 		}else if(part0.equals("servers")){				
 			return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getServers()), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("software")){
@@ -356,8 +379,8 @@ public class PolyglotRestlet extends ServerResource
 				
 				request = new RequestInformation(client, file, output);
 
-				if(SOFTWARE_SERVER_REST_INTERFACE){
-					polyglot.convertOverREST(file, public_path, output);
+				if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
+					((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 				}else{
 					polyglot.convert(file, public_path, output);
 				}
@@ -415,7 +438,7 @@ public class PolyglotRestlet extends ServerResource
 			component.stop();
 		}catch(Exception e) {e.printStackTrace();}
 		
-		polyglot.stop();
+		polyglot.close();
 	}
 	
 	/**
@@ -464,19 +487,19 @@ public class PolyglotRestlet extends ServerResource
 	        		new File(public_path).mkdir();
 	        	}else if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
-	          }else if(key.equals("StewardPort")){
+	          }else if(key.equals("StewardPort") && polyglot instanceof PolyglotSteward){
 	          	steward_port = Integer.valueOf(value);
 	          	
 	        	  if(steward_port >= 0){
-	        	  	polyglot.listen(steward_port);
+	        	  	((PolyglotSteward)polyglot).listen(steward_port);
 	        	  }
-	          }else if(key.equals("SoftwareServer")){
+	          }else if(key.equals("SoftwareServer") && polyglot instanceof PolyglotSteward){
           		tmpi = value.lastIndexOf(':');
 	        		
 	        		if(tmpi != -1){
 	        			server = value.substring(0, tmpi);
 	        			port = Integer.valueOf(value.substring(tmpi+1));
-	        			polyglot.add(server, port);
+	        			((PolyglotSteward)polyglot).add(server, port);
 	        		}
 	          }else if(key.equals("ReturnURL")){
 	          	RETURN_URL = Boolean.valueOf(value);
@@ -487,11 +510,11 @@ public class PolyglotRestlet extends ServerResource
 	          }else if(key.equals("SoftwareServerRESTInterface")){
 	          	SOFTWARE_SERVER_REST_INTERFACE = Boolean.valueOf(value);
 	          }else if(key.equals("SoftwareServerRESTPort")){
-							polyglot.setSoftwareServerRESTPort(Integer.valueOf(value));
+							if(polyglot instanceof PolyglotSteward) ((PolyglotSteward)polyglot).setSoftwareServerRESTPort(Integer.valueOf(value));
 	          }else if(key.equals("DownloadMethod")){
 							download_method = value;
 	          }else if(key.equals("MaxTaskTime")){
-							polyglot.setMaxTaskTime(Integer.valueOf(value));
+							if(polyglot instanceof PolyglotSteward) ((PolyglotSteward)polyglot).setMaxTaskTime(Integer.valueOf(value));
 	          }
 	        }
 	      }
