@@ -209,7 +209,10 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 			}
 
 			request.put("path", path);
-			collection.insert((DBObject)JSON.parse(request.toString()));			
+			collection.insert((DBObject)JSON.parse(request.toString()));
+			
+			//Create a place holder file, URL is empty
+			Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(input) + "." + output_format + ".url", "[InternetShortcut]\nURL=");
 		}
 		
 		return job_id + "_" + Utility.getFilenameName(input) + "." + output_format;
@@ -388,7 +391,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(document.get("input").toString()) + "." + output_format + ".url", "[InternetShortcut]\nURL=" + URLDecoder.decode(input, "UTF-8"));
 
 						collection.remove(document);
-						System.out.println("[Steward]: Job-" + job_id + " completed!, " + input);
+						System.out.println("[Steward]: Job-" + job_id + " completed!, " + URLDecoder.decode(input, "UTF-8"));
 					}
 				}
 			}

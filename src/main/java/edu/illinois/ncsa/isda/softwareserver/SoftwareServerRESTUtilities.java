@@ -526,21 +526,18 @@ public class SoftwareServerRESTUtilities
 		  	    	api_call = "http://localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + Utility.urlEncode(input);
 		  	    	result = Utility.readURL(api_call, "text/plain");
 		  	    	
-		  	    	System.out.println("ok0: " + api_call);
-		  	    	System.out.println("ok1: " + result);
+		  	    	System.out.println("[AMQ]: " + api_call);
 		  	    	
 		  	    	while(!Utility.existsURL(result)){
 		  	    		Utility.pause(1000);
 		  	    	}
 									  	    	
 		  	    	checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
-		  	    	System.out.println("ok2: " + checkin_call);
+		  	    	System.out.println("[AMQ]: " + checkin_call);
 		  	    	
 		  	    	if(Utility.readURL(checkin_call).equals("ok")){
 		  	    		channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-		  	    	}
-		  	    	
-		  	    	System.out.println("ok3");
+		  	    	}		  	    	
 	  	    	}catch(Exception e) {e.printStackTrace();}
 	  	    }
 	  		}

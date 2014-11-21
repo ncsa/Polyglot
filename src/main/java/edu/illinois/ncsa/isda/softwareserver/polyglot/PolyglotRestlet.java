@@ -39,6 +39,7 @@ public class PolyglotRestlet extends ServerResource
 	private static int mongo_update_interval = 300;
 	private static boolean SOFTWARE_SERVER_REST_INTERFACE = false;
 	private static String download_method = "";
+	private static boolean HOST_POSTED_FILES = false;
 	private static String root_path = "./";
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
@@ -90,6 +91,7 @@ public class PolyglotRestlet extends ServerResource
 	
 	/**
 	 * Handle HTTP GET requests.
+	 * @return a response
 	 */
 	@Get
 	public Representation httpGetHandler()
@@ -152,10 +154,10 @@ public class PolyglotRestlet extends ServerResource
 						result_file = polyglot.convert(file, public_path, output);
 					}
 
-					if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;
+					if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;		//If a name wasn't suggested assume this.
 					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 
-					if(Utility.existsAndNotEmpty(public_path + result_file)){
+					if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 						request.setEndOfRequest(true);
 						System.out.println(" [Success]");
 					}else{
@@ -230,7 +232,15 @@ public class PolyglotRestlet extends ServerResource
 					return new FileRepresentation(file, MediaType.MULTIPART_ALL);
 				}else{
 					if(Utility.exists(file + ".url")){
-						return new FileRepresentation(file, MediaType.MULTIPART_ALL);
+						result_url = Utility.getLine(file + ".url", 2).substring(4);		//Link is on 2nd line after "URL="
+						
+						if(!result_url.isEmpty()){
+							this.getResponse().redirectTemporary(result_url);
+							return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+						}else{
+							setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+							return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
+						}
 					}else{
 						setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
@@ -328,6 +338,7 @@ public class PolyglotRestlet extends ServerResource
 	/**
 	 * Handle HTTP POST requests.
 	 * @param entity the entity
+	 * @return a response
 	 */
 	@Post
 	public Representation httpPostHandler(Representation entity)
@@ -340,7 +351,8 @@ public class PolyglotRestlet extends ServerResource
 		boolean FORM_POST = !part0.isEmpty() && part0.equals("form");
 		boolean TASK_POST = !part1.isEmpty();
 		TreeMap<String,String> parameters = new TreeMap<String,String>();
-		String client, file=null, output = null, result_file, result_url;
+		String file=null, output = null, result_file = null, result_url;
+		String client = getClientInfo().getAddress();
 		
 		if(FORM_POST || TASK_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
@@ -359,8 +371,15 @@ public class PolyglotRestlet extends ServerResource
 						if(fi.getName() == null){
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
 						}else{
-							file = temp_path + fi.getName();
-							fi.write(new File(file));
+							if(HOST_POSTED_FILES){
+								file = public_path + fi.getName();
+								fi.write(new File(file));
+								file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
+								System.out.println("[" + client + "]: Temporarily hosting file \"" + Utility.getFilename(file) + "\", " + file);
+							}else{
+								file = temp_path + fi.getName();
+								fi.write(new File(file));
+							}
 						}
 					}
 				}catch(Exception e) {e.printStackTrace();}
@@ -374,7 +393,6 @@ public class PolyglotRestlet extends ServerResource
 							
 			//Do the conversion
 			if(file != null && output != null){	
-				client = getClientInfo().getAddress();
 				System.out.print("[" + client + "]: " + Utility.getFilename(file) + " -> " + output + "...");
 				
 				request = new RequestInformation(client, file, output);
@@ -382,13 +400,13 @@ public class PolyglotRestlet extends ServerResource
 				if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
 					((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 				}else{
-					polyglot.convert(file, public_path, output);
+					result_file = polyglot.convert(file, public_path, output);
 				}
 
-				result_file = Utility.getFilenameName(file) + "." + output;
+				if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;
 				result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 
-				if(Utility.existsAndNotEmpty(public_path + result_file)){
+				if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 					request.setEndOfRequest(true);
 					System.out.println(" [Success]");
 				}else{
@@ -447,11 +465,13 @@ public class PolyglotRestlet extends ServerResource
 	 */
 	public static void main(String[] args)
 	{		
+		TreeMap<String,String> accounts = new TreeMap<String,String>();	
+
 		//Load configuration file
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader("PolyglotRestlet.conf"));
 	    String line, key, value;
-	    String server;
+	    String server, username, password;
 	    int tmpi;
 	    
 	    while((line=ins.readLine()) != null){
@@ -513,8 +533,14 @@ public class PolyglotRestlet extends ServerResource
 							if(polyglot instanceof PolyglotSteward) ((PolyglotSteward)polyglot).setSoftwareServerRESTPort(Integer.valueOf(value));
 	          }else if(key.equals("DownloadMethod")){
 							download_method = value;
+	          }else if(key.equals("HostPostedFile")){
+							HOST_POSTED_FILES = Boolean.valueOf(value);
 	          }else if(key.equals("MaxTaskTime")){
 							if(polyglot instanceof PolyglotSteward) ((PolyglotSteward)polyglot).setMaxTaskTime(Integer.valueOf(value));
+	          }else if(key.equals("Authentication")){
+	  	        username = value.substring(0, value.indexOf(':')).trim();
+	  	        password = value.substring(value.indexOf(':')+1).trim();
+	  	        accounts.put(username, password);
 	          }
 	        }
 	      }
@@ -570,7 +596,31 @@ public class PolyglotRestlet extends ServerResource
 				}
 			};
 			
-			component.getDefaultHost().attach("/", application);
+			if(!accounts.isEmpty()){
+				ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
+				MapVerifier verifier = new MapVerifier();
+				boolean FOUND_ADMIN = false;
+				boolean FOUND_USER = false;
+				
+				for(String username : accounts.keySet()){
+					if(username.toLowerCase().startsWith("admin")){
+						FOUND_ADMIN = true;
+					}else{
+						FOUND_USER = true;
+					}
+						
+					verifier.getLocalSecrets().put(username, accounts.get(username).toCharArray());
+				}
+					
+				if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
+					
+				guard.setVerifier(verifier);
+				guard.setNext(application);
+				component.getDefaultHost().attachDefault(guard);
+			}else{
+				component.getDefaultHost().attach("/", application);
+			}
+			
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
   	

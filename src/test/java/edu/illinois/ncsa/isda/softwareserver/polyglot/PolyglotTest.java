@@ -53,7 +53,9 @@ public class PolyglotTest
 		System.out.println("\n=== Polyglot: Test 2 (REST interface) ===");
 		
 		//Start Software Server
-		SoftwareServer sserver = new SoftwareServer("SoftwareServer.conf");
+		//SoftwareServer sserver = new SoftwareServer("SoftwareServer.conf");
+		SoftwareServerRestlet sserver = new SoftwareServerRestlet();
+		SoftwareServerRestlet.main(new String[0]);
 		
 		//Start Polyglot
 		PolyglotRestlet prestlet = new PolyglotRestlet();
@@ -68,7 +70,7 @@ public class PolyglotTest
 		
 		//Check if the output endpoint is available
 		try{
-			assertTrue("Did not get answer from URL [" + result + "]", Utility.existsURL(result));
+			assertTrue("Did not get answer from URL [" + result + "]", Utility.existsURL_bak(result));
 			System.out.println("Endpoint OK");
 		}catch(AssertionError e){
 			System.out.println(e.getMessage());
