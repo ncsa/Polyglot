@@ -24,7 +24,7 @@ fi
 cd /opt/kabeja-0.4/
 cp "$1" "./$inputFile"
 
-kabeja.sh  -nogui -pp conf/process.xml   -pipeline "$extO"   "$inputFile" "$2"
+./kabeja.sh  -nogui -pp conf/process.xml   -pipeline "$extO"   "$inputFile" "$2"
 rm "$inputFile"
 #mv "$outputFile" "$2"
 
