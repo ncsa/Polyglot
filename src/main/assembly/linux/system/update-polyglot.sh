@@ -6,6 +6,10 @@ cd $(dirname $0)
 # POL-MAIN is the master branch
 BRANCH=POL-MAIN
 
+# HipChat token for notifications
+HIPCHAT_TOKEN=""		#Add key before deploying!
+HIPCHAT_ROOM="BrownDog"
+
 # install startup scripts
 if [ ! -e /etc/init/softwareserver ]; then
 cat << EOF > /etc/init/softwareserver.conf
@@ -62,7 +66,10 @@ fi
 # fetch software
 /usr/bin/wget -N -q -O polyglot-2.1.0-SNAPSHOT-bin.zip https://opensource.ncsa.illinois.edu/bamboo/browse/${BRANCH}/latest/artifact/JOB1/polyglot-2.1.0-SNAPSHOT-bin.zip/polyglot-2.1.0-SNAPSHOT-bin.zip
 if [ $? == 0 -a polyglot-2.1.0-SNAPSHOT-bin.zip -nt polyglot-2.1.0-SNAPSHOT ]; then
-  echo "UPDATING POLYGLOT TO NEWER VERSION"
+  exec 3>&1
+  exec &> "/tmp/$$.txt"
+
+  echo "UPDATING POLYGLOT"
 
   /sbin/stop polyglot
   /sbin/stop softwareserver
@@ -103,8 +110,24 @@ if [ $? == 0 -a polyglot-2.1.0-SNAPSHOT-bin.zip -nt polyglot-2.1.0-SNAPSHOT ]; t
   cp -r polyglot-2.1.0-SNAPSHOT/web/dap/tests/fonts /var/www/html/dap/tests
   cp -r polyglot-2.1.0-SNAPSHOT/web/dap/tests/js /var/www/html/dap/tests
 
-	mkdir -p /var/www/html/dap/plots
-	mkdir -p /var/www/html/dap/plots/tmp
-	cp polyglot-2.1.0-SNAPSHOT/web/dap/plots/*.php /var/www/html/dap/plots
-	cp polyglot-2.1.0-SNAPSHOT/web/dap/plots/*.gnuplot /var/www/html/dap/plots
+  mkdir -p /var/www/html/dap/plots
+  mkdir -p /var/www/html/dap/plots/tmp
+  cp polyglot-2.1.0-SNAPSHOT/web/dap/plots/*.php /var/www/html/dap/plots
+  cp polyglot-2.1.0-SNAPSHOT/web/dap/plots/*.gnuplot /var/www/html/dap/plots
+
+  # send message by hipchat
+  if [ "${HIPCHAT_TOKEN}" != "" -a "${HIPCHAT_ROOM}" != "" ]; then
+    url="https://api.hipchat.com/v1/rooms/message?format=json&auth_token=${HIPCHAT_TOKEN}"
+    txt=$(cat /tmp/$$.txt | sed 's/ /%20/g;s/!/%21/g;s/"/%22/g;s/#/%23/g;s/\$/%24/g;s/\&/%26/g;s/'\''/%27/g;s/(/%28/g;s/)/%29/g;s/:/%3A/g;s/$/<br\/>/g')
+    room=$(echo ${HIPCHAT_ROOM} | sed 's/ /%20/g;s/!/%21/g;s/"/%22/g;s/#/%23/g;s/\$/%24/g;s/\&/%26/g;s/'\''/%27/g;s/(/%28/g;s/)/%29/g;s/:/%3A/g')
+    body="room_id=${room}&from=${HOSTNAME}&message=${txt}"
+    result=$(curl -X POST -d "${body}" $url)
+    if [ "${result}" != '{"status":"sent"}' ]; then
+      cat /tmp/$$.txt >&3
+      echo ${result} >&3
+    fi
+  else
+    cat /tmp/$$.txt >&3
+  fi
+  rm /tmp/$$.txt
 fi
