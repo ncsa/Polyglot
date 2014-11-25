@@ -66,7 +66,7 @@ public class PolyglotTest
 		//Run the test
 		Utility.pause(2000);
 		String result = Utility.postFile("http://localhost:8184/convert/gif/", "data/demo/Lenna.png", "text/plain");
-		Utility.pause(2000);
+		Utility.pause(5000);
 		
 		//Check if the output endpoint is available
 		try{

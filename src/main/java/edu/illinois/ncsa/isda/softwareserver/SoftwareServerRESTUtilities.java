@@ -528,7 +528,7 @@ public class SoftwareServerRESTUtilities
 		  	    	
 		  	    	System.out.println("[AMQ]: " + api_call);
 		  	    	
-		  	    	while(!Utility.existsURL(result)){
+		  	    	while(!Utility.existsURL_bak(result)){
 		  	    		Utility.pause(1000);
 		  	    	}
 									  	    	
