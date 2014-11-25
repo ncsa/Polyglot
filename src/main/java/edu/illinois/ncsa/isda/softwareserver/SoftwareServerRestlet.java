@@ -395,7 +395,7 @@ public class SoftwareServerRestlet extends ServerResource
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
 		String part3 = (parts.size() > 3) ? parts.get(3) : "";
 		String part4 = (parts.size() > 4) ? parts.get(4) : "";
-		String application_alias = null, task = null, file = null, format = null, result, url;
+		String application_alias = null, task = null, file = null, format = null, localhost = "http://localhost:8182", result, url;
 		String buffer;
 		Form form;
 		Parameter p;
@@ -439,6 +439,8 @@ public class SoftwareServerRestlet extends ServerResource
 							format = part3;
 							file = URLDecoder.decode(part4);
 							session = -1;
+							//localhost = getReference().getBaseRef().toString();
+							localhost = "http://" + Utility.getLocalHostIP() + ":8182";
 						
 							//if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "/file/")){		//Locally cached files already have session ids
 							if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()))){		//Locally cached files already have session ids
@@ -446,7 +448,7 @@ public class SoftwareServerRestlet extends ServerResource
 								result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + Utility.getFilenameName(file) + "." + format;
 							}else{																																											//Remote files must be assigned a session id
 								session = server.getSession();
-								result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + session + "_" + Utility.getFilenameName(file) + "." + format;
+								result = Utility.endSlash(localhost) + "file/" + session + "_" + Utility.getFilenameName(file) + "." + format;
 							}
 														
 							executeTaskLater(session, application_alias, task, file, format);
@@ -672,7 +674,7 @@ public class SoftwareServerRestlet extends ServerResource
 		
 		return httpGetHandler();
 	}
-	
+
 	/**
 	 * Stop the REST interface and underlying Software Server.
 	 */
