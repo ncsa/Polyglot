@@ -306,7 +306,7 @@ public class SoftwareServerRestlet extends ServerResource
 			//Task.print(task, applications);
 			
 			result = server.executeTaskAtomically("localhost", session, task);
-			
+	
 			//Create empty output if not created (e.g. when no conversion path was found)
 			if(result == null){
 				result = server.getCachePath() + session + "_" + Utility.getFilenameName(file) + "." + format;
@@ -496,6 +496,7 @@ public class SoftwareServerRestlet extends ServerResource
 		}else if(part0.equals("file")){
 			if(!part1.isEmpty()){	
 				file = public_path + part1;
+				System.out.println("[REST]: Request for file, " + file);
 				
 				if(Utility.exists(file)){
 					if(Utility.isDirectory(file)){

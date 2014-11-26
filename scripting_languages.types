@@ -1,4 +1,6 @@
 ahk, AutoHotKey, Windows, ;, AutoHotKey
+au3, AutoIt, Windows, ;, AutoIt3
+bat, Batch, Windows, REM
 applescript, AppleScript, Mac, --, osascript
 sikuli, SikuliScript, Windows, #, sikuli-ide.bat -s -r @ --args
 sikuli, SikuliScript, Linux, #, sikuli-ide.sh -s -r @ --args
@@ -7,4 +9,4 @@ py, Python, Mac, #, python
 py, Python, Windows, #, python
 sh, Shell, Linux, #
 sh, Shell, Mac, #
-bat, Batch, Windows, REM
+R, R, Linux, #
