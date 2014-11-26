@@ -12,3 +12,4 @@ tar
 txt2html
 unoconv
 zip
+7zip
