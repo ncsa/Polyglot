@@ -278,10 +278,13 @@ public class SoftwareServerRestlet extends ServerResource
 	public void executeTask(int session, String application_alias, String task_string, String file, String format)
 	{
 		Vector<Subtask> task;
-		String result;
+		String localhost, result;
 		
+		//localhost = getReference().getBaseRef().toString();
+		localhost = "http://" + Utility.getLocalHostIP() + ":8182";
+
 		if(session >= 0){
-			if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "file/")){	//Remove session id from filenames of locally cached files
+			if(file.startsWith(Utility.endSlash(localhost) + "file/")){	//Remove session id from filenames of locally cached files
 				file = SoftwareServer.getFilename(Utility.getFilename(file));
 			}else{																											//Download remote files
 				if(download_method.equals("wget")){
@@ -443,9 +446,9 @@ public class SoftwareServerRestlet extends ServerResource
 							localhost = "http://" + Utility.getLocalHostIP() + ":8182";
 						
 							//if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "/file/")){		//Locally cached files already have session ids
-							if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()))){		//Locally cached files already have session ids
+							if(file.startsWith(Utility.endSlash(localhost))){																															//Locally cached files already have session ids
 								session = SoftwareServer.getSession(file);
-								result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + Utility.getFilenameName(file) + "." + format;
+								result = Utility.endSlash(localhost) + "file/" + Utility.getFilenameName(file) + "." + format;
 							}else{																																											//Remote files must be assigned a session id
 								session = server.getSession();
 								result = Utility.endSlash(localhost) + "file/" + session + "_" + Utility.getFilenameName(file) + "." + format;
@@ -496,9 +499,10 @@ public class SoftwareServerRestlet extends ServerResource
 		}else if(part0.equals("file")){
 			if(!part1.isEmpty()){	
 				file = public_path + part1;
-				System.out.println("[REST]: Request for file, " + file);
 				
 				if(Utility.exists(file)){
+					System.out.println("[REST]: Request for file, " + file);
+
 					if(Utility.isDirectory(file)){
 						url = Utility.endSlash(getRootRef().toString()) + "file/" + part1 + "/";
 
