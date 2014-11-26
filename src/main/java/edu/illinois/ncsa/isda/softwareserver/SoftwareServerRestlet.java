@@ -503,10 +503,16 @@ public class SoftwareServerRestlet extends ServerResource
 
 						//return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head></html>", MediaType.TEXT_HTML);
 
+						/*
 						//Hack to get Restlet to return a "DirectoryRepresentation"
 						file += "/" + part1;
 						Utility.save(file, "<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head></html>");
 						return new FileRepresentation(file, MediaType.TEXT_HTML);
+						*/
+
+						//Redirect to directory endpoint, added a "/"
+						this.getResponse().redirectTemporary(url);
+						return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
 					}else{
 						MetadataService metadata_service = new MetadataService();
 						MediaType media_type = metadata_service.getMediaType(Utility.getFilenameExtension(part1));
