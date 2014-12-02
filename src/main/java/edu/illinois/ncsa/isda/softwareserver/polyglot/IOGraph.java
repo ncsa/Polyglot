@@ -13,7 +13,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import com.fasterxml.jackson.databind.*;
 
-public class IOGraph<V extends Comparable,E> implements Serializable
+public class IOGraph<V extends Comparable, E extends Comparable> implements Serializable
 {
 	private static Log log = LogFactory.getLog(IOGraph.class);
 	
@@ -311,6 +311,24 @@ public class IOGraph<V extends Comparable,E> implements Serializable
 			for(int j=0; j<iograph.adjacency_list.get(i).size(); j++){
 				v1 = iograph.vertices.get(iograph.adjacency_list.get(i).get(j));
 				addEdge(v0, v1, iograph.edges.get(i).get(j));
+			}
+		}
+	}
+	
+	/**
+	 * Remove edges matching the given string.
+	 * @param string a string associated with edges to be removed (matched via the Comparable interface when compared to Strings)
+	 */
+	public void removeEdges(String string)
+	{
+		for(int i=0; i<vertices.size(); i++){
+			for(int j=edges.get(i).size()-1; j>=0; j--){
+				if(edges.get(i).get(j).compareTo(string) == 0){
+					edges.get(i).remove(j);
+					adjacency_list.get(i).remove(j);
+					weights.get(i).remove(j);
+					active.get(i).remove(j);
+				}
 			}
 		}
 	}

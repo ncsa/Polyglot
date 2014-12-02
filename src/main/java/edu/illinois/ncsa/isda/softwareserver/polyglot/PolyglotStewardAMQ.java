@@ -29,6 +29,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	private String rabbitmq_server = null;
 	private String rabbitmq_username = null;
 	private String rabbitmq_password = null;
+	private int heartbeat;
 	private TreeMap<String,Long> software_servers = new TreeMap<String,Long>();
 	private IOGraph<String,SoftwareServerApplication> iograph = new IOGraph<String,SoftwareServerApplication>();
 	private MongoClient mongoClient;
@@ -87,6 +88,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	        		rabbitmq_username = value;
 	        	}else if(key.equals("RabbitMQPassword")){
 	        		rabbitmq_password = value;
+	        	}else if(key.equals("Heartbeat")){
+	        		heartbeat = Integer.valueOf(value);
 	        	}
 	        }
 	      }
@@ -308,6 +311,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		Set<String> hosts = null;
 		String host = null;
 		long startup_time;
+		boolean UPDATED = false;
 		
 		synchronized(software_servers){
 			hosts = software_servers.keySet();
@@ -319,13 +323,16 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	    	startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + host + ":8182/alive"));
 	  	}catch(NumberFormatException e){
 	  		synchronized(software_servers){
+		  		System.out.println("[Steward]: Dropping " + host);
+		  		UPDATED = true;
+		  		
+	  			iograph.removeEdges(host);
 	  			software_servers.remove(host);
-	  		}
-	  		
-	  		System.out.println("[Steward]: Dropping " + host);
-	  		//TODO: prune the I/O-graph
+		  	}
 	  	}
 		}
+		
+		if(UPDATED) iograph.save("tmp/iograph.txt");
 	}
 
 	/**
@@ -449,16 +456,14 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
   	}.start();
   	
   	//Start heartbeat thread to remove dead servers
-  	if(false){	
-	  	new Thread(){
-	  		public void run(){
-		  		while(true){
-		  			heartbeat();
-		  			Utility.pause(1000);
-	  			}
-	  		}
-	  	}.start();
-  	}
+  	new Thread(){
+  		public void run(){
+	  		while(true){
+	  			heartbeat();
+	  			Utility.pause(heartbeat);
+  			}
+  		}
+  	}.start();
 	}
 	
 	/**

@@ -253,6 +253,12 @@ public class PolyglotAuxiliary
   			}else{
   				return -1;
   			}
+  		}else if(object instanceof String){
+  			if(((String)object).equals(host)){
+  				return 0;
+  			}else{
+  				return -1;
+  			}
   		}else{
   			return -1;
   		}

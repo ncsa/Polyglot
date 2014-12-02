@@ -18,7 +18,7 @@ import java.util.*;
  * among them from a source to a target.
  * @author Kenton McHenry
  */
-public class IOGraphPanel<V extends Comparable,E> extends JPanel implements TreeSelectionListener, MouseListener, MouseMotionListener, MouseWheelListener, ActionListener
+public class IOGraphPanel<V extends Comparable, E extends Comparable> extends JPanel implements TreeSelectionListener, MouseListener, MouseMotionListener, MouseWheelListener, ActionListener
 {
   private Graphics bg;
   private Image offscreen;

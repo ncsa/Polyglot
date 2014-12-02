@@ -24,7 +24,7 @@ import edu.uci.ics.jung.algorithms.layout3d.SpringLayout;
 import edu.uci.ics.jung.visualization3d.VisualizationViewer;
 */
 
-public class IOGraphPanel_JUNG<V extends Comparable,E> extends JPanel
+public class IOGraphPanel_JUNG<V extends Comparable, E extends Comparable> extends JPanel
 {
 	private IOGraph<V,E> iograph;
 	private Graph<String,UniqueString> graph;
