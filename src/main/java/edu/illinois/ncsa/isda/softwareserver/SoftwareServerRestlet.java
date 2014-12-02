@@ -444,7 +444,7 @@ public class SoftwareServerRestlet extends ServerResource
 							session = -1;
 							//localhost = getReference().getBaseRef().toString();
 							localhost = "http://" + Utility.getLocalHostIP() + ":8182";
-						
+	
 							//if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "/file/")){		//Locally cached files already have session ids
 							if(file.startsWith(Utility.endSlash(localhost))){																															//Locally cached files already have session ids
 								session = SoftwareServer.getSession(file);
@@ -631,10 +631,13 @@ public class SoftwareServerRestlet extends ServerResource
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
 		String part3 = (parts.size() > 3) ? parts.get(3) : "";
 		TreeMap<String,String> parameters = new TreeMap<String,String>();
-		String application = null, task = null, file = null, format = null, result;
+		String application = null, task = null, file = null, format = null, localhost, result;
 		int session = server.getSession();
 		boolean FORM_POST = !part0.isEmpty() && part0.equals("form");
 		boolean TASK_POST = !part1.isEmpty() && !part2.isEmpty() && !part3.isEmpty();
+		
+		//localhost = getReference().getBaseRef().toString();
+		localhost = "http://" + Utility.getLocalHostIP() + ":8182";
 				
 		if(FORM_POST || TASK_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
@@ -654,7 +657,7 @@ public class SoftwareServerRestlet extends ServerResource
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
 						}else{
 							fi.write(new File(server.getCachePath() + session + "_" + fi.getName()));
-							file = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + session + "_" + fi.getName();
+							file = Utility.endSlash(localhost) + "file/" + session + "_" + fi.getName();
 						}
 					}
 				}catch(Exception e) {e.printStackTrace();}
