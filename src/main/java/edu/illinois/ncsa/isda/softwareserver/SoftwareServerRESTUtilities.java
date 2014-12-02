@@ -500,45 +500,49 @@ public class SoftwareServerRESTUtilities
 			}
 			
 			final int port = softwareserver_port;
-	
+
+			//Monitor bus	in a new thread
 	  	new Thread(){
 	  		public void run(){
-	  			ObjectMapper mapper = new ObjectMapper();
-	  			JsonNode message;
-	  			int job_id;
-	  			String polyglot_ip, input, application, output_format;
-	  			String api_call, result, checkin_call;
-	  			
 	  	    while(true){
-	  	    	try{
+						try{
 	  	    		//Wait for next message
-		  	    	QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+		  	   		final QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+		  	    
+		  	   		//Process each message in a new thread
+							new Thread(){
+								public void run(){
+	  							ObjectMapper mapper = new ObjectMapper();
+	  							String api_call, result, checkin_call;
+
+									try{
+		  							JsonNode message = mapper.readValue(delivery.getBody(), JsonNode.class);
+		  							String polyglot_ip = message.get("polyglot_ip").asText();
+		  							int job_id = Integer.parseInt(message.get("job_id").asText());
+		  	    				String input = message.get("input").asText();
+		  	    				String application = message.get("application").asText();
+		  	    				String output_format = message.get("output_format").asText();
 		  	    	
-		  	    	//Process message
-		  				message = mapper.readValue(delivery.getBody(), JsonNode.class);
-		  				polyglot_ip = message.get("polyglot_ip").asText();
-		  				job_id = Integer.parseInt(message.get("job_id").asText());
-		  	    	input = message.get("input").asText();
-		  	    	application = message.get("application").asText();
-		  	    	output_format = message.get("output_format").asText();
+		  	    				//Execute job using Software Server REST interface (leverage implementation)
+		  	    				api_call = "http://localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + Utility.urlEncode(input);
+		  	    				result = Utility.readURL(api_call, "text/plain");
 		  	    	
-		  	    	//Execute job using Software Server REST interface (leverage implementation)
-		  	    	api_call = "http://localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + Utility.urlEncode(input);
-		  	    	result = Utility.readURL(api_call, "text/plain");
+		  	    				System.out.println("[AMQ]: " + api_call);
 		  	    	
-		  	    	System.out.println("[AMQ]: " + api_call);
-		  	    	
-		  	    	while(!Utility.existsURL_bak(result)){
-		  	    		Utility.pause(1000);
-		  	    	}
+		  	    				while(!Utility.existsURL_bak(result)){
+		  	    					Utility.pause(1000);
+		  	    				}
 									  	    	
-		  	    	checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
-		  	    	System.out.println("[AMQ]: " + checkin_call);
+		  	    				checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
+		  	    				System.out.println("[AMQ]: " + checkin_call);
 		  	    	
-		  	    	if(Utility.readURL(checkin_call).equals("ok")){
-		  	    		channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-		  	    	}		  	    	
-	  	    	}catch(Exception e) {e.printStackTrace();}
+		  	    				if(Utility.readURL(checkin_call).equals("ok")){
+		  	    					channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+		  	    				}
+									}catch(Exception e) {e.printStackTrace();}
+								}
+							}.start();
+						}catch(Exception e) {e.printStackTrace();}
 	  	    }
 	  		}
 	  	}.start();

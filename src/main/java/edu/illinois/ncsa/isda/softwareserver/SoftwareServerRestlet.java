@@ -46,6 +46,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static long initialization_time = -1;
 	private static String public_path = "./";
 	private static boolean ADMINISTRATORS_ENABLED = false;
+	private static boolean ATOMIC_EXECUTION = true;
 	private static String download_method = "";
 	private static Component component;
 	
@@ -307,8 +308,12 @@ public class SoftwareServerRestlet extends ServerResource
 		
 			task = getTask(application_alias, task_string, file, format);
 			//Task.print(task, applications);
-			
-			result = server.executeTaskAtomically("localhost", session, task);
+		
+			if(ATOMIC_EXECUTION){	
+				result = server.executeTaskAtomically("localhost", session, task);
+			}else{
+				result = server.executeTask("localhost", session, task);
+			}
 	
 			//Create empty output if not created (e.g. when no conversion path was found)
 			if(result == null){
@@ -363,7 +368,11 @@ public class SoftwareServerRestlet extends ServerResource
 		
 		new Thread(){
 			public void run(){
-				executeTaskAtomically(session_final, application_alias_final, task_string_final, file_final, format_final);
+				if(ATOMIC_EXECUTION){
+					executeTaskAtomically(session_final, application_alias_final, task_string_final, file_final, format_final);
+				}else{
+					executeTask(session_final, application_alias_final, task_string_final, file_final, format_final);
+				}
 			}
 		}.start();
 	}
@@ -778,6 +787,8 @@ public class SoftwareServerRestlet extends ServerResource
 	          	ADMINISTRATORS_ENABLED = Boolean.valueOf(value);
 	          }else if(key.equals("DownloadMethod")){
 	          	download_method = value;
+	          }else if(key.equals("AtomicExecution")){
+	          	ATOMIC_EXECUTION = Boolean.valueOf(value);
 	          }
 	        }
 	      }
