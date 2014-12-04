@@ -529,7 +529,7 @@ public class SoftwareServerRESTUtilities
 		  	    	
 		  	    				System.out.println("[AMQ]: " + api_call);
 		  	    	
-		  	    				while(!Utility.existsURL_bak(result)){
+		  	    				while(!Utility.existsURL(result)){		//TODO: New version of existsURL needed for Windows but not Linux??
 		  	    					Utility.pause(1000);
 		  	    				}
 									  	    	

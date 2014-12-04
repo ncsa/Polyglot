@@ -31,15 +31,17 @@ import com.mongodb.*;
  */
 public class PolyglotRestlet extends ServerResource
 {
-  private static Polyglot polyglot = new PolyglotStewardAMQ();
+  private static Polyglot polyglot = new PolyglotStewardAMQ(false);
 	private static int steward_port = -1;
 	private static int port = 8184;
 	private static boolean RETURN_URL = false;
 	private static boolean MONGO_LOGGING = false;
 	private static int mongo_update_interval = 300;
 	private static boolean SOFTWARE_SERVER_REST_INTERFACE = false;
+	private static boolean PURGE_JOBS = false;
 	private static String download_method = "";
 	private static boolean HOST_POSTED_FILES = false;
+	private static boolean NEW_TEMP_FOLDERS = true;
 	private static String root_path = "./";
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
@@ -67,6 +69,15 @@ public class PolyglotRestlet extends ServerResource
 	public void setSoftwareServerRESTInterface(boolean value)
 	{
 		SOFTWARE_SERVER_REST_INTERFACE = value;
+	}
+	
+	/**
+	 * Set whether or not previous jobs should be purged or not.
+	 * @param value true if previous jobs should be purged
+	 */
+	public void setPurgeJobs(boolean value)
+	{
+		PURGE_JOBS = value;
 	}
 	
 	/**
@@ -480,7 +491,9 @@ public class PolyglotRestlet extends ServerResource
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#'){
-	        	if(key.equals("RootPath")){
+	        	if(key.equals("NewTempFolders")){
+	        		NEW_TEMP_FOLDERS = Boolean.valueOf(value);
+	        	}else if(key.equals("RootPath")){
 	        		//root_path = value + "/";
 	        		root_path = Utility.unixPath(Utility.absolutePath(value)) + "/";
 	        		
@@ -489,22 +502,36 @@ public class PolyglotRestlet extends ServerResource
 	        			System.exit(1);
 	        		}
 	        		
-	        		tmpi = 0;
-	        		
-	        		while(Utility.exists(root_path + "Temp" + Utility.toString(tmpi,3))){
-	        			tmpi++;
+	        		if(NEW_TEMP_FOLDERS){
+	        			//Purge jobs as they are no longer valid now
+	        			if(polyglot instanceof PolyglotStewardAMQ) ((PolyglotStewardAMQ)polyglot).purgeJobs();
+	        			
+	        			//Find last folder and increment
+		        		tmpi = 0;
+		        		
+		        		while(Utility.exists(root_path + "Temp" + Utility.toString(tmpi,3))){
+		        			tmpi++;
+		        		}
+		        		
+		        		temp_path = root_path + "Temp" + Utility.toString(tmpi,3) + "/";
+		        		tmpi = 0;
+		        		
+		        		while(Utility.exists(root_path + "Public" + Utility.toString(tmpi,3))){
+		        			tmpi++;
+		        		}
+		        		
+		        		public_path = root_path + "Public" + Utility.toString(tmpi,3) + "/";
+	        		}else{
+		        		temp_path = root_path + "Temp/";
+		        		public_path = root_path + "Public/";
+		        		
+		        		//Set the job counter according to previous executions
+	        			if(polyglot instanceof PolyglotStewardAMQ && Utility.exists(public_path)) ((PolyglotStewardAMQ)polyglot).setJobCounter(public_path);
 	        		}
 	        		
-	        		temp_path = root_path + "Temp" + Utility.toString(tmpi,3) + "/";
-	        		new File(temp_path).mkdir();
-	        		tmpi = 0;
-	        		
-	        		while(Utility.exists(root_path + "Public" + Utility.toString(tmpi,3))){
-	        			tmpi++;
-	        		}
-	        		
-	        		public_path = root_path + "Public" + Utility.toString(tmpi,3) + "/";
-	        		new File(public_path).mkdir();
+	        		//Create needed folders
+	        		if(!Utility.exists(temp_path)) new File(temp_path).mkdir();
+	        		if(!Utility.exists(public_path)) new File(public_path).mkdir();
 	        	}else if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("StewardPort") && polyglot instanceof PolyglotSteward){
@@ -548,6 +575,12 @@ public class PolyglotRestlet extends ServerResource
 	    
 	    ins.close();
 	  }catch(Exception e) {e.printStackTrace();}
+	  
+	  //Start after configuration is loaded
+	  if(polyglot instanceof PolyglotStewardAMQ){
+	  	if(PURGE_JOBS) ((PolyglotStewardAMQ)polyglot).purgeJobs();
+	  	((PolyglotStewardAMQ)polyglot).start();
+	  }
 	 	
 	 	if(MONGO_LOGGING){
 			//Setup database connection

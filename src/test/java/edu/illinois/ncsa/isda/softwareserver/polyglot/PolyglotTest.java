@@ -14,48 +14,7 @@ import org.junit.runners.MethodSorters;
  */
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PolyglotTest
-{	
-	/**
-	 * Purge mongo and rabbitmq to ensure a fresh run.
-	 */
-	@BeforeClass
-	public static void setup()
-	{
-		Process p;
-		BufferedReader reader;
-		String command, line;
-
-		System.out.println("\n--- Purging mongo & rabbitmq ---");
-
-		//Purge mongo
-		try{
-			command = "mongo polyglot --eval \"db.steward.drop()\"";
-			System.out.println("> " + command);
-			p = Runtime.getRuntime().exec(command);
-			p.waitFor();
-			reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-	
-			while((line = reader.readLine()) != null){
-				System.out.println(line);
-			}
-		}catch(Exception e) {e.printStackTrace();}
-
-		System.out.println();
-
-		//Purge rabbitmq queue
-		try{
-			command = "curl -i -u guest:guest -H \"content-type:application/json\" -XDELETE http://localhost:15672/api/queues/%2F/ImageMagick/contents";
-			System.out.println("> " + command);
-			p = Runtime.getRuntime().exec(command);
-			p.waitFor();
-			reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-	
-			while((line = reader.readLine()) != null){
-				System.out.println(line);
-			}
-		}catch(Exception e) {e.printStackTrace();}
-	}
-		
+{
 	/**
 	 * Test conversion via client.
 	 */
@@ -102,6 +61,7 @@ public class PolyglotTest
 		
 		//Start Polyglot
 		PolyglotRestlet prestlet = new PolyglotRestlet();
+		prestlet.setPurgeJobs(true);
 		prestlet.main(new String[0]);
 		prestlet.setReturnURL(true);
 		prestlet.setSoftwareServerRESTInterface(false);

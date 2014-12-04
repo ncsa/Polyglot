@@ -1,5 +1,4 @@
 package edu.illinois.ncsa.isda.softwareserver;
-import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Subtask;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import kgm.utility.*;
 import java.io.*;
@@ -31,6 +30,7 @@ public class SoftwareServer implements Runnable
 	private int completed_task_count = 0;
 	private int kill_count = 0;
 	
+	private boolean NEW_TEMP_FOLDERS = true;
 	private boolean SHOW_EXECUTABLES = true;
 	private boolean HANDLE_OPERATION_OUTPUT = false;
 	private boolean SHOW_OPERATION_OUTPUT = false;
@@ -85,7 +85,9 @@ public class SoftwareServer implements Runnable
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#'){
-	        	if(key.equals("RootPath")){
+	        	if(key.equals("NewTempFolders")){
+	        		NEW_TEMP_FOLDERS = Boolean.valueOf(value);
+	        	}else if(key.equals("RootPath")){
 	        		//root_path = value + "/";
 	        		root_path = Utility.unixPath(Utility.absolutePath(value)) + "/";
 	        		
@@ -94,22 +96,35 @@ public class SoftwareServer implements Runnable
 	        			System.exit(1);
 	        		}
 	        		
-	        		tmpi = 0;
-	        		
-	        		while(Utility.exists(root_path + "Cache" + Utility.toString(tmpi,3))){
-	        			tmpi++;
+	        		if(NEW_TEMP_FOLDERS){
+	        			//Find last folder and increment
+		        		tmpi = 0;
+		        		
+		        		while(Utility.exists(root_path + "Cache" + Utility.toString(tmpi,3))){
+		        			tmpi++;
+		        		}
+		        		
+		        		cache_path = root_path + "Cache" + Utility.toString(tmpi,3) + "/";
+		        		tmpi = 0;
+		        		
+		        		while(Utility.exists(root_path + "Temp" + Utility.toString(tmpi,3))){
+		        			tmpi++;
+		        		}
+		        		
+		        		temp_path = root_path + "Temp" + Utility.toString(tmpi,3) + "/";
+	        		}else{
+		        		cache_path = root_path + "Cache/";
+		        		temp_path = root_path + "Temp/";
 	        		}
 	        		
-	        		cache_path = root_path + "Cache" + Utility.toString(tmpi,3) + "/";
-	        		new File(cache_path).mkdir();
-	        		tmpi = 0;
-	        		
-	        		while(Utility.exists(root_path + "Temp" + Utility.toString(tmpi,3))){
-	        			tmpi++;
+	        		//Create new folders
+	        		if(!Utility.exists(cache_path)){
+	        			new File(cache_path).mkdir();
+	        		}else{
+	        			session_counter = new AtomicInteger(getLastSession(cache_path));
 	        		}
 	        		
-	        		temp_path = root_path + "Temp" + Utility.toString(tmpi,3) + "/";
-	        		new File(temp_path).mkdir();
+	        		if(!Utility.exists(temp_path)) new File(temp_path).mkdir();
 	        	}else if(key.equals("Scripts")){
 	        		addScriptedOperations(value + "/", null);
 	        	}else if(key.equals("AHKScripts")){
@@ -766,6 +781,25 @@ public class SoftwareServer implements Runnable
 		}
 		
 		return -1;
+	}
+	
+	/**
+	 * Get the last session, the highest number, based on the files in the given directory.
+	 * @param path the directory to examine
+	 * @return the last session number
+	 */
+	public static int getLastSession(String path)
+	{
+		int last_session = 0;
+		int tmpi;
+  	File dir = new File(path);
+  	
+  	for(File file : dir.listFiles()){
+  		tmpi = getSession(file.getName());
+  		if(tmpi > last_session) last_session = tmpi;
+  	}
+  	
+  	return last_session;
 	}
 
 	/**

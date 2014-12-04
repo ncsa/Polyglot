@@ -26,9 +26,9 @@ import com.rabbitmq.client.*;
  */
 public class PolyglotStewardAMQ extends Polyglot implements Runnable
 {
-	private String rabbitmq_server = null;
-	private String rabbitmq_username = null;
-	private String rabbitmq_password = null;
+	private static String rabbitmq_server = null;
+	private static String rabbitmq_username = null;
+	private static String rabbitmq_password = null;
 	private int heartbeat;
 	private TreeMap<String,Long> software_servers = new TreeMap<String,Long>();
 	private IOGraph<String,SoftwareServerApplication> iograph = new IOGraph<String,SoftwareServerApplication>();
@@ -36,12 +36,21 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	private DB db;
 	private DBCollection collection;
 	private ConnectionFactory factory;
-	private AtomicInteger job_counter = new AtomicInteger();	//TODO: need to initilize off largest job_id in mongo
+	private AtomicInteger job_counter = new AtomicInteger();
 	
 	/**
 	 * Class constructor.
 	 */
 	public PolyglotStewardAMQ()
+	{
+		this(true);
+	}
+	
+	/**
+	 * Class constructor.
+	 * @param START start immediately
+	 */
+	public PolyglotStewardAMQ(boolean START)
 	{
 		loadConfiguration("PolyglotStewardAMQ.conf");
 		
@@ -61,8 +70,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	  	factory.setPassword(rabbitmq_password);
 	  }
     
-    //Start main thread
-		new Thread(this).start();
+		if(START) new Thread(this).start();		//Start main thread
 	}
 	
 	/**
@@ -97,6 +105,14 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	    
 	    ins.close();
 	  }catch(Exception e) {}
+	}
+
+	/**
+	 * Start the main thread (as a separate function so can be called externally, e.g. if jobs should be purged first)
+	 */
+	public void start()
+	{
+		new Thread(this).start();
 	}
 	
 	/**
@@ -263,6 +279,38 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	public void close() {}
 	
 	/**
+	 * Set job counter based on a previous execution.
+	 * @param path the artifact path to examine for previous job IDs
+	 */
+	public void setJobCounter(String path)
+	{
+		//Examine tasks remaining in database
+		DBCursor cursor = collection.find();
+		DBObject document;
+		int last_job_id = 0;
+		int job_id;
+		
+		try{
+			while(cursor.hasNext()){
+				document = cursor.next();
+				job_id = Integer.parseInt(document.get("job_id").toString());
+				if(job_id > last_job_id) last_job_id = job_id;
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}finally{
+			cursor.close();
+		}
+		
+		//Examine artifacts in specified folder
+		job_id = SoftwareServer.getLastSession(path);
+		if(job_id > last_job_id) last_job_id = job_id;
+		
+		//Set the job counter
+		job_counter = new AtomicInteger(last_job_id);		
+	}
+
+	/**
 	 * Discover Software Servers consuming on the given RabbitMQ bus (adds them to I/O-graph).
 	 */
 	public void discoveryAMQ()
@@ -384,7 +432,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 				    Connection connection = factory.newConnection();
 				    Channel channel = connection.createChannel();
 				    channel.queueDeclare(application, true, false, false, null);
-				    channel.basicPublish( "", application, MessageProperties.PERSISTENT_TEXT_PLAIN, message.toString().getBytes());
+				    channel.basicPublish("", application, MessageProperties.PERSISTENT_TEXT_PLAIN, message.toString().getBytes());
 				    channel.close();
 				    connection.close();
 						
@@ -496,6 +544,50 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		return rootnode;
 	}
 	
+	/**
+	 * Purge current and previous jobs.
+	 */
+	public static void purgeJobs()
+	{
+		Process p;
+		BufferedReader reader;
+		String command, line;
+	
+		System.out.println("[Steward]: Purging mongo & rabbitmq ...");
+	
+		//Purge mongo
+		try{
+			command = "mongo polyglot --eval \"db.steward.drop()\"";
+			System.out.println("> " + command);
+			p = Runtime.getRuntime().exec(command);
+			p.waitFor();
+			reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+	
+			while((line = reader.readLine()) != null){
+				System.out.println(line);
+			}
+		}catch(Exception e) {e.printStackTrace();}
+	
+		System.out.println();
+	
+		//Purge rabbitmq queue
+		if(!System.getProperty("os.name").startsWith("Windows")){
+			try{
+				command = "curl -i -u " + rabbitmq_username + ":" + rabbitmq_password + " -H \"content-type:application/json\" -XDELETE http://" + rabbitmq_server + ":15672/api/queues/%2F/ImageMagick/contents";
+				System.out.println("> " + command);
+				p = Runtime.getRuntime().exec(command);
+				p.waitFor();
+				reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+		
+				while((line = reader.readLine()) != null){
+					System.out.println(line);
+				}
+			}catch(Exception e) {e.printStackTrace();}
+		}else{
+			System.out.println("Warning: not purging rabbitmq!");		//TODO: need to do this without a curl call!
+		}
+	}
+
 	/**
 	 * Start the Polyglot Steward.
 	 * @param args command line arguments
