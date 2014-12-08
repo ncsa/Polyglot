@@ -112,7 +112,8 @@ public class PolyglotRestlet extends ServerResource
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
-		String client, file = null, output = null, result_file = null, result_url, url, type;
+		String part3 = (parts.size() > 3) ? parts.get(3) : "";
+		String client, file = null, output = null, input = null, result_file = null, result_url, url, type;
 		String buffer;
 		Form form;
 		Parameter p;
@@ -155,10 +156,18 @@ public class PolyglotRestlet extends ServerResource
 	
 						//file = temp_path + Utility.getFilename(file);
 						file = temp_path + SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(file));
+					}else{		//Handle files that don't have extensions
+						if(!part3.isEmpty()){
+							input = part3;
+							Utility.save(public_path + "/" + Utility.getFilenameName(file) + "." + input + ".url", "[InternetShortcut]\nURL=" + file);
+							file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file) + "." + input;
+						}else{
+							return new StringRepresentation("Input format not specified", MediaType.TEXT_PLAIN);
+						}
 					}
 					
 					request = new RequestInformation(client, file, output);
-					
+				
 					if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
 						((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 					}else{
