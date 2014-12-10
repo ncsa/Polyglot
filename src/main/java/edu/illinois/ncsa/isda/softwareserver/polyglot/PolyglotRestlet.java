@@ -157,12 +157,14 @@ public class PolyglotRestlet extends ServerResource
 						//file = temp_path + Utility.getFilename(file);
 						file = temp_path + SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(file));
 					}else{		//Handle files that don't have extensions
-						if(!part3.isEmpty()){
-							input = part3;
-							Utility.save(public_path + "/" + Utility.getFilenameName(file) + "." + input + ".url", "[InternetShortcut]\nURL=" + file);
-							file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file) + "." + input;
-						}else{
-							return new StringRepresentation("Input format not specified", MediaType.TEXT_PLAIN);
+						if(Utility.getFilenameExtension(file).isEmpty()){
+							if(!part3.isEmpty()){
+								input = part3;
+								Utility.save(public_path + "/" + Utility.getFilenameName(file) + "." + input + ".url", "[InternetShortcut]\nURL=" + file);
+								file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file) + "." + input;
+							}else{
+								return new StringRepresentation("Input format not specified", MediaType.TEXT_PLAIN);
+							}
 						}
 					}
 					

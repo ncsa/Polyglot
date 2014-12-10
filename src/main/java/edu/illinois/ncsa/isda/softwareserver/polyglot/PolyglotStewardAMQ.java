@@ -199,10 +199,19 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		ObjectNode request, task;
 		ArrayNode path;
 		int job_id = job_counter.incrementAndGet();
-				
-		//Get conversion path
-		String input_format = Utility.getFilenameExtension(input);
-		Vector<Conversion<String,SoftwareServerApplication>> conversions = iograph.getShortestConversionPath(input_format, output_format, false);
+		String input_format;
+		Vector<Conversion<String,SoftwareServerApplication>> conversions;
+		
+		//Get conversion path, give multiple extensions precedence (i.e. if a script exists that supports such a thing it should be run)
+		input_format = Utility.getFilenameExtension(Utility.getFilename(input), true);
+System.out.println("ok1: " + input_format);
+		conversions = iograph.getShortestConversionPath(input_format, output_format, false);
+
+		if(conversions == null){
+			input_format = Utility.getFilenameExtension(input);
+System.out.println("ok2: " + input_format);
+			conversions = iograph.getShortestConversionPath(input_format, output_format, false);
+		}
 
 		//Add to mongo
 		if(conversions != null){
