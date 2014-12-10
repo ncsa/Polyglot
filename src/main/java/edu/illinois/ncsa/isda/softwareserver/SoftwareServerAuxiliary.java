@@ -50,6 +50,7 @@ public class SoftwareServerAuxiliary
 		private String absolute_name;
 		private String name;
 		private String format;
+		private String formats;		//Considers multiple extensions, TODO: need to revisit need for this variable
 		private byte[] data;
 		
 		public FileData() {}
@@ -64,6 +65,7 @@ public class SoftwareServerAuxiliary
 			this.absolute_name = absolute_name;
 			name = Utility.getFilenameName(absolute_name);
 			format = Utility.getFilenameExtension(absolute_name);
+			formats = Utility.getFilenameExtension(Utility.getFilename(absolute_name), true);
 			
 			if(LOAD) load(null);
 		}
@@ -77,6 +79,7 @@ public class SoftwareServerAuxiliary
   		FileData data = new FileData();
   		
 			data.format = format;
+			data.formats = format;
 			
   		return data;
   	}
@@ -148,6 +151,15 @@ public class SoftwareServerAuxiliary
   	}
   	
   	/**
+  	 * Get the files formats, if multiple extensions.
+  	 * @return the file formats
+  	 */
+  	public String getFormats()
+  	{
+  		return formats;
+  	}
+  	
+  	/**
   	 * Get the files data.
   	 * @return the file data
   	 */
@@ -209,6 +221,7 @@ public class SoftwareServerAuxiliary
 		public static final long serialVersionUID = 1L;
 		private String name;
 		private String format;
+		private String formats;		//Consider multiple extensions, TODO: need to revisit the need for this variable
 
 		public CachedFileData() {}
 		
@@ -220,6 +233,7 @@ public class SoftwareServerAuxiliary
 		{
 			name = Utility.getFilenameName(filename);
 			format = Utility.getFilenameExtension(filename);
+			formats = Utility.getFilenameExtension(Utility.getFilename(filename), true);
 		}
 		
 		/**
@@ -229,8 +243,20 @@ public class SoftwareServerAuxiliary
 		 */
 		public CachedFileData(String filename, String format)
 		{
-			name = Utility.getFilenameName(filename);
+			this(filename, format, false);
+		}
+		
+		/**
+		 * Class constructor.
+		 * @param filename the name of the file
+		 * @param format the new format of this data
+		 * @param MULTIPLE_EXTENSIONS is this filename using multiple extensions
+		 */
+		public CachedFileData(String filename, String format, boolean MULTIPLE_EXTENSIONS)
+		{
+			name = Utility.getFilenameName(Utility.getFilename(filename), MULTIPLE_EXTENSIONS);
 			this.format = format;
+			this.formats = format;
 		}
 		
 		/**
@@ -242,6 +268,7 @@ public class SoftwareServerAuxiliary
 		{			
 			name = file_data.name;
 			this.format = format;
+			this.formats = format;
 		}
 
 		/**
@@ -254,6 +281,7 @@ public class SoftwareServerAuxiliary
 		{			
 			name = file_data.name;
 			format = file_data.format;
+			formats = file_data.formats;
 			
   		file_data.save(cache_path, getCacheFilename(session));
 		}
@@ -267,6 +295,7 @@ public class SoftwareServerAuxiliary
 		{			
 			name = cached_file_data.name;
 			this.format = format;
+			this.formats = format;
 		}
 
 		/**
@@ -314,6 +343,15 @@ public class SoftwareServerAuxiliary
   	public String getFormat()
   	{
   		return format;
+  	}
+  	
+  	/**
+  	 * Get the files formats, if multiple extensions.
+  	 * @return the file formats
+  	 */
+  	public String getFormats()
+  	{
+  		return formats;
   	}
   	
 		/**
@@ -1156,6 +1194,25 @@ public class SoftwareServerAuxiliary
     	}
     }
     
+    /**
+     * Determine if the given extension is a supported input for some operation
+     * @param extension the input extension
+     * @return true if the application has an operation supporting this input
+     */
+    public boolean supportedInput(String extension)
+    {
+    	for(int i=0; i<operations.size(); i++){
+    		for(int j=0; j<operations.get(i).inputs.size(); j++){
+    			if(((FileData)operations.get(i).inputs.get(j)).getFormat().equals(extension) ||
+    				 ((FileData)operations.get(i).inputs.get(j)).getFormats().equals(extension)){
+    				return true;
+    			}
+    		}
+    	}
+    	
+    	return false;
+    }
+    
   	/**
      * Display information on available applications.
      * @param applications the list of applications available and their supported operations
@@ -1430,8 +1487,12 @@ public class SoftwareServerAuxiliary
 									data = operation.inputs.get(k);
 									
 									if(data instanceof FileData){		//FileData
-										if((input_data instanceof FileData && ((FileData)data).getFormat().equals(((FileData)input_data).getFormat())) ||
-											 (input_data instanceof CachedFileData && ((FileData)data).getFormat().equals(((CachedFileData)input_data).getFormat()))){
+										if((input_data instanceof FileData && 
+											 (((FileData)data).getFormat().equals(((FileData)input_data).getFormat()) ||
+											  ((FileData)data).getFormats().equals(((FileData)input_data).getFormats()))) ||
+											 (input_data instanceof CachedFileData && 
+												(((FileData)data).getFormat().equals(((CachedFileData)input_data).getFormat()) ||
+												 ((FileData)data).getFormats().equals(((CachedFileData)input_data).getFormats())))){
 											FOUND_INPUT = true;
 											break;
 										}
@@ -1446,8 +1507,12 @@ public class SoftwareServerAuxiliary
 									data = operation.outputs.get(k);
 									
 									if(data instanceof FileData){		//FileData
-										if((output_data instanceof FileData && ((FileData)data).getFormat().equals(((FileData)output_data).getFormat())) ||
-											 (output_data instanceof CachedFileData && ((FileData)data).getFormat().equals(((CachedFileData)output_data).getFormat()))){
+										if((output_data instanceof FileData && 
+											 (((FileData)data).getFormat().equals(((FileData)output_data).getFormat()) ||
+												((FileData)data).getFormats().equals(((FileData)output_data).getFormats()))) ||
+											 (output_data instanceof CachedFileData && 
+												(((FileData)data).getFormat().equals(((CachedFileData)output_data).getFormat()) ||
+												 ((FileData)data).getFormats().equals(((CachedFileData)output_data).getFormats())))){
 											FOUND_OUTPUT = true;
 											break;
 										}

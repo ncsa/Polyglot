@@ -201,15 +201,15 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		int job_id = job_counter.incrementAndGet();
 		String input_format;
 		Vector<Conversion<String,SoftwareServerApplication>> conversions;
+		boolean MULTIPLE_EXTENSIONS = true;
 		
 		//Get conversion path, give multiple extensions precedence (i.e. if a script exists that supports such a thing it should be run)
 		input_format = Utility.getFilenameExtension(Utility.getFilename(input), true);
-System.out.println("ok1: " + input_format);
 		conversions = iograph.getShortestConversionPath(input_format, output_format, false);
 
 		if(conversions == null){
+			MULTIPLE_EXTENSIONS = false;
 			input_format = Utility.getFilenameExtension(input);
-System.out.println("ok2: " + input_format);
 			conversions = iograph.getShortestConversionPath(input_format, output_format, false);
 		}
 
@@ -217,6 +217,7 @@ System.out.println("ok2: " + input_format);
 		if(conversions != null){
 			request = mapper.createObjectNode();
 			request.put("job_id", job_id);
+			request.put("multiple_extensions", MULTIPLE_EXTENSIONS);
 			request.put("input", input);
 			request.put("output_path", output_path);
 			request.put("output_format", output_format);
@@ -243,7 +244,7 @@ System.out.println("ok2: " + input_format);
 			Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(input) + "." + output_format + ".url", "[InternetShortcut]\nURL=");
 		}
 		
-		return job_id + "_" + Utility.getFilenameName(input) + "." + output_format;
+		return job_id + "_" + Utility.getFilenameName(input, MULTIPLE_EXTENSIONS) + "." + output_format;
 	}
 	
 	/**
@@ -403,12 +404,14 @@ System.out.println("ok2: " + input_format);
 		ObjectNode message;
 		int job_id, step, step_status;
 		String polyglot_ip, input, application, output_format, output_path;
+		boolean MULTIPLE_EXTENSIONS;	//Was a path found for an input with multiple extensions
 		
 		try{
 			while(cursor.hasNext()){
 				document = cursor.next();
 				polyglot_ip = InetAddress.getLocalHost().getHostAddress();
 				job_id = Integer.parseInt(document.get("job_id").toString());
+				MULTIPLE_EXTENSIONS = Boolean.parseBoolean(document.get("multiple_extensions").toString());
 				step = Integer.parseInt(document.get("step").toString());
 				step_status = Integer.parseInt(document.get("step_status").toString());
 				int steps = ((BasicDBList)document.get("path")).size();
@@ -452,8 +455,7 @@ System.out.println("ok2: " + input_format);
 					}else{
 						output_path = document.get("output_path").toString();
 						output_format = document.get("output_format").toString();
-						Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(document.get("input").toString()) + "." + output_format + ".url", "[InternetShortcut]\nURL=" + URLDecoder.decode(input, "UTF-8"));
-
+						Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(document.get("input").toString(), MULTIPLE_EXTENSIONS) + "." + output_format + ".url", "[InternetShortcut]\nURL=" + URLDecoder.decode(input, "UTF-8"));
 						collection.remove(document);
 						System.out.println("[Steward]: Job-" + job_id + " completed!, " + URLDecoder.decode(input, "UTF-8"));
 					}

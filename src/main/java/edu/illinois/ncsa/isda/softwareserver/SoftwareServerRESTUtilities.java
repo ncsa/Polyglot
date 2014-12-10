@@ -528,7 +528,7 @@ public class SoftwareServerRESTUtilities
 		  	    				result = Utility.readURL(api_call, "text/plain");
 		  	    	
 		  	    				System.out.println("[AMQ]: " + api_call);
-		  	    	
+		  	    						  	    	
 		  	    				while(!Utility.existsURL(result)){		//TODO: New version of existsURL needed for Windows but not Linux??
 		  	    					Utility.pause(1000);
 		  	    				}

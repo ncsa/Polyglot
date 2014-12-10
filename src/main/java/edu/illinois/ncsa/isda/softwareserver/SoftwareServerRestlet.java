@@ -262,8 +262,9 @@ public class SoftwareServerRestlet extends ServerResource
 	 */
 	public Vector<Subtask> getTask(String application_alias, String task_string, String filename, String output_format)
 	{
+		boolean MULTIPLE_EXTENSIONS = alias_map.get(application_alias).supportedInput(Utility.getFilenameExtension(Utility.getFilename(filename), true));
 		Task task = new Task(applications);
-		task.addSubtasks(task.getApplicationString(application_alias), task_string, new CachedFileData(filename), new CachedFileData(filename, output_format));
+		task.addSubtasks(task.getApplicationString(application_alias), task_string, new CachedFileData(filename), new CachedFileData(filename, output_format, MULTIPLE_EXTENSIONS));
 		
 		return task.getSubtasks();
 	}
@@ -408,6 +409,7 @@ public class SoftwareServerRestlet extends ServerResource
 		String part3 = (parts.size() > 3) ? parts.get(3) : "";
 		String part4 = (parts.size() > 4) ? parts.get(4) : "";
 		String application_alias = null, task = null, file = null, format = null, localhost = "http://localhost:8182", result, url;
+		boolean MULTIPLE_EXTENSIONS;
 		String buffer;
 		Form form;
 		Parameter p;
@@ -453,16 +455,17 @@ public class SoftwareServerRestlet extends ServerResource
 							session = -1;
 							//localhost = getReference().getBaseRef().toString();
 							localhost = "http://" + Utility.getLocalHostIP() + ":8182";
+							MULTIPLE_EXTENSIONS = alias_map.get(application_alias).supportedInput(Utility.getFilenameExtension(Utility.getFilename(file), true));
 	
 							//if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "/file/")){		//Locally cached files already have session ids
 							if(file.startsWith(Utility.endSlash(localhost))){																															//Locally cached files already have session ids
 								session = SoftwareServer.getSession(file);
-								result = Utility.endSlash(localhost) + "file/" + Utility.getFilenameName(file) + "." + format;
+								result = Utility.endSlash(localhost) + "file/" + Utility.getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
 							}else{																																											//Remote files must be assigned a session id
 								session = server.getSession();
-								result = Utility.endSlash(localhost) + "file/" + session + "_" + Utility.getFilenameName(file) + "." + format;
+								result = Utility.endSlash(localhost) + "file/" + session + "_" + Utility.getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
 							}
-														
+
 							executeTaskLater(session, application_alias, task, file, format);
 							
 							if(isPlainRequest(Request.getCurrent())){
