@@ -1,4 +1,4 @@
-package edu.illinois.ncsa.isda.softwareserver.polyglot;
+package edu.illinois.ncsa.isda.softwareserver.polyglot.weighted;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;

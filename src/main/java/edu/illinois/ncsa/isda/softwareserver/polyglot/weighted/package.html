@@ -1,5 +1,54 @@
 <html>
 <body>
-Polyglot tools supporting weighted and parameterized I/O-graphs.
+Polyglot tools supporting weighted and parameterized I/O-graphs. All the 
+magic is in IOGraphWeightsToolHeadless and the configuration file
+IOGraphWeightsToolHeadless.conf. IOGraphWeightsToolHeadless contains a 
+main that will start the whole process. You start the program with multiple 
+tuples of arguments, a folder and an extension, for example ~/Pictures jpg 
+~/Pictures png (4 arguments in total in this case). It will run through 
+the following steps:
+
+1) create an iograph based on the software servers and CSR specified in
+the configuration file.
+
+2) take each tuple and check the files, it will recurse into the folder
+specified and find all files with the specific extension in the folder or
+subfolders and add them to the list. Next it will compute the number of
+direct conversions you can do from A->B and B->A, for example jpg->png and
+png->jpg. (see note 1)
+
+3) put all jobs in the queue, queue is not being processed yet. Each job
+will be all files converted from A->B->A`, using a specific set of
+software for conversions (see note 1).
+
+4) create folders to hold test outputs, folder 0 will hold the original
+files, all other conversions will have their own folder which will hold
+the results of a conversion from A->B->A`.
+
+5) copy the original files to folder 0 and add all conversions to an
+executer thread, the executor thread will run as many jobs in parallel as
+there are software servers.
+
+6) each conversion thread will run 1 conversion at a time, saving the
+result in a special folder.
+
+7) once all conversions in this thread are done it will add all results to
+the compare executor, each result will be compared based on the
+comparisons specified in the config file. The compare executor will have a
+single thread.
+
+8) the comparison thread will upload the original file and the resulting
+file to versus (if not uploaded yet) and use the measure info to compare
+the two datasets. The results are uploaded back to ICR (in uploadResult).
+This requires a modified version of ICR, but we might be able to replace
+this with a function that just writes the results to disk. The measure
+result will be made positive with a ceiling of 9999. 10000 == bad measure,
+20000 == no result found, 30000 == conversion failed.
+
+9) once all conversions and comparisons are done the system will exit.
+
+Note 1: if there are 2 pieces of software (S1, S2) that do the conversion
+from A->B and 2 (S3, S4) that can do the conversion from B->A there will be 
+a total of 4 different permutations tested.
 </body>
 </html>

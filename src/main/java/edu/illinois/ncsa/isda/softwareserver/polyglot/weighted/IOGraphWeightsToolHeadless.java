@@ -1,4 +1,4 @@
-package edu.illinois.ncsa.isda.softwareserver.polyglot;
+package edu.illinois.ncsa.isda.softwareserver.polyglot.weighted;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,6 +28,8 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.BasicConfigurator;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Application;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Data;
+import edu.illinois.ncsa.isda.softwareserver.polyglot.IOGraph;
+import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary;
 import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.Conversion;
 import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.FileInformation;
 import kgm.utility.*;
