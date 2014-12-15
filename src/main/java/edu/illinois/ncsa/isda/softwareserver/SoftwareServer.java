@@ -777,7 +777,11 @@ public class SoftwareServer implements Runnable
 		tmpi = filename.indexOf('_');
 		
 		if(tmpi >= 0){
-			return Integer.valueOf(filename.substring(0, tmpi));
+			try{
+				return Integer.valueOf(filename.substring(0, tmpi));
+			}catch(NumberFormatException e){
+				return -1;
+			}
 		}
 		
 		return -1;
