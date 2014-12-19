@@ -567,33 +567,17 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		System.out.println("[Steward]: Purging mongo & rabbitmq ...");
 	
 		//Purge mongo
-		try{
-			command = "mongo polyglot --eval \"db.steward.drop()\"";
-			System.out.println("> " + command);
-			p = Runtime.getRuntime().exec(command);
-			p.waitFor();
-			reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-	
-			while((line = reader.readLine()) != null){
-				System.out.println(line);
-			}
-		}catch(Exception e) {e.printStackTrace();}
+		command = "mongo polyglot --eval \"db.steward.drop()\"";
+		System.out.println("> " + command);
+		Utility.executeAndWait(command, -1, true, true);
 	
 		System.out.println();
 	
 		//Purge rabbitmq queue
 		if(!System.getProperty("os.name").startsWith("Windows")){
-			try{
-				command = "curl -i -u " + rabbitmq_username + ":" + rabbitmq_password + " -H \"content-type:application/json\" -XDELETE http://" + rabbitmq_server + ":15672/api/queues/%2F/ImageMagick/contents";
-				System.out.println("> " + command);
-				p = Runtime.getRuntime().exec(command);
-				p.waitFor();
-				reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-		
-				while((line = reader.readLine()) != null){
-					System.out.println(line);
-				}
-			}catch(Exception e) {e.printStackTrace();}
+			command = "curl -i -u " + rabbitmq_username + ":" + rabbitmq_password + " -H \"content-type:application/json\" -XDELETE http://" + rabbitmq_server + ":15672/api/queues/%2F/ImageMagick/contents";
+			System.out.println("> " + command);
+			Utility.executeAndWait(command, -1, true, true);
 		}else{
 			System.out.println("Warning: not purging rabbitmq!");		//TODO: need to do this without a curl call!
 		}
