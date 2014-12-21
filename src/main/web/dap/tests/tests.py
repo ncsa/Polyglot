@@ -10,6 +10,7 @@ import socket
 from os.path import basename
 
 host = 'http://kgm-d3.ncsa.illinois.edu'
+#host = 'http://dap1.ncsa.illinois.edu'
 
 def main():
 	"""Run extraction bus tests."""
@@ -34,7 +35,7 @@ def main():
 
 					#Run test
 					output_filename = 'tmp/' + str(count) + '_' + os.path.splitext(basename(input_filename))[0] + '.' + output
-					download_file(host + ':8184/convert/' + output + '/' + urllib.quote_plus(input_filename), output_filename)
+					output_filename = convert(host, input_filename, output, output_filename)
 
 					#Check for expected output
 					if os.path.isfile(output_filename) and os.stat(output_filename).st_size > 0:
@@ -60,12 +61,37 @@ def main():
 		print 'Elapsed time: ' + timeToString(time.time() - t0)
 		mailserver.quit()
 
-def download_file(url, filename):
+def convert(host, input_filename, output, output_path):
+	"""Pass file to Polyglot Steward."""
+	headers = {'Accept': 'text/plain'}
+	api_call = host + ':8184/convert/' + output + '/' + urllib.quote_plus(input_filename)
+	r = requests.get(api_call, headers=headers)
+
+	if(r.status_code != 404):
+		result = r.text
+
+		if basename(output_path):
+			output_filename = output_path
+		else:
+			output_filename = output_path + basename(result)
+
+		download_file(result, output_filename, 60)
+	else:
+		output_filename = ""
+
+	return output_filename
+
+def download_file(url, filename, wait):
 	"""Download file at given URL"""
 	if not filename:
 		filename = url.split('/')[-1]
 
 	r = requests.get(url, stream=True)
+
+	while(wait > 0 and r.status_code == 404):
+		time.sleep(1)
+		wait -= 1
+		r = requests.get(url, stream=True)
 
 	if(r.status_code != 404):	
 		with open(filename, 'wb') as f:
