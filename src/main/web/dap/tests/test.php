@@ -30,7 +30,7 @@ if($run) {
 	$context = stream_context_create($opts);
 
 	$result = file_get_contents($api_call, false, $context);
-	error_log("Result: " . $result);
+	//error_log("Result: " . $result);
 
 	if($result){
 		while($wait > 0 && http_response_code($result) == "404") {
