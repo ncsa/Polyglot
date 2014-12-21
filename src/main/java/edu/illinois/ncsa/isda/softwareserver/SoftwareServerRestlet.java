@@ -513,7 +513,7 @@ public class SoftwareServerRestlet extends ServerResource
 				file = public_path + part1;
 				
 				if(Utility.exists(file)){
-					System.out.println("[REST]: Request for file, " + file);
+					//System.out.println("[REST]: Request for file, " + file);
 
 					if(Utility.isDirectory(file)){
 						url = Utility.endSlash(getRootRef().toString()) + "file/" + part1 + "/";

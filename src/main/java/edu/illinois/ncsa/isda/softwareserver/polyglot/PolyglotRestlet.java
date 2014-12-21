@@ -174,6 +174,11 @@ public class PolyglotRestlet extends ServerResource
 						((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 					}else{
 						result_file = polyglot.convert(file, public_path, output);
+
+						if(result_file.equals("404")){
+							setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+							return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
+						}
 					}
 
 					if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;		//If a name wasn't suggested assume this.

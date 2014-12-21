@@ -242,9 +242,11 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 			
 			//Create a place holder file, URL is empty
 			Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(input) + "." + output_format + ".url", "[InternetShortcut]\nURL=");
-		}
 		
-		return job_id + "_" + Utility.getFilenameName(input, MULTIPLE_EXTENSIONS) + "." + output_format;
+			return job_id + "_" + Utility.getFilenameName(input, MULTIPLE_EXTENSIONS) + "." + output_format;
+		}else{
+			return "404";
+		}
 	}
 	
 	/**
