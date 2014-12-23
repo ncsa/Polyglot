@@ -65,7 +65,8 @@ public class SoftwareServerRestlet extends ServerResource
 		}
 		
 		//Create public folder for results
-		public_path = server.getTempPath() + "public/";
+		//public_path = server.getTempPath() + "public/";
+		public_path = server.getCachePath() + "public/";
 		
 		if(!Utility.exists(public_path)){
 			new File(public_path).mkdir();
@@ -264,7 +265,14 @@ public class SoftwareServerRestlet extends ServerResource
 	{
 		boolean MULTIPLE_EXTENSIONS = alias_map.get(application_alias).supportedInput(Utility.getFilenameExtension(Utility.getFilename(filename), true));
 		Task task = new Task(applications);
-		task.addSubtasks(task.getApplicationString(application_alias), task_string, new CachedFileData(filename), new CachedFileData(filename, output_format, MULTIPLE_EXTENSIONS));
+		CachedFileData input_data, output_data;
+
+		//input_data = new CachedFileData(filename);
+		input_data = new CachedFileData(getFilenameName(filename, MULTIPLE_EXTENSIONS), Utility.getFilenameExtension(filename), Utility.getFilenameExtension(Utility.getFilename(filename), true));
+		//output_data = new CachedFileData(filename, output_format, MULTIPLE_EXTENSIONS);
+		output_data = new CachedFileData(getFilenameName(filename, MULTIPLE_EXTENSIONS), output_format, output_format);
+
+		task.addSubtasks(task.getApplicationString(application_alias), task_string, input_data, output_data);
 		
 		return task.getSubtasks();
 	}
@@ -287,7 +295,8 @@ public class SoftwareServerRestlet extends ServerResource
 
 		if(session >= 0){
 			if(file.startsWith(Utility.endSlash(localhost) + "file/")){	//Remove session id from filenames of locally cached files
-				file = SoftwareServer.getFilename(Utility.getFilename(file));
+				//file = SoftwareServer.getFilename(Utility.getFilename(file));
+				file = getFilename(file);
 			}else{																											//Download remote files
 				if(download_method.equals("wget")){
 					try{
@@ -324,7 +333,7 @@ public class SoftwareServerRestlet extends ServerResource
 
 			//Move result to public folder
 			if(!Utility.isDirectory(result)){
-				Utility.copyFile(result, public_path + Utility.getFilename(result));
+				Utility.copyFile(result, public_path + session + "_" + getFilename(result));
 			}else{
 				try{
 					FileUtils.copyDirectory(new File(result), new File(public_path + Utility.getFilename(result)));
@@ -459,8 +468,8 @@ public class SoftwareServerRestlet extends ServerResource
 	
 							//if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "/file/")){		//Locally cached files already have session ids
 							if(file.startsWith(Utility.endSlash(localhost))){																															//Locally cached files already have session ids
-								session = SoftwareServer.getSession(file);
-								result = Utility.endSlash(localhost) + "file/" + Utility.getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
+								session = getSession(file);
+								result = Utility.endSlash(localhost) + "file/" + session + "_" + getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
 							}else{																																											//Remote files must be assigned a session id
 								session = server.getSession();
 								result = Utility.endSlash(localhost) + "file/" + session + "_" + Utility.getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
@@ -746,6 +755,84 @@ public class SoftwareServerRestlet extends ServerResource
 			return false;
 		}
 	}
+	
+	/**
+	 * Parse the session id from the cached public filename (addressing that some may be in public output directories!).
+	 * @param filename the cached public filename
+	 * @return the session id
+	 */
+	public static int getSession(String filename)
+	{
+		int tmpi = filename.indexOf("/file/");
+
+		if(tmpi >= 0){
+			filename = filename.substring(tmpi+6);
+			tmpi = filename.indexOf('_');
+
+			if(tmpi >= 0){
+				try{
+					return Integer.valueOf(filename.substring(0, tmpi));
+				}catch(NumberFormatException e){
+					return -1;
+				}
+			}
+		}
+		
+		return -1;
+	}
+
+	/**
+   * Parse the filename from the cached public filename (leaves on prepended public output directories!).
+   * @param filename the cached public filename (either the local URL or the local filename without the cache path prepended)
+   * @return the filename (including parent directory if has one, e.g. previously unzipped files)
+   */
+  public static String getFilename(String filename)
+  {
+    int tmpi = filename.indexOf("/file/");
+
+		if(tmpi >= 0){
+			filename = filename.substring(tmpi+6);
+		}
+
+		tmpi = filename.indexOf('_');
+
+   	if(tmpi >= 0){
+     	return filename.substring(tmpi+1);
+   	}
+
+    return filename;
+  }
+
+	/**
+   * Get the name of a file from the cached public filename (i.e. no path and no extension while leaving on prepended output directories!)
+   * @param filename the cached public filename 
+   * @param MULTIPLE_EXTENSIONS true if files are allowed to have multiple extensions
+   * @return the name of the file (including parent directory if has one, e.g. previously unzipped files)
+   */
+	public static String getFilenameName(String filename, boolean MULTIPLE_EXTENSIONS)
+	{
+		String name = getFilename(filename);
+    int tmpi;
+
+    //Remove extension
+    if(MULTIPLE_EXTENSIONS){
+			tmpi = name.lastIndexOf('/');
+		
+			if(tmpi >= 0){	//Start after last '/' if a directory is part of the name
+				tmpi = name.indexOf('.', tmpi+1);
+			}else{
+      	tmpi = name.indexOf('.');
+			}
+    }else{
+      tmpi = name.lastIndexOf('.');
+    }
+
+    if(tmpi >= 0){
+      name = name.substring(0, tmpi);
+    }
+
+    return name;
+	}
 
 	/**
 	 * Start the restful service.
@@ -821,6 +908,20 @@ public class SoftwareServerRestlet extends ServerResource
 				public Restlet createInboundRoot(){
 					Router router = new Router(getContext());
 					router.attachDefault(SoftwareServerRestlet.class);
+		
+					//Examine public path and reattach any previous directories to an endpoint
+					File folder = new File(public_path);
+					File[] files = folder.listFiles();
+
+					for(int i=0; i<files.length; i++){
+						if(files[i].isDirectory()){
+							//System.out.println("[REST]: Re-attaching " + files[i].getName());
+							Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + files[i].getName()));
+							directory.setListingAllowed(true);
+							component.getDefaultHost().attach("/file/" + files[i].getName() + "/", directory);
+						}
+					}
+
 					return router;
 				}
 			};
@@ -852,7 +953,7 @@ public class SoftwareServerRestlet extends ServerResource
 			
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
-			
+				
 	 	//Notify other services of our existence
 	 	if(distributed_server != null){
 	 		final int port_final = port;

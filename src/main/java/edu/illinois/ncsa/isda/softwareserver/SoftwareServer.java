@@ -5,6 +5,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import org.apache.commons.io.*;
 
 /**
  * A Software Server.
@@ -139,6 +140,8 @@ public class SoftwareServer implements Runnable
 	          	addScriptedOperations(value + "/", "sh");
 	        	}else if(key.equals("BatchScripts")){
 	          	addScriptedOperations(value + "/", "bat");
+	        	}else if(key.equals("RScripts")){
+	          	addScriptedOperations(value + "/", "R");
 	        	}else if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("MaxOperationTime")){
@@ -438,7 +441,7 @@ public class SoftwareServer implements Runnable
 	  			temp_target = null;
 	  			
 	  			if(Utility.exists(target)){	
-	  			  //Create a new temporary directory (import to not change name as scripts can use the name)
+	  			  //Create a new temporary directory (important to not change name as scripts can use the name)
 	  				temp_target_path = temp_path + System.currentTimeMillis() + "/";				
 	  				if(!Utility.exists(temp_target_path)) new File(temp_target_path).mkdir();
 	  				
@@ -484,7 +487,15 @@ public class SoftwareServer implements Runnable
 		  	}
 		  	
 		  	//Move the output if a temporary target was used
-		  	if(temp_target != null && Utility.exists(temp_target)) Utility.copyFile(temp_target, target);
+		  	if(temp_target != null && Utility.exists(temp_target)){
+					if(!Utility.isDirectory(temp_target)){
+						Utility.copyFile(temp_target, target);
+					}else{
+						try{
+							FileUtils.copyDirectory(new File(temp_target), new File(target));
+						}catch(Exception e) {e.printStackTrace();}
+					}
+				}
 		  	
 		  	//If we got past the last subtask then the task is complete!
 		  	if(j == task.size()-1) TASK_COMPLETED = true;

@@ -248,6 +248,19 @@ public class SoftwareServerAuxiliary
 		
 		/**
 		 * Class constructor.
+		 * @param name the name of the file
+		 * @param format the format of the file
+		 * @param formats the formats of the file
+		 */
+		public CachedFileData(String name, String format, String formats)
+		{
+			this.name = name;
+			this.format = format;
+			this.formats = formats;
+		}
+		
+		/**
+		 * Class constructor.
 		 * @param filename the name of the file
 		 * @param format the new format of this data
 		 * @param MULTIPLE_EXTENSIONS is this filename using multiple extensions
