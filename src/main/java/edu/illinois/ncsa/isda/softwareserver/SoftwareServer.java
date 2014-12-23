@@ -456,7 +456,6 @@ public class SoftwareServer implements Runnable
 				temp = temp_path + session + "_";
 				if(WINDOWS) temp = Utility.windowsPath(temp);
 		  
-System.out.println("ok0: " + temp_target + ", " + temp);	
 		  	command = Script.getCommand(operation.script, source, temp_target != null ? temp_target : target, temp);
 		  	System.out.print("[" + host + "](" + session + "): " + command + " ");
 		  	

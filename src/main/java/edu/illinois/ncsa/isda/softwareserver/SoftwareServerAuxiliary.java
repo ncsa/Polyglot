@@ -257,7 +257,6 @@ public class SoftwareServerAuxiliary
 			this.name = name;
 			this.format = format;
 			this.formats = formats;
-			System.out.println("ok1c: " + name + ", " + format + ", " + formats);
 		}
 		
 		/**
