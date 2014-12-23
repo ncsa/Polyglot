@@ -1,7 +1,7 @@
 #!/usr/bin/Rscript
 #PEcAn2Sipnet
 #data
-#cf-nc,cf-nc.zip
+#pecan.nc, pecan.zip
 #clim
 
 # get command line arguments
@@ -55,12 +55,13 @@ dir.create(climfolder, showWarnings=FALSE, recursive=TRUE)
 
 # 1 copy input file to input directory and unzip if needed 
 if (extI == ".zip") {
-    file.copy(args[1],paste0(cffolder,"/",args[1]))
+    #file.copy(args[1],paste0(cffolder,"/",args[1]))
+    file.copy(args[1],paste0(cffolder,"/"))
     wd <- getwd()
     rootZip <- paste0(tempDir,"/cf")
     setwd(rootZip)
     system(paste0("unzip  ./*"))
-    file.remove(args[1])
+    #file.remove(args[1])
     setwd(wd)
 } else {
     file.copy(args[1],paste0(tempDir,"/cf/",site,".",yearS,".nc"))
@@ -78,4 +79,4 @@ met2model.SIPNET(cffolder, site, climfolder, start_date=start_date, end_date=end
 filename <-list.files(climfolder)
 #print( paste0(climfolder,"/",filename) )
 file.rename(paste0(climfolder,"/",filename),args[2])
-unlink(tempDir, recursive = TRUE) 
+#unlink(tempDir, recursive = TRUE) 

@@ -271,6 +271,8 @@ public class SoftwareServerRestlet extends ServerResource
 		input_data = new CachedFileData(getFilenameName(filename, MULTIPLE_EXTENSIONS), Utility.getFilenameExtension(filename), Utility.getFilenameExtension(Utility.getFilename(filename), true));
 		//output_data = new CachedFileData(filename, output_format, MULTIPLE_EXTENSIONS);
 		output_data = new CachedFileData(getFilenameName(filename, MULTIPLE_EXTENSIONS), output_format, output_format);
+System.out.println("ok1a: " + filename);
+System.out.println("ok1b: " + input_data);
 
 		task.addSubtasks(task.getApplicationString(application_alias), task_string, input_data, output_data);
 		
@@ -522,7 +524,7 @@ public class SoftwareServerRestlet extends ServerResource
 				file = public_path + part1;
 				
 				if(Utility.exists(file)){
-					//System.out.println("[REST]: Request for file, " + file);
+					System.out.println("[REST]: Request for file, " + file);
 
 					if(Utility.isDirectory(file)){
 						url = Utility.endSlash(getRootRef().toString()) + "file/" + part1 + "/";

@@ -2,7 +2,7 @@
 #AmerifluxSite2PEcAn
 #data
 #xml
-#cf-nc,cf-nc.zip
+#pecan.nc, pecan.zip
 
 # input filesis a xml file specifying what to get
 #<input>
@@ -67,13 +67,14 @@ if (ext == ".zip") {
     rootZip <- paste0(tempDir,"/",input$type,"/",input$site,"/cf")
     setwd(rootZip)
     system("zip temp.zip ./*")
-    file.rename("temp.zip", paste0(wd,"/", args[2]))   
+    #file.rename("temp.zip", paste0(wd,"/", args[2]))   
+    file.rename("temp.zip", args[2])   
     setwd(wd)
 } else {
     file.rename(outfile,args[2])
 }    
 if (length(args) > 2) {
-    unlink(args[3], recursive = TRUE) 
+    #unlink(args[3], recursive = TRUE) 
 } else {
-    unlink(input$type, recursive = TRUE) 
+    #unlink(input$type, recursive = TRUE) 
 }

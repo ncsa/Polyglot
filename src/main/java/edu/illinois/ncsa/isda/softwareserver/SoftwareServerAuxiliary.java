@@ -257,6 +257,7 @@ public class SoftwareServerAuxiliary
 			this.name = name;
 			this.format = format;
 			this.formats = formats;
+			System.out.println("ok1c: " + name + ", " + format + ", " + formats);
 		}
 		
 		/**
@@ -320,7 +321,11 @@ public class SoftwareServerAuxiliary
 			if(name == null){
 				return format;
 			}else{
-				return name + "." + format;
+				if(formats != null && !formats.isEmpty() && name.indexOf('.') == -1){		//Note: assumes only two extensions possible!
+					return name + "." + formats;
+				}else{
+					return name + "." + format;
+				}
 			}
 		}
 
@@ -384,7 +389,8 @@ public class SoftwareServerAuxiliary
 		 */
 		public String getCacheFilename(int session)
 		{
-			return getCacheName(session) + "." + format;
+			//return getCacheName(session) + "." + format;
+			return session + "_" + toString();
 		}
 		
 		/**

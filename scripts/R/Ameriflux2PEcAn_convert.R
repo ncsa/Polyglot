@@ -1,8 +1,8 @@
 #!/usr/bin/Rscript
 #Ameriflux2PEcAn
 #data
-#amfx-nc,amfx-nc.zip
-#cf-nc, cf-nc.zip
+#ameriflux.nc, ameriflux.zip
+#pecan.nc, pecan.zip
 
 # get command line arguments
 args <- commandArgs(trailingOnly = TRUE)
@@ -58,14 +58,14 @@ dir.create(cffolder, showWarnings=FALSE, recursive=TRUE)
 
 # 1 copy input file to input directory
 # and unzip if needed 
-
 if (extI == ".zip") {
-    file.copy(args[1],paste0(rawfolder,"/",args[1]))
+    #file.copy(args[1],paste0(rawfolder,"/",args[1]))
+    file.copy(args[1],paste0(rawfolder,"/"))
     wd <- getwd()
     rootZip <- paste0(tempDir,"/raw")
     setwd(rootZip)
     system(paste0("unzip  ./*"))
-    file.remove(args[1])
+    #file.remove(args[1])
     setwd(wd)
 } else {
     file.copy(args[1],paste0(tempDir,"/raw/",site,".",yearS,".nc"))
@@ -83,15 +83,16 @@ if (extO == ".zip") {
     rootZip <- paste0(tempDir,"/cf")
     setwd(rootZip)
     system("zip temp.zip ./*")
-    file.rename("temp.zip", paste0(wd,"/", args[2]))   
+    #file.rename("temp.zip", paste0(wd,"/", args[2]))   
+    file.rename("temp.zip", args[2])   
     setwd(wd)
 } else {
     file.rename(paste0(tempDir,"/cf/",site,".",yearS,".nc"),args[2])
 }
 if (length(args) > 2) {
-    unlink(args[3], recursive = TRUE) 
+    #unlink(args[3], recursive = TRUE) 
 } else {
-    unlink(tempDir, recursive = TRUE) 
+    #unlink(tempDir, recursive = TRUE) 
 }
 
 #filename <- paste0(site,".",substr(start_date,1,4),".nc")

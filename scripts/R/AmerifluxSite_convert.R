@@ -2,7 +2,7 @@
 #AmerifluxSite
 #data
 #xml
-#ameriflux.nc, amferiflux.zip 
+#ameriflux.nc, ameriflux.zip 
 
 # input filesis a xml file specifying what to get
 #<input>

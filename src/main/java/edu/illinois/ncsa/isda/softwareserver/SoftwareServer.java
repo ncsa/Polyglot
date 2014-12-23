@@ -437,12 +437,12 @@ public class SoftwareServer implements Runnable
 	  			target = cache_path + output_file_data.getCacheFilename(session);
 	  			result = target;
 	  			
-	  			//Prevent applications from complaining about overwriting files
+	  			//Prevent applications from complaining about overwriting files by creating a temporary output directory (if a file with the same output name exists!)
 	  			temp_target = null;
 	  			
 	  			if(Utility.exists(target)){	
 	  			  //Create a new temporary directory (important to not change name as scripts can use the name)
-	  				temp_target_path = temp_path + System.currentTimeMillis() + "/";				
+	  				temp_target_path = temp_path + session + "_" + System.currentTimeMillis() + "/";				
 	  				if(!Utility.exists(temp_target_path)) new File(temp_target_path).mkdir();
 	  				
 		  			temp_target = temp_target_path + Utility.getFilename(target);
@@ -452,9 +452,11 @@ public class SoftwareServer implements Runnable
 	  			if(WINDOWS) target = Utility.windowsPath(target);
 				}
 				
+				//Suggest a name for a scratch space for the script to use. May be a folder, may be prepended to output files.
 				temp = temp_path + session + "_";
 				if(WINDOWS) temp = Utility.windowsPath(temp);
-		  	
+		  
+System.out.println("ok0: " + temp_target + ", " + temp);	
 		  	command = Script.getCommand(operation.script, source, temp_target != null ? temp_target : target, temp);
 		  	System.out.print("[" + host + "](" + session + "): " + command + " ");
 		  	
