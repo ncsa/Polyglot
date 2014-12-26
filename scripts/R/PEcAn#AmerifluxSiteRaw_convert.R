@@ -1,5 +1,5 @@
 #!/usr/bin/Rscript
-#AmerifluxSite
+#PEcAn
 #data
 #xml
 #ameriflux.nc, ameriflux.zip 

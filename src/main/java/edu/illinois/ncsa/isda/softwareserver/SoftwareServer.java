@@ -226,10 +226,8 @@ public class SoftwareServer implements Runnable
   {    
   	TreeSet<String> alias_list = null; 
   	Script script;
-    String name;
     String alias;
     String line;
-    String[] tokens;
     Scanner scanner;
     Application application;
     final String extension_final = extension;
@@ -262,9 +260,7 @@ public class SoftwareServer implements Runnable
     
     if(scripts != null){
       for(int i=0; i<scripts.length; i++){
-        name = Utility.getFilenameName(scripts[i].getName());      	
-        tokens = name.split("_");
-        alias = tokens[0];
+        alias = Script.getAlias(scripts[i].getName());
 
         if(alias_list == null || alias_list.contains(alias)){
         	//Load and parse the script's header

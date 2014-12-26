@@ -573,38 +573,60 @@ public class SoftwareServerRestlet extends ServerResource
 			//return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
 			return new StringRepresentation(Long.toString(initialization_time), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("applications")){
+			Application application;
+			Operation operation;
 			JSONArray json = new JSONArray();
-			JSONObject application;
+			JSONObject application_info;
+			JSONArray conversions_list;
+			JSONObject conversions;
 			JSONArray inputs, outputs;
-			TaskInfo task_info;
 			
-			for(int i=0; i<applications.size(); i++){
-				application = new JSONObject();
-				inputs = new JSONArray();
-				outputs = new JSONArray();
-				
-				try{
-					application.put("alias", applications.get(i).alias);
+			try{
+				for(int a=0; a<applications.size(); a++){
+ 			  	application = applications.get(a);
+					application_info = new JSONObject();
+					application_info.put("alias", application.alias);
+					conversions_list = new JSONArray();
 
-					for(Iterator<TaskInfo> itr1=application_tasks.get(i).iterator(); itr1.hasNext();){
-						task_info = itr1.next();
-						
-						if(task_info.name.equals("convert")){	
-							for(Iterator<String> itr2=task_info.inputs.iterator(); itr2.hasNext();){
-								inputs.put(itr2.next());
-							}
-							
-							for(Iterator<String> itr2=task_info.outputs.iterator(); itr2.hasNext();){
-								outputs.put(itr2.next());
-							}
-							
-							application.put("inputs", inputs);
-							application.put("outputs", outputs);
-							json.put(application);
-						}
-					}					
-				}catch(Exception e) {e.printStackTrace();}
-			}
+     			for(int o=0; o<application.operations.size(); o++){
+       			operation = application.operations.get(o);
+						conversions = new JSONObject();
+						inputs = new JSONArray();
+						outputs = new JSONArray();
+
+       			if(!operation.inputs.isEmpty()){
+         			if(!operation.outputs.isEmpty()){   //Conversion operation
+           			for(int i=0; i<operation.inputs.size(); i++){
+             			inputs.put(operation.inputs.get(i));
+								}
+
+             		for(int j=0; j<operation.outputs.size(); j++){
+               		outputs.put(operation.outputs.get(j));
+           			}
+         			}else{                              //Open/Import operation
+               	for(int j=0; j<operation.inputs.size(); j++){
+                	inputs.put(operation.inputs.get(j));
+								}
+           			
+								for(int i=0; i<application.operations.size(); i++){
+             			if(application.operations.get(i).inputs.isEmpty() && !application.operations.get(i).outputs.isEmpty()){
+                 		for(int k=0; k<application.operations.get(i).outputs.size(); k++){
+                   		outputs.put(application.operations.get(i).outputs.get(k));
+               			}
+             			}
+           			}
+         			}
+					
+							conversions.put("inputs", inputs);
+							conversions.put("outputs", outputs);
+							conversions_list.put(conversions);
+       			}
+					}
+				
+					application_info.put("conversions", conversions_list);
+					json.put(application_info);
+				}
+			}catch(Exception e) {e.printStackTrace();}
 			
 			return new JsonRepresentation(json);
 		}else if(part0.equals("busy")){

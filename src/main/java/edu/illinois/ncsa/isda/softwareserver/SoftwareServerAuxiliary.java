@@ -687,6 +687,10 @@ public class SoftwareServerAuxiliary
 	  	//Examine script name
 	    String[] tokens = name.split("_");
 	    alias = tokens[0];
+
+			//Remove comments from alias
+			tmpi = alias.indexOf('#');
+			if(tmpi >= 0) alias = alias.substring(0, tmpi);
 	    
 	    if(tokens.length > 1){
 	    	operation = tokens[1].toLowerCase();
@@ -787,6 +791,28 @@ public class SoftwareServerAuxiliary
 	      
 	      ins.close();
 	    }catch(Exception e) {e.printStackTrace();}
+		}
+
+		/**
+		 * Return the application alias from a filename
+		 * @param filename script filename
+		 * @return the application alias
+		 */
+		public static String getAlias(String filename)
+		{
+	    String name = Utility.getFilenameName(Utility.unixPath(filename));
+			String alias = null;
+			int tmpi = name.indexOf('_');
+
+			if(tmpi >= 0){
+				alias = name.substring(0, tmpi);
+			
+				//Remove comments from alias
+				tmpi = alias.indexOf('#');
+				if(tmpi >= 0) alias = alias.substring(0, tmpi);
+			}
+
+			return alias;
 		}
 		
 		/**
@@ -1872,7 +1898,7 @@ public class SoftwareServerAuxiliary
 					operation = application.operations.get(j);
 					
 					if(operation.name.equals("convert") || operation.name.equals("open") || operation.name.equals("save") || operation.name.equals("import") || operation.name.equals("export")){
-						if(convert_info != null){																					//Add inputs/outputs to convert task
+						if(convert_info != null){																					//Add inputs/outputs to convert task (TODO: check who calls this, seems wrong to merge all converts into one?)
 							for(int k=0; k<operation.inputs.size(); k++){
 								convert_info.inputs.add(operation.inputs.get(k).toString());
 							}

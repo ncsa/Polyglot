@@ -1,5 +1,5 @@
 #!/usr/bin/Rscript
-#PEcAn2Sipnet
+#PEcAn
 #data
 #pecan.nc, pecan.zip
 #clim

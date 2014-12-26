@@ -86,15 +86,17 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
 		SoftwareServerApplication application;
 		String input, output;
 		
-		for(int i=0; i<applications.size(); i++){
-			application = new SoftwareServerApplication(applications.get(i).get("alias").asText(), host);
-			
-			for(int j=0; j<applications.get(i).get("inputs").size(); j++){
-				input = applications.get(i).get("inputs").get(j).asText();
+		for(int a=0; a<applications.size(); a++){
+			application = new SoftwareServerApplication(applications.get(a).get("alias").asText(), host);
+		
+			for(int i=0; i<applications.get(a).get("conversions").size(); i++){	
+				for(int j=0; j<applications.get(a).get("conversions").get(i).get("inputs").size(); j++){
+					input = applications.get(a).get("conversions").get(i).get("inputs").get(j).asText();
 				
-				for(int k=0; k<applications.get(i).get("outputs").size(); k++){
-					output = applications.get(i).get("outputs").get(k).asText();
-					addEdge((V)input, (V)output, (E)application);
+					for(int k=0; k<applications.get(a).get("conversions").get(i).get("outputs").size(); k++){
+						output = applications.get(a).get("conversions").get(i).get("outputs").get(k).asText();
+						addEdge((V)input, (V)output, (E)application);
+					}
 				}
 			}
 		}
