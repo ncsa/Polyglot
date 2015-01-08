@@ -316,7 +316,7 @@ public class SoftwareServerRestlet extends ServerResource
 				file = SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(file));
 			}
 		
-			task = getTask(application_alias, task_string, file, format);
+			task = getTask(application_alias, task_string, session + "_" + file, format);
 			//Task.print(task, applications);
 		
 			if(ATOMIC_EXECUTION){	
