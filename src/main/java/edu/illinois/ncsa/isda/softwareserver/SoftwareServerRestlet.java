@@ -805,7 +805,7 @@ public class SoftwareServerRestlet extends ServerResource
 
 	/**
    * Parse the filename from the cached public filename (leaves on prepended public output directories!).
-   * @param filename the cached public filename (either the local URL or the local filename without the cache path prepended)
+   * @param filename the cached public filename (either the local URL or the local filename without the cache path prepended.  Assumes session ID is prepended!)
    * @return the filename (including parent directory if has one, e.g. previously unzipped files)
    */
   public static String getFilename(String filename)
@@ -827,7 +827,7 @@ public class SoftwareServerRestlet extends ServerResource
 
 	/**
    * Get the name of a file from the cached public filename (i.e. no path and no extension while leaving on prepended output directories!)
-   * @param filename the cached public filename 
+   * @param filename the cached public filename (either the local URL or the local filename without the cach path prepended.  Assumes session ID is prepended!)
    * @param MULTIPLE_EXTENSIONS true if files are allowed to have multiple extensions
    * @return the name of the file (including parent directory if has one, e.g. previously unzipped files)
    */
