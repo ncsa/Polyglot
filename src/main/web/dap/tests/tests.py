@@ -9,11 +9,16 @@ import smtplib
 import socket
 from os.path import basename
 
-host = 'http://kgm-d3.ncsa.illinois.edu'
-#host = 'http://dap1.ncsa.illinois.edu'
+#host = 'http://kgm-d3.ncsa.illinois.edu'
+host = 'http://dap1.ncsa.illinois.edu'
 
 def main():
 	"""Run extraction bus tests."""
+	#Remove previous outputs
+	for output_filename in os.listdir('tmp'):
+		if(output_filename[0] != '.'):
+			os.unlink('tmp/' + output_filename)
+
 	with open('tests.txt', 'r') as tests_file:
 		#Read in tests
 		lines = tests_file.readlines()

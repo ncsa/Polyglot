@@ -86,6 +86,13 @@
 			if(isset($_REQUEST['run'])) echo "run = " . $_REQUEST['run'] . ";\n";
       if(isset($_REQUEST['mail'])) echo "mail = " . $_REQUEST['mail'] . ";\n";
 			if(isset($_REQUEST['start'])) echo "start_tests();\n";
+			
+			//Remove previous outputs
+			if(isset($_REQUEST['purge'])) {
+				foreach(glob('tmp/*') as $file) {
+					unlink($file);
+				}
+			}
 			?>
 
 			function start_tests() {
