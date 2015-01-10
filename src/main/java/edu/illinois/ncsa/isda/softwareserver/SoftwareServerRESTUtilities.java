@@ -1,5 +1,6 @@
 package edu.illinois.ncsa.isda.softwareserver;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
+import edu.illinois.ncsa.isda.softwareserver.SoftwareServerUtility;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -529,7 +530,7 @@ public class SoftwareServerRESTUtilities
 		  	    	
 		  	    				System.out.println("[AMQ]: " + api_call);
 		  	    						  	    	
-		  	    				while(!Utility.existsURL(result)){		//TODO: New version of existsURL needed for Windows but not Linux??
+		  	    				while(!SoftwareServerUtility.existsURL(result)){
 		  	    					Utility.pause(1000);
 		  	    				}
 									  	    	
