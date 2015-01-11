@@ -411,7 +411,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		try{
 			while(cursor.hasNext()){
 				document = cursor.next();
-				polyglot_ip = InetAddress.getLocalHost().getHostAddress();
+				//polyglot_ip = InetAddress.getLocalHost().getHostAddress();
+				polyglot_ip = Utility.getLocalHostIP();
 				job_id = Integer.parseInt(document.get("job_id").toString());
 				MULTIPLE_EXTENSIONS = Boolean.parseBoolean(document.get("multiple_extensions").toString());
 				step = Integer.parseInt(document.get("step").toString());

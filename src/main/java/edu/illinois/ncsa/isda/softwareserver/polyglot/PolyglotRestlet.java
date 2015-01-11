@@ -186,7 +186,7 @@ public class PolyglotRestlet extends ServerResource
 
 					if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 						request.setEndOfRequest(true);
-						System.out.println(" [Success]");
+						System.out.println(" [Converting]");
 					}else{
 						request.setEndOfRequest(false);
 						System.out.println(" [Failed]");
@@ -435,7 +435,7 @@ public class PolyglotRestlet extends ServerResource
 
 				if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 					request.setEndOfRequest(true);
-					System.out.println(" [Success]");
+					System.out.println(" [Converting]");
 				}else{
 					request.setEndOfRequest(false);
 					System.out.println(" [Failed]");
