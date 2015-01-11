@@ -7,23 +7,39 @@ import os
 import time
 import smtplib
 import socket
+import getopt
+import netifaces as ni
 from os.path import basename
-
-#host = 'http://kgm-d3.ncsa.illinois.edu'
-host = 'http://dap1.ncsa.illinois.edu'
 
 def main():
 	"""Run extraction bus tests."""
+	host = 'http://' + ni.ifaddresses('eth0')[2][0]['addr']
+	suppress = False
+
+	#Arguments
+	opts, args = getopt.getopt(sys.argv[1:], 'h:s')
+
+	for o, a in opts:
+		if o == '-h':
+			host = 'http://' + a
+		elif o == '-s':
+			suppress = True
+		else:
+			assert False, "unhandled option"
+
+	print 'Testing: ' + host
+
 	#Remove previous outputs
 	for output_filename in os.listdir('tmp'):
 		if(output_filename[0] != '.'):
 			os.unlink('tmp/' + output_filename)
 
+	#Read in tests
 	with open('tests.txt', 'r') as tests_file:
-		#Read in tests
 		lines = tests_file.readlines()
 		count = 0;
 		mailserver = smtplib.SMTP('localhost')
+		report = ''
 		t0 = time.time()
 
 		for line in lines:
@@ -51,19 +67,32 @@ def main():
 						print '\t\033[91m[Failed]\033[0m'
 
 						#Send email notifying watchers	
-						with open('watchers.txt', 'r') as watchers_file:
-							watchers = watchers_file.readlines()
+						message = 'Test-' + str(count) + ' failed.  Output file of type "' + output + '" was not created from:\n\n' + input_filename + '\n\n'
+						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?run=false&start=true\n'
+						report += message
+						message = 'Subject: DAP Test Failed\n\n' + message
+	
+						if not suppress:					
+							with open('watchers.txt', 'r') as watchers_file:
+								watchers = watchers_file.readlines()
 		
-							for watcher in watchers:
-								watcher = watcher.strip()
-
-								message = 'Subject: DAP Test Failed\n\n'
-								message += 'Test-' + str(count) + ' failed.  Output file of type "' + output + '" was not created from:\n\n' + input_filename + '\n\n'
-								message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?run=false&start=true\n'
-								
-								mailserver.sendmail('', watcher, message)
+								for watcher in watchers:
+									watcher = watcher.strip()
+									mailserver.sendmail('', watcher, message)
 
 		print 'Elapsed time: ' + timeToString(time.time() - t0)
+
+		#Send a final report of failures
+		if report:
+			report = 'Subject: DAP Test Failure Report\n\n' + report
+
+			with open('watchers.txt', 'r') as watchers_file:
+				watchers = watchers_file.readlines()
+		
+				for watcher in watchers:
+					watcher = watcher.strip()
+					mailserver.sendmail('', watcher, report)
+			
 		mailserver.quit()
 
 def convert(host, input_filename, output, output_path):
