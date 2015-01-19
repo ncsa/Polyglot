@@ -68,8 +68,8 @@ def main():
 
 						#Send email notifying watchers	
 						message = 'Test-' + str(count) + ' failed.  Output file of type "' + output + '" was not created from:\n\n' + input_filename + '\n\n'
-						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?run=false&start=true\n'
 						report += message
+						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?run=false&start=true\n'
 						message = 'Subject: DAP Test Failed\n\n' + message
 	
 						if not suppress:					
@@ -85,6 +85,7 @@ def main():
 		#Send a final report of failures
 		if report:
 			report = 'Subject: DAP Test Failure Report\n\n' + report
+			report += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?run=false&start=true\n'
 
 			with open('watchers.txt', 'r') as watchers_file:
 				watchers = watchers_file.readlines()

@@ -76,6 +76,7 @@
 				<include>appliescript/*.applescript</include>
 				<include>bat/*.bat</include>
 				<include>sh/.aliases.txt</include>
+				<include>R/.aliases.txt</include>
 			</includes>
 			<fileMode>0644</fileMode>
 			<directoryMode>0755</directoryMode>
@@ -88,6 +89,7 @@
 				<include>sh/auxiliary/*</include>
 				<include>py/*.py</include>
 				<include>sikuli/*/*</include>
+				<include>R/*.R</include>
 			</includes>
 			<fileMode>0755</fileMode>
 			<directoryMode>0755</directoryMode>
