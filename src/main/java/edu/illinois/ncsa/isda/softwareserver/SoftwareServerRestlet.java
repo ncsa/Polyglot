@@ -699,8 +699,8 @@ public class SoftwareServerRestlet extends ServerResource
 						if(fi.getName() == null){
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
 						}else{
-							fi.write(new File(server.getCachePath() + session + "_" + fi.getName()));
-							file = Utility.endSlash(localhost) + "file/" + session + "_" + fi.getName();
+							fi.write(new File(server.getCachePath() + session + "_" + (fi.getName()).replace(" ","_")));
+							file = Utility.endSlash(localhost) + "file/" + session + "_" + (fi.getName()).replace(" ","_");
 						}
 					}
 				}catch(Exception e) {e.printStackTrace();}
