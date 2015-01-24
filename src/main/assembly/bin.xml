@@ -9,6 +9,7 @@
 		<fileSet>
 			<includes>
 				<include>*.txt</include>
+				<include>scripting_languages.types</include>
 			</includes>
 			<lineEnding>dos</lineEnding>
 			<fileMode>0644</fileMode>

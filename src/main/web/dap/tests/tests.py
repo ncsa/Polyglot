@@ -18,7 +18,7 @@ def main():
 	all_failures = False
 
 	#Arguments
-	opts, args = getopt.getopt(sys.argv[1:], 'h:s')
+	opts, args = getopt.getopt(sys.argv[1:], 'h:a')
 
 	for o, a in opts:
 		if o == '-h':

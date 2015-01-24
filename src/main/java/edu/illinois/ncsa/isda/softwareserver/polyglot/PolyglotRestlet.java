@@ -36,7 +36,7 @@ public class PolyglotRestlet extends ServerResource
 	private static int port = 8184;
 	private static boolean RETURN_URL = false;
 	private static boolean MONGO_LOGGING = false;
-	private static int mongo_update_interval = 300;
+	private static int mongo_update_interval = 2000;
 	private static boolean SOFTWARE_SERVER_REST_INTERFACE = false;
 	private static boolean PURGE_JOBS = false;
 	private static String download_method = "";
@@ -569,7 +569,7 @@ public class PolyglotRestlet extends ServerResource
 	          }else if(key.equals("MongoLogging")){
 	          	MONGO_LOGGING = Boolean.valueOf(value);
 	          }else if(key.equals("MongoUpdateInterval")){
-	          	mongo_update_interval = Integer.valueOf(value) * 1000;
+	          	mongo_update_interval = Integer.valueOf(value);
 	          }else if(key.equals("SoftwareServerRESTInterface")){
 	          	SOFTWARE_SERVER_REST_INTERFACE = Boolean.valueOf(value);
 	          }else if(key.equals("SoftwareServerRESTPort")){

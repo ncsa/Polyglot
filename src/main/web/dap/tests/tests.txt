@@ -19,3 +19,4 @@ http://browndog.ncsa.illinois.edu/examples/cache/NewTux.svg jpg
 http://browndog.ncsa.illinois.edu/examples/cache/moby-dick-20120118.epub pdf,txt
 http://browndog.ncsa.illinois.edu/examples/plane.dxf pdf,jpg
 #https://wiki.csiamerica.com/download/attachments/2590320/sample%20solid%20-%20pyramid%20base.DXF
+http://browndog.ncsa.illinois.edu/examples/US-Dk3-2001-2003.xml clim
