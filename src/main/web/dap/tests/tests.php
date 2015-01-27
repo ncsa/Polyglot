@@ -22,7 +22,7 @@
 		<div class="container">
 			<div class="jumbotron">
     		<h1>DAP Tests</h1>
-				<input id="dap" type="text" class="form-control" value="<?php echo "http://" . $_SERVER['SERVER_NAME']; ?>">
+				<input id="dap" type="text" class="form-control" value="<?php echo isset($_REQUEST['dap']) ? $_REQUEST['dap'] : $_SERVER['SERVER_NAME']; ?>">
 				<div id="failures" style="color:#999999;font-style:italic;font-size:90%;"></div>
 			</div>
 				
@@ -108,7 +108,7 @@
 				$(row).attr('class', 'info');		//Set it again in case this is a second attempt
 
 				var dap = document.getElementById('dap').value;
-				var url = 'test.php?dap=' + encodeURIComponent(dap) + '&file=' + encodeURIComponent(file) + '&output=' + output + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
+				var url = 'test.php?dap=' + encodeURIComponent('http://' + dap) + '&file=' + encodeURIComponent(file) + '&output=' + output + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
 				
 				$.get(url, function(success) {
 					//Check result
@@ -129,6 +129,7 @@
 							test(task, tasks[task-1]["file"], tasks[task-1]["output"], true);
 						}else{
               document.getElementById('failures').appendChild(document.createTextNode(', Elapsed time: ' + timeToString((new Date).getTime() - t0)));
+							run = true;		//Allow runs if currently disabled
             }
 					}
 				});

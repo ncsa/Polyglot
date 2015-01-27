@@ -14,7 +14,7 @@ from pymongo import MongoClient
 
 def main():
 	"""Run extraction bus tests."""
-	host = 'http://' + ni.ifaddresses('eth0')[2][0]['addr']
+	host = ni.ifaddresses('eth0')[2][0]['addr']
 	all_failures = False
 
 	#Arguments
@@ -22,7 +22,7 @@ def main():
 
 	for o, a in opts:
 		if o == '-h':
-			host = 'http://' + a
+			host = a
 		elif o == '-a':
 			all_failures = True
 		else:
@@ -44,7 +44,7 @@ def main():
 		t0 = time.time()
 
 		for line in lines:
-			if not line.startswith('#'):
+			if line and not line.startswith('#'):
 				parts = line.split(' ')
 				input_filename = parts[0]
 				outputs = parts[1].split(',')
@@ -67,18 +67,21 @@ def main():
 					else:
 						print '\t\033[91m[Failed]\033[0m'
 
+						report = 'Test-' + str(count) + ' failed.  Output file of type "' + output + '" was not created from:\n\n' + input_filename + '\n\n'
+						failure_report += report
+				
 						#Send email notifying watchers	
-						message = 'Test-' + str(count) + ' failed.  Output file of type "' + output + '" was not created from:\n\n' + input_filename + '\n\n'
-						failure_report += message
-						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?run=false&start=true\n'
-						message = 'Subject: DAP Test Failed (' + host + ')\n\n' + message
-	
 						if all_failures:					
 							with open('failure_watchers.txt', 'r') as watchers_file:
-								watchers = watchers_file.readlines()
+								watchers = watchers_file.read().splitlines()
+						
+								message = 'From: \"' + host + '\" <devnull@ncsa.illiois.edu>\n'
+								message += 'To: ' + ', '.join(watchers) + '\n'
+								message += 'Subject: DAP Test Failed\n\n'
+								message += report
+								message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?dap=' + host + '&run=false&start=true\n'
 		
 								for watcher in watchers:
-									watcher = watcher.strip()
 									mailserver.sendmail('', watcher, message)
 
 		dt = time.time() - t0;
@@ -93,23 +96,28 @@ def main():
 		
 		#Send a final report of failures
 		if failure_report:
-			failure_report = 'Subject: DAP Test Failure Report (' + host + ')\n\n' + failure_report
-			failure_report += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?run=false&start=true\n\n'
-			failure_report += 'Elapsed time: ' + timeToString(dt)
-
 			with open('failure_watchers.txt', 'r') as watchers_file:
-				watchers = watchers_file.readlines()
-		
+				watchers = watchers_file.read().splitlines()
+				
+				message = 'From: \"' + host + '\" <devnull@ncsa.illiois.edu>\n'
+				message += 'To: ' + ', '.join(watchers) + '\n'
+				message += 'Subject: DAP Test Failure Report\n\n'
+				message += failure_report	
+				message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?dap=' + host + '&run=false&start=true\n\n'
+				message += 'Elapsed time: ' + timeToString(dt)
+
 				for watcher in watchers:
-					watcher = watcher.strip()
-					mailserver.sendmail('', watcher, failure_report)
+					mailserver.sendmail('', watcher, message)
 		else:
 			with open('pass_watchers.txt', 'r') as watchers_file:
-				watchers = watchers_file.readlines()
+				watchers = watchers_file.read().splitlines()
+			
+				message = 'From: \"' + host + '\" <devnull@ncsa.illiois.edu>\n'
+				message += 'To: ' + ', '.join(watchers) + '\n'
+				message += 'Subject: DAP Tests Passed\n\n'
+				message += 'Elapsed time: ' + timeToString(dt)
 
 				for watcher in watchers:
-					message = 'Subject: DAP Tests Passed (' + host + ')\n\n';
-					message += 'Elapsed time: ' + timeToString(dt)
 					mailserver.sendmail('', watcher, message)
 
 		mailserver.quit()
@@ -117,7 +125,7 @@ def main():
 def convert(host, input_filename, output, output_path):
 	"""Pass file to Polyglot Steward."""
 	headers = {'Accept': 'text/plain'}
-	api_call = host + ':8184/convert/' + output + '/' + urllib.quote_plus(input_filename)
+	api_call = 'http://' + host + ':8184/convert/' + output + '/' + urllib.quote_plus(input_filename)
 	r = requests.get(api_call, headers=headers)
 
 	if(r.status_code != 404):
