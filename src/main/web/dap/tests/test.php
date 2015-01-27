@@ -1,5 +1,5 @@
 <?php
-function http_response_code($url)
+function my_http_response_code($url)
 {
 	$headers = get_headers($url);
 	return substr($headers[0], 9, 3);
@@ -33,12 +33,12 @@ if($run) {
 	//error_log("Result: " . $result);
 
 	if($result){
-		while($wait > 0 && http_response_code($result) == "404") {
+		while($wait > 0 && my_http_response_code($result) == "404") {
 			sleep(1);
 			$wait--;
 		}
 
-		if(http_response_code($result) != "404") {
+		if(my_http_response_code($result) != "404") {
 			$command = "wget -O " . $output_file . " " . $result;
 			exec($command);
 		}

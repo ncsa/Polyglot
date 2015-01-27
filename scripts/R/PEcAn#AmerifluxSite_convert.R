@@ -12,6 +12,9 @@
 #  <end_date>2001-12-31 23:59:59</end_date>
 #</input>
 
+.libPaths("/home/polyglot/R/library")
+sink(stdout(),type="message")
+
 # get command line arguments
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) < 2) {

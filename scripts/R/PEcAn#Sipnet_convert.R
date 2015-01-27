@@ -4,6 +4,9 @@
 #pecan.nc, pecan.zip
 #clim
 
+.libPaths("/home/polyglot/R/library")
+sink(stdout(),type="message")
+
 # get command line arguments
 args <- commandArgs(trailingOnly = TRUE)
 
