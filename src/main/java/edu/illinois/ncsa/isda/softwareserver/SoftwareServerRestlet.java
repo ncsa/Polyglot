@@ -703,16 +703,17 @@ public class SoftwareServerRestlet extends ServerResource
 							
 							String extension = Utility.getFilenameExtension(fi.getName());
 							
-							if (extension.equals("")){ 																																														  //if no extension
-								String myCommand ="trid  -r:1 " + server.getCachePath() + session + "_" + (fi.getName()).replace(" ","_") + " | grep % "+ "| awk  '{print tolower($2) }'" + "|  sed 's/^.\\(.*\\).$/\\1/'"; 
+							if(extension.isEmpty()){		//If no extension add one
+								String myCommand ="trid -r:1 " + server.getCachePath() + session + "_" + (fi.getName()).replace(" ","_") + " | grep % "+ "| awk  '{print tolower($2) }'" + "|  sed 's/^.\\(.*\\).$/\\1/'";
 								Process p = Runtime.getRuntime().exec(new String[] {"sh", "-c", myCommand});
 								p.waitFor();
 								BufferedReader buf = new BufferedReader(new InputStreamReader(p.getInputStream()));
 							  extension = buf.readLine();
-								Runtime.getRuntime().exec("trid -ae " + server.getCachePath() + session + "_" + (fi.getName()).replace(" ","_")  ); 	//adding extension  
+								Runtime.getRuntime().exec("trid -ae " + server.getCachePath() + session + "_" + (fi.getName()).replace(" ","_"));
 								Utility.pause(1000);
+
 							  file = Utility.endSlash(localhost) + "file/" + session + "_" + (fi.getName()).replace(" ","_") + extension;
-							} else {																																																								//else the file has an extension
+							}else{
 							  file = Utility.endSlash(localhost) + "file/" + session + "_" + (fi.getName()).replace(" ","_");
 							}
 						}
