@@ -399,12 +399,23 @@ public class PolyglotRestlet extends ServerResource
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
 						}else{
 							if(HOST_POSTED_FILES){
-								file = public_path + fi.getName();
+								file = public_path + (fi.getName()).replace(" ","_");
 								fi.write(new File(file));
+								String extension = Utility.getFilenameExtension(fi.getName());
+								if(extension.isEmpty()){		//If no extension add one
+									String myCommand ="trid -r:1 " + public_path + (fi.getName()).replace(" ","_") + " | grep % "+ "| awk  '{print tolower($2) }'" + "|  sed 's/^.\\(.*\\).$/\\1/'";
+									Process p = Runtime.getRuntime().exec(new String[] {"sh", "-c", myCommand});
+									p.waitFor();
+									BufferedReader buf = new BufferedReader(new InputStreamReader(p.getInputStream()));
+								  extension = buf.readLine();
+								  file +=extension;
+								  Runtime.getRuntime().exec("trid -ae " + public_path + (fi.getName()).replace(" ","_"));
+								  Utility.pause(1000);
+								}
 								file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
 								System.out.println("[" + client + "]: Temporarily hosting file \"" + Utility.getFilename(file) + "\", " + file);
 							}else{
-								file = temp_path + fi.getName();
+								file = temp_path + (fi.getName()).replace(" ","_");
 								fi.write(new File(file));
 							}
 						}
