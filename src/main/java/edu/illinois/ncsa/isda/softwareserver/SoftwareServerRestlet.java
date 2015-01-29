@@ -700,7 +700,21 @@ public class SoftwareServerRestlet extends ServerResource
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
 						}else{
 							fi.write(new File(server.getCachePath() + session + "_" + (fi.getName()).replace(" ","_")));
-							file = Utility.endSlash(localhost) + "file/" + session + "_" + (fi.getName()).replace(" ","_");
+							
+							String extension = Utility.getFilenameExtension(fi.getName());
+							
+							if (extension.equals("")){ 																																														  //if no extension
+								String myCommand ="trid  -r:1 " + server.getCachePath() + session + "_" + (fi.getName()).replace(" ","_") + " | grep % "+ "| awk  '{print tolower($2) }'" + "|  sed 's/^.\\(.*\\).$/\\1/'"; 
+								Process p = Runtime.getRuntime().exec(new String[] {"sh", "-c", myCommand});
+								p.waitFor();
+								BufferedReader buf = new BufferedReader(new InputStreamReader(p.getInputStream()));
+							  extension = buf.readLine();
+								Runtime.getRuntime().exec("trid -ae " + server.getCachePath() + session + "_" + (fi.getName()).replace(" ","_")  ); 	//adding extension  
+								Utility.pause(1000);
+							  file = Utility.endSlash(localhost) + "file/" + session + "_" + (fi.getName()).replace(" ","_") + extension;
+							} else {																																																								//else the file has an extension
+							  file = Utility.endSlash(localhost) + "file/" + session + "_" + (fi.getName()).replace(" ","_");
+							}
 						}
 					}
 				}catch(Exception e) {e.printStackTrace();}
