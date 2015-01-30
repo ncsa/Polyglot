@@ -75,7 +75,7 @@ def main():
 							with open('failure_watchers.txt', 'r') as watchers_file:
 								watchers = watchers_file.read().splitlines()
 						
-								message = 'From: \"' + host + '\" <devnull@ncsa.illiois.edu>\n'
+								message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
 								message += 'To: ' + ', '.join(watchers) + '\n'
 								message += 'Subject: DAP Test Failed\n\n'
 								message += report
@@ -99,7 +99,7 @@ def main():
 			with open('failure_watchers.txt', 'r') as watchers_file:
 				watchers = watchers_file.read().splitlines()
 				
-				message = 'From: \"' + host + '\" <devnull@ncsa.illiois.edu>\n'
+				message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
 				message += 'To: ' + ', '.join(watchers) + '\n'
 				message += 'Subject: DAP Test Failure Report\n\n'
 				message += failure_report	
@@ -112,7 +112,7 @@ def main():
 			with open('pass_watchers.txt', 'r') as watchers_file:
 				watchers = watchers_file.read().splitlines()
 			
-				message = 'From: \"' + host + '\" <devnull@ncsa.illiois.edu>\n'
+				message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
 				message += 'To: ' + ', '.join(watchers) + '\n'
 				message += 'Subject: DAP Tests Passed\n\n'
 				message += 'Elapsed time: ' + timeToString(dt)
