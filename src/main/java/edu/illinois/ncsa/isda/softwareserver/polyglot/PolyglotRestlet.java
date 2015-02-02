@@ -405,12 +405,12 @@ public class PolyglotRestlet extends ServerResource
 								String extension = Utility.getFilenameExtension(fi.getName());
 
 								if(extension.isEmpty()){		//If no extension add one
-									String myCommand ="trid -r:1 " + public_path + (fi.getName()).replace(" ","_") + " | grep % "+ "| awk  '{print tolower($2) }'" + "|  sed 's/^.\\(.*\\).$/\\1/'";
+									String myCommand ="trid -r:1 -ae " + public_path + (fi.getName()).replace(" ","_") + " | grep % "+ "| awk  '{print tolower($2) }'" + "|  sed 's/^.\\(.*\\).$/\\1/'";
+									// the 'trid' command can be obtained at http://mark0.net/soft-trid-e.html
 									Process p = Runtime.getRuntime().exec(new String[] {"sh", "-c", myCommand});
 									p.waitFor();
 									BufferedReader buf = new BufferedReader(new InputStreamReader(p.getInputStream()));
 									extension = buf.readLine();
-									Runtime.getRuntime().exec("trid -ae " + public_path + (fi.getName()).replace(" ","_"));
 									Utility.pause(1000);
 									
 									file += extension;
