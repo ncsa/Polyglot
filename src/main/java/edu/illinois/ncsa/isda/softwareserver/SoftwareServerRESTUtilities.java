@@ -467,23 +467,31 @@ public class SoftwareServerRESTUtilities
 	 * Have a Software Server listen to a RabbitMQ bus for jobs.
 	 * @param softwareserver_port the Software Server port
 	 * @param softwareserver_applications the available applications
+	 * @param rabbitmq_uri the rabbitmq URI, overrides below parameters
 	 * @param rabbitmq_server the rabbitmq server
 	 * @param rabbitmq_vhost the rabbitmq virtual host
 	 * @param rabbitmq_username the rabbitmq user
 	 * @param rabbitmq_password the rabbitmq user password
 	 */
-	public static void rabbitMQHandler(int softwareserver_port, Vector<Application> softwareserver_applications, String rabbitmq_server, String rabbitmq_vhost, String rabbitmq_username, String rabbitmq_password)
+	public static void rabbitMQHandler(int softwareserver_port, Vector<Application> softwareserver_applications, String rabbitmq_uri, String rabbitmq_server, String rabbitmq_vhost, String rabbitmq_username, String rabbitmq_password)
 	{
  		System.out.println("\nConnecting to RabbitMQ server and starting consumer thread ...\n");
 		
 	  ConnectionFactory factory = new ConnectionFactory();
-	  factory.setHost(rabbitmq_server);
-	  factory.setVirtualHost(rabbitmq_vhost);
+
+		if(rabbitmq_uri != null){
+			try{
+				factory.setUri(rabbitmq_uri);
+			}catch(Exception e) {e.printStackTrace();}
+		}else{
+	  	factory.setHost(rabbitmq_server);
+	  	factory.setVirtualHost(rabbitmq_vhost);
 	  
-	  if((rabbitmq_username != null) && (rabbitmq_password != null)){
-	  	factory.setUsername(rabbitmq_username);
-	  	factory.setPassword(rabbitmq_password);
-	  }
+	  	if((rabbitmq_username != null) && (rabbitmq_password != null)){
+	  		factory.setUsername(rabbitmq_username);
+	  		factory.setPassword(rabbitmq_password);
+	  	}
+		}
 	  
 	  try{
 	    Connection connection = factory.newConnection();

@@ -26,6 +26,7 @@ import com.rabbitmq.client.*;
  */
 public class PolyglotStewardAMQ extends Polyglot implements Runnable
 {
+	private static String rabbitmq_uri = null;
 	private static String rabbitmq_server = null;
 	private static String rabbitmq_vhost = "/";
 	private static String rabbitmq_username = null;
@@ -64,13 +65,24 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		
 		//Connect to RabbitMQ
 	  factory = new ConnectionFactory();
-    factory.setHost(rabbitmq_server);
-		factory.setVirtualHost(rabbitmq_vhost);
+
+		if(rabbitmq_uri != null){
+			try{
+				factory.setUri(rabbitmq_uri);
+				rabbitmq_server = factory.getHost();
+				rabbitmq_vhost = factory.getVirtualHost();
+				rabbitmq_username = factory.getUsername();
+				rabbitmq_password = factory.getPassword();
+			}catch(Exception e) {e.printStackTrace();}
+		}else{
+    	factory.setHost(rabbitmq_server);
+			factory.setVirtualHost(rabbitmq_vhost);
 	  
-    if((rabbitmq_username != null) && (rabbitmq_password != null)){
-	  	factory.setUsername(rabbitmq_username);
-	  	factory.setPassword(rabbitmq_password);
-	  }
+    	if((rabbitmq_username != null) && (rabbitmq_password != null)){
+	  		factory.setUsername(rabbitmq_username);
+	  		factory.setPassword(rabbitmq_password);
+	  	}
+		}
     
 		if(START) new Thread(this).start();		//Start main thread
 	}
@@ -92,7 +104,9 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#'){
-	        	if(key.equals("RabbitMQServer")){
+	        	if(key.equals("RabbitMQURI")){
+	        		rabbitmq_uri = value;
+	        	}else if(key.equals("RabbitMQServer")){
 	        		rabbitmq_server = value;
 	        	}else if(key.equals("RabbitMQVirtualHost")){
 	        		rabbitmq_vhost = value;
