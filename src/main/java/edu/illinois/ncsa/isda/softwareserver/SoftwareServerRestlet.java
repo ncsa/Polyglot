@@ -880,6 +880,7 @@ public class SoftwareServerRestlet extends ServerResource
 		int port = 8182;		
 		String distributed_server = null;
 		String rabbitmq_server = null;
+		String rabbitmq_vhost = "/";
 		String rabbitmq_username = null;
 		String rabbitmq_password = null;
 		TreeMap<String,String> accounts = new TreeMap<String,String>();	
@@ -902,6 +903,8 @@ public class SoftwareServerRestlet extends ServerResource
 	          	distributed_server = value;
 	          }else if(key.equals("RabbitMQServer")){
 	          	rabbitmq_server = value;
+	          }else if(key.equals("RabbitMQVirtualHost")){
+	          	rabbitmq_vhost = value;
 	          }else if(key.equals("RabbitMQUsername")){
 	          	rabbitmq_username = value;
 	          }else if(key.equals("RabbitMQPassword")){
@@ -1018,7 +1021,7 @@ public class SoftwareServerRestlet extends ServerResource
 	 	
 	 	//Connect to RabbitMQ bus
 	 	if(rabbitmq_server != null){
-	 		SoftwareServerRESTUtilities.rabbitMQHandler(port, applications, rabbitmq_server, rabbitmq_username, rabbitmq_password);
+	 		SoftwareServerRESTUtilities.rabbitMQHandler(port, applications, rabbitmq_server, rabbitmq_vhost, rabbitmq_username, rabbitmq_password);
 		}
 	}
 }

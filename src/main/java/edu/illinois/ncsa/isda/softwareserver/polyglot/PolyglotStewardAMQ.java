@@ -27,6 +27,7 @@ import com.rabbitmq.client.*;
 public class PolyglotStewardAMQ extends Polyglot implements Runnable
 {
 	private static String rabbitmq_server = null;
+	private static String rabbitmq_vhost = "/";
 	private static String rabbitmq_username = null;
 	private static String rabbitmq_password = null;
 	private int heartbeat;
@@ -64,6 +65,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		//Connect to RabbitMQ
 	  factory = new ConnectionFactory();
     factory.setHost(rabbitmq_server);
+		factory.setVirtualHost(rabbitmq_vhost);
 	  
     if((rabbitmq_username != null) && (rabbitmq_password != null)){
 	  	factory.setUsername(rabbitmq_username);
@@ -92,6 +94,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	        if(key.charAt(0) != '#'){
 	        	if(key.equals("RabbitMQServer")){
 	        		rabbitmq_server = value;
+	        	}else if(key.equals("RabbitMQVirtualHost")){
+	        		rabbitmq_vhost = value;
 	        	}else if(key.equals("RabbitMQUsername")){
 	        		rabbitmq_username = value;
 	        	}else if(key.equals("RabbitMQPassword")){
@@ -327,7 +331,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	 */
 	public void discoveryAMQ()
 	{
-		JsonNode queues = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/queues/");
+		JsonNode queues = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/queues/" + Utility.urlEncode(rabbitmq_vhost) + "/");
 		JsonNode queue;
 		JsonNode applications;
 		String name, host;
@@ -336,7 +340,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	
 		for(int i=0; i<queues.size(); i++) {
 			name = queues.get(i).get("name").asText();
-	    queue = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/queues/%2F/" + name);
+	    queue = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/queues/" + Utility.urlEncode(rabbitmq_vhost) + "/" + name);
 	    	    
 	    for(int j=0; j<queue.get("consumer_details").size(); j++){
 	    	host = queue.get("consumer_details").get(j).get("channel_details").get("peer_host").asText();
@@ -578,7 +582,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	
 		//Purge rabbitmq queue
 		if(!System.getProperty("os.name").startsWith("Windows")){
-			command = "curl -i -u " + rabbitmq_username + ":" + rabbitmq_password + " -H \"content-type:application/json\" -XDELETE http://" + rabbitmq_server + ":15672/api/queues/%2F/ImageMagick/contents";
+			command = "curl -i -u " + rabbitmq_username + ":" + rabbitmq_password + " -H \"content-type:application/json\" -XDELETE http://" + rabbitmq_server + ":15672/api/queues/" + Utility.urlEncode(rabbitmq_vhost) + "/ImageMagick/contents";
 			System.out.println("> " + command);
 			Utility.executeAndWait(command, -1, true, true);
 		}else{
