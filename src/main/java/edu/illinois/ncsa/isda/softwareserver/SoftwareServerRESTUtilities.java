@@ -475,9 +475,9 @@ public class SoftwareServerRESTUtilities
 	 */
 	public static void rabbitMQHandler(int softwareserver_port, Vector<Application> softwareserver_applications, String rabbitmq_uri, String rabbitmq_server, String rabbitmq_vhost, String rabbitmq_username, String rabbitmq_password)
 	{
- 		System.out.println("\nConnecting to RabbitMQ server and starting consumer thread ...\n");
-		
-	  ConnectionFactory factory = new ConnectionFactory();
+		final int softwareserver_port_final = softwareserver_port;
+		final Vector<Application> softwareserver_applications_final = softwareserver_applications;
+	  final ConnectionFactory factory = new ConnectionFactory();
 
 		if(rabbitmq_uri != null){
 			try{
@@ -492,71 +492,82 @@ public class SoftwareServerRESTUtilities
 	  		factory.setPassword(rabbitmq_password);
 	  	}
 		}
-	  
-	  try{
-	    Connection connection = factory.newConnection();
-	    final Channel channel = connection.createChannel();
-	    final QueueingConsumer consumer = new QueueingConsumer(channel);
+	
+		//Maintain connection to rabbitmq in a constantly running thread 
+		new Thread(){
+			public void run(){
+				while(true){ 
+ 					System.out.println("\nConnecting to RabbitMQ server and starting consumer thread ...\n");
+
+	  			try{
+	    			Connection connection = factory.newConnection();
+	    			final Channel channel = connection.createChannel();
+	    			final QueueingConsumer consumer = new QueueingConsumer(channel);
 	    
-	    //Create queues if not yet created
-			for(int i=0; i<softwareserver_applications.size(); i++){
-				channel.queueDeclare(softwareserver_applications.get(i).alias, true, false, false, null);
-			}
+	    			//Create queues if not yet created
+						for(int i=0; i<softwareserver_applications_final.size(); i++){
+							channel.queueDeclare(softwareserver_applications_final.get(i).alias, true, false, false, null);
+						}
 			
-	    channel.basicQos(1);	//Fetch only one message at a time
+	  			  channel.basicQos(1);	//Fetch only one message at a time
 			
-	    //Bind to needed queues
-			for(int i=0; i<softwareserver_applications.size(); i++){
-		    channel.basicConsume(softwareserver_applications.get(i).alias, false, consumer);
-			}
+	  			  //Bind to needed queues
+						for(int i=0; i<softwareserver_applications_final.size(); i++){
+		    			channel.basicConsume(softwareserver_applications_final.get(i).alias, false, consumer);
+						}
 			
-			final int port = softwareserver_port;
+						final int port = softwareserver_port_final;
 
-			//Monitor bus	in a new thread
-	  	new Thread(){
-	  		public void run(){
-	  	    while(true){
-						try{
-	  	    		//Wait for next message
-		  	   		final QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+						//Monitor bus
+	  	    	while(true){
+							try{
+	  	    			//Wait for next message
+		  	   			final QueueingConsumer.Delivery delivery = consumer.nextDelivery();
 		  	    
-		  	   		//Process each message in a new thread
-							new Thread(){
-								public void run(){
-	  							ObjectMapper mapper = new ObjectMapper();
-	  							String api_call, result, checkin_call;
+		  	  	 		//Process each message in a new thread
+								new Thread(){
+									public void run(){
+	  								ObjectMapper mapper = new ObjectMapper();
+	  								String api_call, result, checkin_call;
 
-									try{
-		  							JsonNode message = mapper.readValue(delivery.getBody(), JsonNode.class);
-		  							String polyglot_ip = message.get("polyglot_ip").asText();
-		  							int job_id = Integer.parseInt(message.get("job_id").asText());
-		  	    				String input = message.get("input").asText();
-		  	    				String application = message.get("application").asText();
-		  	    				String output_format = message.get("output_format").asText();
+										try{
+		  								JsonNode message = mapper.readValue(delivery.getBody(), JsonNode.class);
+		  								String polyglot_ip = message.get("polyglot_ip").asText();
+		  								int job_id = Integer.parseInt(message.get("job_id").asText());
+		  	   						String input = message.get("input").asText();
+		  	   						String application = message.get("application").asText();
+		  	   						String output_format = message.get("output_format").asText();
 		  	    	
-		  	    				//Execute job using Software Server REST interface (leverage implementation)
-		  	    				api_call = "http://localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + Utility.urlEncode(input);
-		  	    				result = Utility.readURL(api_call, "text/plain");
+		  	   		 				//Execute job using Software Server REST interface (leverage implementation)
+		  	   						api_call = "http://localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + Utility.urlEncode(input);
+		  	   						result = Utility.readURL(api_call, "text/plain");
 		  	    	
-		  	    				System.out.println("[AMQ]: " + api_call);
+		  	   						System.out.println("[AMQ]: " + api_call);
 		  	    						  	    	
-		  	    				while(!SoftwareServerUtility.existsURL(result)){
-		  	    					Utility.pause(1000);
-		  	    				}
+		  	   						while(!SoftwareServerUtility.existsURL(result)){
+		  	   							Utility.pause(1000);
+		  	   						}
 									  	    	
-		  	    				checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
-		  	    				System.out.println("[AMQ]: " + checkin_call);
+		  	   						checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
+		  	   						System.out.println("[AMQ]: " + checkin_call);
 		  	    	
-		  	    				if(Utility.readURL(checkin_call).equals("ok")){
-		  	    					channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-		  	    				}
-									}catch(Exception e) {e.printStackTrace();}
-								}
-							}.start();
-						}catch(Exception e) {e.printStackTrace();}
-	  	    }
-	  		}
-	  	}.start();
-	  }catch(Exception e) {e.printStackTrace();}	
+		  	   						if(Utility.readURL(checkin_call).equals("ok")){
+		  	   							channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+		  	   						}
+										}catch(Exception e) {e.printStackTrace();}
+									}
+								}.start();
+							}catch(Exception e){
+								e.printStackTrace();
+								break;
+							}
+	  	    	}
+	  			}catch(Exception e){
+						e.printStackTrace();
+						Utility.pause(1000);		//Wait a bit before reconnecting to rabbitmq
+					}
+				}
+			}
+		}.start();
 	}
 }

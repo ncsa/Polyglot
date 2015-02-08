@@ -519,7 +519,10 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
   	new Thread(){
   		public void run(){
   			while(true){
-  				discoveryAMQ();
+					try{	//If rabbitmq goes down it will throw an excpetion
+  					discoveryAMQ();
+					}catch(Exception e) {e.printStackTrace();}
+
   				Utility.pause(1000);
   			}
   		}
