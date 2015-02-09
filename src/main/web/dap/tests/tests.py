@@ -162,7 +162,7 @@ def convert(host, input_filename, output, output_path):
 		else:
 			output_filename = output_path + basename(result)
 
-		download_file(result, output_filename, 60)
+		download_file(result, output_filename, 90)
 	else:
 		output_filename = ""
 
@@ -173,12 +173,21 @@ def download_file(url, filename, wait):
 	if not filename:
 		filename = url.split('/')[-1]
 
-	r = requests.get(url, stream=True)
+	try:
+		r = requests.get(url, stream=True)
+	except:
+		e = sys.exc_info()[0]
+		print repr(e)
 
 	while(wait > 0 and r.status_code == 404):
 		time.sleep(1)
 		wait -= 1
-		r = requests.get(url, stream=True)
+
+		try:
+			r = requests.get(url, stream=True)
+		except:
+			e = sys.exc_info()[0]
+			print repr(e)
 
 	if(r.status_code != 404):	
 		with open(filename, 'wb') as f:
