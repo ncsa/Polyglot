@@ -465,6 +465,8 @@ public class SoftwareServerRESTUtilities
 	
 	/**
 	 * Have a Software Server listen to a RabbitMQ bus for jobs.
+	 * @param softwareserver_username the Software Server user to use
+	 * @param softwareserver_password the Software Server user password
 	 * @param softwareserver_port the Software Server port
 	 * @param softwareserver_applications the available applications
 	 * @param rabbitmq_uri the rabbitmq URI, overrides below parameters
@@ -473,11 +475,22 @@ public class SoftwareServerRESTUtilities
 	 * @param rabbitmq_username the rabbitmq user
 	 * @param rabbitmq_password the rabbitmq user password
 	 */
-	public static void rabbitMQHandler(int softwareserver_port, Vector<Application> softwareserver_applications, String rabbitmq_uri, String rabbitmq_server, String rabbitmq_vhost, String rabbitmq_username, String rabbitmq_password)
+	public static void rabbitMQHandler(final String softwareserver_username, final String softwareserver_password, int softwareserver_port, Vector<Application> softwareserver_applications, String rabbitmq_uri, String rabbitmq_server, String rabbitmq_vhost, String rabbitmq_username, String rabbitmq_password)
 	{
+		String softwareserver_authentication = "";
 		final int softwareserver_port_final = softwareserver_port;
 		final Vector<Application> softwareserver_applications_final = softwareserver_applications;
 	  final ConnectionFactory factory = new ConnectionFactory();
+
+		if(softwareserver_username != null && softwareserver_password != null){
+			Authenticator.setDefault (new Authenticator() {
+				protected PasswordAuthentication getPasswordAuthentication() {
+					return new PasswordAuthentication (softwareserver_username, softwareserver_password.toCharArray());
+				}
+			});	
+
+			softwareserver_authentication = softwareserver_username + ":" + softwareserver_password + "@";
+		}
 
 		if(rabbitmq_uri != null){
 			try{
@@ -492,6 +505,8 @@ public class SoftwareServerRESTUtilities
 	  		factory.setPassword(rabbitmq_password);
 	  	}
 		}
+
+		final String softwareserver_authentication_final = softwareserver_authentication;
 	
 		//Maintain connection to rabbitmq in a constantly running thread 
 		new Thread(){
@@ -539,7 +554,7 @@ public class SoftwareServerRESTUtilities
 		  	   						String output_format = message.get("output_format").asText();
 		  	    	
 		  	   		 				//Execute job using Software Server REST interface (leverage implementation)
-		  	   						api_call = "http://localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + Utility.urlEncode(input);
+		  	   						api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + Utility.urlEncode(input);
 		  	   						result = Utility.readURL(api_call, "text/plain");
 		  	    	
 		  	   						System.out.println("[AMQ]: " + api_call);

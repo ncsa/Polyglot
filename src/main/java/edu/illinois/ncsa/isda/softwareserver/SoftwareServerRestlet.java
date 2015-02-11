@@ -923,6 +923,7 @@ public class SoftwareServerRestlet extends ServerResource
 	 */
 	public static void main(String[] args)
 	{		
+	  String last_username = null, last_password = null;
 		int port = 8182;		
 		String distributed_server = null;
 		String rabbitmq_uri = null;
@@ -936,7 +937,6 @@ public class SoftwareServerRestlet extends ServerResource
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader("SoftwareServerRestlet.conf"));
 	    String line, key, value;
-	    String username, password;
 
 	    while((line=ins.readLine()) != null){
 	      if(line.contains("=")){
@@ -959,10 +959,10 @@ public class SoftwareServerRestlet extends ServerResource
 	          }else if(key.equals("RabbitMQPassword")){
 	          	rabbitmq_password = value;
 	          }else if(key.equals("Authentication")){
-	  	        username = value.substring(0, value.indexOf(':')).trim();
-	  	        password = value.substring(value.indexOf(':')+1).trim();
-							System.out.println("Adding user: " + username);
-	  	        accounts.put(username, password);	
+	  	        last_username = value.substring(0, value.indexOf(':')).trim();
+	  	        last_password = value.substring(value.indexOf(':')+1).trim();
+							System.out.println("Adding user: " + last_username);
+	  	        accounts.put(last_username, last_password);	
 	          }else if(key.equals("EnableAdministrators")){
 	          	ADMINISTRATORS_ENABLED = Boolean.valueOf(value);
 	          }else if(key.equals("DownloadMethod")){
@@ -1071,7 +1071,7 @@ public class SoftwareServerRestlet extends ServerResource
 	 	
 	 	//Connect to RabbitMQ bus
 	 	if(rabbitmq_uri != null || rabbitmq_server != null){
-	 		SoftwareServerRESTUtilities.rabbitMQHandler(port, applications, rabbitmq_uri, rabbitmq_server, rabbitmq_vhost, rabbitmq_username, rabbitmq_password);
+	 		SoftwareServerRESTUtilities.rabbitMQHandler(last_username, last_password, port, applications, rabbitmq_uri, rabbitmq_server, rabbitmq_vhost, rabbitmq_username, rabbitmq_password);
 		}
 	}
 }

@@ -389,7 +389,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 			    	}
 		    	}
 	    	}catch(NumberFormatException e) {
-					e.printStackTrace();
+					//e.printStackTrace();
 				}
 	    }
 	  }
