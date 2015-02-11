@@ -9,6 +9,7 @@ import java.nio.channels.*;
 import java.net.*;
 import java.lang.*;
 import java.util.*;
+import java.util.concurrent.*;
 import javax.servlet.*;
 import org.restlet.*;
 import org.restlet.resource.*;
@@ -18,6 +19,8 @@ import org.restlet.routing.*;
 import org.restlet.security.*;
 import org.restlet.ext.fileupload.*;
 import org.restlet.ext.json.*;
+import org.restlet.engine.header.*;
+import org.restlet.util.*;
 import org.json.*;
 import org.restlet.service.*;
 import org.apache.commons.fileupload.*;
@@ -99,6 +102,41 @@ public class PolyglotRestlet extends ServerResource
 	{
 		return getForm(false, null);
 	}	
+
+	/**
+	 * Get message headers.
+	 * @param message the message
+	 * @return the headers
+	 */	
+	@SuppressWarnings("unchecked")
+	static Series<Header> getMessageHeaders(Message message)
+	{
+		String HEADERS_KEY = "org.restlet.http.headers";
+		ConcurrentMap<String,Object> attrs = message.getAttributes();
+		Series<Header> headers = (Series<Header>)attrs.get(HEADERS_KEY);
+
+		if(headers == null){
+			headers = new Series<Header>(Header.class);
+			Series<Header> prev = (Series<Header>)attrs.putIfAbsent(HEADERS_KEY, headers);
+			if(prev != null) headers = prev;
+		}
+
+		return headers;
+	}
+
+	/**
+	 * Enable CORS.
+	 * @param entity a representation
+	 */
+	@Options
+	public void doOptions(Representation entity)
+	{
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Origin", "*"); 
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Methods", "POST,OPTIONS");
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Headers", "Content-Type"); 
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Credentials", "true"); 
+		getMessageHeaders(getResponse()).add("Access-Control-Max-Age", "60"); 
+	}
 	
 	/**
 	 * Handle HTTP GET requests.
@@ -118,6 +156,14 @@ public class PolyglotRestlet extends ServerResource
 		Form form;
 		Parameter p;
 		
+		//Allow Cross origin
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Origin", "*"); 
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Methods", "POST,GET,OPTIONS");
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Headers", "x-requested-with,Content-Type"); 
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Credentials", "true"); 
+		getMessageHeaders(getResponse()).add("Access-Control-Max-Age", "60"); 
+	
+		//Parse endpoint	
 		if(part0.equals("convert")){
 			if(part1.isEmpty()){
 				if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
@@ -598,6 +644,7 @@ public class PolyglotRestlet extends ServerResource
 	          }else if(key.equals("Authentication")){
 	  	        username = value.substring(0, value.indexOf(':')).trim();
 	  	        password = value.substring(value.indexOf(':')+1).trim();
+							System.out.println("Adding user: " + username);
 	  	        accounts.put(username, password);
 	          }
 	        }

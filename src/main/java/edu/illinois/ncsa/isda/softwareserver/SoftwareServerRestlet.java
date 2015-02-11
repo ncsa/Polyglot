@@ -5,6 +5,7 @@ import edu.illinois.ncsa.isda.softwareserver.SoftwareServerRESTUtilities.*;
 import kgm.image.ImageUtility;
 import kgm.utility.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.io.*;
 import java.nio.*;
 import java.nio.channels.*;
@@ -22,6 +23,8 @@ import org.restlet.security.*;
 import org.restlet.ext.fileupload.*;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.service.*;
+import org.restlet.engine.header.*;
+import org.restlet.util.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
 import org.apache.commons.io.*;
@@ -405,10 +408,45 @@ public class SoftwareServerRestlet extends ServerResource
 		return false;
 	}
 
-	@Get
+	/**
+	 * Get message headers.
+	 * @param message the message
+	 * @return the headers
+	 */	
+	@SuppressWarnings("unchecked")
+	static Series<Header> getMessageHeaders(Message message)
+	{
+		String HEADERS_KEY = "org.restlet.http.headers";
+		ConcurrentMap<String,Object> attrs = message.getAttributes();
+		Series<Header> headers = (Series<Header>)attrs.get(HEADERS_KEY);
+
+		if(headers == null){
+			headers = new Series<Header>(Header.class);
+			Series<Header> prev = (Series<Header>)attrs.putIfAbsent(HEADERS_KEY, headers);
+			if(prev != null) headers = prev;
+		}
+
+		return headers;
+	}
+
+	/**
+	 * Handle HTTP GET requests.
+	 * @return a response
+	 */
+	@Options
+	public void doOptions(Representation entity)
+	{
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Origin", "*"); 
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Methods", "POST,OPTIONS");
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Headers", "Content-Type"); 
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Credentials", "true"); 
+		getMessageHeaders(getResponse()).add("Access-Control-Max-Age", "60"); 
+	}
+
 	/**
 	 * Handle HTTP GET requests.
 	 */
+	@Get
 	public Representation httpGetHandler()
 	{
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
@@ -423,7 +461,15 @@ public class SoftwareServerRestlet extends ServerResource
 		Form form;
 		Parameter p;
 		int session;
-				
+
+		//Allow Cross origin
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Origin", "*"); 
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Methods", "POST,GET,OPTIONS");
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Headers", "x-requested-with,Content-Type"); 
+		getMessageHeaders(getResponse()).add("Access-Control-Allow-Credentials", "true"); 
+		getMessageHeaders(getResponse()).add("Access-Control-Max-Age", "60"); 
+
+		//Parse endpoint
 		if(part0.isEmpty()){
 			return new StringRepresentation(getApplicationStack(), MediaType.TEXT_HTML);
 		}else if(part0.equals("software")){
@@ -915,7 +961,8 @@ public class SoftwareServerRestlet extends ServerResource
 	          }else if(key.equals("Authentication")){
 	  	        username = value.substring(0, value.indexOf(':')).trim();
 	  	        password = value.substring(value.indexOf(':')+1).trim();
-	  	        accounts.put(username, password);
+							System.out.println("Adding user: " + username);
+	  	        accounts.put(username, password);	
 	          }else if(key.equals("EnableAdministrators")){
 	          	ADMINISTRATORS_ENABLED = Boolean.valueOf(value);
 	          }else if(key.equals("DownloadMethod")){

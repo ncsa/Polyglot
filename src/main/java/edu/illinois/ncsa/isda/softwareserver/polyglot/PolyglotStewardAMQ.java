@@ -7,6 +7,8 @@ import kgm.utility.*;
 import java.io.*;
 import java.net.InetAddress;
 import java.net.URLDecoder;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.http.*;
@@ -31,6 +33,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	private static String rabbitmq_vhost = "/";
 	private static String rabbitmq_username = null;
 	private static String rabbitmq_password = null;
+	private static String softwareserver_authentication = "";
 	private int heartbeat;
 	private TreeMap<String,Long> software_servers = new TreeMap<String,Long>();
 	private IOGraph<String,SoftwareServerApplication> iograph = new IOGraph<String,SoftwareServerApplication>();
@@ -114,7 +117,18 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	        		rabbitmq_username = value;
 	        	}else if(key.equals("RabbitMQPassword")){
 	        		rabbitmq_password = value;
-	        	}else if(key.equals("Heartbeat")){
+	        	}else if(key.equals("SoftwareServerAuthentication")){
+							softwareserver_authentication = value + "@";
+	  	        final String username = value.substring(0, value.indexOf(':')).trim();
+	  	        final String password = value.substring(value.indexOf(':')+1).trim();
+							System.out.println("Software Server authentication: " + username);
+							
+							Authenticator.setDefault (new Authenticator() {
+								protected PasswordAuthentication getPasswordAuthentication() {
+									return new PasswordAuthentication (username, password.toCharArray());
+								}
+							});	
+						}else if(key.equals("Heartbeat")){
 	        		heartbeat = Integer.valueOf(value);
 	        	}
 	        }
@@ -360,7 +374,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	    	host = queue.get("consumer_details").get(j).get("channel_details").get("peer_host").asText();
 	    	
 	    	try{
-		    	startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + host + ":8182/alive"));
+		    	startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
 			    //System.out.println(name + ", " + host + ", " + startup_time);
 
 		    	synchronized(software_servers){
@@ -369,12 +383,14 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 			    		UPDATED = true;
 
 			    		//Get applications on server
-			    		applications = queryEndpoint("http://" + host + ":8182/applications");
+			    		applications = queryEndpoint("http://" + softwareserver_authentication + host + ":8182/applications");
 			    		iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
 			    		software_servers.put(host, startup_time);
 			    	}
 		    	}
-	    	}catch(NumberFormatException e) {}
+	    	}catch(NumberFormatException e) {
+					e.printStackTrace();
+				}
 	    }
 	  }
 		
@@ -398,7 +414,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		for(Iterator<String> itr=hosts.iterator(); itr.hasNext();){
 	  	try{
 	  		host = itr.next();
-	    	startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + host + ":8182/alive"));
+	    	startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
 	  	}catch(NumberFormatException e){
 	  		synchronized(software_servers){
 		  		System.out.println("[Steward]: Dropping " + host);
