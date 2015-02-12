@@ -124,6 +124,18 @@
   		<artifactId>org.restlet.ext.json</artifactId>
   		<version>2.2.1</version>
   	</dependency>
+		<!--
+		<dependency>  
+			<groupId>org.restlet.jse</groupId>  
+			<artifactId>org.restlet.ext.simple</artifactId>  
+			<version>2.2.1</version>  
+		</dependency>
+		<dependency>  
+			<groupId>org.restlet.jse</groupId>  
+			<artifactId>org.restlet.ext.ssl</artifactId>  
+			<version>2.1.7</version>  
+		</dependency>
+		-->
   	<!--
   	<dependency>
   		<groupId>org.restlet.jse</groupId>

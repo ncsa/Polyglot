@@ -36,6 +36,7 @@ public class PolyglotRestlet extends ServerResource
 {
   private static Polyglot polyglot = new PolyglotStewardAMQ(false);
 	private static int steward_port = -1;
+	private static String context = "";
 	private static int port = 8184;
 	private static boolean RETURN_URL = false;
 	private static boolean MONGO_LOGGING = false;
@@ -147,6 +148,8 @@ public class PolyglotRestlet extends ServerResource
 	{
 		RequestInformation request;
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
+		if(parts.size() > 0 && parts.get(0).equals(context)) parts.remove(0);
+
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
@@ -418,6 +421,8 @@ public class PolyglotRestlet extends ServerResource
 	{
 		RequestInformation request;
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
+		if(parts.size() > 0 && parts.get(0).equals(context)) parts.remove(0);
+
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
@@ -609,6 +614,8 @@ public class PolyglotRestlet extends ServerResource
 	        		//Create needed folders
 	        		if(!Utility.exists(temp_path)) new File(temp_path).mkdir();
 	        		if(!Utility.exists(public_path)) new File(public_path).mkdir();
+	        	}else if(key.equals("Context")){
+	        		context = value;
 	        	}else if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("StewardPort") && polyglot instanceof PolyglotSteward){
@@ -697,7 +704,7 @@ public class PolyglotRestlet extends ServerResource
 			component.getServers().add(Protocol.HTTP, port);
 			component.getClients().add(Protocol.HTTP);
 			component.getLogService().setEnabled(false);
-			
+
 			org.restlet.Application application = new org.restlet.Application(){
 				@Override
 				public Restlet createInboundRoot(){

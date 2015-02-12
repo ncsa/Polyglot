@@ -48,6 +48,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static TreeMap<String,Application> alias_map = new TreeMap<String,Application>();
 	private static long initialization_time = -1;
 	private static String public_path = "./";
+	private static String context = "";
 	private static boolean ADMINISTRATORS_ENABLED = false;
 	private static boolean ATOMIC_EXECUTION = true;
 	private static String download_method = "";
@@ -450,6 +451,8 @@ public class SoftwareServerRestlet extends ServerResource
 	public Representation httpGetHandler()
 	{
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
+		if(parts.size() > 0 && parts.get(0).equals(context)) parts.remove(0);
+
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
@@ -715,6 +718,8 @@ public class SoftwareServerRestlet extends ServerResource
 	public Representation httpPostHandler(Representation entity)
 	{
 		Vector<String> parts = Utility.split(getReference().getRemainingPart(), '/', true);
+		if(parts.size() > 0 && parts.get(0).equals(context)) parts.remove(0);
+
 		String part0 = (parts.size() > 0) ? parts.get(0) : "";
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
@@ -944,7 +949,9 @@ public class SoftwareServerRestlet extends ServerResource
 	        value = line.substring(line.indexOf('=')+1).trim();
 	        
 	        if(key.charAt(0) != '#'){
-	        	if(key.equals("Port")){
+	        	if(key.equals("Context")){
+	        		context = value;
+	        	}else if(key.equals("Port")){
 	        		port = Integer.valueOf(value);
 	          }else if(key.equals("DistributedServer")){
 	          	distributed_server = value;
