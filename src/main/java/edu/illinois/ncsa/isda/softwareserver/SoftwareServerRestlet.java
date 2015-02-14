@@ -24,6 +24,7 @@ import org.restlet.ext.fileupload.*;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.service.*;
 import org.restlet.engine.header.*;
+import org.restlet.engine.application.*;
 import org.restlet.util.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
@@ -49,6 +50,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static long initialization_time = -1;
 	private static String public_path = "./";
 	private static String context = "";
+	private static boolean GUESTS_ENABLED = false;
 	private static boolean ADMINISTRATORS_ENABLED = false;
 	private static boolean ATOMIC_EXECUTION = true;
 	private static String download_method = "";
@@ -346,7 +348,14 @@ public class SoftwareServerRestlet extends ServerResource
 				//Attach directory as a new endpoint
 				Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + Utility.getFilename(result)));
 				directory.setListingAllowed(true);
-				component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", directory);
+				//component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", directory);
+
+				//Add CORS filter
+  			CorsFilter corsfilter = new CorsFilter(getContext(), directory);
+  			corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+  			corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+  			corsfilter.setAllowedCredentials(true);
+				component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", corsfilter);
 			}
 		}
 	}
@@ -392,56 +401,22 @@ public class SoftwareServerRestlet extends ServerResource
 	}
 	
 	/**
-	 * Check if the given request is authenticated by an administrator.
+	 * Check if the given request is authenticated by the specified user.
 	 * @param request the request
-	 * @return true if authenticated as an administrator
+	 * @param user the user to check for
+	 * @return true if authenticated as a the given user
 	 */
-	private boolean isAdministrator(Request request)
+	private boolean isUser(Request request, String user)
 	{		
 		if(request.getChallengeResponse() != null){
 			String identifier = request.getChallengeResponse().getIdentifier();
 			
-			if(identifier != null && identifier.toLowerCase().startsWith("admin")){
+			if(identifier != null && identifier.toLowerCase().startsWith(user)){
 				return true;
 			}
 		}
 		
 		return false;
-	}
-
-	/**
-	 * Get message headers.
-	 * @param message the message
-	 * @return the headers
-	 */	
-	@SuppressWarnings("unchecked")
-	static Series<Header> getMessageHeaders(Message message)
-	{
-		String HEADERS_KEY = "org.restlet.http.headers";
-		ConcurrentMap<String,Object> attrs = message.getAttributes();
-		Series<Header> headers = (Series<Header>)attrs.get(HEADERS_KEY);
-
-		if(headers == null){
-			headers = new Series<Header>(Header.class);
-			Series<Header> prev = (Series<Header>)attrs.putIfAbsent(HEADERS_KEY, headers);
-			if(prev != null) headers = prev;
-		}
-
-		return headers;
-	}
-
-	/**
-	 * Handle HTTP GET requests.
-	 * @return a response
-	 */
-	@Options
-	public void doOptions(Representation entity)
-	{
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Origin", "*"); 
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Methods", "POST,OPTIONS");
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Headers", "Content-Type"); 
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Credentials", "true"); 
-		getMessageHeaders(getResponse()).add("Access-Control-Max-Age", "60"); 
 	}
 
 	/**
@@ -464,14 +439,7 @@ public class SoftwareServerRestlet extends ServerResource
 		Form form;
 		Parameter p;
 		int session;
-
-		//Allow Cross origin
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Origin", "*"); 
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Methods", "POST,GET,OPTIONS");
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Headers", "x-requested-with,Content-Type"); 
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Credentials", "true"); 
-		getMessageHeaders(getResponse()).add("Access-Control-Max-Age", "60"); 
-
+		
 		//Parse endpoint
 		if(part0.isEmpty()){
 			return new StringRepresentation(getApplicationStack(), MediaType.TEXT_HTML);
@@ -505,6 +473,8 @@ public class SoftwareServerRestlet extends ServerResource
 							}else{
 								return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(getApplicationTaskInputs(part1, part2), Utility.endSlash(getReference().getBaseRef().toString()) + "form/post?application=" + part1, false, "software/" + part1 + "/" + part2 + "/" + part3), MediaType.TEXT_HTML);
 							}
+						}else if(GUESTS_ENABLED && isUser(getRequest(), "guest")){
+							return new StringRepresentation("error: guest user can not submit jobs", MediaType.TEXT_PLAIN);
 						}else{
 							application_alias = part1;
 							task = part2;
@@ -523,6 +493,8 @@ public class SoftwareServerRestlet extends ServerResource
 								session = server.getSession();
 								result = Utility.endSlash(localhost) + "file/" + session + "_" + Utility.getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
 							}
+
+							if(GUESTS_ENABLED) result = result.substring(0, 7) + "guest:guest@" + result.substring(7);
 
 							executeTaskLater(session, application_alias, task, file, format);
 							
@@ -598,7 +570,7 @@ public class SoftwareServerRestlet extends ServerResource
 						return file_representation;
 					}
 				}else{
-					setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+					setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
 					return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 				}
 			}else{
@@ -692,7 +664,7 @@ public class SoftwareServerRestlet extends ServerResource
 			return new StringRepresentation("" + server.getKillCount(), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("completed_tasks")){
 			return new StringRepresentation("" + server.getCompletedTaskCount(), MediaType.TEXT_PLAIN);
-		}else if(ADMINISTRATORS_ENABLED && isAdministrator(getRequest())){
+		}else if(ADMINISTRATORS_ENABLED && isUser(getRequest(), "admin")){
 			if(part0.equals("screen")){
 				ImageUtility.save(public_path + "screen.jpg", ImageUtility.getScreen());
 				return new FileRepresentation(new File(public_path + "screen.jpg"), MediaType.IMAGE_JPEG);
@@ -970,6 +942,10 @@ public class SoftwareServerRestlet extends ServerResource
 	  	        last_password = value.substring(value.indexOf(':')+1).trim();
 							System.out.println("Adding user: " + last_username);
 	  	        accounts.put(last_username, last_password);	
+	          }else if(key.equals("EnableGuests")){
+							System.out.println("Adding user: guest");
+							accounts.put("guest", "guest");
+	          	GUESTS_ENABLED = Boolean.valueOf(value);
 	          }else if(key.equals("EnableAdministrators")){
 	          	ADMINISTRATORS_ENABLED = Boolean.valueOf(value);
 	          }else if(key.equals("DownloadMethod")){
@@ -1015,8 +991,24 @@ public class SoftwareServerRestlet extends ServerResource
 							//System.out.println("[REST]: Re-attaching " + files[i].getName());
 							Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + files[i].getName()));
 							directory.setListingAllowed(true);
-							component.getDefaultHost().attach("/file/" + files[i].getName() + "/", directory);
+							//component.getDefaultHost().attach("/file/" + files[i].getName() + "/", directory);
+
+							//Add CORS filter
+  						CorsFilter corsfilter = new CorsFilter(getContext(), directory);
+  						corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+  						corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+  						corsfilter.setAllowedCredentials(true);
+							component.getDefaultHost().attach("/file/" + files[i].getName() + "/", corsfilter);
 						}
+					}
+
+					if(true){ 	//Add a CORS filter to allow cross-domain requests
+  					CorsFilter corsfilter = new CorsFilter(getContext(), router);
+  					corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+  					corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+  					corsfilter.setAllowedCredentials(false);
+					
+						return corsfilter;
 					}
 
 					return router;

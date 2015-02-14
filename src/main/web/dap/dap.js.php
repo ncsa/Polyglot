@@ -14,13 +14,69 @@ window.onload = function() {
 	addGraphic();
 
 	$("a[dap]").each(function() {
-		this.href = dap + ":8184/convert/" + $(this).attr('dap') + "/" + encodeURIComponent(this.href);
+		//this.href = dap + ":8184/convert/" + $(this).attr('dap') + "/" + encodeURIComponent(this.href);
+		$(this).data('href', this.href);
+		$(this).data('output', $(this).attr('dap'));
+		$(this).attr('href', '#');
+		$(this).on('click', convert)
 	});
 	
 	$("img[dap]").each(function() {
-		this.src = dap + ":8184/convert/" + $(this).attr('dap') + "/" + encodeURIComponent(this.src);
+		//this.src = dap + ":8184/convert/" + $(this).attr('dap') + "/" + encodeURIComponent(this.src);
+	
+		console.log(this.src + ' -> ' + $(this).attr('dap'));
+		var img = this;
+
+		$.ajax({
+    	headers: {Accept: "text/plain"},
+			url: dap + ':8184/convert/' + $(this).attr('dap') + '/' + encodeURIComponent(this.src)
+		}).then(function(data) {
+			reload(img, data);
+		});
 	});
 };
+
+//Issue a conversion request
+function convert() {
+	console.log($(this).data('href') + ' -> ' + $(this).data('output'));
+
+	$.ajax({
+    headers: {Accept: "text/plain"},
+		url: dap + ':8184/convert/' + $(this).data('output') + '/' + encodeURIComponent($(this).data('href'))
+	}).then(function(data) {
+		redirect(data);
+	});
+}
+
+//Redirect to the given url once it exists
+function redirect(url) {
+	$.ajax({
+		type: 'HEAD',
+   	url: url,
+		success: function() {
+			window.location.href = url;
+		},
+		error: function() {
+			setTimeout(function() {redirect(url);}, 1000);
+		}
+	});
+}
+
+//Redirect the image once it source exists
+function reload(img, url) {
+	//console.log(img.src + ', ' + url);
+
+	$.ajax({
+		type: 'HEAD',
+   	url: url,
+		success: function() {
+			img.src = url;
+		},
+		error: function() {
+			setTimeout(function() {reload(img, url);}, 1000);
+		}
+	});
+}
 
 //Brown Dog graphic
 function addGraphic() {

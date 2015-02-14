@@ -1,5 +1,5 @@
 //Set DAP server
-protocol = 'https://';
+protocol = 'http://';
 dap = "<?php echo $_SERVER['SERVER_NAME']; ?>";
 console.log(dap);
 
@@ -41,9 +41,12 @@ function addMenuToLinks() {
 		if(input){
 			console.log('Input: ' + input);
 
-			$.getJSON(protocol + dap + '/dap/bookmarklet/outputs.php?input=' + input, function(outputs) {
-				if(outputs.length > 0) {
-					console.log(outputs);
+			//$.getJSON(protocol + dap + '/dap/bookmarklet/outputs.php?input=' + input, function(outputs) {
+			$.ajax({url: protocol + dap + ':8184/inputs/' + input}).done(function(outputs) {
+				if(outputs) {
+					outputs = outputs.split("\n");
+					outputs = outputs.filter(function(v){return v!==''});
+					//console.log(outputs);
 
 					//Replace link with a menu
 					var new_link = $('<ul/>').addClass('menu');
@@ -60,9 +63,13 @@ function addMenuToLinks() {
 						var li = $('<li/>')
 							.on('DOMMouseScroll', scrollMenu)
 							.appendTo(menu_list);
-
+							
 						var a = $('<a/>')
-							.attr('href', 'http://' + dap + ':8184/convert/' + outputs[i] + '/' + encodeURIComponent(href))
+						 	//.attr('href', 'http://' + dap + ':8184/convert/' + outputs[i] + '/' + encodeURIComponent(href))
+							.attr('href', '#')
+							.data('href', href)
+							.data('output', outputs[i])
+							.on('click', convert)
 							.text(outputs[i])
 							.appendTo(li);
 					});
@@ -73,6 +80,33 @@ function addMenuToLinks() {
 		}
 	});
 };
+
+//Issue a conversion request
+function convert() {
+	console.log($(this).data('href') + ' -> ' + $(this).data('output'));
+
+	$.ajax({
+    headers: {Accept: "text/plain"},
+		url: protocol + dap + ':8184/convert/' + $(this).data('output') + '/' + encodeURIComponent($(this).data('href'))
+	}).then(function(data) {
+		redirect(data);
+	});
+}
+
+//Redirect to the given url once it exists
+function redirect(url) {
+	$.ajax({
+		//xhrFields: { withCredentials: true },
+		type: 'HEAD',
+   	url: url,
+		success: function() {
+			window.location.href = url;
+		},
+		error: function() {
+			setTimeout(function() {redirect(url);}, 1000);
+		}
+	});
+}
 
 function openMenu() {
 	$(this).find('ul').css('visibility', 'visible');	
@@ -92,6 +126,7 @@ function scrollMenu(event) {
 	event.originalEvent.preventDefault();
 }
 
+//Brown Dog graph
 function addGraphic() {
 	//Preload images
 	//$.get(protocol + dap + '/dap/images/browndog-small-transparent.gif');
@@ -103,7 +138,7 @@ function addGraphic() {
 		.attr('id', 'graphic')
 		.css('position', 'absolute')
 		.css('left', '0px')
-		.css('bottom', '25px')
+		.css('bottom', '25px');
 	$("body").append(graphic);
 
 	setTimeout(moveGraphicRight, 10);

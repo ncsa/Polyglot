@@ -54,10 +54,11 @@ public class SoftwareServerUtility
   public static boolean existsURL(String url)
   {
     try{
-      HttpURLConnection.setFollowRedirects(false);
+      //HttpURLConnection.setFollowRedirects(false);
+      HttpURLConnection.setFollowRedirects(true);
       HttpURLConnection connection = (HttpURLConnection)new URL(url).openConnection();
       connection.setRequestMethod("HEAD");
- 
+
       return (connection.getResponseCode() == HttpURLConnection.HTTP_OK || connection.getResponseCode() == HttpURLConnection.HTTP_NO_CONTENT);
     }catch(Exception e){
       e.printStackTrace();

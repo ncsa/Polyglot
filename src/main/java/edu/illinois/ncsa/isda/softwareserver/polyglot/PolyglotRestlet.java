@@ -20,6 +20,7 @@ import org.restlet.security.*;
 import org.restlet.ext.fileupload.*;
 import org.restlet.ext.json.*;
 import org.restlet.engine.header.*;
+import org.restlet.engine.application.*;
 import org.restlet.util.*;
 import org.json.*;
 import org.restlet.service.*;
@@ -105,41 +106,6 @@ public class PolyglotRestlet extends ServerResource
 	}	
 
 	/**
-	 * Get message headers.
-	 * @param message the message
-	 * @return the headers
-	 */	
-	@SuppressWarnings("unchecked")
-	static Series<Header> getMessageHeaders(Message message)
-	{
-		String HEADERS_KEY = "org.restlet.http.headers";
-		ConcurrentMap<String,Object> attrs = message.getAttributes();
-		Series<Header> headers = (Series<Header>)attrs.get(HEADERS_KEY);
-
-		if(headers == null){
-			headers = new Series<Header>(Header.class);
-			Series<Header> prev = (Series<Header>)attrs.putIfAbsent(HEADERS_KEY, headers);
-			if(prev != null) headers = prev;
-		}
-
-		return headers;
-	}
-
-	/**
-	 * Enable CORS.
-	 * @param entity a representation
-	 */
-	@Options
-	public void doOptions(Representation entity)
-	{
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Origin", "*"); 
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Methods", "POST,OPTIONS");
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Headers", "Content-Type"); 
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Credentials", "true"); 
-		getMessageHeaders(getResponse()).add("Access-Control-Max-Age", "60"); 
-	}
-	
-	/**
 	 * Handle HTTP GET requests.
 	 * @return a response
 	 */
@@ -158,14 +124,7 @@ public class PolyglotRestlet extends ServerResource
 		String buffer;
 		Form form;
 		Parameter p;
-		
-		//Allow Cross origin
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Origin", "*"); 
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Methods", "POST,GET,OPTIONS");
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Headers", "x-requested-with,Content-Type"); 
-		getMessageHeaders(getResponse()).add("Access-Control-Allow-Credentials", "true"); 
-		getMessageHeaders(getResponse()).add("Access-Control-Max-Age", "60"); 
-	
+
 		//Parse endpoint	
 		if(part0.equals("convert")){
 			if(part1.isEmpty()){
@@ -225,7 +184,7 @@ public class PolyglotRestlet extends ServerResource
 						result_file = polyglot.convert(file, public_path, output);
 
 						if(result_file.equals("404")){
-							setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+							setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
 							return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 						}
 					}
@@ -264,7 +223,7 @@ public class PolyglotRestlet extends ServerResource
 							
 							return file_representation;
 						}else{
-							setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+							setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
 							return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 						}
 					}
@@ -314,11 +273,11 @@ public class PolyglotRestlet extends ServerResource
 							this.getResponse().redirectTemporary(result_url);
 							return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
 						}else{
-							setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+							setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
 							return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 						}
 					}else{
-						setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+						setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
 						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 					}
 				}
@@ -530,7 +489,7 @@ public class PolyglotRestlet extends ServerResource
 						
 						return file_representation;
 					}else{
-						setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+						setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
 						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 					}
 				}
@@ -710,6 +669,16 @@ public class PolyglotRestlet extends ServerResource
 				public Restlet createInboundRoot(){
 					Router router = new Router(getContext());
 					router.attachDefault(PolyglotRestlet.class);
+					
+					if(true){ 	//Add a CORS filter to allow cross-domain requests
+  					CorsFilter corsfilter = new CorsFilter(getContext(), router);
+  					corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+  					corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+  					corsfilter.setAllowedCredentials(true);
+					
+						return corsfilter;
+					}
+
 					return router;
 				}
 			};

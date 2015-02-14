@@ -562,8 +562,8 @@ public class SoftwareServerRESTUtilities
 		  	   						while(!SoftwareServerUtility.existsURL(result)){
 		  	   							Utility.pause(1000);
 		  	   						}
-									  	    	
-		  	   						checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
+
+		  	   						checkin_call = "http://" + softwareserver_authentication_final + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
 		  	   						System.out.println("[AMQ]: " + checkin_call);
 		  	    	
 		  	   						if(Utility.readURL(checkin_call).equals("ok")){

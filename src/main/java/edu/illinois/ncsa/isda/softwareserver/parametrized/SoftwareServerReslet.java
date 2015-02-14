@@ -1193,7 +1193,7 @@ public class SoftwareServerReslet extends ServerResource
 				if(Utility.exists(file)){
 					return new FileRepresentation(file, MediaType.MULTIPART_ALL);
 				}else{
-					setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+					setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
 					return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 				}
 			}else{
