@@ -95,15 +95,25 @@ function convert() {
 
 //Redirect to the given url once it exists
 function redirect(url) {
+	//console.log('Redirecting: ' + url);
+
 	$.ajax({
 		//xhrFields: { withCredentials: true },
 		type: 'HEAD',
    	url: url,
 		success: function() {
+			console.log('Redirected: ' + url);
 			window.location.href = url;
 		},
-		error: function() {
-			setTimeout(function() {redirect(url);}, 1000);
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log('Status: ' + jqXHR.status + ': ' + errorThrown);
+
+			if(jqXHR.status == 0) {
+				console.log('Redirected: ' + url);
+				window.location.href = url;
+			}else{
+				setTimeout(function() {redirect(url);}, 1000);
+			}
 		}
 	});
 }
