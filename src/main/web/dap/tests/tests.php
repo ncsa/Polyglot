@@ -51,6 +51,7 @@
           } else {
             $comment = $comment . "<br/>" . substr($line, 1);
           }
+
           next;
         } else {
 					$parts = explode(' ', $line);
@@ -72,6 +73,7 @@
 						echo "<td align=\"center\"><input type=\"button\" class=\"btn btn-xs btn-primary\" value=\"Run\" onclick=\"test(" . $count . ",'" . $input_filename . "','" . $output . "', false)\"></td>";
 						echo "</tr>\n";
 					}
+
           $comment = "";
 				}
 			}
