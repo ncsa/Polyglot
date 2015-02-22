@@ -152,7 +152,12 @@ def convert(host, input_filename, output, output_path):
 	"""Pass file to Polyglot Steward."""
 	headers = {'Accept': 'text/plain'}
 	api_call = 'http://' + host + ':8184/convert/' + output + '/' + urllib.quote_plus(input_filename)
-	r = requests.get(api_call, headers=headers)
+
+	try:
+		r = requests.get(api_call, headers=headers)
+	except:
+		e = sys.exc_info()[0]
+		print repr(e)
 
 	if(r.status_code != 404):
 		result = r.text
