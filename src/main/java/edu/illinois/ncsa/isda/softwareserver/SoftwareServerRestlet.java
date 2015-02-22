@@ -53,6 +53,8 @@ public class SoftwareServerRestlet extends ServerResource
 	private static boolean GUESTS_ENABLED = false;
 	private static boolean ADMINISTRATORS_ENABLED = false;
 	private static boolean ATOMIC_EXECUTION = true;
+	private static boolean USE_OPENSTACK_PUBLIC_IP = false;
+	private static final String OPENSTACK_PUBLIC_IPV4_URL = "http://169.254.169.254/2009-04-04/meta-data/public-ipv4";
 	private static String download_method = "";
 	private static Component component;
 	
@@ -482,7 +484,13 @@ public class SoftwareServerRestlet extends ServerResource
 							file = URLDecoder.decode(part4);
 							session = -1;
 							//localhost = getReference().getBaseRef().toString();
-							localhost = "http://" + Utility.getLocalHostIP() + ":8182";
+							if (USE_OPENSTACK_PUBLIC_IP) {
+							    String publicIp = Utility.readURL(OPENSTACK_PUBLIC_IPV4_URL, "text/plain");
+							    localhost = "http://" + publicIp + ":8182";
+							} else {
+							    localhost = "http://" + Utility.getLocalHostIP() + ":8182";
+							}
+							System.out.println("[localhost]: localhost = " + localhost);
 							MULTIPLE_EXTENSIONS = alias_map.get(application_alias).supportedInput(Utility.getFilenameExtension(Utility.getFilename(file), true));
 	
 							//if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "/file/")){		//Locally cached files already have session ids
@@ -952,6 +960,9 @@ public class SoftwareServerRestlet extends ServerResource
 	          	download_method = value;
 	          }else if(key.equals("AtomicExecution")){
 	          	ATOMIC_EXECUTION = Boolean.valueOf(value);
+	          }else if(key.equals("UseOpenStackPublicIP")){
+                        USE_OPENSTACK_PUBLIC_IP = Boolean.valueOf(value);
+                        System.out.println("[localhost]: USE_OPENSTACK_PUBLIC_IP = " + USE_OPENSTACK_PUBLIC_IP);
 	          }
 	        }
 	      }
