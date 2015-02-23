@@ -55,6 +55,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static boolean ATOMIC_EXECUTION = true;
 	private static boolean USE_OPENSTACK_PUBLIC_IP = false;
 	private static String OPENSTACK_PUBLIC_IPV4_URL = "";// Default value is "http://169.254.169.254/2009-04-04/meta-data/public-ipv4".
+	private static String HTTP_GETTER_LOCALHOST = "";
 	private static String download_method = "";
 	private static Component component;
 	
@@ -484,13 +485,7 @@ public class SoftwareServerRestlet extends ServerResource
 							file = URLDecoder.decode(part4);
 							session = -1;
 							//localhost = getReference().getBaseRef().toString();
-							if (USE_OPENSTACK_PUBLIC_IP) {
-							    String publicIp = Utility.readURL(OPENSTACK_PUBLIC_IPV4_URL, "text/plain");
-							    localhost = "http://" + publicIp + ":8182";
-							} else {
-							    localhost = "http://" + Utility.getLocalHostIP() + ":8182";
-							}
-							System.out.println("[localhost]: localhost = " + localhost);
+							localhost = HTTP_GETTER_LOCALHOST;
 							MULTIPLE_EXTENSIONS = alias_map.get(application_alias).supportedInput(Utility.getFilenameExtension(Utility.getFilename(file), true));
 	
 							//if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "/file/")){		//Locally cached files already have session ids
@@ -974,6 +969,19 @@ public class SoftwareServerRestlet extends ServerResource
 	    ins.close();
 	  }catch(Exception e) {e.printStackTrace();}
 		
+          try {
+	    if (USE_OPENSTACK_PUBLIC_IP) {
+		String publicIp = Utility.readURL(OPENSTACK_PUBLIC_IPV4_URL, "text/plain");
+		HTTP_GETTER_LOCALHOST = "http://" + publicIp + ":8182";
+	    } else {
+		HTTP_GETTER_LOCALHOST = "http://" + Utility.getLocalHostIP() + ":8182";
+	    }
+	  } catch (Exception e) {
+		System.out.println("Error in getting HTTP_GETTER_LOCALHOST: " + e.getMessage());
+		//e.printStackTrace();
+	  } 
+	  System.out.println("[localhost]: HTTP_GETTER_LOCALHOST = " + HTTP_GETTER_LOCALHOST);
+
 	  //Initialize and start the service
 	  initialize();
 	  
