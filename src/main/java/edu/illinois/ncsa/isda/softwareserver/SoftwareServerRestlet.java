@@ -54,7 +54,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static boolean ADMINISTRATORS_ENABLED = false;
 	private static boolean ATOMIC_EXECUTION = true;
 	private static boolean USE_OPENSTACK_PUBLIC_IP = false;
-	private static final String OPENSTACK_PUBLIC_IPV4_URL = "http://169.254.169.254/2009-04-04/meta-data/public-ipv4";
+	private static String OPENSTACK_PUBLIC_IPV4_URL = "";// Default value is "http://169.254.169.254/2009-04-04/meta-data/public-ipv4".
 	private static String download_method = "";
 	private static Component component;
 	
@@ -963,6 +963,9 @@ public class SoftwareServerRestlet extends ServerResource
 	          }else if(key.equals("UseOpenStackPublicIP")){
                         USE_OPENSTACK_PUBLIC_IP = Boolean.valueOf(value);
                         System.out.println("[localhost]: USE_OPENSTACK_PUBLIC_IP = " + USE_OPENSTACK_PUBLIC_IP);
+	          }else if(key.equals("OpenStackPublicIPv4URL")){
+                        OPENSTACK_PUBLIC_IPV4_URL = value;
+                        System.out.println("[localhost]: OPENSTACK_PUBLIC_IPV4_URL = " + OPENSTACK_PUBLIC_IPV4_URL);
 	          }
 	        }
 	      }
