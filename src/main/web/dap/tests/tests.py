@@ -44,7 +44,9 @@ def main():
 		t0 = time.time()
 
 		for line in lines:
-			if line and not line.startswith('#'):
+			line = line.strip();
+
+			if line and not line.startswith('#') and not line.startswith('@'):
 				parts = line.split(' ')
 				input_filename = parts[0]
 				outputs = parts[1].split(',')
@@ -152,24 +154,25 @@ def convert(host, input_filename, output, output_path):
 	"""Pass file to Polyglot Steward."""
 	headers = {'Accept': 'text/plain'}
 	api_call = 'http://' + host + ':8184/convert/' + output + '/' + urllib.quote_plus(input_filename)
+	output_filename = ""
 
 	try:
 		r = requests.get(api_call, headers=headers)
+
+		if(r.status_code != 404):
+			result = r.text
+
+			if basename(output_path):
+				output_filename = output_path
+			else:
+				output_filename = output_path + basename(result)
+
+			download_file(result, output_filename, 90)
+	except KeyboardInterrupt:
+		sys.exit()
 	except:
 		e = sys.exc_info()[0]
 		print repr(e)
-
-	if(r.status_code != 404):
-		result = r.text
-
-		if basename(output_path):
-			output_filename = output_path
-		else:
-			output_filename = output_path + basename(result)
-
-		download_file(result, output_filename, 90)
-	else:
-		output_filename = ""
 
 	return output_filename
 
@@ -180,27 +183,21 @@ def download_file(url, filename, wait):
 
 	try:
 		r = requests.get(url, stream=True)
-	except:
-		e = sys.exc_info()[0]
-		print repr(e)
 
-	while(wait > 0 and r.status_code == 404):
-		time.sleep(1)
-		wait -= 1
-
-		try:
+		while(wait > 0 and r.status_code == 404):
+			time.sleep(1)
+			wait -= 1
 			r = requests.get(url, stream=True)
-		except:
-			e = sys.exc_info()[0]
-			print repr(e)
 
-	if(r.status_code != 404):	
-		with open(filename, 'wb') as f:
-			for chunk in r.iter_content(chunk_size=1024): 
-				if chunk:		#Filter out keep-alive new chunks
-					f.write(chunk)
-					f.flush()
-	
+		if(r.status_code != 404):	
+			with open(filename, 'wb') as f:
+				for chunk in r.iter_content(chunk_size=1024): 
+					if chunk:		#Filter out keep-alive new chunks
+						f.write(chunk)
+						f.flush()
+	except:
+		raise
+
 	return filename
 
 def timeToString(t):
