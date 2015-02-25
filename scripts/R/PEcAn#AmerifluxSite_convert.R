@@ -12,16 +12,16 @@
 #  <end_date>2001-12-31 23:59:59</end_date>
 #</input>
 
-.libPaths("/home/polyglot/R/library")
+#.libPaths("/home/polyglot/R/library")
 sink(stdout(),type="message")
 
 # get command line arguments
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) < 2) {
     myCommand <- substr(commandArgs()[4],10,1000000L)
-    print(paste0("Usage:   ", myCommand, " xml_Input_File  cf-nc_Output_File [tempDirectory]"))
-    print(paste0("Example1: ", myCommand, " US-Dk3-2001-2003.xml US-Dk3-2001-2003.cf-nc [/tmp/watever] "))
-    print(paste0("Example2: ", myCommand, " US-Dk3-2001-2003.xml US-Dk3-2001-2003.cf-nc.zip [/tmp/watever] "))
+    print(paste0("Usage:    ", myCommand, " xml_Input_File  cf-nc_Output_File [tempDirectory]"))
+    print(paste0("Example1: ", myCommand, " US-Dk3.xml US-Dk3.pecan.nc [/tmp/watever] "))
+    print(paste0("Example2: ", myCommand, " US-Dk3.xml US-Dk3.pecan.zip [/tmp/watever] "))
     q()
 } else {
     require(XML)
@@ -76,8 +76,9 @@ if (ext == ".zip") {
 } else {
     file.rename(outfile,args[2])
 }    
-if (length(args) > 2) {
-    #unlink(args[3], recursive = TRUE) 
-} else {
-    #unlink(input$type, recursive = TRUE) 
-}
+
+#if (length(args) > 2) {
+#    unlink(args[3], recursive = TRUE) 
+#} else {
+#    unlink(input$type, recursive = TRUE) 
+#}

@@ -4,7 +4,7 @@
 #pecan.nc, pecan.zip
 #clim
 
-.libPaths("/home/polyglot/R/library")
+#.libPaths("/home/polyglot/R/library")
 sink(stdout(),type="message")
 
 # get command line arguments
@@ -19,22 +19,32 @@ if (  !suppressWarnings(!is.na(as.numeric(isANumber)))   ) {
 
 if (length(args) < 2) {
     myCommand <- substr(commandArgs()[4],10,1000000L)
-    print(paste0("Usage:   ", myCommand, " cf-nc_Input_File climOutputDir "))
-    print(paste0("Example1: ", myCommand, " US-Dk3-2001-2003.cf-nc US-Dk3-2001-2003.clim-nc     [/tmp/watever] "))
-    print(paste0("Example2: ", myCommand, " US-Dk3-2001-2003.cf-nc.zip US-Dk3-2001-2003.clim-nc [/tmp/watever] "))
+    print(paste0("Usage:    ", myCommand, " cf-nc_Input_File climOutputDir "))
+    print(paste0("Example1: ", myCommand, " US-Dk3.pecan.nc US-Dk3.clim  [/tmp/watever] "))
+    print(paste0("Example2: ", myCommand, " US-Dk3.pecan.zip US-Dk3.clim [/tmp/watever] "))
     q()
 } else {
     dotPos <- which(strsplit(args[1], "")[[1]]==".")
-    extI <- substr(args[1],start=dotPos[length(dotPos)], stop=nchar(args[1]))
+    extI <- substr(args[1],start=dotPos[1], stop=nchar(args[1]))
     dotPos <- which(strsplit(args[2], "")[[1]]==".")
-    extO <- substr(args[2],start=dotPos[length(dotPos)], stop=nchar(args[2]))
+    extO <- substr(args[2],start=dotPos[1], stop=nchar(args[2]))
+
     site <-substr(filename,start=1+underPos,stop=6+underPos)
-    yearS <- substr(filename,start=8+underPos,stop=11+underPos)
-    yearE <- substr(filename,start=13+underPos,stop=16+underPos)
-    #site <-substr(args[1],start=1,stop=6)
-    #yearS <- substr(args[1],start=8,stop=11)
-    #yearE <- substr(args[1],start=13,stop=16)
-    newInFile <- paste0(substr(args[1],start=1,stop=dotPos[2]), "nc")
+    
+    
+    if (extI == ".pecan.nc") {
+        tempVar <- system(paste0("ncdump ", args[1], " | grep time:units"), intern = TRUE, ignore.stderr = TRUE)
+        tempVar <- substr(tempVar,star=28,stop=31)
+        yearS <- toString(strtoi(tempVar, base = 0L) + 1)
+        yearE <- toString(strtoi(tempVar, base = 0L) + 1)
+    } else {
+        tempVar <- system(paste0("unzip -l ", args[1], " | grep .nc |head -1 | awk '{print $4}' "), intern = TRUE, ignore.stderr = TRUE)
+        dotPos <- which(strsplit(tempVar, "")[[1]]==".")
+        yearS <- substr(tempVar,star=dotPos[1]+1,stop=dotPos[2]-1)
+        tempVar <- system(paste0("unzip -l ", args[1], " | grep .nc |tail -1 | awk '{print $4}' "), intern = TRUE, ignore.stderr = TRUE)
+        dotPos <- which(strsplit(tempVar, "")[[1]]==".")
+        yearE <- substr(tempVar,star=dotPos[1]+1,stop=dotPos[2]-1)
+    }    
 }
 
 if (length(args) > 2) {
@@ -42,6 +52,7 @@ if (length(args) > 2) {
 } else {
     tempDir <- "temp"    
 }
+
 
 # variables definition
 start_date <- as.POSIXlt(paste0(yearS,"-01-01 00:00:00"), tz = "GMT")
@@ -57,7 +68,7 @@ climfolder <- file.path(tempDir,"clim")
 dir.create(climfolder, showWarnings=FALSE, recursive=TRUE)
 
 # 1 copy input file to input directory and unzip if needed 
-if (extI == ".zip") {
+if (extI == ".pecan.zip") {
     #file.copy(args[1],paste0(cffolder,"/",args[1]))
     file.copy(args[1],paste0(cffolder,"/"))
     wd <- getwd()
@@ -71,7 +82,6 @@ if (extI == ".zip") {
     end_date <-start_date
     #file.copy(args[1],paste0(tempDir,"/raw"))
 } 
-
 # convert CF to output, in this case clim
 require(PEcAn.SIPNET)
 require(PEcAn.ED2)
