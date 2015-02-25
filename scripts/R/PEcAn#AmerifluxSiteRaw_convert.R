@@ -2,7 +2,7 @@
 #PEcAn
 #data
 #xml
-#ameriflux.nc, ameriflux.zip 
+#ameriflux.zip 
 
 # input filesis a xml file specifying what to get
 #<input>
@@ -19,9 +19,9 @@ sink(stdout(),type="message")
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) < 2) {
     myCommand <- substr(commandArgs()[4],10,1000000L)
-    print(paste0("Usage:   ", myCommand, " xml_Input_File  amfx-nc_Output_File [tempDirectory]"))
-    print(paste0("Example1: ", myCommand, " US-Dk3-2001-2003.xml US-Dk3-2001-2003.amfx-nc [/tmp/watever] "))
-    print(paste0("Example2: ", myCommand, " US-Dk3-2001-2003.xml US-Dk3-2001-2003.amfx-nc.zip [/tmp/watever] "))
+    print(paste0("Usage:    ", myCommand, " xml_Input_File  amfx-nc_Output_File [tempDirectory]"))
+    print(paste0("Example1: ", myCommand, " US-Dk3.xml US-Dk3.ameriflux.nc [/tmp/watever] "))
+    print(paste0("Example2: ", myCommand, " US-Dk3.xml US-Dk3.ameriflux.zip [/tmp/watever] "))
     q()
 } else {
     require(XML)
@@ -64,14 +64,14 @@ if (ext == ".zip") {
     setwd(paste0(rootZip, "/raw/"))
     system("zip temp.zip ./*")
     #file.rename("temp.zip", paste0(wd,"/", args[2]))   
-    file.rename("temp.zip", args[2])   
+    file.rename("temp.zip",args[2])   
     setwd(wd)
 } else {
     file.rename(outfile,args[2])
 }    
 
-if (length(args) > 2) {
-    #unlink(args[3], recursive = TRUE) 
-} else {
-    #unlink(input$type, recursive = TRUE) 
-}
+#if (length(args) > 2) {
+#    unlink(args[3], recursive = TRUE) 
+#} else {
+#    unlink(input$type, recursive = TRUE) 
+#}
