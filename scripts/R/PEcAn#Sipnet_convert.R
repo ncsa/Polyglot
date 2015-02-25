@@ -1,10 +1,10 @@
 #!/usr/bin/Rscript
 #PEcAn
 #data
-#pecan.nc, pecan.zip
+#pecan.zip
 #clim
 
-#.libPaths("/home/polyglot/R/library")
+.libPaths("/home/polyglot/R/library")
 sink(stdout(),type="message")
 
 # get command line arguments
@@ -29,7 +29,7 @@ if (length(args) < 2) {
     dotPos <- which(strsplit(args[2], "")[[1]]==".")
     extO <- substr(args[2],start=dotPos[1], stop=nchar(args[2]))
 
-    site <-substr(filename,start=1+underPos,stop=6+underPos)
+    #site <-substr(filename,start=1+underPos,stop=6+underPos)
     
     
     if (extI == ".pecan.nc") {
@@ -38,6 +38,9 @@ if (length(args) < 2) {
         yearS <- toString(strtoi(tempVar, base = 0L) + 1)
         yearE <- toString(strtoi(tempVar, base = 0L) + 1)
     } else {
+        tempVar <- system(paste0("unzip -l ", args[1], " | grep .nc |head -1 | awk '{print $4}' "), intern = TRUE, ignore.stderr = TRUE)
+        dotPos <- which(strsplit(tempVar, "")[[1]]==".")
+        site <-substr(tempVar,start=1,stop=dotPos[1]-1)
         tempVar <- system(paste0("unzip -l ", args[1], " | grep .nc |head -1 | awk '{print $4}' "), intern = TRUE, ignore.stderr = TRUE)
         dotPos <- which(strsplit(tempVar, "")[[1]]==".")
         yearS <- substr(tempVar,star=dotPos[1]+1,stop=dotPos[2]-1)

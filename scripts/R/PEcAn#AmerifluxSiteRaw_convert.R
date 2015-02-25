@@ -2,7 +2,7 @@
 #PEcAn
 #data
 #xml
-#ameriflux.nc, ameriflux.zip 
+#ameriflux.zip 
 
 # input filesis a xml file specifying what to get
 #<input>
@@ -12,7 +12,7 @@
 #  <end_date>2001-12-31 23:59:59</end_date>
 #</input>
 
-#.libPaths("/home/polyglot/R/library")
+.libPaths("/home/polyglot/R/library")
 sink(stdout(),type="message")
 
 # get command line arguments
