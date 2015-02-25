@@ -11,7 +11,6 @@ import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
 import java.lang.management.*;
-import java.net.*;
 import javax.servlet.*;
 import org.json.JSONArray;
 import org.restlet.*;
@@ -35,6 +34,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.*;
 import com.rabbitmq.client.Channel;
 import org.json.*;
+// Used to check whether a string is a valid IP address.
+import org.apache.commons.validator.routines.InetAddressValidator;
 
 /**
  * A restful interface for a software server.
@@ -56,6 +57,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static boolean USE_OPENSTACK_PUBLIC_IP = false;
 	private static String OPENSTACK_PUBLIC_IPV4_URL = "";// Default value is "http://169.254.169.254/2009-04-04/meta-data/public-ipv4".
 	private static String HTTP_GETTER_LOCALHOST = "";
+	private static String EXTERNAL_PUBLIC_IP_SERVICES = "";
 	private static String download_method = "";
 	private static Component component;
 	
@@ -961,6 +963,9 @@ public class SoftwareServerRestlet extends ServerResource
 	          }else if(key.equals("OpenStackPublicIPv4URL")){
                         OPENSTACK_PUBLIC_IPV4_URL = value;
                         System.out.println("[localhost]: OPENSTACK_PUBLIC_IPV4_URL = " + OPENSTACK_PUBLIC_IPV4_URL);
+	          }else if(key.equals("ExternalPublicIPServices")){
+                        EXTERNAL_PUBLIC_IP_SERVICES = value;
+                        System.out.println("[localhost]: EXTERNAL_PUBLIC_IP_SERVICES = " + EXTERNAL_PUBLIC_IP_SERVICES);
 	          }
 	        }
 	      }
@@ -972,6 +977,16 @@ public class SoftwareServerRestlet extends ServerResource
           try {
 	    if (USE_OPENSTACK_PUBLIC_IP) {
 		String publicIp = Utility.readURL(OPENSTACK_PUBLIC_IPV4_URL, "text/plain");
+                if (! InetAddressValidator.getInstance().isValid(publicIp)) {
+                    String[] urlList = EXTERNAL_PUBLIC_IP_SERVICES.split(" ");
+                    for (int i = 0; i < urlList.length; i++) {
+                        publicIp = Utility.readURL(urlList[i], "text/plain");
+                        if (InetAddressValidator.getInstance().isValid(publicIp)) {
+                            System.out.println("[localhost]: public IP " + publicIp + " resolved by '" + urlList[i] + "'.");
+                            break;
+                        }
+                    }
+                }
 		HTTP_GETTER_LOCALHOST = "http://" + publicIp + ":8182";
 	    } else {
 		HTTP_GETTER_LOCALHOST = "http://" + Utility.getLocalHostIP() + ":8182";
