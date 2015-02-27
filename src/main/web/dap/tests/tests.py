@@ -15,14 +15,17 @@ from pymongo import MongoClient
 def main():
 	"""Run extraction bus tests."""
 	host = ni.ifaddresses('eth0')[2][0]['addr']
+	hostname = ''
 	all_failures = False
 
 	#Arguments
-	opts, args = getopt.getopt(sys.argv[1:], 'h:a')
+	opts, args = getopt.getopt(sys.argv[1:], 'h:n:a')
 
 	for o, a in opts:
 		if o == '-h':
 			host = a
+		elif o == '-n':
+			hostname = a
 		elif o == '-a':
 			all_failures = True
 		else:
@@ -77,7 +80,11 @@ def main():
 							with open('failure_watchers.txt', 'r') as watchers_file:
 								watchers = watchers_file.read().splitlines()
 						
-								message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+								if hostname:
+									message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
+								else:
+									message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+	
 								message += 'To: ' + ', '.join(watchers) + '\n'
 								message += 'Subject: DAP Test Failed\n\n'
 								message += report
@@ -106,7 +113,11 @@ def main():
 			with open('failure_watchers.txt', 'r') as watchers_file:
 				watchers = watchers_file.read().splitlines()
 				
-				message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+				if hostname:
+					message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
+				else:
+					message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+
 				message += 'To: ' + ', '.join(watchers) + '\n'
 				message += 'Subject: DAP Test Failure Report\n\n'
 				message += failure_report	
@@ -125,7 +136,11 @@ def main():
 					with open('failure_watchers.txt', 'r') as watchers_file:
 						watchers = watchers_file.read().splitlines()
 
-						message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+						if hostname:
+							message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
+						else:
+							message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+
 						message += 'To: ' + ', '.join(watchers) + '\n'
 						message += 'Subject: DAP Tests Now Passing\n\n'
 						message += 'Previous failures:\n\n'
@@ -140,7 +155,11 @@ def main():
 				with open('pass_watchers.txt', 'r') as watchers_file:
 					watchers = watchers_file.read().splitlines()
 			
-					message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+					if hostname:
+						message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
+					else:
+						message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+
 					message += 'To: ' + ', '.join(watchers) + '\n'
 					message += 'Subject: DAP Tests Passed\n\n'
 					message += 'Elapsed time: ' + timeToString(dt)
