@@ -706,7 +706,8 @@ public class SoftwareServerRestlet extends ServerResource
 		int session = server.getSession();
 		boolean FORM_POST = !part0.isEmpty() && part0.equals("form");
 		boolean TASK_POST = !part1.isEmpty() && !part2.isEmpty() && !part3.isEmpty();
-		
+		boolean MULTIPLE_EXTENSIONS;
+
 		//localhost = getReference().getBaseRef().toString();
 		localhost = "http://" + Utility.getLocalHostIP() + ":8182";
 				
@@ -762,7 +763,8 @@ public class SoftwareServerRestlet extends ServerResource
 			if(application != null && task != null && file != null && format != null){		
 				executeTaskLater(session, application, task, file, format);
 				
-				result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + Utility.getFilenameName(file) + "." + format;
+				MULTIPLE_EXTENSIONS = alias_map.get(application).supportedInput(Utility.getFilenameExtension(Utility.getFilename(file), true));
+				result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + Utility.getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
 
 				if(isPlainRequest(Request.getCurrent())){
 					return new StringRepresentation(result, MediaType.TEXT_PLAIN);
