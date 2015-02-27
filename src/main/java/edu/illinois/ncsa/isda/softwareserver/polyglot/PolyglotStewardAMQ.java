@@ -236,12 +236,12 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		boolean MULTIPLE_EXTENSIONS = true;
 		
 		//Get conversion path, give multiple extensions precedence (i.e. if a script exists that supports such a thing it should be run)
-		input_format = Utility.getFilenameExtension(Utility.getFilename(input), true);
+		input_format = Utility.getFilenameExtension(Utility.getFilename(input), true).toLowerCase();
 		conversions = iograph.getShortestConversionPath(input_format, output_format, false);
 
 		if(conversions == null){
 			MULTIPLE_EXTENSIONS = false;
-			input_format = Utility.getFilenameExtension(input);
+			input_format = Utility.getFilenameExtension(input).toLowerCase();
 			conversions = iograph.getShortestConversionPath(input_format, output_format, false);
 		}
 
