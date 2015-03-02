@@ -1,4 +1,5 @@
 <?php
+header('Access-Control-Allow-Origin: *');
 $servers = isset($_REQUEST["servers"]) ? $_REQUEST["servers"] : "";
 $software = isset($_REQUEST["software"]) ? $_REQUEST["software"] : "";
 $inputs = isset($_REQUEST["inputs"]) ? $_REQUEST["inputs"] : "";

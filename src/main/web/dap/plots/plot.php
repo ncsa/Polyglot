@@ -1,14 +1,15 @@
 <?php
+header('Access-Control-Allow-Origin: *');
 $bins = isset($_REQUEST["bins"]) ? $_REQUEST["bins"] : "minutes";
-$time_unit = 60*1000;						//Milli-seconds in a minute
-$time_window = 24*60*60;				//Seconds in one day
+$time_unit = 60*1000;							//Milli-seconds in a minute
+$time_window = 24*60*60;					//Seconds in one day
 
 if($bins == "hours"){
 	$time_unit = 60*60*1000;
 }else if($bins == "days"){
 	$time_unit = 24*60*60*1000;
-	$time_window = 7*24*60*60;
-}else if($bins != "minutes"){   //Make sure a bins is one of these 3 values, default to minutes
+	$time_window = 7*24*60*60;			//Seconds in one week
+}else if($bins != "minutes"){   	//Make sure a bins is one of these 3 values, default to minutes
   $bins = "minutes";
 }
 
@@ -25,15 +26,20 @@ $cursor = $collection->find();
 
 foreach($cursor as $document) {
 	//print_r($document);
-	$timestamp = round($document["start_time"] / $time_unit);
-	//echo $timestamp . "<br>\n";
+	$start_time = $document["start_time"];
+	$delta_time = time() - round($start_time/1000);
 
-	//if(!array_key_exists($timestamp, $tasks_per_x)) $tasks_per_x[$timestamp] = 0;	//ToDo: Why is this always true now?  Result is a reset to 0.
-	$tasks_per_x[$timestamp]++;
+	if($delta_time < $time_window) {
+		$timestamp = round($start_time / $time_unit);
+		//echo $timestamp . "<br>\n";
 
-	if(!$document["success"]){
-		//if(!array_key_exists($timestamp, $failures_per_x)) $failures_per_x[$timestamp] = 0;	//ToDo: Why is this always true now? Result is a reset to 0.
-		$failures_per_x[$timestamp]++;
+		//if(!array_key_exists($timestamp, $tasks_per_x)) $tasks_per_x[$timestamp] = 0;	//ToDo: Why is this always true now?  Result is a reset to 0.
+		$tasks_per_x[$timestamp]++;
+
+		if(!$document["success"]){
+			//if(!array_key_exists($timestamp, $failures_per_x)) $failures_per_x[$timestamp] = 0;	//ToDo: Why is this always true now? Result is a reset to 0.
+			$failures_per_x[$timestamp]++;
+		}
 	}
 }
 
