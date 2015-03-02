@@ -42,7 +42,6 @@ def main():
 	with open('tests.txt', 'r') as tests_file:
 		lines = tests_file.readlines()
 		count = 0;
-		mailserver = smtplib.SMTP('localhost')
 		failure_report = ''
 		t0 = time.time()
 
@@ -91,7 +90,9 @@ def main():
 								message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?dap=' + host + '&run=false&start=true\n'
 		
 								for watcher in watchers:
+									mailserver = smtplib.SMTP('localhost')
 									mailserver.sendmail('', watcher, message)
+									mailserver.quit()
 
 		dt = time.time() - t0;
 		print 'Elapsed time: ' + timeToString(dt)
@@ -125,7 +126,9 @@ def main():
 				message += 'Elapsed time: ' + timeToString(dt)
 
 				for watcher in watchers:
+					mailserver = smtplib.SMTP('localhost')
 					mailserver.sendmail('', watcher, message)
+					mailserver.quit()
 		else:
 			if os.path.isfile('tmp/failures.txt'):
 				#Send failure rectification emails
@@ -149,7 +152,9 @@ def main():
 						message += 'Elapsed time: ' + timeToString(dt)
 
 						for watcher in watchers:
+							mailserver = smtplib.SMTP('localhost')
 							mailserver.sendmail('', watcher, message)
+							mailserver.quit()
 			else:
         #Send success notification emails
 				with open('pass_watchers.txt', 'r') as watchers_file:
@@ -165,9 +170,10 @@ def main():
 					message += 'Elapsed time: ' + timeToString(dt)
 
 					for watcher in watchers:
+						mailserver = smtplib.SMTP('localhost')
 						mailserver.sendmail('', watcher, message)
+						mailserver.quit()
 
-		mailserver.quit()
 
 def convert(host, input_filename, output, output_path):
 	"""Pass file to Polyglot Steward."""
