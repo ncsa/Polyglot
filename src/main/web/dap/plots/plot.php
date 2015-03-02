@@ -33,12 +33,10 @@ foreach($cursor as $document) {
 		$timestamp = round($start_time / $time_unit);
 		//echo $timestamp . "<br>\n";
 
-		//if(!array_key_exists($timestamp, $tasks_per_x)) $tasks_per_x[$timestamp] = 0;	//ToDo: Why is this always true now?  Result is a reset to 0.
-		$tasks_per_x[$timestamp]++;
+		$tasks_per_x[$timestamp] = isset($tasks_per_x[$timestamp]) ? $tasks_per_x[$timestamp]+1 : 1;
 
 		if(!$document["success"]){
-			//if(!array_key_exists($timestamp, $failures_per_x)) $failures_per_x[$timestamp] = 0;	//ToDo: Why is this always true now? Result is a reset to 0.
-			$failures_per_x[$timestamp]++;
+			$failures_per_x[$timestamp] = isset($failures_per_x[$timestamp]) ? $failures_per_x[$timestamp]+1 : 1;
 		}
 	}
 }
