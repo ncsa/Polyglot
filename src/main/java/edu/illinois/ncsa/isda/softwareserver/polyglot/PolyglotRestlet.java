@@ -426,7 +426,8 @@ public class PolyglotRestlet extends ServerResource
 									file += extension;
 								}
 
-								file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
+								//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
+								file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file);
 								System.out.println("[" + client + "]: Temporarily hosting file \"" + Utility.getFilename(file) + "\", " + file);
 							}else{
 								file = temp_path + (fi.getName()).replace(" ","_");
