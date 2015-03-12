@@ -21,7 +21,7 @@ def shpclip(inshp, clipshp, outshpname):
     #print m[0]
     outshp = m[0]
     #o = subprocess.check_output(['/Library/Frameworks/GDAL.framework/Programs/ogr2ogr', "-f", "ESRI Shapefile", "-clipsrc", clipshp, outshp, inshp])
-    o = subprocess.check_output(['usr/bin/ogr2ogr', "-f", "ESRI Shapefile", "-clipsrc", clipshp, outshp, inshp])
+    o = subprocess.check_output(['/usr/bin/ogr2ogr', "-f", "ESRI Shapefile", "-clipsrc", clipshp, outshp, inshp])
     print o
     zipshp(outshpname)
 
