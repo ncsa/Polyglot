@@ -11,6 +11,7 @@ import tempfile
 import os, os.path
 import xmltodict
 import requests
+import logging
 
 # clip the input DEM for a given polygon
 def clip(inraster, inshape, fieldname, outputfile):
@@ -33,8 +34,8 @@ def clip(inraster, inshape, fieldname, outputfile):
         print outraster
 
         # the following code selects a polygon
-        o  = subprocess.check_output(['/Library/Frameworks/GDAL.framework/Programs/gdalwarp', inraster, outraster, '-srcnodata', str(nodata), '-dstnodata', str(nodata), '-cutline', inshape, '-crop_to_cutline', '-cwhere', "'%s'='%s'" % (fieldname, value)])
-        
+        #o  = subprocess.check_output(['/Library/Frameworks/GDAL.framework/Programs/gdalwarp', inraster, outraster, '-srcnodata', str(nodata), '-dstnodata', str(nodata), '-cutline', inshape, '-crop_to_cutline', '-cwhere', "'%s'='%s'" % (fieldname, value)])
+        o  = subprocess.check_output(['/usr/bin/gdalwarp', inraster, outraster, '-srcnodata', str(nodata), '-dstnodata', str(nodata), '-cutline', inshape, '-crop_to_cutline', '-cwhere', "'%s'='%s'" % (fieldname, value)])
         print o
         ft = lyr.GetNextFeature()
 
@@ -43,7 +44,8 @@ def clip(inraster, inshape, fieldname, outputfile):
 
 # unzips the zipped shapefile and returns the .shp file
 def unzip(tmpDir, inzip):
-    subprocess.check_call(['/usr/local/bin/7z', 'x', '-o%s' % tmpDir, inzip], shell=False)
+    #subprocess.check_call(['/usr/local/bin/7z', 'x', '-o%s' % tmpDir, inzip], shell=False)
+    subprocess.check_call(['/usr/bin/7z', 'x', '-o%s' % tmpDir, inzip], shell=False)
     files = [os.path.join(tmpDir,f) for f in os.listdir(tmpDir) ]
     for f in files:
         if f.endswith(".shp"):
@@ -74,6 +76,7 @@ def convert_xml_to_dictionary(input_xml_filename) :
     return (dem_url,polygon_url,fieldname)
 
 if __name__ == '__main__':
+    global logger
     inputs = convert_xml_to_dictionary(sys.argv[1])
     dem_url = inputs[0]+ '?key=r1ek3rs'
     polygon_url = inputs[1] + '?key=r1ek3rs'    
