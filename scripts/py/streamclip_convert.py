@@ -13,25 +13,29 @@ import shutil
 import xmltodict
 import requests
 import re
+import logging
 
 #clip the shapefile of streamflow with the given polygon 
 def shpclip(inshp, clipshp, outshpname):
     m = re.split('\.zip', outshpname)
     #print m[0]
     outshp = m[0]
-    o = subprocess.check_output(['/Library/Frameworks/GDAL.framework/Programs/ogr2ogr', "-f", "ESRI Shapefile", "-clipsrc", clipshp, outshp, inshp])
+    #o = subprocess.check_output(['/Library/Frameworks/GDAL.framework/Programs/ogr2ogr', "-f", "ESRI Shapefile", "-clipsrc", clipshp, outshp, inshp])
+    o = subprocess.check_output(['usr/bin/ogr2ogr', "-f", "ESRI Shapefile", "-clipsrc", clipshp, outshp, inshp])
     print o
     zipshp(outshpname)
 
 #zip the clipped shapefile for the streamflow to be output to the user
 def zipshp(name):
     m = re.split('\.shp.zip', name)
-    subprocess.check_call(['/usr/local/bin/7z', 'a','-tzip', name, m[0]+'*','-x!*.xml'], shell=False)
+    #subprocess.check_call(['/usr/local/bin/7z', 'a','-tzip', name, m[0]+'*','-x!*.xml'], shell=False)
+    subprocess.check_call(['/usr/bin/7z', 'a','-tzip', name, m[0]+'*','-x!*.xml'], shell=False)
     return name  
 
 #unzip the shapefile
 def unzip(tmpDir, inzip):
-    subprocess.check_call(['/usr/local/bin/7z', 'x', '-o%s' % tmpDir, inzip], shell=False)
+    #subprocess.check_call(['/usr/local/bin/7z', 'x', '-o%s' % tmpDir, inzip], shell=False)
+    subprocess.check_call(['/usr/bin/7z', 'x', '-o%s' % tmpDir, inzip], shell=False)
     files = [os.path.join(tmpDir,f) for f in os.listdir(tmpDir) ]
     for f in files:
         if f.endswith(".shp"):
@@ -61,6 +65,7 @@ def convert_xml_to_dictionary(input_xml_filename) :
     return (streamflow_url,polygon_url)
 
 if __name__ == '__main__':
+    global logger
     inputs = convert_xml_to_dictionary(sys.argv[1])
     streamflow_url = inputs[0]+ '?key=r1ek3rs'
     polygon_url = inputs[1] + '?key=r1ek3rs'    
