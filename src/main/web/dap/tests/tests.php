@@ -53,6 +53,8 @@
           }
 
           next;
+        } else if($line[0] == '*') {
+          next;
         } else {
 					$parts = explode(' ', $line);
 					$input_filename = $parts[0];

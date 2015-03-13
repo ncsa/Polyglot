@@ -12,6 +12,7 @@ http://browndog.ncsa.illinois.edu/examples/105_1.sid jpg
 http://browndog.ncsa.illinois.edu/examples/marbles.tga jpg
 
 @Test image conversion, SVG to JPG
+*5
 http://browndog.ncsa.illinois.edu/examples/cache/NewTux.svg jpg
 
 @Test document conversions, DOCX to PDF and DOCX to TXT

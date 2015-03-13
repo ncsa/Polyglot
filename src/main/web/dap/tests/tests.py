@@ -9,17 +9,28 @@ import smtplib
 import socket
 import getopt
 import netifaces as ni
+import thread
+import threading
 from os.path import basename
 from pymongo import MongoClient
 
+failure_report = ''
+enable_threads = False
+threads = 0
+lock = threading.Lock()
+
 def main():
 	"""Run extraction bus tests."""
+	global failure_report
+	global enable_threads
+	global threads
+	global lock
 	host = ni.ifaddresses('eth0')[2][0]['addr']
 	hostname = ''
 	all_failures = False
 
 	#Arguments
-	opts, args = getopt.getopt(sys.argv[1:], 'h:n:a')
+	opts, args = getopt.getopt(sys.argv[1:], 'h:n:at')
 
 	for o, a in opts:
 		if o == '-h':
@@ -28,10 +39,12 @@ def main():
 			hostname = a
 		elif o == '-a':
 			all_failures = True
+		elif o == '-t':
+			enable_threads = True
 		else:
 			assert False, "unhandled option"
 
-	print 'Testing: ' + host
+	print 'Testing: ' + host + '\n'
 
 	#Remove previous outputs
 	for output_filename in os.listdir('tmp'):
@@ -42,13 +55,18 @@ def main():
 	with open('tests.txt', 'r') as tests_file:
 		lines = tests_file.readlines()
 		count = 0;
-		failure_report = ''
 		t0 = time.time()
+		runs = 1
 
 		for line in lines:
 			line = line.strip();
 
-			if line and not line.startswith('#') and not line.startswith('@'):
+			if line and line.startswith('@'):
+				if not enable_threads:
+					print line[1:] + ': '
+			elif line and line.startswith('*'):
+				runs = int(line[1:])
+			elif line and not line.startswith('#'):
 				parts = line.split(' ')
 				input_filename = parts[0]
 				outputs = parts[1].split(',')
@@ -57,42 +75,24 @@ def main():
 					output = output.strip();
 					count += 1
 
-					print(input_filename + ' -> "' + output + '"'),
+					#Run the test
+					if enable_threads:
+						for i in range(0, runs):
+							with lock:
+								threads += 1
 
-					#Run test
-					output_filename = 'tmp/' + str(count) + '_' + os.path.splitext(basename(input_filename))[0] + '.' + output
-					output_filename = convert(host, input_filename, output, output_filename)
-
-					#Check for expected output
-					if os.path.isfile(output_filename) and os.stat(output_filename).st_size > 0:
-						print '\t\033[92m[OK]\033[0m'
-
-						os.chmod(output_filename, 0776)		#Give web application permission to overwrite
+							thread.start_new_thread(run_test, (host, hostname, input_filename, output, count, all_failures))
 					else:
-						print '\t\033[91m[Failed]\033[0m'
+						for i in range(0, runs):
+							run_test(host, hostname, input_filename, output, count, all_failures)
 
-						report = 'Test-' + str(count) + ' failed.  Output file of type "' + output + '" was not created from:\n\n' + input_filename + '\n\n'
-						failure_report += report
-				
-						#Send email notifying watchers	
-						if all_failures:					
-							with open('failure_watchers.txt', 'r') as watchers_file:
-								watchers = watchers_file.read().splitlines()
-						
-								if hostname:
-									message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
-								else:
-									message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
-	
-								message += 'To: ' + ', '.join(watchers) + '\n'
-								message += 'Subject: DAP Test Failed\n\n'
-								message += report
-								message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?dap=' + host + '&run=false&start=true\n'
-		
-								mailserver = smtplib.SMTP('localhost')
-								for watcher in watchers:
-									mailserver.sendmail('', watcher, message)
-								mailserver.quit()
+					#Set runs back to one for next test
+					runs = 1
+
+		#Wait for threads if any
+		if enable_threads:
+			while threads:
+				time.sleep(1)
 
 		dt = time.time() - t0;
 		print 'Elapsed time: ' + timeToString(dt)
@@ -179,6 +179,75 @@ def main():
 						mailserver.sendmail('', watcher, message)
 					mailserver.quit()
 
+def run_test(host, hostname, input_filename, output, count, all_failures):
+	"""Run a test."""
+	global failure_report
+	global enable_threads
+	global threads
+	global lock
+
+	#Print out test
+	if enable_threads:
+		with lock:
+			print input_filename + ' -> "' + output + '"\t\033[94m[Running]\033[0m'
+	else:
+		print(input_filename + ' -> "' + output + '"'),
+
+	output_filename = 'tmp/' + str(count) + '_' + os.path.splitext(basename(input_filename))[0] + '.' + output
+	output_filename = convert(host, input_filename, output, output_filename)
+
+	#Display result
+	if enable_threads:
+		with lock:
+			print(input_filename + ' -> "' + output + '"'),
+
+			if os.path.isfile(output_filename) and os.stat(output_filename).st_size > 0:
+				print '\t\033[92m[OK]\033[0m'
+			else:
+				print '\t\033[91m[Failed]\033[0m'
+
+	#Check for expected output and add to report
+	if os.path.isfile(output_filename) and os.stat(output_filename).st_size > 0:
+		if not enable_threads:
+			print '\t\033[92m[OK]\033[0m\n'
+
+		os.chmod(output_filename, 0776)		#Give web application permission to overwrite
+	else:
+		if not enable_threads:
+			print '\t\033[91m[Failed]\033[0m\n'
+
+		report = 'Test-' + str(count) + ' failed.  Output file of type "' + output + '" was not created from:\n\n' + input_filename + '\n\n'
+
+		if enable_threads:
+			with lock:
+				failure_report += report
+		else:
+			failure_report += report
+				
+		#Send email notifying watchers	
+		if all_failures:					
+			with open('failure_watchers.txt', 'r') as watchers_file:
+				watchers = watchers_file.read().splitlines()
+						
+				if hostname:
+					message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
+				else:
+					message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
+	
+				message += 'To: ' + ', '.join(watchers) + '\n'
+				message += 'Subject: DAP Test Failed\n\n'
+				message += report
+				message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?dap=' + host + '&run=false&start=true\n'
+		
+				mailserver = smtplib.SMTP('localhost')
+				for watcher in watchers:
+					mailserver.sendmail('', watcher, message)
+				mailserver.quit()
+
+	#If in a thread decrement the thread counter
+	with lock:
+		if threads:
+			threads -= 1
 
 def convert(host, input_filename, output, output_path):
 	"""Pass file to Polyglot Steward."""
