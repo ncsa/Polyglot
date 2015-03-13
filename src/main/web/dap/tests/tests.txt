@@ -1,27 +1,56 @@
 #Any line with a # will be ignored
 #Any line starting with @ will be used as a comment for the next test
+#Any line starting with a * should be followed by an integer indicating how many times to run that test
 
-@Test conversion from JPEG-2000 to JPG
+@Test image conversion, JPEG-2000 to JPG
 http://browndog.ncsa.illinois.edu/examples/0005.jp2 jpg
+
+@Test image conversion, SID to JPG
 http://browndog.ncsa.illinois.edu/examples/105_1.sid jpg
-http://browndog.ncsa.illinois.edu/examples/Astell1700.docx pdf,txt
-http://browndog.ncsa.illinois.edu/examples/dob.csv xml
-http://browndog.ncsa.illinois.edu/examples/favicon.png xml
+
+@Test image coversion, TGA to JPG
 http://browndog.ncsa.illinois.edu/examples/marbles.tga jpg
-#https://orion.math.iastate.edu/burkardt/data/pgm/balloons.pgm
-#http://upload.wikimedia.org/wikipedia/commons/b/b0/NewTux.svg jpg
+
+@Test image conversion, SVG to JPG
 http://browndog.ncsa.illinois.edu/examples/cache/NewTux.svg jpg
-#http://www.wiz-worx.com/iges5x/misc/igs/slot.igs
-#http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp
-#http://thesixteendigital.com.s3.amazonaws.com/testfiles/Hallelujah.flac mp3
-##http://browndog.ncsa.illinois.edu/examples/cache/Hallelujah.flac mp3
-#http://hubblesource.stsci.edu/sources/video/clips/details/images/grb_1.mpg mp4
-##http://browndog.ncsa.illinois.edu/examples/cache/grb_1.mpg mp4
-#http://www.fullimpactwebdesign.com/solutions/websiteDevelopment/videoGalleryWebsites/files/neilYoungNeedleAndTheDamageDone.flv mp4
-##http://browndog.ncsa.illinois.edu/examples/cache/neilYoungNeedleAndTheDamageDone.flv mp4
-#https://epub-samples.googlecode.com/files/moby-dick-20120118.epub pdf,txt
+
+@Test document conversions, DOCX to PDF and DOCX to TXT
+http://browndog.ncsa.illinois.edu/examples/Astell1700.docx pdf,txt
+
+@Test document conversion, EPUB to PDF and EPUB to TXT
 http://browndog.ncsa.illinois.edu/examples/cache/moby-dick-20120118.epub pdf,txt
+
+@Test daffodil conversion, CSV to XML
+http://browndog.ncsa.illinois.edu/examples/dob.csv xml
+
+@Test daffodil/chained conversion, PNG to PGM to XML
+http://browndog.ncsa.illinois.edu/examples/favicon.png xml
+
+@Test 3D conversion, DXF to PDF and DXF to JPG
 http://browndog.ncsa.illinois.edu/examples/plane.dxf pdf,jpg
-#https://wiki.csiamerica.com/download/attachments/2590320/sample%20solid%20-%20pyramid%20base.DXF
+
+@Test PEcAn conversion, Ameriflux to netCDF-CF
 http://browndog.ncsa.illinois.edu/examples/US-Dk3-2001-2003.xml pecan.zip
+
+@Test chained PEcAn conversion, Ameriflux to netCDF-CF to SIPNET format
 http://browndog.ncsa.illinois.edu/examples/US-Dk3-2001-2003.xml clim
+
+#@Test audio conversion, FLAC to MP3
+#http://browndog.ncsa.illinois.edu/examples/cache/Hallelujah.flac mp3
+
+#@Test video conversion, MPG to MP4
+#http://browndog.ncsa.illinois.edu/examples/cache/grb_1.mpg mp4
+
+#@Test video conversion, FLV to MP4
+#http://browndog.ncsa.illinois.edu/examples/cache/neilYoungNeedleAndTheDamageDone.flv mp4
+
+#Other potential tests:
+#https://orion.math.iastate.edu/burkardt/data/pgm/balloons.pgm jpg
+#http://upload.wikimedia.org/wikipedia/commons/b/b0/NewTux.svg jpg
+#http://www.wiz-worx.com/iges5x/misc/igs/slot.igs stp
+#http://www.steptools.com/support/stdev_docs/stpfiles/ap203/hose-fitting.stp obj
+#http://thesixteendigital.com.s3.amazonaws.com/testfiles/Hallelujah.flac mp3
+#http://hubblesource.stsci.edu/sources/video/clips/details/images/grb_1.mpg mp4
+#http://www.fullimpactwebdesign.com/solutions/websiteDevelopment/videoGalleryWebsites/files/neilYoungNeedleAndTheDamageDone.flv mp4
+#https://epub-samples.googlecode.com/files/moby-dick-20120118.epub pdf,txt
+#https://wiki.csiamerica.com/download/attachments/2590320/sample%20solid%20-%20pyramid%20base.DXF pdf
