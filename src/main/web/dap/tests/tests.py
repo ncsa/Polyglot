@@ -56,14 +56,17 @@ def main():
 		lines = tests_file.readlines()
 		count = 0;
 		t0 = time.time()
+		comment = ''
 		runs = 1
 
 		for line in lines:
 			line = line.strip();
 
 			if line and line.startswith('@'):
+				comment = line[1:]
+
 				if not enable_threads:
-					print line[1:] + ': '
+					print comment + ': '
 			elif line and line.startswith('*'):
 				runs = int(line[1:])
 			elif line and not line.startswith('#'):
@@ -81,12 +84,13 @@ def main():
 							with lock:
 								threads += 1
 
-							thread.start_new_thread(run_test, (host, hostname, input_filename, output, count, all_failures))
+							thread.start_new_thread(run_test, (host, hostname, input_filename, output, count, comment, all_failures))
 					else:
 						for i in range(0, runs):
-							run_test(host, hostname, input_filename, output, count, all_failures)
+							run_test(host, hostname, input_filename, output, count, comment, all_failures)
 
 					#Set runs back to one for next test
+					comment = ''
 					runs = 1
 
 		#Wait for threads if any
@@ -179,7 +183,7 @@ def main():
 						mailserver.sendmail('', watcher, message)
 					mailserver.quit()
 
-def run_test(host, hostname, input_filename, output, count, all_failures):
+def run_test(host, hostname, input_filename, output, count, comment, all_failures):
 	"""Run a test."""
 	global failure_report
 	global enable_threads
@@ -216,7 +220,12 @@ def run_test(host, hostname, input_filename, output, count, all_failures):
 		if not enable_threads:
 			print '\t\033[91m[Failed]\033[0m\n'
 
-		report = 'Test-' + str(count) + ' failed.  Output file of type "' + output + '" was not created from:\n\n' + input_filename + '\n\n'
+		report = ''
+
+		if comment:
+			report = 'Test-' + str(count) + ' failed: ' + comment + '.  Output file of type "' + output + '" was not created from:\n\n' + input_filename + '\n\n'
+		else:
+			report = 'Test-' + str(count) + ' failed.  Output file of type "' + output + '" was not created from:\n\n' + input_filename + '\n\n'
 
 		if enable_threads:
 			with lock:
