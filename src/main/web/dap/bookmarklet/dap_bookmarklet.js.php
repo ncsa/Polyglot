@@ -85,6 +85,12 @@ function addMenuToLinks() {
 function convert() {
 	console.log($(this).data('href') + ' -> ' + $(this).data('output'));
 
+	//Set cursor to wait
+	$('html,body').css('cursor', 'wait');
+	$('a').each(function() {
+		$(this).css('cursor', 'wait');
+	});
+
 	$.ajax({
     headers: {Accept: "text/plain"},
 		url: protocol + dap + ':8184/convert/' + $(this).data('output') + '/' + encodeURIComponent($(this).data('href'))
