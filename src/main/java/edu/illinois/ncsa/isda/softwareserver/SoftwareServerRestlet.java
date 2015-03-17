@@ -274,7 +274,7 @@ public class SoftwareServerRestlet extends ServerResource
 	}
 	
 	/**
-	 * Get the task involved in using the given applications to convert the given file to the specified output format.
+	 * Get the task involved in using the given applications to convert the given file to the specified output format (treats all extensions as lower case).
 	 * @param application_alias the alias of the application to use.
 	 * @param task_string the task to perform
 	 * @param filename the file name of the cached file to convert
@@ -283,12 +283,12 @@ public class SoftwareServerRestlet extends ServerResource
 	 */
 	public Vector<Subtask> getTask(String application_alias, String task_string, String filename, String output_format)
 	{
-		boolean MULTIPLE_EXTENSIONS = alias_map.get(application_alias).supportedInput(Utility.getFilenameExtension(Utility.getFilename(filename), true));
+		boolean MULTIPLE_EXTENSIONS = alias_map.get(application_alias).supportedInput(Utility.getFilenameExtension(Utility.getFilename(filename), true).toLowerCase());
 		Task task = new Task(applications);
 		CachedFileData input_data, output_data;
 
 		//input_data = new CachedFileData(filename);
-		input_data = new CachedFileData(getFilenameName(filename, MULTIPLE_EXTENSIONS), Utility.getFilenameExtension(filename), Utility.getFilenameExtension(Utility.getFilename(filename), true));
+		input_data = new CachedFileData(getFilenameName(filename, MULTIPLE_EXTENSIONS), Utility.getFilenameExtension(filename).toLowerCase(), Utility.getFilenameExtension(Utility.getFilename(filename), true).toLowerCase());
 		//output_data = new CachedFileData(filename, output_format, MULTIPLE_EXTENSIONS);
 		output_data = new CachedFileData(getFilenameName(filename, MULTIPLE_EXTENSIONS), output_format, output_format);
 
@@ -321,17 +321,17 @@ public class SoftwareServerRestlet extends ServerResource
 			}else{																											//Download remote files
 				if(download_method.equals("wget")){
 					try{
-						Runtime.getRuntime().exec("wget -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)) + " " + file).waitFor();
+						Runtime.getRuntime().exec("wget -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file).waitFor();
 					}catch(Exception e){e.printStackTrace();}
 				}else if(download_method.equals("nio")){
 					try{
 						URL website = new URL(file);
 						ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-						FileOutputStream fos = new FileOutputStream(server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)));
+						FileOutputStream fos = new FileOutputStream(server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase());
 						fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 					}catch(Exception e){e.printStackTrace();}
 				}else{
-					Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)), file);
+					Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase(), file);
 				}
 
 				file = SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(file));
@@ -499,7 +499,7 @@ public class SoftwareServerRestlet extends ServerResource
 							//localhost = getReference().getBaseRef().toString();
 							//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
 							localhost = public_ip;
-							MULTIPLE_EXTENSIONS = alias_map.get(application_alias).supportedInput(Utility.getFilenameExtension(Utility.getFilename(file), true));
+							MULTIPLE_EXTENSIONS = alias_map.get(application_alias).supportedInput(Utility.getFilenameExtension(Utility.getFilename(file), true).toLowerCase());
 	
 							if(file.startsWith(Utility.endSlash(localhost))){																						//Locally cached files already have session ids
 								session = getSession(file);
@@ -773,7 +773,7 @@ public class SoftwareServerRestlet extends ServerResource
 			if(application != null && task != null && file != null && format != null){		
 				executeTaskLater(session, application, task, file, format);
 				
-				MULTIPLE_EXTENSIONS = alias_map.get(application).supportedInput(Utility.getFilenameExtension(Utility.getFilename(file), true));
+				MULTIPLE_EXTENSIONS = alias_map.get(application).supportedInput(Utility.getFilenameExtension(Utility.getFilename(file), true).toLowerCase());
 				result = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + Utility.getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
 
 				if(isPlainRequest(Request.getCurrent())){

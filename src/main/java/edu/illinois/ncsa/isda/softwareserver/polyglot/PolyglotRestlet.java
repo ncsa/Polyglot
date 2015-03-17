@@ -334,6 +334,8 @@ public class PolyglotRestlet extends ServerResource
 					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getInputs()), Utility.endSlash(getReference().toString()), true, "Inputs"), MediaType.TEXT_HTML);
 				}
 			}else{
+				part1 = part1.toLowerCase();	//Ignore case of file extension
+
 				if(SoftwareServerRestlet.isJSONRequest(Request.getCurrent())){
 					return new JsonRepresentation(new JSONArray(polyglot.getOutputs(part1)));
 				}else{
