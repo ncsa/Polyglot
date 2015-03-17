@@ -55,9 +55,9 @@ public class SoftwareServerRestlet extends ServerResource
 	private static boolean ADMINISTRATORS_ENABLED = false;
 	private static boolean ATOMIC_EXECUTION = true;
 	private static boolean USE_OPENSTACK_PUBLIC_IP = false;
-	private static String OPENSTACK_PUBLIC_IPV4_URL = "";// Default value is "http://169.254.169.254/2009-04-04/meta-data/public-ipv4".
-	private static String HTTP_GETTER_LOCALHOST = "";
-	private static String EXTERNAL_PUBLIC_IP_SERVICES = "";
+	private static String openstack_public_ipv4_url = "";		//Default value is "http://169.254.169.254/2009-04-04/meta-data/public-ipv4".
+	private static String public_ip = "";
+	private static String external_public_ip_services = "";
 	private static String download_method = "";
 	private static Component component;
 	
@@ -84,6 +84,15 @@ public class SoftwareServerRestlet extends ServerResource
 		}
 		
 		initialization_time = System.currentTimeMillis();
+	}
+
+	/**
+	 * Get the public IP determined by the software server.
+	 * @return the software servers public IP
+	 */
+	public String getPublicIP()
+	{
+		return public_ip;
 	}
 
 	/**
@@ -302,7 +311,8 @@ public class SoftwareServerRestlet extends ServerResource
 		String localhost, result;
 		
 		//localhost = getReference().getBaseRef().toString();
-		localhost = "http://" + Utility.getLocalHostIP() + ":8182";
+		//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
+		localhost = public_ip;
 
 		if(session >= 0){
 			if(file.startsWith(Utility.endSlash(localhost) + "file/")){	//Remove session id from filenames of locally cached files
@@ -487,11 +497,11 @@ public class SoftwareServerRestlet extends ServerResource
 							file = URLDecoder.decode(part4);
 							session = -1;
 							//localhost = getReference().getBaseRef().toString();
-							localhost = HTTP_GETTER_LOCALHOST;
+							//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
+							localhost = public_ip;
 							MULTIPLE_EXTENSIONS = alias_map.get(application_alias).supportedInput(Utility.getFilenameExtension(Utility.getFilename(file), true));
 	
-							//if(file.startsWith(Utility.endSlash(getReference().getBaseRef().toString()) + "/file/")){		//Locally cached files already have session ids
-							if(file.startsWith(Utility.endSlash(localhost))){																															//Locally cached files already have session ids
+							if(file.startsWith(Utility.endSlash(localhost))){																						//Locally cached files already have session ids
 								session = getSession(file);
 								result = Utility.endSlash(localhost) + "file/" + session + "_" + getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
 							}else{																																											//Remote files must be assigned a session id
@@ -709,7 +719,8 @@ public class SoftwareServerRestlet extends ServerResource
 		boolean MULTIPLE_EXTENSIONS;
 
 		//localhost = getReference().getBaseRef().toString();
-		localhost = "http://" + Utility.getLocalHostIP() + ":8182";
+		//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
+		localhost = public_ip;
 				
 		if(FORM_POST || TASK_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
@@ -732,9 +743,8 @@ public class SoftwareServerRestlet extends ServerResource
 							
 							String extension = Utility.getFilenameExtension(fi.getName());
 							
-							if(extension.isEmpty()){		//If no extension add one
+							if(extension.isEmpty()){		//If no extension add one (the 'trid' command can be obtained at http://mark0.net/soft-trid-e.html)
 								String myCommand ="trid -r:1 -ae " + server.getCachePath() + session + "_" + (fi.getName()).replace(" ","_") + " | grep % "+ "| awk  '{print tolower($2) }'" + "|  sed 's/^.\\(.*\\).$/\\1/'";
-								// the 'trid' command can be obtained at http://mark0.net/soft-trid-e.html
 								Process p = Runtime.getRuntime().exec(new String[] {"sh", "-c", myCommand});
 								p.waitFor();
 								BufferedReader buf = new BufferedReader(new InputStreamReader(p.getInputStream()));
@@ -960,14 +970,14 @@ public class SoftwareServerRestlet extends ServerResource
 	          }else if(key.equals("AtomicExecution")){
 	          	ATOMIC_EXECUTION = Boolean.valueOf(value);
 	          }else if(key.equals("UseOpenStackPublicIP")){
-                        USE_OPENSTACK_PUBLIC_IP = Boolean.valueOf(value);
-                        System.out.println("[localhost]: USE_OPENSTACK_PUBLIC_IP = " + USE_OPENSTACK_PUBLIC_IP);
+							USE_OPENSTACK_PUBLIC_IP = Boolean.valueOf(value);
+							System.out.println("[localhost]: USE_OPENSTACK_PUBLIC_IP = " + USE_OPENSTACK_PUBLIC_IP);
 	          }else if(key.equals("OpenStackPublicIPv4URL")){
-                        OPENSTACK_PUBLIC_IPV4_URL = value;
-                        System.out.println("[localhost]: OPENSTACK_PUBLIC_IPV4_URL = " + OPENSTACK_PUBLIC_IPV4_URL);
+							openstack_public_ipv4_url = value;
+							System.out.println("[localhost]: Openstack Public IPv4 URL = " + openstack_public_ipv4_url);
 	          }else if(key.equals("ExternalPublicIPServices")){
-                        EXTERNAL_PUBLIC_IP_SERVICES = value;
-                        System.out.println("[localhost]: EXTERNAL_PUBLIC_IP_SERVICES = " + EXTERNAL_PUBLIC_IP_SERVICES);
+							external_public_ip_services = value;
+							System.out.println("[localhost]: External Public IP Services = " + external_public_ip_services);
 	          }
 	        }
 	      }
@@ -976,28 +986,33 @@ public class SoftwareServerRestlet extends ServerResource
 	    ins.close();
 	  }catch(Exception e) {e.printStackTrace();}
 		
-          try {
-	    if (USE_OPENSTACK_PUBLIC_IP) {
-		String publicIp = Utility.readURL(OPENSTACK_PUBLIC_IPV4_URL, "text/plain");
-                if (! InetAddressValidator.getInstance().isValid(publicIp)) {
-                    String[] urlList = EXTERNAL_PUBLIC_IP_SERVICES.split(" ");
-                    for (int i = 0; i < urlList.length; i++) {
-                        publicIp = Utility.readURL(urlList[i], "text/plain");
-                        if (InetAddressValidator.getInstance().isValid(publicIp)) {
-                            System.out.println("[localhost]: public IP " + publicIp + " resolved by '" + urlList[i] + "'.");
-                            break;
-                        }
-                    }
-                }
-		HTTP_GETTER_LOCALHOST = "http://" + publicIp + ":8182";
-	    } else {
-		HTTP_GETTER_LOCALHOST = "http://" + Utility.getLocalHostIP() + ":8182";
-	    }
-	  } catch (Exception e) {
-		System.out.println("Error in getting HTTP_GETTER_LOCALHOST: " + e.getMessage());
-		//e.printStackTrace();
-	  } 
-	  System.out.println("[localhost]: HTTP_GETTER_LOCALHOST = " + HTTP_GETTER_LOCALHOST);
+		try{
+			if(USE_OPENSTACK_PUBLIC_IP){
+				String ip = Utility.readURL(openstack_public_ipv4_url, "text/plain");
+
+				if(!InetAddressValidator.getInstance().isValid(ip)){
+					String[] urlList = external_public_ip_services.split(" ");
+
+					for(int i = 0; i < urlList.length; i++){
+						ip = Utility.readURL(urlList[i], "text/plain");
+
+						if(InetAddressValidator.getInstance().isValid(ip)){
+							System.out.println("[localhost]: public IP " + ip + " resolved by '" + urlList[i] + "'.");
+							break;
+						}
+					}
+				}
+
+				public_ip = "http://" + ip + ":8182";
+	    }else{
+				public_ip = "http://" + Utility.getLocalHostIP() + ":8182";
+			}
+	  }catch(Exception e){
+			System.out.println("Error in getting public IP: " + e.getMessage());
+			//e.printStackTrace();
+	  }
+
+	  System.out.println("[localhost]: Public IP = " + public_ip);
 
 	  //Initialize and start the service
 	  initialize();
