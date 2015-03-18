@@ -61,8 +61,9 @@ public class SoftwareServerUtility
 
       return (connection.getResponseCode() == HttpURLConnection.HTTP_OK || connection.getResponseCode() == HttpURLConnection.HTTP_NO_CONTENT);
     }catch(Exception e){
+			System.out.println("Error accessing: " + url);
       e.printStackTrace();
-      return false;
+      return true;					//Return true to move on!
     }
   }
 
