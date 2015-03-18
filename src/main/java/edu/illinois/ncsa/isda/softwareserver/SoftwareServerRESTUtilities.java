@@ -474,8 +474,9 @@ public class SoftwareServerRESTUtilities
 	 * @param rabbitmq_vhost the rabbitmq virtual host
 	 * @param rabbitmq_username the rabbitmq user
 	 * @param rabbitmq_password the rabbitmq user password
+	 * @param WAIT true if should wait for jobs to finish before acknowledging completion
 	 */
-	public static void rabbitMQHandler(final String softwareserver_username, final String softwareserver_password, int softwareserver_port, Vector<Application> softwareserver_applications, String rabbitmq_uri, String rabbitmq_server, String rabbitmq_vhost, String rabbitmq_username, String rabbitmq_password)
+	public static void rabbitMQHandler(final String softwareserver_username, final String softwareserver_password, int softwareserver_port, Vector<Application> softwareserver_applications, String rabbitmq_uri, String rabbitmq_server, String rabbitmq_vhost, String rabbitmq_username, String rabbitmq_password, final boolean WAIT)
 	{
 		String softwareserver_authentication = "";
 		final int softwareserver_port_final = softwareserver_port;
@@ -555,11 +556,11 @@ public class SoftwareServerRESTUtilities
 		  	    	
 		  	   		 				//Execute job using Software Server REST interface (leverage implementation)
 		  	   						api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + Utility.urlEncode(input);
-		  	   						result = Utility.readURL(api_call, "text/plain");
+		  	   						result = SoftwareServerUtility.readURL(api_call, "text/plain");
 		  	    	
 		  	   						System.out.println("[AMQ]: " + api_call);
 		  	    						  	    	
-		  	   						while(!SoftwareServerUtility.existsURL(result)){
+		  	   						while(WAIT && !SoftwareServerUtility.existsURL(result)){
 		  	   							Utility.pause(1000);
 		  	   						}
 

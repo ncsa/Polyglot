@@ -89,11 +89,11 @@ public class SoftwareServerUtility
       if(type != null) conn.setRequestProperty("Accept", type);
       conn.connect();
       
-      if(url.endsWith(".gz")){
-      	ins = new BufferedReader(new InputStreamReader(new GZIPInputStream(conn.getInputStream())));
-      }else{
+      //if(url.endsWith(".gz")){
+      //	ins = new BufferedReader(new InputStreamReader(new GZIPInputStream(conn.getInputStream())));
+      //}else{
       	ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-      }
+      //}
      
       /*
       while((line = ins.readLine()) != null){

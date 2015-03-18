@@ -4,12 +4,12 @@
 #tar, tgz, tar.gz
 #html
 
-output_filename=$(basename "$2")
-output_format="${output_filename##*.}" 
-mkdir -p $2
+input_filename=$(basename "$1")
+input_format="${input_filename##*.}" 
+#mkdir -p $2
 
-if [ "$output_format" = "tar" ]; then
-	tar xf "$1" -C "$2"
+if [ "$input_format" = "tar" ]; then
+	tar xvf "$1" -C "$2"
 else
-	tar xzf "$1" -C "$2"
+	tar xzvf "$1" -C "$2"
 fi

@@ -925,6 +925,7 @@ public class SoftwareServerRestlet extends ServerResource
 		String rabbitmq_vhost = "/";
 		String rabbitmq_username = null;
 		String rabbitmq_password = null;
+		boolean rabbitmq_WAITTOACK = true;
 		TreeMap<String,String> accounts = new TreeMap<String,String>();	
 		
 		//Load configuration file
@@ -954,6 +955,8 @@ public class SoftwareServerRestlet extends ServerResource
 	          	rabbitmq_username = value;
 	          }else if(key.equals("RabbitMQPassword")){
 	          	rabbitmq_password = value;
+	          }else if(key.equals("RabbitMQWaitToAcknowledge")){
+	          	rabbitmq_WAITTOACK = Boolean.valueOf(value);
 	          }else if(key.equals("Authentication")){
 	  	        last_username = value.substring(0, value.indexOf(':')).trim();
 	  	        last_password = value.substring(value.indexOf(':')+1).trim();
@@ -1124,7 +1127,7 @@ public class SoftwareServerRestlet extends ServerResource
 	 	
 	 	//Connect to RabbitMQ bus
 	 	if(rabbitmq_uri != null || rabbitmq_server != null){
-	 		SoftwareServerRESTUtilities.rabbitMQHandler(last_username, last_password, port, applications, rabbitmq_uri, rabbitmq_server, rabbitmq_vhost, rabbitmq_username, rabbitmq_password);
+	 		SoftwareServerRESTUtilities.rabbitMQHandler(last_username, last_password, port, applications, rabbitmq_uri, rabbitmq_server, rabbitmq_vhost, rabbitmq_username, rabbitmq_password, rabbitmq_WAITTOACK);
 		}
 	}
 }
