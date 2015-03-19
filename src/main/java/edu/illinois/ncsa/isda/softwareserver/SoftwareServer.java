@@ -457,7 +457,7 @@ public class SoftwareServer implements Runnable
 		  	
 		  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
 		  	if(!command.isEmpty()){
-		  		COMMAND_COMPLETED = Utility.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
+		  		COMMAND_COMPLETED = SoftwareServerUtility.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
 			  	
           if(!COMMAND_COMPLETED){
             if(i < (task_attempts-1)){
@@ -474,7 +474,7 @@ public class SoftwareServer implements Runnable
           			kill_count++;
           			
           			try{
-          				Utility.executeAndWait("taskkill /f /im " + Utility.getFilename(Utility.unixPath(application.executables.first())), -1);
+          				SoftwareServerUtility.executeAndWait("taskkill /f /im " + Utility.getFilename(Utility.unixPath(application.executables.first())), -1);
           			}catch(Exception e) {e.printStackTrace();}
           		}
           	}

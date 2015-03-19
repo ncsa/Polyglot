@@ -117,4 +117,86 @@ public class SoftwareServerUtility
     
     return contents;
   }
+
+  /**
+   * Execute the given command.
+   * @param command the command
+   * @param max_runtime the maximum allowed time to run (in milli-seconds, -1 indicates forever)
+   * @param HANDLE_OUTPUT true if the process output should be handled
+   * @param SHOW_OUTPUT true if the process output should be shown
+   * @return true if the operation completed within the given time frame
+   */
+  public static boolean executeAndWait(String command, int max_runtime, boolean HANDLE_OUTPUT, boolean SHOW_OUTPUT)
+  {
+    Process process;
+    TimedProcess timed_process;
+    boolean COMPLETE = false;
+
+    if(!command.isEmpty()){
+      try{
+        process = Runtime.getRuntime().exec(command);
+
+        if(max_runtime >= 0){
+          timed_process = new TimedProcess(process, HANDLE_OUTPUT, SHOW_OUTPUT);
+          COMPLETE = timed_process.waitFor(max_runtime); System.out.println();
+        }else{
+          if(HANDLE_OUTPUT){
+            SoftwareServerUtility.handleProcessOutput(process, SHOW_OUTPUT);
+          }else{
+            process.waitFor();
+          }
+
+          COMPLETE = true;
+        }
+      }catch(Exception e) {e.printStackTrace();}
+    }
+
+    return COMPLETE;
+  }
+
+  /**
+   * Execute the given command.
+   * @param command the command
+   * @param max_runtime the maximum allowed time to run (in milli-seconds, -1 indicates forever)
+   * @return true if the operation completed within the given time frame
+   */
+  public static boolean executeAndWait(String command, int max_runtime)
+  {
+    return executeAndWait(command, max_runtime, false, false);
+  }
+
+  /**
+   * Handle the output of a process.
+   * @param process the process
+   * @param SHOW_OUTPUT true if the output should be printed
+   */
+  public static void handleProcessOutput(Process process, boolean SHOW_OUTPUT)
+  {
+    String line = null;
+
+		/*
+    DataInputStream ins = new DataInputStream(process.getInputStream());
+
+    try{
+      while((line = ins.readLine()) != null){
+        if(SHOW_OUTPUT) System.out.println(line);
+      }
+    }catch(Exception e) {e.printStackTrace();}
+		*/
+
+		BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
+		BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+
+		try{
+			//Read output
+			while((line = stdInput.readLine()) != null){
+    		if(SHOW_OUTPUT) System.out.println(line);
+			}
+
+			//Read errors
+			while((line = stdError.readLine()) != null){
+				if(SHOW_OUTPUT) System.out.println(line);
+			}
+    }catch(Exception e) {e.printStackTrace();}
+  }
 }
