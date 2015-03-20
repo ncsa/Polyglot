@@ -248,7 +248,11 @@ public class PolyglotRestlet extends ServerResource
 				p = form.getFirst("output"); if(p != null) output = p.getValue();
 								
 				if(file != null && output != null){
-					url = getRootRef() + "convert/" + output + "/" + URLEncoder.encode(file);
+					try{
+						file = URLEncoder.encode(file, "UTF-8");
+					}catch(Exception e) {e.printStackTrace();}
+						
+					url = getRootRef() + "convert/" + output + "/" + file;
 	
 					return new StringRepresentation("<html><head><meta http-equiv=\"refresh\" content=\"1; url=" + url + "\"></head</html>", MediaType.TEXT_HTML);
 				}else{
@@ -314,6 +318,10 @@ public class PolyglotRestlet extends ServerResource
 					int job_id = Integer.parseInt(part1);
 				
 					if(!part2.isEmpty()){
+						try{
+							part2 = URLDecoder.decode(part2, "UTF-8");
+						}catch(Exception e) {e.printStackTrace();}
+
 						return new StringRepresentation(((PolyglotStewardAMQ)polyglot).checkin(getClientInfo().getAddress(), job_id, part2), MediaType.TEXT_PLAIN);
 					}else{
 						return new StringRepresentation("error: invalid file", MediaType.TEXT_PLAIN);
