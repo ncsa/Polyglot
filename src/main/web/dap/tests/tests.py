@@ -44,6 +44,13 @@ def main():
 		else:
 			assert False, "unhandled option"
 
+	#Set hostname if not set
+	if not hostname:
+		if '@' in host:
+			hostname = host.split('@')[1]
+		else:
+			hostname = host
+		
 	print 'Testing: ' + host + '\n'
 
 	#Remove previous outputs
@@ -123,15 +130,11 @@ def main():
 			with open('failure_watchers.txt', 'r') as watchers_file:
 				watchers = watchers_file.read().splitlines()
 				
-				if hostname:
-					message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
-				else:
-					message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
-
+				message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
 				message += 'To: ' + ', '.join(watchers) + '\n'
 				message += 'Subject: DAP Test Failure Report\n\n'
 				message += failure_report	
-				message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?dap=' + host + '&run=false&start=true\n\n'
+				message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?dap=' + urllib.quote(host) + '&run=false&start=true\n\n'
 				message += 'Elapsed time: ' + timeToString(dt)
 
 				mailserver = smtplib.SMTP('localhost')
@@ -148,11 +151,7 @@ def main():
 					with open('failure_watchers.txt', 'r') as watchers_file:
 						watchers = watchers_file.read().splitlines()
 
-						if hostname:
-							message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
-						else:
-							message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
-
+						message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
 						message += 'To: ' + ', '.join(watchers) + '\n'
 						message += 'Subject: DAP Tests Now Passing\n\n'
 						message += 'Previous failures:\n\n'
@@ -169,11 +168,7 @@ def main():
 				with open('pass_watchers.txt', 'r') as watchers_file:
 					watchers = watchers_file.read().splitlines()
 			
-					if hostname:
-						message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
-					else:
-						message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
-
+					message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
 					message += 'To: ' + ', '.join(watchers) + '\n'
 					message += 'Subject: DAP Tests Passed\n\n'
 					message += 'Elapsed time: ' + timeToString(dt)
@@ -238,11 +233,7 @@ def run_test(host, hostname, input_filename, output, count, comment, all_failure
 			with open('failure_watchers.txt', 'r') as watchers_file:
 				watchers = watchers_file.read().splitlines()
 						
-				if hostname:
-					message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
-				else:
-					message = 'From: \"' + host + '\" <devnull@ncsa.illinois.edu>\n'
-	
+				message = 'From: \"' + hostname + '\" <devnull@ncsa.illinois.edu>\n'
 				message += 'To: ' + ', '.join(watchers) + '\n'
 				message += 'Subject: DAP Test Failed\n\n'
 				message += report
@@ -260,12 +251,23 @@ def run_test(host, hostname, input_filename, output, count, comment, all_failure
 
 def convert(host, input_filename, output, output_path):
 	"""Pass file to Polyglot Steward."""
+	username = ''
+	password = ''
+	output_filename = ''
+	
+	#Check for authentication
+	if '@' in host:
+		parts = host.split('@')
+		host = parts[1]
+		parts = parts[0].split(':')
+		username = parts[0]
+		password = parts[1]
+
 	headers = {'Accept': 'text/plain'}
 	api_call = 'http://' + host + ':8184/convert/' + output + '/' + urllib.quote_plus(input_filename)
-	output_filename = ""
 
 	try:
-		r = requests.get(api_call, headers=headers)
+		r = requests.get(api_call, auth=(username, password), headers=headers)
 
 		if(r.status_code != 404):
 			result = r.text
@@ -275,7 +277,7 @@ def convert(host, input_filename, output, output_path):
 			else:
 				output_filename = output_path + basename(result)
 
-			download_file(result, output_filename, 90)
+			download_file(result, output_filename, 90, username, password)
 	except KeyboardInterrupt:
 		sys.exit()
 	except:
@@ -284,18 +286,18 @@ def convert(host, input_filename, output, output_path):
 
 	return output_filename
 
-def download_file(url, filename, wait):
+def download_file(url, filename, wait, username='', password=''):
 	"""Download file at given URL"""
 	if not filename:
 		filename = url.split('/')[-1]
 
 	try:
-		r = requests.get(url, stream=True)
+		r = requests.get(url, auth=(username, password), stream=True)
 
 		while(wait > 0 and r.status_code == 404):
 			time.sleep(1)
 			wait -= 1
-			r = requests.get(url, stream=True)
+			r = requests.get(url, auth=(username, password), stream=True)
 
 		if(r.status_code != 404):	
 			with open(filename, 'wb') as f:

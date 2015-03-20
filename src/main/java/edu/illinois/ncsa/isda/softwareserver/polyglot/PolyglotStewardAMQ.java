@@ -28,6 +28,8 @@ import com.rabbitmq.client.*;
  */
 public class PolyglotStewardAMQ extends Polyglot implements Runnable
 {
+	private static String polyglot_username = null;
+	private static String polyglot_password = null;
 	private static String rabbitmq_uri = null;
 	private static String rabbitmq_server = null;
 	private static String rabbitmq_vhost = "/";
@@ -355,6 +357,15 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	}
 
 	/**
+	 * Set the username and password to use when others communicate back to polyglot.
+	 */
+	public void setAuthentication(String username, String password)
+	{
+		polyglot_username = username;
+		polyglot_password = password;
+	}
+
+	/**
 	 * Discover Software Servers consuming on the given RabbitMQ bus (adds them to I/O-graph).
 	 */
 	public void discoveryAMQ()
@@ -439,7 +450,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode message;
 		int job_id, step, step_status;
-		String polyglot_ip, input, application, output_format, output_path;
+		String polyglot_ip, polyglot_auth = "", input, application, output_format, output_path;
 		boolean MULTIPLE_EXTENSIONS;	//Was a path found for an input with multiple extensions
 		
 		try{
@@ -447,12 +458,13 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 				document = cursor.next();
 				//polyglot_ip = InetAddress.getLocalHost().getHostAddress();
 				polyglot_ip = Utility.getLocalHostIP();
+				if(polyglot_username != null && polyglot_password != null) polyglot_auth = polyglot_username + ":" + polyglot_password;
 				job_id = Integer.parseInt(document.get("job_id").toString());
 				MULTIPLE_EXTENSIONS = Boolean.parseBoolean(document.get("multiple_extensions").toString());
 				step = Integer.parseInt(document.get("step").toString());
 				step_status = Integer.parseInt(document.get("step_status").toString());
 				int steps = ((BasicDBList)document.get("path")).size();
-												
+
 				//Move the job along
 				if(step_status == 1){
 					if(step == -1){
@@ -472,6 +484,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						//Build message
 						message = mapper.createObjectNode();
 						message.put("polyglot_ip", polyglot_ip);
+						message.put("polyglot_auth", polyglot_auth);
 						message.put("job_id", job_id);
 						message.put("input", input);
 						message.put("application", application);

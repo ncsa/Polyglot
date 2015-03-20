@@ -25,10 +25,30 @@ if($prefix) {
 
 //Run through Polyglot
 if($run) {
-	$api_call = $dap . ":8184/convert/" . $output . "/" . urlencode($file);
-	$opts = array('http'=>array('method'=>"GET", 'header'=>"Accept:text/plain\r\n"));
-	$context = stream_context_create($opts);
+	$opts = array();
+	$username = "";
+	$password = "";
 
+	//Add authentication if required
+	if(strpos($dap,'@') !== false) {
+		$parts = explode('@', $dap);
+		$dap = $parts[1];
+		$parts = explode(':', $parts[0]);
+		$username = $parts[0];
+		$password = $parts[1];
+
+		//Set defaults for get_headers function
+		$opts = array('http'=>array('method'=>"HEAD", 'header'=>"Accept:text/plain\r\n" . "Authorization: Basic " . base64_encode("$username:$password") . "\r\n"));
+		stream_context_set_default($opts);
+
+		//Set options for api call
+		$opts = array('http'=>array('method'=>"GET", 'header'=>"Accept:text/plain\r\n" . "Authorization: Basic " . base64_encode("$username:$password") . "\r\n"));
+	} else {
+		$opts = array('http'=>array('method'=>"GET", 'header'=>"Accept:text/plain\r\n"));
+	}
+
+	$api_call = "http://" . $dap . ":8184/convert/" . $output . "/" . urlencode($file);
+	$context = stream_context_create($opts);
 	$result = file_get_contents($api_call, false, $context);
 	//error_log("Result: " . $result);
 
@@ -39,7 +59,16 @@ if($run) {
 		}
 
 		if(my_http_response_code($result) != "404") {
-			$command = "wget -O " . $output_file . " " . $result;
+			$command = "";
+
+			if($username && $password) {
+				error_log("ok2: $username $password");
+				$command = "wget --user=" . $username . " --password=" . $password . " -O " . $output_file . " " . $result;
+			} else {
+				$command = "wget -O " . $output_file . " " . $result;
+			}
+
+			error_log("ok3: $command");
 			exec($command);
 		}
 	}

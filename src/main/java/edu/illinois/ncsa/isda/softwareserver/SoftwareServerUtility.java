@@ -89,11 +89,7 @@ public class SoftwareServerUtility
       if(type != null) conn.setRequestProperty("Accept", type);
       conn.connect();
       
-      //if(url.endsWith(".gz")){
-      //	ins = new BufferedReader(new InputStreamReader(new GZIPInputStream(conn.getInputStream())));
-      //}else{
-      	ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-      //}
+     	ins = new BufferedReader(new InputStreamReader(conn.getInputStream()));
      
       /*
       while((line = ins.readLine()) != null){
@@ -199,4 +195,39 @@ public class SoftwareServerUtility
 			}
     }catch(Exception e) {e.printStackTrace();}
   }
+
+	/**
+	 * Add authentication to a URL.
+	 * @param url a URL
+	 * @param authentication the "username:password"
+	 * @return the URL with the authentication included
+	 */
+	public static String addAuthentication(String url, String authentication)
+	{
+		if(authentication != null && !authentication.isEmpty()){
+			String[] strings = url.split("//");
+			return strings[0] + "//" + authentication + "@" + strings[1];
+		}else{
+			return url;
+		}
+	}
+
+	/**
+	 * Set default authentication for HTTP requests.
+	 * @param authentication the "username:password"
+	 */
+	public static void setDefaultAuthentication(String authentication)
+	{
+		if(authentication != null && !authentication.isEmpty()){
+			String[] strings = authentication.split(":");
+			final String username = strings[0];
+			final String password = strings[1];
+
+			Authenticator.setDefault(new Authenticator(){
+				protected PasswordAuthentication getPasswordAuthentication(){
+					return new PasswordAuthentication(username, password.toCharArray());
+				}
+			});
+		}
+	}
 }

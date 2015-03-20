@@ -549,22 +549,25 @@ public class SoftwareServerRESTUtilities
 										try{
 		  								JsonNode message = mapper.readValue(delivery.getBody(), JsonNode.class);
 		  								String polyglot_ip = message.get("polyglot_ip").asText();
+		  								String polyglot_auth = message.get("polyglot_auth").asText();
 		  								int job_id = Integer.parseInt(message.get("job_id").asText());
 		  	   						String input = message.get("input").asText();
 		  	   						String application = message.get("application").asText();
 		  	   						String output_format = message.get("output_format").asText();
 		  	    	
 		  	   		 				//Execute job using Software Server REST interface (leverage implementation)
-		  	   						api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + Utility.urlEncode(input);
-		  	   						result = SoftwareServerUtility.readURL(api_call, "text/plain");
-		  	    	
+		  	   						api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(input, "UTF-8");
 		  	   						System.out.println("[AMQ]: " + api_call);
-		  	    						  	    	
+
+											result = SoftwareServerUtility.readURL(api_call, "text/plain");
+											result = SoftwareServerUtility.addAuthentication(result, softwareserver_authentication_final);
+		  	    	
 		  	   						while(WAIT && !SoftwareServerUtility.existsURL(result)){
 		  	   							Utility.pause(1000);
 		  	   						}
 
-		  	   						checkin_call = "http://" + softwareserver_authentication_final + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
+											SoftwareServerUtility.setDefaultAuthentication(polyglot_auth);
+		  	   						checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
 		  	   						System.out.println("[AMQ]: " + checkin_call);
 		  	    	
 		  	   						if(Utility.readURL(checkin_call).equals("ok")){

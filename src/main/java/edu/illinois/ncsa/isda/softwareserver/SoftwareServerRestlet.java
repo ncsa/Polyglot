@@ -308,7 +308,7 @@ public class SoftwareServerRestlet extends ServerResource
 	public void executeTask(int session, String application_alias, String task_string, String file, String format)
 	{
 		Vector<Subtask> task;
-		String localhost, result;
+		String localhost, result, username = null, password = null;
 		
 		//localhost = getReference().getBaseRef().toString();
 		//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
@@ -320,8 +320,20 @@ public class SoftwareServerRestlet extends ServerResource
 				file = getFilename(file);
 			}else{																											//Download remote files
 				if(download_method.equals("wget")){
+					if(file.contains("@")){
+						String[] strings = file.split("@");
+						strings = strings[0].split("//");
+						strings = strings[1].split(":");
+						username = strings[0];
+						password = strings[1];
+					}
+
 					try{
-						Runtime.getRuntime().exec("wget -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file).waitFor();
+						if(username != null && password != null){
+							Runtime.getRuntime().exec("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file).waitFor();
+						}else{
+							Runtime.getRuntime().exec("wget -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file).waitFor();
+						}
 					}catch(Exception e){e.printStackTrace();}
 				}else if(download_method.equals("nio")){
 					try{
@@ -494,7 +506,11 @@ public class SoftwareServerRestlet extends ServerResource
 							application_alias = part1;
 							task = part2;
 							format = part3;
-							file = URLDecoder.decode(part4);
+	
+							try{
+								file = URLDecoder.decode(part4, "UTF-8");
+							}catch(Exception e) {e.printStackTrace();}
+
 							session = -1;
 							//localhost = getReference().getBaseRef().toString();
 							//localhost = "http://" + Utility.getLocalHostIP() + ":8182";

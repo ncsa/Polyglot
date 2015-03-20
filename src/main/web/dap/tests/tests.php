@@ -124,7 +124,7 @@
 				$(row).attr('class', 'info');		//Set it again in case this is a second attempt
 
 				var dap = document.getElementById('dap').value;
-				var url = 'test.php?dap=' + encodeURIComponent('http://' + dap) + '&file=' + encodeURIComponent(file) + '&output=' + output + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
+				var url = 'test.php?dap=' + encodeURIComponent(dap) + '&file=' + encodeURIComponent(file) + '&output=' + output + '&prefix=' + id + '&run=' + run + '&mail=' + mail;
 				
 				$.get(url, function(success) {
 					//Check result

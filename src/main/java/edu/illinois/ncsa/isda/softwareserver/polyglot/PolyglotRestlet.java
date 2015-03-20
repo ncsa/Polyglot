@@ -36,6 +36,8 @@ import com.mongodb.*;
 public class PolyglotRestlet extends ServerResource
 {
   private static Polyglot polyglot = new PolyglotStewardAMQ(false);
+	private static TreeMap<String,String> accounts = new TreeMap<String,String>();
+	private static String nonadmin_user = "";
 	private static int steward_port = -1;
 	private static String context = "";
 	private static int port = 8184;
@@ -430,6 +432,7 @@ public class PolyglotRestlet extends ServerResource
 
 								//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
 								file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file);
+								if(!nonadmin_user.isEmpty()) file = SoftwareServerUtility.addAuthentication(file, nonadmin_user + ":" + accounts.get(nonadmin_user));
 								System.out.println("[" + client + "]: Temporarily hosting file \"" + Utility.getFilename(file) + "\", " + file);
 							}else{
 								file = temp_path + (fi.getName()).replace(" ","_");
@@ -520,8 +523,6 @@ public class PolyglotRestlet extends ServerResource
 	 */
 	public static void main(String[] args)
 	{		
-		TreeMap<String,String> accounts = new TreeMap<String,String>();	
-
 		//Load configuration file
 	  try{
 	    BufferedReader ins = new BufferedReader(new FileReader("PolyglotRestlet.conf"));
@@ -615,6 +616,11 @@ public class PolyglotRestlet extends ServerResource
 	  	        password = value.substring(value.indexOf(':')+1).trim();
 							System.out.println("Adding user: " + username);
 	  	        accounts.put(username, password);
+					
+							if(!username.toLowerCase().startsWith("admin")){
+								nonadmin_user = username;
+								if(polyglot instanceof PolyglotStewardAMQ) ((PolyglotStewardAMQ)polyglot).setAuthentication(username, password);
+							}
 	          }
 	        }
 	      }
