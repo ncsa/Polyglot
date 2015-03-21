@@ -62,13 +62,11 @@ if($run) {
 			$command = "";
 
 			if($username && $password) {
-				error_log("ok2: $username $password");
 				$command = "wget --user=" . $username . " --password=" . $password . " -O " . $output_file . " " . $result;
 			} else {
 				$command = "wget -O " . $output_file . " " . $result;
 			}
 
-			error_log("ok3: $command");
 			exec($command);
 		}
 	}
