@@ -572,7 +572,19 @@ public class SoftwareServerRESTUtilities
 		  	    	
 		  	   						if(Utility.readURL(checkin_call).equals("ok")){
 		  	   							channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-		  	   						}
+		  	   							System.out.println("[AMQ]: " + checkin_call + ", job acknowledged!");
+		  	   						}else{		//Wait a bit and try one more time
+												Utility.pause(5000);
+		  	   							System.out.println("[AMQ]: " + checkin_call + ", second attempt ...");
+
+		  	   							if(Utility.readURL(checkin_call).equals("ok")){
+		  	   								channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+		  	   								System.out.println("[AMQ]: " + checkin_call + ", job acknowledged!");
+												}else{
+		  	   								channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
+		  	   								System.out.println("[AMQ]: " + checkin_call + ", job un-acknowledged, rejecting!");
+												}
+											}
 										}catch(Exception e) {e.printStackTrace();}
 									}
 								}.start();
