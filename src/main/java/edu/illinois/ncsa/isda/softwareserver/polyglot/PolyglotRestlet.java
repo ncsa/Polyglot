@@ -686,45 +686,50 @@ public class PolyglotRestlet extends ServerResource
 				public Restlet createInboundRoot(){
 					Router router = new Router(getContext());
 					router.attachDefault(PolyglotRestlet.class);
-					
-					if(true){ 	//Add a CORS filter to allow cross-domain requests
+			
+  	    	if(!accounts.isEmpty()){
+    	    	ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
+     	  		MapVerifier verifier = new MapVerifier();
+      	  	boolean FOUND_ADMIN = false;
+       			boolean FOUND_USER = false;
+        
+        		for(String username : accounts.keySet()){
+          		if(username.toLowerCase().startsWith("admin")){
+            		FOUND_ADMIN = true;
+          		}else{
+            		FOUND_USER = true;
+          		}
+            
+          		verifier.getLocalSecrets().put(username, accounts.get(username).toCharArray());
+        		}
+          
+        		if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
+          
+        		guard.setVerifier(verifier);
+        		guard.setNext(router);
+
+          	//Add a CORS filter to allow cross-domain requests
+           	CorsFilter corsfilter = new CorsFilter(getContext(), guard);
+           	corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+						//corsfilter.setAllowingAllRequestedHeaders(true);
+           	//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+           	corsfilter.setAllowedCredentials(true);
+						corsfilter.setSkippingResourceForCorsOptions(true);
+
+           	return corsfilter;
+					}else{
+					 	//Add a CORS filter to allow cross-domain requests
   					CorsFilter corsfilter = new CorsFilter(getContext(), router);
   					corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
-  					corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+  					//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
   					corsfilter.setAllowedCredentials(true);
 					
 						return corsfilter;
 					}
-
-					return router;
 				}
 			};
-			
-			if(!accounts.isEmpty()){
-				ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
-				MapVerifier verifier = new MapVerifier();
-				boolean FOUND_ADMIN = false;
-				boolean FOUND_USER = false;
-				
-				for(String username : accounts.keySet()){
-					if(username.toLowerCase().startsWith("admin")){
-						FOUND_ADMIN = true;
-					}else{
-						FOUND_USER = true;
-					}
-						
-					verifier.getLocalSecrets().put(username, accounts.get(username).toCharArray());
-				}
-					
-				if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
-					
-				guard.setVerifier(verifier);
-				guard.setNext(application);
-				component.getDefaultHost().attachDefault(guard);
-			}else{
-				component.getDefaultHost().attach("/", application);
-			}
-			
+		
+			component.getDefaultHost().attach("/", application);
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
   	

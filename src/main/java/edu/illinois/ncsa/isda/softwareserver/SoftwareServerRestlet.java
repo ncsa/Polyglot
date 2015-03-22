@@ -45,6 +45,7 @@ import org.apache.commons.validator.routines.InetAddressValidator;
 public class SoftwareServerRestlet extends ServerResource
 {
 	private static SoftwareServer server;
+	private static TreeMap<String,String> accounts = new TreeMap<String,String>();	
 	private static Vector<Application> applications;
 	private static Vector<TreeSet<TaskInfo>> application_tasks;
 	private static TreeMap<String,Application> alias_map = new TreeMap<String,Application>();
@@ -380,7 +381,7 @@ public class SoftwareServerRestlet extends ServerResource
 				//Add CORS filter
   			CorsFilter corsfilter = new CorsFilter(getContext(), directory);
   			corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
-  			corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+  			//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
   			corsfilter.setAllowedCredentials(true);
 				component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", corsfilter);
 			}
@@ -942,7 +943,6 @@ public class SoftwareServerRestlet extends ServerResource
 		String rabbitmq_username = null;
 		String rabbitmq_password = null;
 		boolean rabbitmq_WAITTOACK = true;
-		TreeMap<String,String> accounts = new TreeMap<String,String>();	
 		
 		//Load configuration file
 	  try{
@@ -1064,55 +1064,57 @@ public class SoftwareServerRestlet extends ServerResource
 							//System.out.println("[REST]: Re-attaching " + files[i].getName());
 							Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + files[i].getName()));
 							directory.setListingAllowed(true);
-							//component.getDefaultHost().attach("/file/" + files[i].getName() + "/", directory);
 
 							//Add CORS filter
   						CorsFilter corsfilter = new CorsFilter(getContext(), directory);
   						corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
-  						corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+  						//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
   						corsfilter.setAllowedCredentials(true);
 							component.getDefaultHost().attach("/file/" + files[i].getName() + "/", corsfilter);
 						}
 					}
+			
+					if(!accounts.isEmpty()){
+						ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
+						MapVerifier verifier = new MapVerifier();
+						boolean FOUND_ADMIN = false;
+						boolean FOUND_USER = false;
+				
+						for(String username : accounts.keySet()){
+							if(username.toLowerCase().startsWith("admin")){
+								FOUND_ADMIN = true;
+							}else{
+								FOUND_USER = true;
+							}
+						
+							verifier.getLocalSecrets().put(username, accounts.get(username).toCharArray());
+						}
+					
+						if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
+					
+						guard.setVerifier(verifier);
+						guard.setNext(router);
+						
+						//Add a CORS filter to allow cross-domain requests
+  					CorsFilter corsfilter = new CorsFilter(getContext(), guard);
+  					corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+  					//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+  					corsfilter.setAllowedCredentials(false);
 
-					if(true){ 	//Add a CORS filter to allow cross-domain requests
+						return corsfilter;
+					}else{
+						//Add a CORS filter to allow cross-domain requests
   					CorsFilter corsfilter = new CorsFilter(getContext(), router);
   					corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
-  					corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+  					//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
   					corsfilter.setAllowedCredentials(false);
 					
 						return corsfilter;
 					}
-
-					return router;
 				}
 			};
 				
-			if(!accounts.isEmpty()){
-				ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
-				MapVerifier verifier = new MapVerifier();
-				boolean FOUND_ADMIN = false;
-				boolean FOUND_USER = false;
-				
-				for(String username : accounts.keySet()){
-					if(username.toLowerCase().startsWith("admin")){
-						FOUND_ADMIN = true;
-					}else{
-						FOUND_USER = true;
-					}
-						
-					verifier.getLocalSecrets().put(username, accounts.get(username).toCharArray());
-				}
-					
-				if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
-					
-				guard.setVerifier(verifier);
-				guard.setNext(application);
-				component.getDefaultHost().attachDefault(guard);
-			}else{
-				component.getDefaultHost().attach("/", application);
-			}
-			
+			component.getDefaultHost().attach("/", application);
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
 				

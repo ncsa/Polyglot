@@ -1,7 +1,11 @@
 //Set DAP server
 protocol = 'http://';
 dap = "<?php echo $_SERVER['SERVER_NAME']; ?>";
+username = getCookie('username');
+password = getCookie('password');
+
 console.log(dap);
+console.log(username + ':' + password);
 
 //Load CSS
 var css = document.createElement('link');
@@ -14,12 +18,35 @@ document.getElementsByTagName('head')[0].appendChild(css);
 //if (!window.jQuery) {
 	var jq = document.createElement('script');
 	jq.type = 'text/javascript';
-	jq.addEventListener('load', addMenuToLinks);
+	jq.addEventListener('load', checkAuthorization);
 	jq.src = "https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js";
 	document.getElementsByTagName('head')[0].appendChild(jq);
 //} else {
 //	addMenuToLinks();
 //}
+
+//Check if authorization is needed for DAP before attempting to add menus
+function checkAuthorization() {
+	$.ajax({
+   	url: protocol + dap + ':8184/alive',
+		beforeSend: function(req) { req.setRequestHeader('Authorization', 'Basic ' + btoa(username + ':' + password)); },
+		success: function() {
+			addMenuToLinks();
+		},
+		error: function(jqXHR, textStatus, errorThrown) {
+			console.log('Status: ' + jqXHR.status + ', ' + errorThrown);
+			
+			authorization = prompt("Authorization");
+			strings = authorization.split(':');
+			username = strings[0];
+			password = strings[1];
+			document.cookie = "username=" + username;
+			document.cookie = "password=" + password;
+
+			checkAuthorization();
+		}
+	});
+}
 
 //Process webpage once loaded
 function addMenuToLinks() {
@@ -42,7 +69,7 @@ function addMenuToLinks() {
 			console.log('Input: ' + input);
 
 			//$.getJSON(protocol + dap + '/dap/bookmarklet/outputs.php?input=' + input, function(outputs) {
-			$.ajax({url: protocol + dap + ':8184/inputs/' + input}).done(function(outputs) {
+			$.ajax({url: protocol + dap + ':8184/inputs/' + input, beforeSend: function(req) { req.setRequestHeader('Authorization', 'Basic ' + btoa(username + ':' + password)); }}).done(function(outputs) {
 				if(outputs) {
 					outputs = outputs.split("\n");
 					outputs = outputs.filter(function(v){return v!==''});
@@ -93,7 +120,8 @@ function convert() {
 
 	$.ajax({
     headers: {Accept: "text/plain"},
-		url: protocol + dap + ':8184/convert/' + $(this).data('output') + '/' + encodeURIComponent($(this).data('href'))
+		url: protocol + dap + ':8184/convert/' + $(this).data('output') + '/' + encodeURIComponent($(this).data('href')),
+		beforeSend: function(req) { req.setRequestHeader('Authorization', 'Basic ' + btoa(username + ':' + password)); }
 	}).then(function(data) {
 		redirect(data);
 	});
@@ -105,23 +133,49 @@ function redirect(url) {
 
 	$.ajax({
 		//xhrFields: { withCredentials: true },
-		type: 'HEAD',
+		//crossDomain: true,
+		//type: 'HEAD',
    	url: url,
+		beforeSend: function(req) { req.setRequestHeader('Authorization', 'Basic ' + btoa(username + ':' + password)); },
 		success: function() {
 			console.log('Redirected: ' + url);
-			window.location.href = url;
+			//window.location.href = url;
+			window.location.href = addAuthentication(url);
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
-			console.log('Status: ' + jqXHR.status + ': ' + errorThrown);
+			console.log('Status: ' + jqXHR.status + ', ' + errorThrown);
 
 			if(jqXHR.status == 0) {
 				console.log('Redirected: ' + url);
-				window.location.href = url;
+				//window.location.href = url;
+				window.location.href = addAuthentication(url);
 			}else{
 				setTimeout(function() {redirect(url);}, 1000);
 			}
 		}
 	});
+}
+
+function getCookie(cname) {
+	var name = cname + "=";
+	var ca = document.cookie.split(';');
+
+	for(var i=0; i<ca.length; i++) {
+		var c = ca[i];
+		while(c.charAt(0)==' ') c = c.substring(1);
+		if(c.indexOf(name) == 0) return c.substring(name.length, c.length);
+	}
+
+	return '';
+} 
+
+function addAuthentication(url) {
+	if(username && password) {
+		strings = url.split('//');
+		url = strings[0] + '//' + username + ':' + password + '@' + strings[1];
+	}
+
+	return url;
 }
 
 function openMenu() {

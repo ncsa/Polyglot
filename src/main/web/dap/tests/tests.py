@@ -156,7 +156,7 @@ def main():
 						message += 'Subject: DAP Tests Now Passing\n\n'
 						message += 'Previous failures:\n\n'
 						message += failure_report
-						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?dap=' + host + '&run=false&start=true\n\n'
+						message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?dap=' + urllib.quote(host) + '&run=false&start=true\n\n'
 						message += 'Elapsed time: ' + timeToString(dt)
 
 						mailserver = smtplib.SMTP('localhost')
@@ -237,7 +237,7 @@ def run_test(host, hostname, input_filename, output, count, comment, all_failure
 				message += 'To: ' + ', '.join(watchers) + '\n'
 				message += 'Subject: DAP Test Failed\n\n'
 				message += report
-				message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?dap=' + host + '&run=false&start=true\n'
+				message += 'Report of last run can be seen here: \n\n http://' + socket.getfqdn() + '/dap/tests/tests.php?dap=' + urllib.quote(host) + '&run=false&start=true\n'
 		
 				mailserver = smtplib.SMTP('localhost')
 				for watcher in watchers:
