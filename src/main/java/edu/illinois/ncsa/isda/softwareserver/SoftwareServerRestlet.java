@@ -310,6 +310,7 @@ public class SoftwareServerRestlet extends ServerResource
 	{
 		Vector<Subtask> task;
 		String localhost, result, username = null, password = null;
+		boolean DOWNLOAD_COMPLETED;
 		
 		//localhost = getReference().getBaseRef().toString();
 		//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
@@ -320,6 +321,8 @@ public class SoftwareServerRestlet extends ServerResource
 				//file = SoftwareServer.getFilename(Utility.getFilename(file));
 				file = getFilename(file);
 			}else{																											//Download remote files
+				System.out.print("[localhost]: Downloading " + file + " ");
+
 				if(download_method.equals("wget")){
 					if(file.contains("@")){
 						String[] strings = file.split("@");
@@ -331,9 +334,13 @@ public class SoftwareServerRestlet extends ServerResource
 
 					try{
 						if(username != null && password != null){
-							Runtime.getRuntime().exec("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file).waitFor();
+							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false);
 						}else{
-							Runtime.getRuntime().exec("wget -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file).waitFor();
+							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false);
+						}
+
+						if(!DOWNLOAD_COMPLETED){
+							System.out.println("[localhost]: Download failed!");
 						}
 					}catch(Exception e){e.printStackTrace();}
 				}else if(download_method.equals("nio")){
@@ -1016,7 +1023,7 @@ public class SoftwareServerRestlet extends ServerResource
 						ip = Utility.readURL(urlList[i], "text/plain");
 
 						if(InetAddressValidator.getInstance().isValid(ip)){
-							System.out.println("[localhost]: public IP " + ip + " resolved by '" + urlList[i] + "'.");
+							System.out.println("[localhost]: Public IP " + ip + " resolved by '" + urlList[i] + "'.");
 							break;
 						}
 					}

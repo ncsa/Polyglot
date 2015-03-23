@@ -200,6 +200,15 @@ public class SoftwareServer implements Runnable
 	}
 
 	/**
+	 * Get the maximum allowed operation time.
+	 * @return the maximum allowed operation time
+	 */
+	public int getMaxOperationTime()
+	{
+		return max_operation_time;
+	}
+
+	/**
 	 * Add operation scripts within the given directory.  Script info will be looked up.
 	 * Note: all scripts must follow the text header convention
 	 * @param path the path to the scripts
@@ -519,7 +528,7 @@ public class SoftwareServer implements Runnable
   	
   	status = "idle";
   	BUSY = false;
-  	
+  
   	return result;
   }
   

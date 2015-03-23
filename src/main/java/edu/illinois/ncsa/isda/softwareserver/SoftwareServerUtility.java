@@ -193,6 +193,7 @@ public class SoftwareServerUtility
 			while((line = stdError.readLine()) != null){
 				if(SHOW_OUTPUT) System.out.println(line);
 			}
+		}catch(IOException e){	//Do nothing, the process was killed
     }catch(Exception e) {e.printStackTrace();}
   }
 
@@ -230,4 +231,17 @@ public class SoftwareServerUtility
 			});
 		}
 	}
+
+  /**
+   * A main for debug purposes.
+   * @param args the command line arguments
+   */
+  public static void main(String args[])
+  {
+		if(true){		//Test timed processes
+			System.out.println("Execution process...");
+			boolean COMPLETED = executeAndWait("scripts/sh/tar_convert.sh /home/kmchenry/git/polyglot/tmp/SoftwareServer/Cache/592_101_ObjectCategories.tar.gz /home/kmchenry/git/polyglot/tmp/SoftwareServer/Cache/592_101_ObjectCategories.html /home/kmchenry/git/polyglot/tmp/SoftwareServer/Temp/592_1427055418584_", 500, true, true);
+			System.out.println("Finished executing (completed = " + COMPLETED + ")!");
+		}
+  }
 }

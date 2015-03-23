@@ -561,7 +561,7 @@ public class SoftwareServerRESTUtilities
 
 											result = SoftwareServerUtility.readURL(api_call, "text/plain");
 											//result = SoftwareServerUtility.addAuthentication(result, softwareserver_authentication_final);	//Make sure restlet doesn't already use guest!
-		  	    	
+
 		  	   						while(WAIT && !SoftwareServerUtility.existsURL(result)){
 		  	   							Utility.pause(1000);
 		  	   						}
