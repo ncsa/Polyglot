@@ -257,7 +257,7 @@ def convert(host, input_filename, output, output_path):
 	
 	#Check for authentication
 	if '@' in host:
-		parts = host.split('@')
+		parts = host.rsplit('@', 1)
 		host = parts[1]
 		parts = parts[0].split(':')
 		username = parts[0]
