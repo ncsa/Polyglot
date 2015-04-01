@@ -44,17 +44,16 @@
 
 			foreach($lines as $line) {
         if($line[0] == '#') {
-          next;
+          continue;
         } else if($line[0] == '@') {
           if ($comment == "") {
             $comment = substr($line, 1);
           } else {
             $comment = $comment . "<br/>" . substr($line, 1);
           }
-
-          next;
+          continue;
         } else if($line[0] == '*') {
-          next;
+          continue;
         } else {
 					$parts = explode(' ', $line);
 					$input_filename = $parts[0];
