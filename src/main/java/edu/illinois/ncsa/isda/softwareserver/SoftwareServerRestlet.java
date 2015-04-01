@@ -322,16 +322,18 @@ public class SoftwareServerRestlet extends ServerResource
 				file = getFilename(file);
 			}else{																											//Download remote files
 				System.out.print("[localhost]: Downloading " + file + " ");
+					
+				if(file.contains("@")){
+					String[] strings = file.split("@");
+					strings = strings[0].split("//");
+					strings = strings[1].split(":");
+					username = strings[0];
+					password = strings[1];
+
+					SoftwareServerUtility.setDefaultAuthentication(username + ":" + password);
+				}
 
 				if(download_method.equals("wget")){
-					if(file.contains("@")){
-						String[] strings = file.split("@");
-						strings = strings[0].split("//");
-						strings = strings[1].split(":");
-						username = strings[0];
-						password = strings[1];
-					}
-
 					try{
 						if(username != null && password != null){
 							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false);
