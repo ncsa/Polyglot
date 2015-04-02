@@ -11,6 +11,7 @@ import getopt
 import netifaces as ni
 import thread
 import threading
+import datetime
 from os.path import basename
 from pymongo import MongoClient
 
@@ -18,6 +19,7 @@ failure_report = ''
 enable_threads = False
 threads = 0
 lock = threading.Lock()
+total_success = 0
 
 def main():
 	"""Run extraction bus tests."""
@@ -25,9 +27,11 @@ def main():
 	global enable_threads
 	global threads
 	global lock
+	global total_success
 	host = ni.ifaddresses('eth0')[2][0]['addr']
 	hostname = ''
 	all_failures = False
+	total_tests = 0
 
 	#Arguments
 	opts, args = getopt.getopt(sys.argv[1:], 'h:n:at')
@@ -80,12 +84,14 @@ def main():
 				parts = line.split(' ')
 				input_filename = parts[0]
 				outputs = parts[1].split(',')
+				prev_failure_report = failure_report
 
 				for output in outputs:
 					output = output.strip();
 					count += 1
 
 					#Run the test
+					total_tests += runs
 					if enable_threads:
 						for i in range(0, runs):
 							with lock:
@@ -119,6 +125,8 @@ def main():
 			document = {'time': int(round(time.time()*1000)), 'elapsed_time': dt, 'failures': False}
 
 		collection.insert(document)
+
+		report(host, hostname, 'DAP', total_tests, total_success, failure_report, dt)
 		
 		#Send a final report of failures
 		if failure_report:
@@ -164,7 +172,7 @@ def main():
 							mailserver.sendmail('', watcher, message)
 						mailserver.quit()
 			else:
-        #Send success notification emails
+		#Send success notification emails
 				with open('pass_watchers.txt', 'r') as watchers_file:
 					watchers = watchers_file.read().splitlines()
 			
@@ -184,6 +192,7 @@ def run_test(host, hostname, input_filename, output, count, comment, all_failure
 	global enable_threads
 	global threads
 	global lock
+	global total_success
 
 	#Print out test
 	if enable_threads:
@@ -201,6 +210,7 @@ def run_test(host, hostname, input_filename, output, count, comment, all_failure
 			print(input_filename + ' -> "' + output + '"'),
 
 			if os.path.isfile(output_filename) and os.stat(output_filename).st_size > 0:
+				total_success += 1
 				print '\t\033[92m[OK]\033[0m'
 			else:
 				print '\t\033[91m[Failed]\033[0m'
@@ -208,6 +218,7 @@ def run_test(host, hostname, input_filename, output, count, comment, all_failure
 	#Check for expected output and add to report
 	if os.path.isfile(output_filename) and os.stat(output_filename).st_size > 0:
 		if not enable_threads:
+			total_success += 1
 			print '\t\033[92m[OK]\033[0m\n'
 
 		os.chmod(output_filename, 0776)		#Give web application permission to overwrite
@@ -268,7 +279,7 @@ def convert(host, input_filename, output, output_path):
 
 	try:
 		r = requests.get(api_call, auth=(username, password), headers=headers)
-
+		print r.text
 		if(r.status_code != 404):
 			result = r.text
 
@@ -311,17 +322,29 @@ def download_file(url, filename, wait, username='', password=''):
 	return filename
 
 def timeToString(t):
-  """Return a string represntation of the give elapsed time"""
-  h = int(t / 3600);
-  m = int((t % 3600) / 60);
-  s = int((t % 3600) % 60);
+	"""Return a string represntation of the give elapsed time"""
+	h = int(t / 3600);
+	m = int((t % 3600) / 60);
+	s = int((t % 3600) % 60);
 
-  if h > 0:
-    return str(round(h + m / 60.0, 2)) + ' hours';
-  elif m > 0:
-    return str(round(m + s / 60.0, 2)) + ' minutes';
-  else:
-    return str(s) + ' seconds';
+	if h > 0:
+	   return str(round(h + m / 60.0, 2)) + ' hours';
+	elif m > 0:
+	   return str(round(m + s / 60.0, 2)) + ' minutes';
+	else:
+	   return str(s) + ' seconds';
+
+def report(host, hostname, type, total, success, message, elapsed_time):
+	"""Write the test results to mongo database"""
+	# create the message
+	document = { "host": host, "hostname": hostname, "type": type,
+				 "total": total, "success": success, "failures": (total - success),
+				 "message": message,
+				 "elapsed_time": elapsed_time, "date": datetime.datetime.utcnow() }
+	mc = MongoClient("mongo.ncsa.illinois.edu")
+	db = mc['browndog']
+	tests = db['tests']
+	tests.insert(document)
 
 if __name__ == '__main__':
 	main()
