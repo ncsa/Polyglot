@@ -278,7 +278,7 @@ def convert(host, input_filename, output, output_path):
 
 	try:
 		r = requests.get(api_call, auth=(username, password), headers=headers)
-		print r.text
+
 		if(r.status_code != 404):
 			result = r.text
 
