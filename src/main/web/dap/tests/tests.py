@@ -84,7 +84,6 @@ def main():
 				parts = line.split(' ')
 				input_filename = parts[0]
 				outputs = parts[1].split(',')
-				prev_failure_report = failure_report
 
 				for output in outputs:
 					output = output.strip();
