@@ -1,3 +1,4 @@
 #ImageMagick
 demclip
 streamclip
+galaxy
