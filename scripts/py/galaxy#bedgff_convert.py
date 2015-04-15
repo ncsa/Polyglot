@@ -1,4 +1,5 @@
-#galaxy#bedgff
+#!/usr/bin/env python
+#Galaxy
 #genomic
 #bed,gff
 #bed,gff
