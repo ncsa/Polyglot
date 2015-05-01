@@ -483,6 +483,9 @@ public class SoftwareServerRESTUtilities
 		final Vector<Application> softwareserver_applications_final = softwareserver_applications;
 	  final ConnectionFactory factory = new ConnectionFactory();
 
+		//Set heartbeat
+		factory.setRequestedHeartbeat(180);
+
 		if(softwareserver_username != null && softwareserver_password != null){
 			Authenticator.setDefault (new Authenticator() {
 				protected PasswordAuthentication getPasswordAuthentication() {
