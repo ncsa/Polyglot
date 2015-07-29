@@ -9,6 +9,7 @@ package edu.illinois.ncsa.isda.softwareserver;
 public class TimedProcess implements Runnable
 {
   private Process process;
+	private String output;
   private boolean HANDLE_OUTPUT = false;
   private boolean SHOW_OUTPUT = false;
   private boolean RUNNING = false;
@@ -36,6 +37,15 @@ public class TimedProcess implements Runnable
     this.SHOW_OUTPUT = SHOW_OUTPUT;
     RUNNING = true;
   }
+
+	/**
+	 * Get the process output (stdout and stderr).
+	 * @return the process output
+	 */
+	public String getOutput()
+	{
+		return output;
+	}
   
   /**
    * The starting point for the thread that will monitor the process.
@@ -44,7 +54,7 @@ public class TimedProcess implements Runnable
   {
     try{
     	if(HANDLE_OUTPUT){
-    		SoftwareServerUtility.handleProcessOutput(process, SHOW_OUTPUT);
+    		output = SoftwareServerUtility.handleProcessOutput(process, SHOW_OUTPUT);
     	}else{
     		process.waitFor();
     	}
@@ -71,9 +81,11 @@ public class TimedProcess implements Runnable
       t1 = System.currentTimeMillis();
       
       if(!RUNNING){
+				System.out.println();
         return true;
       }else if((t1-t0) > n){
       	process.destroy();
+				System.out.println();
         return false;
       }
 

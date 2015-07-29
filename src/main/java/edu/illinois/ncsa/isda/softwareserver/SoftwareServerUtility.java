@@ -179,6 +179,7 @@ public class SoftwareServerUtility
   {
     Process process;
     TimedProcess timed_process;
+		String output = "";
     boolean COMPLETE = false;
 
     if(!command.isEmpty()){
@@ -187,10 +188,11 @@ public class SoftwareServerUtility
 
         if(max_runtime >= 0){
           timed_process = new TimedProcess(process, HANDLE_OUTPUT, SHOW_OUTPUT);
-          COMPLETE = timed_process.waitFor(max_runtime); System.out.println();
+          COMPLETE = timed_process.waitFor(max_runtime);
+					output = timed_process.getOutput();
         }else{
           if(HANDLE_OUTPUT){
-            SoftwareServerUtility.handleProcessOutput(process, SHOW_OUTPUT);
+            output = SoftwareServerUtility.handleProcessOutput(process, SHOW_OUTPUT);
           }else{
             process.waitFor();
           }
@@ -218,36 +220,31 @@ public class SoftwareServerUtility
    * Handle the output of a process.
    * @param process the process
    * @param SHOW_OUTPUT true if the output should be printed
+	 * @return the process output
    */
-  public static void handleProcessOutput(Process process, boolean SHOW_OUTPUT)
+  public static String handleProcessOutput(Process process, boolean SHOW_OUTPUT)
   {
-    String line = null;
-
-		/*
-    DataInputStream ins = new DataInputStream(process.getInputStream());
-
-    try{
-      while((line = ins.readLine()) != null){
-        if(SHOW_OUTPUT) System.out.println(line);
-      }
-    }catch(Exception e) {e.printStackTrace();}
-		*/
-
+		String output = "";
 		BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
 		BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+    String line = null;
 
 		try{
 			//Read output
 			while((line = stdInput.readLine()) != null){
+				output += line + "\n";
     		if(SHOW_OUTPUT) System.out.println(line);
 			}
 
 			//Read errors
 			while((line = stdError.readLine()) != null){
+				output += line + "\n";
 				if(SHOW_OUTPUT) System.out.println(line);
 			}
 		}catch(IOException e){	//Do nothing, the process was killed
     }catch(Exception e) {e.printStackTrace();}
+
+		return output;
   }
 
 	/**
