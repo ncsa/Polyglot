@@ -11,6 +11,7 @@ import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
 import java.lang.management.*;
+import java.text.*;
 import javax.servlet.*;
 import org.json.JSONArray;
 import org.restlet.*;
@@ -61,6 +62,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static String external_public_ip_services = "";
 	private static String download_method = "";
 	private static Component component;
+	private static SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
 	
 	/**
 	 * Initialize.
@@ -321,7 +323,7 @@ public class SoftwareServerRestlet extends ServerResource
 				//file = SoftwareServer.getFilename(Utility.getFilename(file));
 				file = getFilename(file);
 			}else{																											//Download remote files
-				System.out.println("[localhost]: Downloading " + file + " ");
+				System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Downloading " + file + " ...");
 					
 				if(file.contains("@")){
 					String[] strings = file.split("@");
@@ -342,7 +344,7 @@ public class SoftwareServerRestlet extends ServerResource
 						}
 
 						if(!DOWNLOAD_COMPLETED){
-							System.out.println("[localhost]: Download failed!");
+							System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Download of " + file + " failed");
 						}
 					}catch(Exception e){e.printStackTrace();}
 				}else if(download_method.equals("nio")){
@@ -534,8 +536,9 @@ public class SoftwareServerRestlet extends ServerResource
 								session = server.getSession();
 								result = Utility.endSlash(localhost) + "file/" + session + "_" + Utility.getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
 							}
-
+				
 							if(GUESTS_ENABLED) result = result.substring(0, 7) + "guest:guest@" + result.substring(7);
+							System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session);
 
 							executeTaskLater(session, application_alias, task, file, format);
 							
@@ -747,6 +750,8 @@ public class SoftwareServerRestlet extends ServerResource
 		//localhost = getReference().getBaseRef().toString();
 		//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
 		localhost = public_ip;
+							
+		System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session);
 				
 		if(FORM_POST || TASK_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
@@ -999,13 +1004,13 @@ public class SoftwareServerRestlet extends ServerResource
 	          	ATOMIC_EXECUTION = Boolean.valueOf(value);
 	          }else if(key.equals("UseOpenStackPublicIP")){
 							USE_OPENSTACK_PUBLIC_IP = Boolean.valueOf(value);
-							System.out.println("[localhost]: USE_OPENSTACK_PUBLIC_IP = " + USE_OPENSTACK_PUBLIC_IP);
+							System.out.println("Setting USE_OPENSTACK_PUBLIC_IP to " + USE_OPENSTACK_PUBLIC_IP);
 	          }else if(key.equals("OpenStackPublicIPv4URL")){
 							openstack_public_ipv4_url = value;
-							System.out.println("[localhost]: Openstack Public IPv4 URL = " + openstack_public_ipv4_url);
+							System.out.println("Setting Openstack Public IPv4 URL to " + openstack_public_ipv4_url);
 	          }else if(key.equals("ExternalPublicIPServices")){
 							external_public_ip_services = value;
-							System.out.println("[localhost]: External Public IP Services = " + external_public_ip_services);
+							System.out.println("Setting External Public IP Services to " + external_public_ip_services);
 	          }
 	        }
 	      }
@@ -1025,7 +1030,7 @@ public class SoftwareServerRestlet extends ServerResource
 						ip = Utility.readURL(urlList[i], "text/plain");
 
 						if(InetAddressValidator.getInstance().isValid(ip)){
-							System.out.println("[localhost]: Public IP " + ip + " resolved by '" + urlList[i] + "'.");
+							System.out.println("Public IP " + ip + " resolved by '" + urlList[i] + "'.");
 							break;
 						}
 					}
@@ -1040,7 +1045,7 @@ public class SoftwareServerRestlet extends ServerResource
 			//e.printStackTrace();
 	  }
 
-	  System.out.println("[localhost]: Public IP = " + public_ip);
+	  System.out.println("Setting Public IP to " + public_ip);
 
 	  //Initialize and start the service
 	  initialize();
@@ -1132,7 +1137,7 @@ public class SoftwareServerRestlet extends ServerResource
 	 		final int port_final = port;
 	 		final String distributed_server_final = distributed_server;
 	  		  		
-	 		System.out.println("\nStarting distributed software restlet notification thread...\n");
+	 		System.out.println("Starting distributed software restlet notification thread");
 
 	  	new Thread(){
 	  		public void run(){
@@ -1156,5 +1161,9 @@ public class SoftwareServerRestlet extends ServerResource
 	 	if(rabbitmq_uri != null || rabbitmq_server != null){
 	 		SoftwareServerRESTUtilities.rabbitMQHandler(last_username, last_password, port, applications, rabbitmq_uri, rabbitmq_server, rabbitmq_vhost, rabbitmq_username, rabbitmq_password, rabbitmq_WAITTOACK);
 		}
+
+		//A gap before message streams start.
+		Utility.pause(1000);
+		System.out.println();
 	}
 }

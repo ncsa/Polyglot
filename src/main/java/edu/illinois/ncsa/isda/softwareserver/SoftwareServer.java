@@ -5,6 +5,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import java.text.*;
 import org.apache.commons.io.*;
 
 /**
@@ -17,6 +18,7 @@ public class SoftwareServer implements Runnable
 	private Vector<Application> applications = new Vector<Application>();
 	private int port;
 	private AtomicInteger session_counter = new AtomicInteger();
+	private static SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
 	private String root_path = "./";
 	private String cache_path = root_path + "Cache";
 	private String temp_path = root_path + "Temp";
@@ -197,6 +199,8 @@ public class SoftwareServer implements Runnable
   			}
   		}
   	}
+
+		System.out.println();
 	}
 
 	/**
@@ -310,7 +314,7 @@ public class SoftwareServer implements Runnable
 	    	
 	    	if(application.monitor_operation != null){
 	    		if(!STARTED_MONITORS) System.out.println();
-	    		System.out.println("Starting monitor for " + application.alias + "...");
+	    		System.out.println("Starting monitor for " + application.alias);
 	    		Script.execute(application.monitor_operation.script);
 	    		STARTED_MONITORS = true;
 	    	}
@@ -462,7 +466,7 @@ public class SoftwareServer implements Runnable
 				if(WINDOWS) temp = Utility.windowsPath(temp);
 		  
 		  	command = Script.getCommand(operation.script, source, temp_target != null ? temp_target : target, temp);
-		  	System.out.print("[" + host + "](" + session + "): " + command + " ");
+				System.out.print("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Executing, " + command + " ...");
 		  	
 		  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
 		  	if(!command.isEmpty()){
@@ -470,9 +474,9 @@ public class SoftwareServer implements Runnable
 			  	
           if(!COMMAND_COMPLETED){
             if(i < (task_attempts-1)){
-              System.out.println("retrying...");
+							System.out.print("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Retrying, " + command + " ...");
             }else{
-              System.out.println("killing...");
+							System.out.print("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Killing, " + command + " ...");
             }  
             
           	if(application.kill_operation != null){
@@ -521,7 +525,7 @@ public class SoftwareServer implements Runnable
   		application = applications.get(itr.next());
   		
 	    if(application.exit_operation != null){
-				System.out.println("exiting " + application.alias + "...");
+				System.out.print("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Exiting " + application.alias + " ...");
 	      Script.executeAndWait(application.exit_operation.script);
 	    }
   	}
@@ -562,7 +566,7 @@ public class SoftwareServer implements Runnable
   	
   	//Notify a Polyglot steward
   	if(steward_server != null){
-  		System.out.println("\nStarting steward notification thread...");
+  		System.out.println("Starting steward notification thread");
   		
 	  	new Thread(){
 	  		public void run(){
@@ -585,7 +589,7 @@ public class SoftwareServer implements Runnable
 	  		}
 	  	}.start();
   	}else if(broadcast_group != null){
-   		System.out.println("\nStarting UDP broadcast thread...\n");
+   		System.out.println("Starting UDP broadcast thread");
 
 	  	new Thread(){
 	  		public void run(){
@@ -609,7 +613,7 @@ public class SoftwareServer implements Runnable
   	}
   	
   	//Begin accepting connections
-  	System.out.println("\nSoftware server is running...\n");
+  	System.out.println("Software server is running ...");
 		RUNNING = true;
 		
 		while(RUNNING){

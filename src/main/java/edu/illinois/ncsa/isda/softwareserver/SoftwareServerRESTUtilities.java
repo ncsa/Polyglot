@@ -1,10 +1,11 @@
 package edu.illinois.ncsa.isda.softwareserver;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerUtility;
+import kgm.utility.Utility;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import kgm.utility.Utility;
+import java.text.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
@@ -18,6 +19,8 @@ import com.rabbitmq.client.QueueingConsumer;
  */
 public class SoftwareServerRESTUtilities
 {
+	private static SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
+
 	/**
 	 * Get an icon representation of the available software.
 	 * @param applications the list of applications
@@ -516,7 +519,7 @@ public class SoftwareServerRESTUtilities
 		new Thread(){
 			public void run(){
 				while(true){ 
- 					System.out.println("\nConnecting to RabbitMQ server and starting consumer thread ...\n");
+ 					System.out.println("Connecting to RabbitMQ server and starting consumer thread");
 
 	  			try{
 	    			Connection connection = factory.newConnection();
@@ -557,10 +560,12 @@ public class SoftwareServerRESTUtilities
 		  	   						String input = message.get("input").asText();
 		  	   						String application = message.get("application").asText();
 		  	   						String output_format = message.get("output_format").asText();
+											
+											System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [rabbitm] [" + job_id + "]: Consuming job-" + job_id + ", " + input + "->" + output_format + " via " + application + " (" + SoftwareServerUtility.getFileSizeHR(input) + ")");
 		  	    	
 		  	   		 				//Execute job using Software Server REST interface (leverage implementation)
 		  	   						api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(input, "UTF-8");
-		  	   						System.out.println("[AMQ]: " + api_call);
+											System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [rabbitm] [" + job_id + "]: API call, " + api_call);
 
 											result = SoftwareServerUtility.readURL(api_call, "text/plain");
 											//result = SoftwareServerUtility.addAuthentication(result, softwareserver_authentication_final);	//Make sure restlet doesn't already use guest!
@@ -568,24 +573,26 @@ public class SoftwareServerRESTUtilities
 		  	   						while(WAIT && !SoftwareServerUtility.existsURL(result)){
 		  	   							Utility.pause(1000);
 		  	   						}
+											
+											System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [rabbitm] [" + job_id + "]: API call complete, result at " + result + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
 
 											SoftwareServerUtility.setDefaultAuthentication(polyglot_auth);
 		  	   						checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
-		  	   						System.out.println("[AMQ]: " + checkin_call);
+											System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [rabbitm] [" + job_id + "]: Checking in result with Polyglot, " + checkin_call);
 		  	    	
 		  	   						if(Utility.readURL(checkin_call).equals("ok")){
 		  	   							channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-		  	   							System.out.println("[AMQ]: " + checkin_call + ", job acknowledged!");
+												System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [rabbitm] [" + job_id + "]: Checkin acknowledged!");
 		  	   						}else{		//Wait a bit and try one more time
 												Utility.pause(5000);
-		  	   							System.out.println("[AMQ]: " + checkin_call + ", second attempt ...");
+												System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [rabbitm] [" + job_id + "]: Second attempt at checkin result with Polyglot, " + checkin_call);
 
 		  	   							if(Utility.readURL(checkin_call).equals("ok")){
 		  	   								channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-		  	   								System.out.println("[AMQ]: " + checkin_call + ", job acknowledged!");
+													System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [rabbitm] [" + job_id + "]: Second checkin acknowledged!");
 												}else{
 		  	   								channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
-		  	   								System.out.println("[AMQ]: " + checkin_call + ", job un-acknowledged, rejecting!");
+													System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [rabbitm] [" + job_id + "]: Rejecting job after second checkin un-acknowledged!");
 												}
 											}
 										}catch(Exception e) {e.printStackTrace();}
