@@ -321,7 +321,7 @@ public class SoftwareServerRestlet extends ServerResource
 				//file = SoftwareServer.getFilename(Utility.getFilename(file));
 				file = getFilename(file);
 			}else{																											//Download remote files
-				System.out.print("[localhost]: Downloading " + file + " ");
+				System.out.println("[localhost]: Downloading " + file + " ");
 					
 				if(file.contains("@")){
 					String[] strings = file.split("@");

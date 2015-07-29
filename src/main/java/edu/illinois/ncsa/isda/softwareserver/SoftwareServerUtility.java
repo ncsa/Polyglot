@@ -114,6 +114,59 @@ public class SoftwareServerUtility
     return contents;
   }
 
+	/**
+	 * Get the size of a local or remote file.
+	 * @param filename the file name or URL
+	 * @return the size of the file
+	 */
+	public static long getFileSize(String filename)
+	{
+		if(filename.startsWith("http")){
+			HttpURLConnection conn = null;
+
+			try{
+				conn = (HttpURLConnection) new URL(filename).openConnection();
+				conn.setRequestMethod("HEAD");
+				conn.getInputStream();
+
+				return conn.getContentLength();
+			}catch(IOException e){
+				return -1;
+			}finally{
+				conn.disconnect();
+			}
+		}else{
+			return new File(filename).length();
+		}
+	}
+
+	/**
+	 * Get bytes in human readable form.
+	 * @param bytes the number of bytes
+	 * @return the human readable string representation
+	 */
+	public static String humanReadableBytes(long bytes)
+	{
+		int unit = 1024;
+		
+		if(bytes < unit){
+			return bytes + " B";
+		}else{
+			int exp = (int)(Math.log(bytes)/Math.log(unit));
+			return String.format("%.1f %sB", bytes/Math.pow(unit, exp), "KMGTPE".charAt(exp-1));
+		}
+	}
+
+	/**
+	 * Get the size of a local or remote file in a human readable form.
+	 * @param filename the file name or URL
+	 * @return the size of the file
+	 */
+	public static String getFileSizeHR(String filename)
+	{
+		return humanReadableBytes(getFileSize(filename));
+	}
+
   /**
    * Execute the given command.
    * @param command the command
@@ -231,6 +284,35 @@ public class SoftwareServerUtility
 			});
 		}
 	}
+
+  /**
+   * Append a string to a file.
+   *  @param filename the file to append to
+   *  @param string the text to append to the file
+   */
+  public static void print(String filename, String string)
+  {
+    try{
+      BufferedWriter outs = new BufferedWriter(new FileWriter(filename, true));
+      outs.write(string);
+      outs.close();
+    }catch(Exception e) {e.printStackTrace();}
+  }
+
+  /**
+   * Append a line to a file.
+   *  @param filename the file to append to
+   *  @param string the line to append to the file
+   */
+  public static void println(String filename, String string)
+  {
+    try{
+      BufferedWriter outs = new BufferedWriter(new FileWriter(filename, true));
+      outs.write(string);
+      outs.newLine();
+      outs.close();
+    }catch(Exception e) {e.printStackTrace();}
+  }
 
   /**
    * A main for debug purposes.

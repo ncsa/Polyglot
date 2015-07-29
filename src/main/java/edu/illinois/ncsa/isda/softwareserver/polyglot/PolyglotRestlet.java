@@ -10,6 +10,7 @@ import java.net.*;
 import java.lang.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.text.*;
 import javax.servlet.*;
 import org.restlet.*;
 import org.restlet.resource.*;
@@ -53,6 +54,7 @@ public class PolyglotRestlet extends ServerResource
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
 	private static Component component;
+	private static SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
 	
 	//Logs
 	private static long start_time;
@@ -144,7 +146,7 @@ public class PolyglotRestlet extends ServerResource
 					file = URLDecoder.decode(part2);
 					
 					//Do the conversion
-					System.out.print("[" + client + "]: " + Utility.getFilename(file) + " -> " + output + "...");
+					System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]: " + client + " requesting " + file + "->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
 					
 					//Download URLs
 					if(!(polyglot instanceof PolyglotStewardAMQ)){
@@ -196,10 +198,10 @@ public class PolyglotRestlet extends ServerResource
 
 					if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 						request.setEndOfRequest(true);
-						System.out.println(" [Converting]");
+						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]: " + client + " request for " + file + "->" + output + " is converting.");
 					}else{
 						request.setEndOfRequest(false);
-						System.out.println(" [Failed]");
+						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]: " + client + " request for " + file + "->" + output + " failed.");
 					}
 					
 					requests.add(request);
