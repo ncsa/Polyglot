@@ -443,7 +443,7 @@ public class PolyglotRestlet extends ServerResource
 								//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
 								file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file);
 								if(!nonadmin_user.isEmpty()) file = SoftwareServerUtility.addAuthentication(file, nonadmin_user + ":" + accounts.get(nonadmin_user));
-								System.out.println("[" + client + "]: Temporarily hosting file \"" + Utility.getFilename(file) + "\", " + file);
+								System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]: Temporarily hosting file \"" + Utility.getFilename(file) + "\" for " + client + " at " + file);
 							}else{
 								file = temp_path + (fi.getName()).replace(" ","_");
 								fi.write(new File(file));
@@ -461,7 +461,7 @@ public class PolyglotRestlet extends ServerResource
 							
 			//Do the conversion
 			if(file != null && output != null){	
-				System.out.print("[" + client + "]: " + Utility.getFilename(file) + " -> " + output + "...");
+				System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]: " + client + " requesting " + file + "->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
 				
 				request = new RequestInformation(client, file, output);
 
@@ -476,10 +476,10 @@ public class PolyglotRestlet extends ServerResource
 
 				if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 					request.setEndOfRequest(true);
-					System.out.println(" [Converting]");
+					System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]: " + client + " request for " + file + "->" + output + " is converting.");
 				}else{
 					request.setEndOfRequest(false);
-					System.out.println(" [Failed]");
+					System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]: " + client + " request for " + file + "->" + output + " failed.");
 				}
 				
 				requests.add(request);
@@ -656,7 +656,7 @@ public class PolyglotRestlet extends ServerResource
 	    	//DBCollection collection = db.getCollection(properties.getProperty("collection"));
 	    	db.getLastError();		//Test the connection, will cause an exception if not connected.
 			}catch(Exception e){
-				System.out.println("\nMongo database not found, disabiling Mongo logging...");
+				System.out.println("\nMongo database not found, disabling Mongo logging...");
 				MONGO_LOGGING = false;
 			}
 
@@ -735,6 +735,6 @@ public class PolyglotRestlet extends ServerResource
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
   	
-		System.out.println("\nPolyglot restlet is running...");
+		System.out.println("\nPolyglot restlet is running...\n");
 	}
 }
