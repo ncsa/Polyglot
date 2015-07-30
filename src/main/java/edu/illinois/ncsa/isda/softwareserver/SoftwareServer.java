@@ -468,6 +468,7 @@ public class SoftwareServer implements Runnable
 		  
 		  	command = Script.getCommand(operation.script, source, temp_target != null ? temp_target : target, temp);
 				System.out.print("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Executing, " + command + " ...");
+				SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Executing, " + command + " ...", cache_path + ".session_" + session + ".txt");
 		  	
 		  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
 		  	if(!command.isEmpty()){
@@ -476,13 +477,16 @@ public class SoftwareServer implements Runnable
 			
 					if(command_output != null && !command_output.isEmpty()){
 						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Printing execution output ...\n" + command_output.trim());
+						SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Printing execution output ...\n" + command_output.trim(), cache_path + ".session_" + session + ".txt");
 					}
 	
           if(!COMMAND_COMPLETED){
             if(i < (task_attempts-1)){
-							System.out.print("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Retrying, " + command + " ...");
+							System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Retrying, " + command + " ...");
+							SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Retrying, " + command + " ...", cache_path + ".session_" + session + ".txt");
             }else{
-							System.out.print("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Killing, " + command + " ...");
+							System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Killing, " + command + " ...");
+							SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Killing, " + command + " ...", cache_path + ".session_" + session + ".txt");
             }  
             
           	if(application.kill_operation != null){
@@ -531,7 +535,8 @@ public class SoftwareServer implements Runnable
   		application = applications.get(itr.next());
   		
 	    if(application.exit_operation != null){
-				System.out.print("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Exiting " + application.alias + " ...");
+				System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Exiting " + application.alias + " ...");
+				SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Exiting " + application.alias + " ...", cache_path + ".session_" + session + ".txt");
 	      Script.executeAndWait(application.exit_operation.script);
 	    }
   	}

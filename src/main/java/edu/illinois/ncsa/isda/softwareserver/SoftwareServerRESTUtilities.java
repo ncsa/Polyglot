@@ -561,7 +561,7 @@ public class SoftwareServerRESTUtilities
 		  	   						String application = message.get("application").asText();
 		  	   						String output_format = message.get("output_format").asText();
 											
-											System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [rabbitm] [" + job_id + "]: Consuming job-" + job_id + ", " + input + "->" + output_format + " via " + application + " (" + SoftwareServerUtility.getFileSizeHR(input) + ")");
+											System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [rabbitm] [" + job_id + "]: Consuming job-" + job_id + ", " + input + "->" + output_format + " via " + application);
 		  	    	
 		  	   		 				//Execute job using Software Server REST interface (leverage implementation)
 		  	   						api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(input, "UTF-8");
@@ -574,7 +574,7 @@ public class SoftwareServerRESTUtilities
 		  	   							Utility.pause(1000);
 		  	   						}
 											
-											System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [rabbitm] [" + job_id + "]: API call complete, result at " + result + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
+											System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [rabbitm] [" + job_id + "]: API call complete, result at " + result);
 
 											SoftwareServerUtility.setDefaultAuthentication(polyglot_auth);
 		  	   						checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);

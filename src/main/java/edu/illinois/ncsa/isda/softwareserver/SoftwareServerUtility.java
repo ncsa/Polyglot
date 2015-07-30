@@ -253,10 +253,10 @@ public class SoftwareServerUtility
 
   /**
    * Append a string to a file.
-   *  @param filename the file to append to
-   *  @param string the text to append to the file
+   * @param string the text to append to the file
+   * @param filename the file to append to
    */
-  public static void print(String filename, String string)
+  public static void print(String string, String filename)
   {
     try{
       BufferedWriter outs = new BufferedWriter(new FileWriter(filename, true));
@@ -267,10 +267,10 @@ public class SoftwareServerUtility
 
   /**
    * Append a line to a file.
-   *  @param filename the file to append to
-   *  @param string the line to append to the file
+   * @param string the line to append to the file
+   * @param filename the file to append to
    */
-  public static void println(String filename, String string)
+  public static void println(String string, String filename)
   {
     try{
       BufferedWriter outs = new BufferedWriter(new FileWriter(filename, true));

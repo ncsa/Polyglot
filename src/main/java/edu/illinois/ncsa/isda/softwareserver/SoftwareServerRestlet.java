@@ -323,7 +323,8 @@ public class SoftwareServerRestlet extends ServerResource
 				//file = SoftwareServer.getFilename(Utility.getFilename(file));
 				file = getFilename(file);
 			}else{																											//Download remote files
-				System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Downloading " + file + " ...");
+				System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Downloading " + file + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+				SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Downloading " + file + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...", server.getCachePath() + ".session_" + session + ".txt");
 					
 				if(file.contains("@")){
 					String[] strings = file.split("@");
@@ -338,13 +339,14 @@ public class SoftwareServerRestlet extends ServerResource
 				if(download_method.equals("wget")){
 					try{
 						if(username != null && password != null){
-							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false);
+							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
 						}else{
-							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false);
+							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
 						}
 
 						if(!DOWNLOAD_COMPLETED){
 							System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Download of " + file + " failed");
+							SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Download of " + file + " failed", server.getCachePath() + ".session_" + session + ".txt");
 						}
 					}catch(Exception e){e.printStackTrace();}
 				}else if(download_method.equals("nio")){
@@ -369,12 +371,15 @@ public class SoftwareServerRestlet extends ServerResource
 			}else{
 				result = server.executeTask("localhost", session, task);
 			}
-	
+							
 			//Create empty output if not created (e.g. when no conversion path was found)
 			if(result == null){
 				result = server.getCachePath() + session + "_" + Utility.getFilenameName(file) + "." + format;
 				Utility.touch(result);
 			}
+			
+			System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Execution complete, result at " + result + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
+			SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Execution complete, result at " + result + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")", server.getCachePath() + ".session_" + session + ".txt");
 
 			//Move result to public folder
 			if(!Utility.isDirectory(result)){
@@ -396,6 +401,12 @@ public class SoftwareServerRestlet extends ServerResource
   			corsfilter.setAllowedCredentials(true);
 				component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", corsfilter);
 			}
+			
+			System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Copied result to public folder");
+			SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Copied result to public folder", server.getCachePath() + ".session_" + session + ".txt");
+		
+			//Move log file		
+			Utility.copyFile(server.getCachePath() + ".session_" + session + ".txt", public_path + session + "_" + getFilename(result) + ".txt");
 		}
 	}
 	
@@ -538,7 +549,8 @@ public class SoftwareServerRestlet extends ServerResource
 							}
 				
 							if(GUESTS_ENABLED) result = result.substring(0, 7) + "guest:guest@" + result.substring(7);
-							System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session);
+							System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session + ", result will be at " + result);
+							SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session + ", result will be at " + result, server.getCachePath() + ".session_" + session + ".txt");
 
 							executeTaskLater(session, application_alias, task, file, format);
 							
@@ -752,6 +764,7 @@ public class SoftwareServerRestlet extends ServerResource
 		localhost = public_ip;
 							
 		System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session);
+		SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session, server.getCachePath() + ".session_" + session + ".txt");
 				
 		if(FORM_POST || TASK_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
