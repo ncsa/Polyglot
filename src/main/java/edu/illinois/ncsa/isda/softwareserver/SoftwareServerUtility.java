@@ -173,14 +173,13 @@ public class SoftwareServerUtility
    * @param max_runtime the maximum allowed time to run (in milli-seconds, -1 indicates forever)
    * @param HANDLE_OUTPUT true if the process output should be handled
    * @param SHOW_OUTPUT true if the process output should be shown
-   * @return true if the operation completed within the given time frame
+   * @return the command output, null if the operation did not complete within the given time frame
    */
-  public static boolean executeAndWait(String command, int max_runtime, boolean HANDLE_OUTPUT, boolean SHOW_OUTPUT)
+  public static String executeAndWait(String command, int max_runtime, boolean HANDLE_OUTPUT, boolean SHOW_OUTPUT)
   {
     Process process;
     TimedProcess timed_process;
-		String output = "";
-    boolean COMPLETE = false;
+		String output = null;
 
     if(!command.isEmpty()){
       try{
@@ -188,63 +187,33 @@ public class SoftwareServerUtility
 
         if(max_runtime >= 0){
           timed_process = new TimedProcess(process, HANDLE_OUTPUT, SHOW_OUTPUT);
-          COMPLETE = timed_process.waitFor(max_runtime);
-					output = timed_process.getOutput();
+
+          if(timed_process.waitFor(max_runtime)){
+						output = timed_process.getOutput();
+					}
         }else{
           if(HANDLE_OUTPUT){
-            output = SoftwareServerUtility.handleProcessOutput(process, SHOW_OUTPUT);
+            output = TimedProcess.handleProcessOutput(process, SHOW_OUTPUT);
           }else{
             process.waitFor();
+						output = "";
           }
-
-          COMPLETE = true;
         }
       }catch(Exception e) {e.printStackTrace();}
     }
 
-    return COMPLETE;
+    return output;
   }
 
   /**
    * Execute the given command.
    * @param command the command
    * @param max_runtime the maximum allowed time to run (in milli-seconds, -1 indicates forever)
-   * @return true if the operation completed within the given time frame
+   * @return the command output, null if the operation did not complete within the given time frame
    */
-  public static boolean executeAndWait(String command, int max_runtime)
+  public static String executeAndWait(String command, int max_runtime)
   {
     return executeAndWait(command, max_runtime, false, false);
-  }
-
-  /**
-   * Handle the output of a process.
-   * @param process the process
-   * @param SHOW_OUTPUT true if the output should be printed
-	 * @return the process output
-   */
-  public static String handleProcessOutput(Process process, boolean SHOW_OUTPUT)
-  {
-		String output = "";
-		BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
-		BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-    String line = null;
-
-		try{
-			//Read output
-			while((line = stdInput.readLine()) != null){
-				output += line + "\n";
-    		if(SHOW_OUTPUT) System.out.println(line);
-			}
-
-			//Read errors
-			while((line = stdError.readLine()) != null){
-				output += line + "\n";
-				if(SHOW_OUTPUT) System.out.println(line);
-			}
-		}catch(IOException e){	//Do nothing, the process was killed
-    }catch(Exception e) {e.printStackTrace();}
-
-		return output;
   }
 
 	/**
@@ -319,8 +288,8 @@ public class SoftwareServerUtility
   {
 		if(true){		//Test timed processes
 			System.out.println("Execution process...");
-			boolean COMPLETED = executeAndWait("scripts/sh/tar_convert.sh /home/kmchenry/git/polyglot/tmp/SoftwareServer/Cache/592_101_ObjectCategories.tar.gz /home/kmchenry/git/polyglot/tmp/SoftwareServer/Cache/592_101_ObjectCategories.html /home/kmchenry/git/polyglot/tmp/SoftwareServer/Temp/592_1427055418584_", 500, true, true);
-			System.out.println("Finished executing (completed = " + COMPLETED + ")!");
+			String output = executeAndWait("scripts/sh/tar_convert.sh /home/kmchenry/git/polyglot/tmp/SoftwareServer/Cache/592_101_ObjectCategories.tar.gz /home/kmchenry/git/polyglot/tmp/SoftwareServer/Cache/592_101_ObjectCategories.html /home/kmchenry/git/polyglot/tmp/SoftwareServer/Temp/592_1427055418584_", 500, true, true);
+			System.out.println("Finished executing (completed = " + (output != null) + ")!");
 		}
   }
 }

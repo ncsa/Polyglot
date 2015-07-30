@@ -413,6 +413,7 @@ public class SoftwareServer implements Runnable
   	String source, target, temp;
   	String temp_target, temp_target_path;
   	String command = "";
+		String command_output = "";
   	String result = null;
   	boolean COMMAND_COMPLETED;
   	boolean TASK_COMPLETED = false;
@@ -470,8 +471,13 @@ public class SoftwareServer implements Runnable
 		  	
 		  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
 		  	if(!command.isEmpty()){
-		  		COMMAND_COMPLETED = SoftwareServerUtility.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
-			  	
+		  		command_output = SoftwareServerUtility.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
+					COMMAND_COMPLETED = command_output != null;
+			
+					if(command_output != null && !command_output.isEmpty()){
+						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Printing execution output ...\n" + command_output.trim());
+					}
+	
           if(!COMMAND_COMPLETED){
             if(i < (task_attempts-1)){
 							System.out.print("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [sserver] [" + session + "]: Retrying, " + command + " ...");

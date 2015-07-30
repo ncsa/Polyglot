@@ -1,4 +1,5 @@
 package edu.illinois.ncsa.isda.softwareserver;
+import java.io.*;
 
 /**
  * A process with a time limit.  Allows a process to be executed pseudo-synchronously.
@@ -54,7 +55,7 @@ public class TimedProcess implements Runnable
   {
     try{
     	if(HANDLE_OUTPUT){
-    		output = SoftwareServerUtility.handleProcessOutput(process, SHOW_OUTPUT);
+    		output = handleProcessOutput(process, SHOW_OUTPUT);
     	}else{
     		process.waitFor();
     	}
@@ -94,5 +95,36 @@ public class TimedProcess implements Runnable
         System.out.print(".");
       }catch(Exception e) {e.printStackTrace();}
     }
+  }
+
+  /**
+   * Handle the output of a process.
+   * @param process the process
+   * @param SHOW_OUTPUT true if the output should be printed
+	 * @return the process output
+   */
+  public static String handleProcessOutput(Process process, boolean SHOW_OUTPUT)
+  {
+		String output = "";
+		BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
+		BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+    String line = null;
+
+		try{
+			//Read output
+			while((line = stdInput.readLine()) != null){
+				output += line + "\n";
+    		if(SHOW_OUTPUT) System.out.println(line);
+			}
+
+			//Read errors
+			while((line = stdError.readLine()) != null){
+				output += line + "\n";
+				if(SHOW_OUTPUT) System.out.println(line);
+			}
+		}catch(IOException e){	//Do nothing, the process was killed
+    }catch(Exception e) {e.printStackTrace();}
+
+		return output;
   }
 }
