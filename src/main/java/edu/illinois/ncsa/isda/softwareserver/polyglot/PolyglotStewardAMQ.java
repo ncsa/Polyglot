@@ -238,6 +238,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		String input_format;
 		Vector<Conversion<String,SoftwareServerApplication>> conversions;
 		boolean MULTIPLE_EXTENSIONS = true;
+			
+		System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward]: Searching for conversion paths for " + input + "->" + output_format);
 		
 		//Get conversion path, give multiple extensions precedence (i.e. if a script exists that supports such a thing it should be run)
 		input_format = Utility.getFilenameExtension(Utility.getFilename(input), true).toLowerCase();
@@ -251,7 +253,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 
 		//Add to mongo
 		if(conversions != null){
-			System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward]: Found path for " + input + "->" + output_format + ", submitting as job-" + job_id);
+			System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward] [" + job_id + "]: Found path for " + input + "->" + output_format + ", submitting as job-" + job_id);
 
 			request = mapper.createObjectNode();
 			request.put("job_id", job_id);
@@ -483,7 +485,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						application = ((BasicDBObject)((BasicDBList)document.get("path")).get(step)).get("application").toString();
 						output_format = ((BasicDBObject)((BasicDBList)document.get("path")).get(step)).get("output").toString();
 						
-						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward]: Submitting job-" + job_id + "'s next step, " + Utility.getFilename(input) + "->" + output_format + " via " + application);
+						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward] [" + job_id + "]: Submitting job-" + job_id + "'s next step, " + Utility.getFilename(input) + "->" + output_format + " via " + application);
 						
 						//Build message
 						message = mapper.createObjectNode();
@@ -511,7 +513,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						output_format = document.get("output_format").toString();
 						Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(document.get("input").toString(), MULTIPLE_EXTENSIONS) + "." + output_format + ".url", "[InternetShortcut]\nURL=" + URLDecoder.decode(input, "UTF-8"));
 						collection.remove(document);
-						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward]: Job-" + job_id + " completed, result is at " + URLDecoder.decode(input, "UTF-8") + " (" +  SoftwareServerUtility.getFileSizeHR(URLDecoder.decode(input, "UTF-8")) + ")");
+						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward] [" + job_id + "]: Job-" + job_id + " completed, result hosted at " + URLDecoder.decode(input, "UTF-8"));
 					}
 				}
 			}

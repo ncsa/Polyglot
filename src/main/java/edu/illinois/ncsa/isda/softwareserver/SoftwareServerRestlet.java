@@ -323,7 +323,7 @@ public class SoftwareServerRestlet extends ServerResource
 				//file = SoftwareServer.getFilename(Utility.getFilename(file));
 				file = getFilename(file);
 			}else{																											//Download remote files
-				System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Downloading " + file + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+				System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Downloading \033[94m" + file + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
 				SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Downloading " + file + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...", server.getCachePath() + ".session_" + session + ".txt");
 					
 				if(file.contains("@")){
@@ -378,7 +378,7 @@ public class SoftwareServerRestlet extends ServerResource
 				Utility.touch(result);
 			}
 			
-			System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Execution complete, result at " + result + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
+			System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Execution complete, result at \033[94m" + result + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
 			SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Execution complete, result at " + result + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")", server.getCachePath() + ".session_" + session + ".txt");
 
 			//Move result to public folder
@@ -549,7 +549,7 @@ public class SoftwareServerRestlet extends ServerResource
 							}
 				
 							if(GUESTS_ENABLED) result = result.substring(0, 7) + "guest:guest@" + result.substring(7);
-							System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session + ", result will be at " + result);
+							System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session + ", result will be at \033[94m" + result + "\033[0m");
 							SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session + ", result will be at " + result, server.getCachePath() + ".session_" + session + ".txt");
 
 							executeTaskLater(session, application_alias, task, file, format);
