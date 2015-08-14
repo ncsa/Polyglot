@@ -62,7 +62,6 @@ public class SoftwareServerRestlet extends ServerResource
 	private static String external_public_ip_services = "";
 	private static String download_method = "";
 	private static Component component;
-	private static SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
 	
 	/**
 	 * Initialize.
@@ -323,8 +322,8 @@ public class SoftwareServerRestlet extends ServerResource
 				//file = SoftwareServer.getFilename(Utility.getFilename(file));
 				file = getFilename(file);
 			}else{																											//Download remote files
-				System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Downloading \033[94m" + file + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
-				SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Downloading " + file + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...", server.getCachePath() + ".session_" + session + ".txt");
+				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading \033[94m" + file + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+				SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading " + file + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...", server.getCachePath() + ".session_" + session + ".log");
 					
 				if(file.contains("@")){
 					String[] strings = file.split("@");
@@ -345,8 +344,8 @@ public class SoftwareServerRestlet extends ServerResource
 						}
 
 						if(!DOWNLOAD_COMPLETED){
-							System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Download of " + file + " failed");
-							SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Download of " + file + " failed", server.getCachePath() + ".session_" + session + ".txt");
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + file + " failed");
+							SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + file + " failed", server.getCachePath() + ".session_" + session + ".log");
 						}
 					}catch(Exception e){e.printStackTrace();}
 				}else if(download_method.equals("nio")){
@@ -378,8 +377,8 @@ public class SoftwareServerRestlet extends ServerResource
 				Utility.touch(result);
 			}
 			
-			System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Execution complete, result at \033[94m" + result + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
-			SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Execution complete, result at " + result + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")", server.getCachePath() + ".session_" + session + ".txt");
+			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at \033[94m" + result + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
+			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at " + result + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")", server.getCachePath() + ".session_" + session + ".log");
 
 			//Move result to public folder
 			if(!Utility.isDirectory(result)){
@@ -402,11 +401,11 @@ public class SoftwareServerRestlet extends ServerResource
 				component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", corsfilter);
 			}
 			
-			System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Copied result to public folder");
-			SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Copied result to public folder", server.getCachePath() + ".session_" + session + ".txt");
+			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder");
+			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder", server.getCachePath() + ".session_" + session + ".log");
 		
 			//Move log file		
-			Utility.copyFile(server.getCachePath() + ".session_" + session + ".txt", public_path + session + "_" + getFilename(result) + ".txt");
+			Utility.copyFile(server.getCachePath() + ".session_" + session + ".log", public_path + session + "_" + getFilename(result) + ".log");
 		}
 	}
 	
@@ -549,8 +548,8 @@ public class SoftwareServerRestlet extends ServerResource
 							}
 				
 							if(GUESTS_ENABLED) result = result.substring(0, 7) + "guest:guest@" + result.substring(7);
-							System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session + ", result will be at \033[94m" + result + "\033[0m");
-							SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session + ", result will be at " + result, server.getCachePath() + ".session_" + session + ".txt");
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Setting session to session-" + session + ", result will be at \033[94m" + result + "\033[0m");
+							SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Setting session to session-" + session + ", result will be at " + result, server.getCachePath() + ".session_" + session + ".log");
 
 							executeTaskLater(session, application_alias, task, file, format);
 							
@@ -619,7 +618,14 @@ public class SoftwareServerRestlet extends ServerResource
 					}else{
 						MetadataService metadata_service = new MetadataService();
 						MediaType media_type = metadata_service.getMediaType(Utility.getFilenameExtension(part1));
-						if(media_type == null) media_type = MediaType.MULTIPART_ALL;
+
+						if(media_type == null){
+							if(Utility.getFilenameExtension(part1).equals("log")){
+								media_type = MediaType.TEXT_PLAIN;
+							}else{
+								media_type = MediaType.MULTIPART_ALL;
+							}
+						}
 							
 						FileRepresentation file_representation = new FileRepresentation(file, media_type);
 						//file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
@@ -763,8 +769,8 @@ public class SoftwareServerRestlet extends ServerResource
 		//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
 		localhost = public_ip;
 							
-		System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session);
-		SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + session + "]: Setting session to session-" + session, server.getCachePath() + ".session_" + session + ".txt");
+		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Setting session to session-" + session);
+		SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Setting session to session-" + session, server.getCachePath() + ".session_" + session + ".log");
 				
 		if(FORM_POST || TASK_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){

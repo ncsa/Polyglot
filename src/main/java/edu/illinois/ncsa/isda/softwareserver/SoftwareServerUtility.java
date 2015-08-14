@@ -7,6 +7,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.zip.*;
 import java.security.*;
+import java.text.*;
 
 /**
  * Utility functions.
@@ -279,6 +280,15 @@ public class SoftwareServerUtility
       outs.close();
     }catch(Exception e) {e.printStackTrace();}
   }
+
+	/**
+	 * Get the current date and time (useful for logs, is thread safe).
+	 * @return a string containing the current date and time
+	 */
+	public static String getTimeStamp()
+	{
+		return new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy").format(new Date(System.currentTimeMillis()));
+	}
 
   /**
    * A main for debug purposes.

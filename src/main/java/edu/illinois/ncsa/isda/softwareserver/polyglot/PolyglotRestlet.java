@@ -54,7 +54,6 @@ public class PolyglotRestlet extends ServerResource
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
 	private static Component component;
-	private static SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
 	
 	//Logs
 	private static long start_time;
@@ -146,7 +145,7 @@ public class PolyglotRestlet extends ServerResource
 					file = URLDecoder.decode(part2);
 					
 					//Do the conversion
-					System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
 					
 					//Download URLs
 					if(!(polyglot instanceof PolyglotStewardAMQ)){
@@ -199,11 +198,11 @@ public class PolyglotRestlet extends ServerResource
 
 					if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 						request.setEndOfRequest(true);
-						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at \033[94m" + result_url + "\033[0m");
-						SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at " + result_url, public_path + result_file + ".txt");
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at \033[94m" + result_url + "\033[0m");
+						SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at " + result_url, public_path + result_file + ".log");
 					}else{
 						request.setEndOfRequest(false);
-						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]: " + client + " request for " + file + "->" + output + " failed.");
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " request for " + file + "->" + output + " failed.");
 					}
 					
 					requests.add(request);
@@ -276,7 +275,14 @@ public class PolyglotRestlet extends ServerResource
 				if(Utility.exists(file)){
 					MetadataService metadata_service = new MetadataService();
 					MediaType media_type = metadata_service.getMediaType(Utility.getFilenameExtension(part1));
-					if(media_type == null) media_type = MediaType.MULTIPART_ALL;
+					
+					if(media_type == null){
+						if(Utility.getFilenameExtension(part1).equals("log")){
+							media_type = MediaType.TEXT_PLAIN;
+						}else{
+							media_type = MediaType.MULTIPART_ALL;
+						}
+					}
 							
 					FileRepresentation file_representation = new FileRepresentation(file, media_type);
 					//file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
@@ -333,20 +339,20 @@ public class PolyglotRestlet extends ServerResource
 							part2 = URLDecoder.decode(part2, "UTF-8");
 						}catch(Exception e) {e.printStackTrace();}
 					
-						//Find relevant log file to append to
+						//Find relevant log file to append to. TODO: Replace with an index to avoid this possibly costly search step
 						File[] files = new File(public_path).listFiles(new FilenameFilter() {
 							public boolean accept(File dir, String name) {
-								return name.startsWith(job_id + "_") && name.endsWith(".txt");
+								return name.startsWith(job_id + "_") && name.endsWith(".log");
 							}
 						});
 
 						log_file = files[0].getAbsolutePath();
 	
 						//Append Software Server log
-						SoftwareServerUtility.println(SoftwareServerUtility.readURL(part2 + ".txt", null).trim(), log_file);
+						SoftwareServerUtility.println(SoftwareServerUtility.readURL(part2 + ".log", null).trim(), log_file);
 					
-						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + job_id + "]: Software Server at " + getClientInfo().getAddress() + " checked in result for job-" + job_id + ", \033[94m" + part2 + "\033[0m" + " (" + SoftwareServerUtility.getFileSizeHR(part2) + ")");
-						SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet] [" + job_id + "]: Software Server at " + getClientInfo().getAddress() + " checked in result for job-" + job_id + ", " + part2 + " (" + SoftwareServerUtility.getFileSizeHR(part2) + ")", log_file);
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: Software Server at " + getClientInfo().getAddress() + " checked in result for job-" + job_id + ", \033[94m" + part2 + "\033[0m" + " (" + SoftwareServerUtility.getFileSizeHR(part2) + ")");
+						SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: Software Server at " + getClientInfo().getAddress() + " checked in result for job-" + job_id + ", " + part2 + " (" + SoftwareServerUtility.getFileSizeHR(part2) + ")", log_file);
 
 						return new StringRepresentation(((PolyglotStewardAMQ)polyglot).checkin(getClientInfo().getAddress(), job_id, part2), MediaType.TEXT_PLAIN);
 					}else{
@@ -467,7 +473,7 @@ public class PolyglotRestlet extends ServerResource
 								//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
 								file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file);
 								if(!nonadmin_user.isEmpty()) file = SoftwareServerUtility.addAuthentication(file, nonadmin_user + ":" + accounts.get(nonadmin_user));
-								System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]: Temporarily hosting file \"" + Utility.getFilename(file) + "\" for " + client + " at " + file);
+								System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Temporarily hosting file \"" + Utility.getFilename(file) + "\" for " + client + " at " + file);
 							}else{
 								file = temp_path + (fi.getName()).replace(" ","_");
 								fi.write(new File(file));
@@ -485,7 +491,7 @@ public class PolyglotRestlet extends ServerResource
 							
 			//Do the conversion
 			if(file != null && output != null){	
-				System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
 				
 				request = new RequestInformation(client, file, output);
 
@@ -501,11 +507,11 @@ public class PolyglotRestlet extends ServerResource
 
 				if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 					request.setEndOfRequest(true);
-					System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at \033[94m" + result_url + "\033[0m");
-					SoftwareServerUtility.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at " + result_url, public_path + result_file + ".txt");
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at \033[94m" + result_url + "\033[0m");
+					SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at " + result_url, public_path + result_file + ".log");
 				}else{
 					request.setEndOfRequest(false);
-					System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [restlet]: " + client + " request for " + file + "->" + output + " failed.");
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " request for " + file + "->" + output + " failed.");
 				}
 				
 				requests.add(request);

@@ -45,7 +45,6 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	private DBCollection collection;
 	private ConnectionFactory factory;
 	private AtomicInteger job_counter = new AtomicInteger();
-	private static SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
 
 	/**
 	 * Class constructor.
@@ -239,7 +238,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		Vector<Conversion<String,SoftwareServerApplication>> conversions;
 		boolean MULTIPLE_EXTENSIONS = true;
 			
-		System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward]: Searching for conversion paths for " + input + "->" + output_format);
+		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Searching for conversion paths for " + input + "->" + output_format);
 		
 		//Get conversion path, give multiple extensions precedence (i.e. if a script exists that supports such a thing it should be run)
 		input_format = Utility.getFilenameExtension(Utility.getFilename(input), true).toLowerCase();
@@ -253,7 +252,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 
 		//Add to mongo
 		if(conversions != null){
-			System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward] [" + job_id + "]: Found path for " + input + "->" + output_format + ", submitting as job-" + job_id);
+			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward] [" + job_id + "]: Found path for " + input + "->" + output_format + ", submitting as job-" + job_id);
 
 			request = mapper.createObjectNode();
 			request.put("job_id", job_id);
@@ -396,7 +395,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 
 		    	synchronized(software_servers){
 			    	if(!software_servers.containsKey(host) || software_servers.get(host) != startup_time){
-			    		System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward]: Adding " + host);
+			    		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
 			    		UPDATED = true;
 
 			    		//Get applications on server
@@ -434,7 +433,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	    	startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
 	  	}catch(NumberFormatException e){
 	  		synchronized(software_servers){
-		  		System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward]: Dropping " + host);
+		  		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Dropping " + host);
 		  		UPDATED = true;
 		  		
 	  			iograph.removeEdges(host);
@@ -485,7 +484,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						application = ((BasicDBObject)((BasicDBList)document.get("path")).get(step)).get("application").toString();
 						output_format = ((BasicDBObject)((BasicDBList)document.get("path")).get(step)).get("output").toString();
 						
-						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward] [" + job_id + "]: Submitting job-" + job_id + "'s next step, " + Utility.getFilename(input) + "->" + output_format + " via " + application);
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward] [" + job_id + "]: Submitting job-" + job_id + "'s next step, " + Utility.getFilename(input) + "->" + output_format + " via " + application);
 						
 						//Build message
 						message = mapper.createObjectNode();
@@ -513,7 +512,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						output_format = document.get("output_format").toString();
 						Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(document.get("input").toString(), MULTIPLE_EXTENSIONS) + "." + output_format + ".url", "[InternetShortcut]\nURL=" + URLDecoder.decode(input, "UTF-8"));
 						collection.remove(document);
-						System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward] [" + job_id + "]: Job-" + job_id + " completed, result hosted at " + URLDecoder.decode(input, "UTF-8"));
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward] [" + job_id + "]: Job-" + job_id + " completed, result hosted at " + URLDecoder.decode(input, "UTF-8"));
 					}
 				}
 			}
@@ -623,7 +622,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		BufferedReader reader;
 		String command, line;
 	
-		System.out.println("[" + sdf.format(new Date(System.currentTimeMillis())) + "] [steward]: Purging mongo & rabbitmq ...");
+		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Purging mongo & rabbitmq ...");
 	
 		//Purge mongo
 		command = "mongo polyglot --eval \"db.steward.drop()\"";
