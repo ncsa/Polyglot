@@ -262,8 +262,10 @@ public class SoftwareServerUtility
     try{
       BufferedWriter outs = new BufferedWriter(new FileWriter(filename, true));
       outs.write(string);
-      outs.close();
-    }catch(Exception e) {e.printStackTrace();}
+			outs.close();
+    }catch(Exception e){
+			e.printStackTrace();
+		}
   }
 
   /**
@@ -277,8 +279,10 @@ public class SoftwareServerUtility
       BufferedWriter outs = new BufferedWriter(new FileWriter(filename, true));
       outs.write(string);
       outs.newLine();
-      outs.close();
-    }catch(Exception e) {e.printStackTrace();}
+			outs.close();
+    }catch(Exception e){
+			e.printStackTrace();
+		}
   }
 
 	/**
