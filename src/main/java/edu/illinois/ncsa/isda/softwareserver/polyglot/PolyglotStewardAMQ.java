@@ -388,7 +388,12 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	    	    
 	    for(int j=0; j<queue.get("consumer_details").size(); j++){
 	    	host = queue.get("consumer_details").get(j).get("channel_details").get("peer_host").asText();
-	    	
+	   
+				//Make sure we use the public IP for local software servers 
+				if(host.equals("127.0.0.1") || host.equals("localhost")){
+					host = Utility.getLocalHostIP();
+				}
+	
 	    	try{
 		    	startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
 			    //System.out.println(name + ", " + host + ", " + startup_time);

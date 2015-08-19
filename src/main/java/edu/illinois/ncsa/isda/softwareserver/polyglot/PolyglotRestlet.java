@@ -366,10 +366,60 @@ public class PolyglotRestlet extends ServerResource
 			}else{
 				return new StringRepresentation("error: invalid job id", MediaType.TEXT_PLAIN);
 			}
-		}else if(part0.equals("servers")){				
-			return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getServers()), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("servers")){
+			if(part1.isEmpty()){
+				if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+					return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getServers()), MediaType.TEXT_PLAIN);
+				}else{
+					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getServers()), Utility.endSlash(getReference().toString()), true, "Servers"), MediaType.TEXT_HTML);
+				}
+			}else{
+				url = "http://" + part1 + ":8182";
+
+				//Add on additional parts if any
+				if(!part2.isEmpty()) url += "/software";
+
+				for(int i=2; i<parts.size(); i++){
+					url += "/" + parts.get(i);
+				}
+
+				//Redirect to specified Software Server
+				this.getResponse().redirectTemporary(url);
+				return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+			}
 		}else if(part0.equals("software")){
-			return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getSoftware()), MediaType.TEXT_PLAIN);
+			if(part1.isEmpty()){
+				if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+					return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getSoftware()), MediaType.TEXT_PLAIN);
+				}else{
+					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getSoftware()), Utility.endSlash(getReference().toString()), true, "Software"), MediaType.TEXT_HTML);
+				}
+			}else{
+				//Find a server with the specified application, TODO: this may need to be more efficient
+				Vector<String> servers = polyglot.getServers();
+
+				for(int i=0; i<servers.size(); i++){
+					String[] lines = SoftwareServerUtility.readURL("http://" + servers.get(i) + ":8182/software", "text/plain").split("\\r?\\n");
+
+					for(int j=0; j<lines.length; j++){
+						if(lines[j].split(" ")[0].equals(part1)){
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Redirecting request for " + part1 + " to " + servers.get(i));
+
+							//Redirect to found software server
+							url = "http://" + servers.get(i) + ":8182/software";
+
+							for(int k=1; k<parts.size(); k++){
+								url += "/" + parts.get(k);
+							}
+
+							this.getResponse().redirectTemporary(url);
+							return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+						}
+					}
+				}
+
+				return new StringRepresentation("error: application not available", MediaType.TEXT_PLAIN);
+			}
 		}else if(part0.equals("inputs")){
 			if(part1.isEmpty()){
 				if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
