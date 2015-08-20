@@ -1030,6 +1030,8 @@ public class SoftwareServerRestlet extends ServerResource
 	          }else if(key.equals("ExternalPublicIPServices")){
 							external_public_ip_services = value;
 							System.out.println("Setting External Public IP Services to " + external_public_ip_services);
+	          }else if(key.equals("PublicIp")){
+	          	public_ip = value;
 	          }
 	        }
 	      }
@@ -1057,8 +1059,12 @@ public class SoftwareServerRestlet extends ServerResource
 
 				public_ip = "http://" + ip + ":8182";
 	    }else{
+	    	if (public_ip.equals("")) {
 				public_ip = "http://" + Utility.getLocalHostIP() + ":8182";
-			}
+	    	}else{
+				public_ip = "http://" + public_ip + ":8182";
+	    	}
+		}
 	  }catch(Exception e){
 			System.out.println("Error in getting public IP: " + e.getMessage());
 			//e.printStackTrace();
