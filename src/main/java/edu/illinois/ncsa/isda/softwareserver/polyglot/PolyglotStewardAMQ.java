@@ -64,8 +64,10 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		
 		//Connect to MongoDB
 		try{
-			mongoClient = new MongoClient("localhost");
-			db = mongoClient.getDB("polyglot");
+			Properties properties = new Properties();
+			properties.load(new FileInputStream("mongo.properties"));
+			mongoClient = new MongoClient(properties.getProperty("server"));
+			db = mongoClient.getDB(properties.getProperty("database"));
 			collection = db.getCollection("steward");
 		}catch(Exception e) {e.printStackTrace();}
 		
