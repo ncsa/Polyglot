@@ -482,12 +482,13 @@ public class PolyglotRestlet extends ServerResource
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
 		boolean FORM_POST = !part0.isEmpty() && part0.equals("form");
-		boolean TASK_POST = !part1.isEmpty();
+		boolean SOFTWARESERVER_POST = !part0.isEmpty() && (part0.equals("servers") || part0.equals("software"));
+		boolean TASK_POST = !part1.isEmpty() && !part0.equals("servers") && !part0.equals("software");
 		TreeMap<String,String> parameters = new TreeMap<String,String>();
-		String file=null, output = null, result_file = null, result_url;
+		String file=null, output = null, result_file = null, result_url, url;
 		String client = getClientInfo().getAddress();
-		
-		if(FORM_POST || TASK_POST){
+	
+		if(FORM_POST || TASK_POST || SOFTWARESERVER_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
 				DiskFileItemFactory factory = new DiskFileItemFactory();
 				factory.setSizeThreshold(1000240);
@@ -540,9 +541,9 @@ public class PolyglotRestlet extends ServerResource
 			}else if(TASK_POST){
 				output = part1;				
 			}
-							
+
 			//Do the conversion
-			if(file != null && output != null){	
+			if(file != null && output != null){
 				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
 				
 				request = new RequestInformation(client, file, output);
@@ -593,6 +594,61 @@ public class PolyglotRestlet extends ServerResource
 						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 					}
 				}
+			}
+		}
+
+		//Check for direct software server requests
+		if(part0.equals("servers")){
+			if(!part1.isEmpty()){
+				url = "http://" + part1 + ":8182";
+
+				//Add on additional parts if any
+				if(!part2.isEmpty()) url += "/software";
+
+				for(int i=2; i<parts.size(); i++){
+					url += "/" + parts.get(i);
+				}
+							
+				//TODO: For some reasone this doesn't seem to be necessary for the task to go through?
+				try{
+					url += "/" + URLEncoder.encode(file, "UTF-8");
+				}catch(Exception e) {e.printStackTrace();}
+
+				//Redirect to specified Software Server
+				this.getResponse().redirectTemporary(url);
+				return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+			}
+		}else if(part0.equals("software")){
+			if(!part1.isEmpty()){
+				//Find a server with the specified application, TODO: this may need to be more efficient
+				Vector<String> servers = polyglot.getServers();
+
+				for(int i=0; i<servers.size(); i++){
+					String[] lines = SoftwareServerUtility.readURL("http://" + servers.get(i) + ":8182/software", "text/plain").split("\\r?\\n");
+
+					for(int j=0; j<lines.length; j++){
+						if(lines[j].split(" ")[0].equals(part1)){
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Redirecting request for " + part1 + " to " + servers.get(i));
+
+							//Redirect to found software server
+							url = "http://" + servers.get(i) + ":8182/software";
+
+							for(int k=1; k<parts.size(); k++){
+								url += "/" + parts.get(k);
+							}
+
+							//TODO: For some reasone this doesn't seem to be necessary for the task to go through?
+							try{
+								url += "/" + URLEncoder.encode(file, "UTF-8");
+							}catch(Exception e) {e.printStackTrace();}
+
+							this.getResponse().redirectTemporary(url);
+							return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+						}
+					}
+				}
+
+				return new StringRepresentation("error: application not available", MediaType.TEXT_PLAIN);
 			}
 		}
 		
