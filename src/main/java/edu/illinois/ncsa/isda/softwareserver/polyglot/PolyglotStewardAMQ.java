@@ -67,7 +67,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 			Properties properties = new Properties();
 			properties.load(new FileInputStream("mongo.properties"));
 			mongoClient = new MongoClient(properties.getProperty("server"));
-			db = mongoClient.getDB(properties.getProperty("database"));
+			//db = mongoClient.getDB(properties.getProperty("database"));
+			db = mongoClient.getDB("polyglot");		//Use this database as mongo.properties file will set this for DAP level
 			collection = db.getCollection("steward");
 		}catch(Exception e) {e.printStackTrace();}
 		
