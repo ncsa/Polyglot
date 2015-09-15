@@ -44,6 +44,9 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	private DB db;
 	private DBCollection collection;
 	private ConnectionFactory factory;
+	private Connection connection;
+	private Channel channel;
+	private String polyglot_ip;
 	private AtomicInteger job_counter = new AtomicInteger();
 
 	/**
@@ -92,6 +95,15 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	  		factory.setPassword(rabbitmq_password);
 	  	}
 		}
+
+		try {
+			connection = factory.newConnection();
+			channel = connection.createChannel();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+
+		polyglot_ip = Utility.getLocalHostIP();
     
 		if(START) new Thread(this).start();		//Start main thread
 	}
@@ -463,14 +475,13 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode message;
 		int job_id, step, step_status;
-		String polyglot_ip, polyglot_auth = "", input, application, output_format, output_path;
+		String polyglot_auth = "", input, application, output_format, output_path;
 		boolean MULTIPLE_EXTENSIONS;	//Was a path found for an input with multiple extensions
 		
 		try{
 			while(cursor.hasNext()){
 				document = cursor.next();
 				//polyglot_ip = InetAddress.getLocalHost().getHostAddress();
-				polyglot_ip = Utility.getLocalHostIP();
 				if(polyglot_username != null && polyglot_password != null) polyglot_auth = polyglot_username + ":" + polyglot_password;
 				job_id = Integer.parseInt(document.get("job_id").toString());
 				MULTIPLE_EXTENSIONS = Boolean.parseBoolean(document.get("multiple_extensions").toString());
@@ -504,12 +515,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						message.put("output_format", output_format);
 						
 						//Submit the next step for execution
-				    Connection connection = factory.newConnection();
-				    Channel channel = connection.createChannel();
 				    channel.queueDeclare(application, true, false, false, null);
 				    channel.basicPublish("", application, MessageProperties.PERSISTENT_TEXT_PLAIN, message.toString().getBytes());
-				    channel.close();
-				    connection.close();
 						
 						//Update the job entry
 						document.put("step", step);
