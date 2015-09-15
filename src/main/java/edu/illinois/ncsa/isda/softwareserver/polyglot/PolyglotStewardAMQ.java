@@ -572,7 +572,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
   					discoveryAMQ();
 					}catch(Exception e) {e.printStackTrace();}
 
-  				Utility.pause(1000);
+  				Utility.pause(30000);
   			}
   		}
   	}.start();
