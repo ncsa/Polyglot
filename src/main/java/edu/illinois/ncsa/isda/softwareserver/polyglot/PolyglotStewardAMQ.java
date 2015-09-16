@@ -397,7 +397,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		long startup_time;
 		boolean UPDATED = false;
 	
-		for(int i=0; i<consumers.size(); i++) {
+                for(int i=0; i<consumers.size(); i++) {
                     String host = consumers.get(i).get("channel_details").get("peer_host").asText();
                     //Make sure we use the public IP for local software servers 
                     if(host.equals("127.0.0.1") || host.equals("localhost")){
@@ -408,9 +408,9 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 
                 for (String host: hosts) {
                     try{
-		    	startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
+                        startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
 
-		    	synchronized(software_servers){
+                        synchronized(software_servers){
                             if(!software_servers.containsKey(host) || software_servers.get(host) != startup_time){
                                 System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
                                 UPDATED = true;
@@ -420,7 +420,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
                                 iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
                                 software_servers.put(host, startup_time);
                             }
-		    	}
+                        }
                     }catch(NumberFormatException e) {
                         //e.printStackTrace();
                     }
