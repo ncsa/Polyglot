@@ -390,45 +390,41 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	 */
 	public void discoveryAMQ()
 	{
-		JsonNode queues = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/queues/" + Utility.urlEncode(rabbitmq_vhost) + "/");
+		JsonNode consumers = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/consumers/" + Utility.urlEncode(rabbitmq_vhost));
+		Set<String> hosts = new TreeSet<String>();
 		JsonNode queue;
 		JsonNode applications;
-		String name, host;
 		long startup_time;
 		boolean UPDATED = false;
 	
-		for(int i=0; i<queues.size(); i++) {
-			name = queues.get(i).get("name").asText();
-	    queue = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/queues/" + Utility.urlEncode(rabbitmq_vhost) + "/" + name);
-	    	    
-	    for(int j=0; j<queue.get("consumer_details").size(); j++){
-	    	host = queue.get("consumer_details").get(j).get("channel_details").get("peer_host").asText();
-	   
-				//Make sure we use the public IP for local software servers 
-				if(host.equals("127.0.0.1") || host.equals("localhost")){
-					host = Utility.getLocalHostIP();
-				}
-	
-	    	try{
+		for(int i=0; i<consumers.size(); i++) {
+                    String host = consumers.get(i).get("channel_details").get("peer_host").asText();
+                    //Make sure we use the public IP for local software servers 
+                    if(host.equals("127.0.0.1") || host.equals("localhost")){
+                        host = Utility.getLocalHostIP();
+                    }
+                    hosts.add(host);
+                }
+
+                for (String host: hosts) {
+                    try{
 		    	startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
-			    //System.out.println(name + ", " + host + ", " + startup_time);
 
 		    	synchronized(software_servers){
-			    	if(!software_servers.containsKey(host) || software_servers.get(host) != startup_time){
-			    		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
-			    		UPDATED = true;
+                            if(!software_servers.containsKey(host) || software_servers.get(host) != startup_time){
+                                System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
+                                UPDATED = true;
 
-			    		//Get applications on server
-			    		applications = queryEndpoint("http://" + softwareserver_authentication + host + ":8182/applications");
-			    		iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
-			    		software_servers.put(host, startup_time);
-			    	}
+                                //Get applications on server
+                                applications = queryEndpoint("http://" + softwareserver_authentication + host + ":8182/applications");
+                                iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
+                                software_servers.put(host, startup_time);
+                            }
 		    	}
-	    	}catch(NumberFormatException e) {
-					//e.printStackTrace();
-				}
-	    }
-	  }
+                    }catch(NumberFormatException e) {
+                        //e.printStackTrace();
+                    }
+                }
 		
 		if(UPDATED) iograph.save("tmp/iograph.txt");
 	}
