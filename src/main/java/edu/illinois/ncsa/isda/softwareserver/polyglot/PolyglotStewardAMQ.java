@@ -474,11 +474,14 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		String polyglot_auth = "", input, application, output_format, output_path;
 		boolean MULTIPLE_EXTENSIONS;	//Was a path found for an input with multiple extensions
 		
+                if(polyglot_username != null && polyglot_password != null) {
+                    polyglot_auth = polyglot_username + ":" + polyglot_password;
+                }
+
 		try{
 			while(cursor.hasNext()){
 				document = cursor.next();
 				//polyglot_ip = InetAddress.getLocalHost().getHostAddress();
-				if(polyglot_username != null && polyglot_password != null) polyglot_auth = polyglot_username + ":" + polyglot_password;
 				job_id = Integer.parseInt(document.get("job_id").toString());
 				MULTIPLE_EXTENSIONS = Boolean.parseBoolean(document.get("multiple_extensions").toString());
 				step = Integer.parseInt(document.get("step").toString());
