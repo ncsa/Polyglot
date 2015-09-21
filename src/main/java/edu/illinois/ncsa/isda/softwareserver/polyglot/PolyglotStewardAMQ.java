@@ -44,6 +44,9 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	private DB db;
 	private DBCollection collection;
 	private ConnectionFactory factory;
+	private Connection connection;
+	private Channel channel;
+	private String polyglot_ip;
 	private AtomicInteger job_counter = new AtomicInteger();
 
 	/**
@@ -92,6 +95,15 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	  		factory.setPassword(rabbitmq_password);
 	  	}
 		}
+
+		try {
+			connection = factory.newConnection();
+			channel = connection.createChannel();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+
+		polyglot_ip = Utility.getLocalHostIP();
     
 		if(START) new Thread(this).start();		//Start main thread
 	}
@@ -378,45 +390,41 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	 */
 	public void discoveryAMQ()
 	{
-		JsonNode queues = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/queues/" + Utility.urlEncode(rabbitmq_vhost) + "/");
+		JsonNode consumers = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/consumers/" + Utility.urlEncode(rabbitmq_vhost));
+		Set<String> hosts = new TreeSet<String>();
 		JsonNode queue;
 		JsonNode applications;
-		String name, host;
 		long startup_time;
 		boolean UPDATED = false;
 	
-		for(int i=0; i<queues.size(); i++) {
-			name = queues.get(i).get("name").asText();
-	    queue = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/queues/" + Utility.urlEncode(rabbitmq_vhost) + "/" + name);
-	    	    
-	    for(int j=0; j<queue.get("consumer_details").size(); j++){
-	    	host = queue.get("consumer_details").get(j).get("channel_details").get("peer_host").asText();
-	   
-				//Make sure we use the public IP for local software servers 
-				if(host.equals("127.0.0.1") || host.equals("localhost")){
-					host = Utility.getLocalHostIP();
-				}
-	
-	    	try{
-		    	startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
-			    //System.out.println(name + ", " + host + ", " + startup_time);
+                for(int i=0; i<consumers.size(); i++) {
+                    String host = consumers.get(i).get("channel_details").get("peer_host").asText();
+                    //Make sure we use the public IP for local software servers 
+                    if(host.equals("127.0.0.1") || host.equals("localhost")){
+                        host = Utility.getLocalHostIP();
+                    }
+                    hosts.add(host);
+                }
 
-		    	synchronized(software_servers){
-			    	if(!software_servers.containsKey(host) || software_servers.get(host) != startup_time){
-			    		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
-			    		UPDATED = true;
+                for (String host: hosts) {
+                    try{
+                        startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
 
-			    		//Get applications on server
-			    		applications = queryEndpoint("http://" + softwareserver_authentication + host + ":8182/applications");
-			    		iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
-			    		software_servers.put(host, startup_time);
-			    	}
-		    	}
-	    	}catch(NumberFormatException e) {
-					//e.printStackTrace();
-				}
-	    }
-	  }
+                        synchronized(software_servers){
+                            if(!software_servers.containsKey(host) || software_servers.get(host) != startup_time){
+                                System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
+                                UPDATED = true;
+
+                                //Get applications on server
+                                applications = queryEndpoint("http://" + softwareserver_authentication + host + ":8182/applications");
+                                iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
+                                software_servers.put(host, startup_time);
+                            }
+                        }
+                    }catch(NumberFormatException e) {
+                        //e.printStackTrace();
+                    }
+                }
 		
 		if(UPDATED) iograph.save("tmp/iograph.txt");
 	}
@@ -463,15 +471,17 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode message;
 		int job_id, step, step_status;
-		String polyglot_ip, polyglot_auth = "", input, application, output_format, output_path;
+		String polyglot_auth = "", input, application, output_format, output_path;
 		boolean MULTIPLE_EXTENSIONS;	//Was a path found for an input with multiple extensions
 		
+                if(polyglot_username != null && polyglot_password != null) {
+                    polyglot_auth = polyglot_username + ":" + polyglot_password;
+                }
+
 		try{
 			while(cursor.hasNext()){
 				document = cursor.next();
 				//polyglot_ip = InetAddress.getLocalHost().getHostAddress();
-				polyglot_ip = Utility.getLocalHostIP();
-				if(polyglot_username != null && polyglot_password != null) polyglot_auth = polyglot_username + ":" + polyglot_password;
 				job_id = Integer.parseInt(document.get("job_id").toString());
 				MULTIPLE_EXTENSIONS = Boolean.parseBoolean(document.get("multiple_extensions").toString());
 				step = Integer.parseInt(document.get("step").toString());
@@ -504,12 +514,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						message.put("output_format", output_format);
 						
 						//Submit the next step for execution
-				    Connection connection = factory.newConnection();
-				    Channel channel = connection.createChannel();
 				    channel.queueDeclare(application, true, false, false, null);
 				    channel.basicPublish("", application, MessageProperties.PERSISTENT_TEXT_PLAIN, message.toString().getBytes());
-				    channel.close();
-				    connection.close();
 						
 						//Update the job entry
 						document.put("step", step);
@@ -565,7 +571,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
   					discoveryAMQ();
 					}catch(Exception e) {e.printStackTrace();}
 
-  				Utility.pause(1000);
+  				Utility.pause(30000);
   			}
   		}
   	}.start();
