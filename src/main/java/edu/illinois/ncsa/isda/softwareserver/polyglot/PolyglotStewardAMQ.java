@@ -397,34 +397,36 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		long startup_time;
 		boolean UPDATED = false;
 	
-                for(int i=0; i<consumers.size(); i++) {
-                    String host = consumers.get(i).get("channel_details").get("peer_host").asText();
-                    //Make sure we use the public IP for local software servers 
-                    if(host.equals("127.0.0.1") || host.equals("localhost")){
-                        host = Utility.getLocalHostIP();
-                    }
-                    hosts.add(host);
-                }
+		for(int i=0; i<consumers.size(); i++) {
+			String host = consumers.get(i).get("channel_details").get("peer_host").asText();
+			
+			//Make sure we use the public IP for local software servers 
+			if(host.equals("127.0.0.1") || host.equals("localhost")){
+				host = Utility.getLocalHostIP();
+			}
 
-                for (String host: hosts) {
-                    try{
-                        startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
+			hosts.add(host);
+		}
 
-                        synchronized(software_servers){
-                            if(!software_servers.containsKey(host) || software_servers.get(host) != startup_time){
-                                System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
-                                UPDATED = true;
+		for (String host: hosts) {
+			try{
+				startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
 
-                                //Get applications on server
-                                applications = queryEndpoint("http://" + softwareserver_authentication + host + ":8182/applications");
-                                iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
-                                software_servers.put(host, startup_time);
-                            }
-                        }
-                    }catch(NumberFormatException e) {
-                        //e.printStackTrace();
-                    }
-                }
+				synchronized(software_servers){
+					if(!software_servers.containsKey(host) || software_servers.get(host) != startup_time){
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
+						UPDATED = true;
+
+						//Get applications on server
+						applications = queryEndpoint("http://" + softwareserver_authentication + host + ":8182/applications");
+						iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
+						software_servers.put(host, startup_time);
+					}
+				}
+			}catch(NumberFormatException e) {
+				//e.printStackTrace();
+			}
+		}
 		
 		if(UPDATED) iograph.save("tmp/iograph.txt");
 	}
