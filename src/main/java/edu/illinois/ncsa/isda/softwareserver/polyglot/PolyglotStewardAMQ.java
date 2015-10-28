@@ -267,10 +267,12 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 
 		//Add to mongo
 		if(conversions != null){
-			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward] [" + job_id + "]: Found path for " + input + "->" + output_format + ", submitting as job-" + job_id);
+			String ts_str = SoftwareServerUtility.getTimeStamp();
+			System.out.println("[" + ts_str + "] [steward] [" + job_id + "]: Found path for " + input + "->" + output_format + ", submitting as job-" + job_id);
 
 			request = mapper.createObjectNode();
 			request.put("job_id", job_id);
+			request.put("timestamp", ts_str);
 			request.put("multiple_extensions", MULTIPLE_EXTENSIONS);
 			request.put("input", input);
 			request.put("output_path", output_path);
@@ -583,7 +585,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
   		public void run(){
   			while(true){
   				process_jobs();
-  				Utility.pause(100);
+				// It was 100 -- 0.1 s, too frequent to cause high CPU usage. Changed to 3000 - 3 seconds.
+  				Utility.pause(3000);
   			}
   		}
   	}.start();
