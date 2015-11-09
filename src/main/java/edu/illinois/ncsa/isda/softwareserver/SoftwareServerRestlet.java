@@ -1057,14 +1057,13 @@ public class SoftwareServerRestlet extends ServerResource
 					}
 				}
 
-				public_ip = "http://" + ip + ":8182";
-	    }else{
-	    	if (public_ip.equals("")) {
-				public_ip = "http://" + Utility.getLocalHostIP() + ":8182";
-	    	}else{
-				public_ip = "http://" + public_ip + ":8182";
-	    	}
-		}
+				public_ip = ip;
+	    }else if(public_ip.equals("")){
+				public_ip = Utility.getLocalHostIP();
+			}
+
+			if(!public_ip.startsWith("http://")) public_ip = "http://" + public_ip;
+			if(!public_ip.endsWith(":8182")) public_ip = public_ip + ":8182";
 	  }catch(Exception e){
 			System.out.println("Error in getting public IP: " + e.getMessage());
 			//e.printStackTrace();

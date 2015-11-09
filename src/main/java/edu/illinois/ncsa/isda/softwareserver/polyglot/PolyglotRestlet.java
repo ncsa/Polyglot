@@ -544,7 +544,8 @@ public class PolyglotRestlet extends ServerResource
 
 			//Do the conversion
 			if(file != null && output != null){
-				// Removed calling of SoftwareServerUtility.getFileSizeHR(file), which seems to cause a deadlock when "file" is hosted on this host:8184 itself.
+				//Removed calling of SoftwareServerUtility.getFileSizeHR(file), which seems to cause a deadlock when "file" is hosted on this host:8184 itself.
+				//System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
 				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " ...");
 				
 				request = new RequestInformation(client, file, output);
