@@ -2,6 +2,7 @@ package edu.illinois.ncsa.isda.softwareserver;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Application;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerRESTUtilities.*;
+import edu.illinois.ncsa.isda.softwareserver.datawolf.WorkflowUtilities;
 import kgm.image.ImageUtility;
 import kgm.utility.*;
 import java.util.*;
@@ -488,6 +489,11 @@ public class SoftwareServerRestlet extends ServerResource
 		Form form;
 		Parameter p;
 		int session;
+		System.out.println("part0: "+part0);
+		System.out.println("part1: "+part1);
+		System.out.println("part2: "+part2);
+		System.out.println("part3: "+part3);
+		System.out.println("part4: "+part4);
 		
 		//Parse endpoint
 		if(part0.isEmpty()){
@@ -626,12 +632,22 @@ public class SoftwareServerRestlet extends ServerResource
 								media_type = MediaType.MULTIPART_ALL;
 							}
 						}
-							
+						System.out.println("show log file: "+file + " media_type = "+media_type);	
+						
 						FileRepresentation file_representation = new FileRepresentation(file, media_type);
 						//file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
 						return file_representation;
 					}
-				}else{
+				}else if(Utility.getFilenameExtension(part1).equals("wf")) {
+					String logfile = file.replace("wf", "log");
+					if(Utility.exists(logfile)) {
+						WorkflowUtilities.parseLogfile(logfile);
+						return new StringRepresentation("Create DW workflow", MediaType.TEXT_PLAIN);
+					} else {
+						setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
+						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
+					}
+				}else {
 					setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
 					return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 				}
