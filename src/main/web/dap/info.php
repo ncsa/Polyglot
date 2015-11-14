@@ -6,6 +6,7 @@ $inputs = isset($_REQUEST["inputs"]) ? $_REQUEST["inputs"] : "";
 $outputs = isset($_REQUEST["outputs"]) ? $_REQUEST["outputs"] : "";
 $requests = isset($_REQUEST["requests"]) ? $_REQUEST["requests"] : "";
 $bytes = isset($_REQUEST["bytes"]) ? $_REQUEST["bytes"] : "";
+$files = isset($_REQUEST["files"]) ? $_REQUEST["files"] : "";
 $headings = isset($_REQUEST["headings"]) ? $_REQUEST["headings"] : "";
 
 $m = new MongoClient();
@@ -126,5 +127,23 @@ if($bytes){
 	}
 
 	echo $sum;
+}
+
+//Files
+if($files){
+	$collection = $db->requests;
+	$cursor = $collection->find();
+	$count = 0;
+
+	if($headings) {
+		echo "<br>\n";
+		echo "<h2>Files</h2>\n";
+	}
+
+	foreach($cursor as $document) {
+		$count++;
+	}
+
+	echo $count;
 }
 ?>
