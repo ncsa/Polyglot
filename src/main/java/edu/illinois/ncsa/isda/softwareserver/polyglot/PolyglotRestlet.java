@@ -13,7 +13,6 @@ import java.util.concurrent.*;
 import java.text.*;
 import javax.servlet.*;
 import javax.xml.bind.DatatypeConverter;
-
 import org.restlet.*;
 import org.restlet.resource.*;
 import org.restlet.data.*;
@@ -836,40 +835,61 @@ public class PolyglotRestlet extends ServerResource
 					Router router = new Router(getContext());
 					router.attachDefault(PolyglotRestlet.class);
 
-					if(!accounts.isEmpty() || (authentication_url != null)) {
+					if(!accounts.isEmpty() || (authentication_url != null)){
 						ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
-						SecretVerifier verifier = new SecretVerifier() {
+
+						SecretVerifier verifier = new SecretVerifier(){
 							@Override
-							public int verify(String username, char[] password) {
-								if (accounts.containsKey(username) && compare(password, accounts.get(username).toCharArray())) {
+							public int verify(String username, char[] password){
+								if(accounts.containsKey(username) && compare(password, accounts.get(username).toCharArray())){
 									return RESULT_VALID;
 								}
+
 								URLConnection connection = null;
-								try {
+
+								try{
 									URL url = new URL(authentication_url);
 									connection = url.openConnection();
 									connection.setDoOutput(true);
 
-									// add basic auth header
+									//Add basic auth header
 									String auth = username + ":" + new String(password);
 									connection.setRequestProperty("Authorization", "Basic " + DatatypeConverter.printBase64Binary(auth.getBytes()));
 									BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
 									String userinfo = br.readLine();
 									br.close();
+
 									return RESULT_VALID;
-								} catch (Exception e) {
+								}catch(Exception e){
 									return RESULT_UNSUPPORTED;
 								}
 							}
 						};
+
+						//Check for admin account, if found with no users make authentication optional	
+      	  	boolean FOUND_ADMIN = false;
+       			boolean FOUND_USER = false;
+        
+        		for(String username : accounts.keySet()){
+          		if(username.toLowerCase().startsWith("admin")){
+            		FOUND_ADMIN = true;
+          		}else{
+            		FOUND_USER = true;
+          		}
+						}
+
+        		if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
 						guard.setVerifier(verifier);
 						guard.setNext(router);
 
 						//Add a CORS filter to allow cross-domain requests
 						CorsFilter corsfilter = new CorsFilter(getContext(), guard);
 						corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+						//corsfilter.setAllowingAllRequestedHeaders(true);
 						//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+           	//corsfilter.setAllowedCredentials(true);
 						corsfilter.setAllowedCredentials(false);
+						//corsfilter.setSkippingResourceForCorsOptions(true);
 
 						return corsfilter;
 					}else{

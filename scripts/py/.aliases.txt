@@ -1,4 +1,4 @@
 #ImageMagick
 DTS
-demclip
-streamclip
+#demclip
+#streamclip
