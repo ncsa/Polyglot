@@ -887,9 +887,9 @@ public class PolyglotRestlet extends ServerResource
 						corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
 						//corsfilter.setAllowingAllRequestedHeaders(true);
 						//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
-           	//corsfilter.setAllowedCredentials(true);
-						corsfilter.setAllowedCredentials(false);
-						//corsfilter.setSkippingResourceForCorsOptions(true);
+           	corsfilter.setAllowedCredentials(true);
+						//corsfilter.setAllowedCredentials(false);
+						corsfilter.setSkippingResourceForCorsOptions(true);
 
 						return corsfilter;
 					}else{
