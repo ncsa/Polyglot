@@ -841,28 +841,37 @@ public class PolyglotRestlet extends ServerResource
 						SecretVerifier verifier = new SecretVerifier(){
 							@Override
 							public int verify(String username, char[] password){
-								if(accounts.containsKey(username) && compare(password, accounts.get(username).toCharArray())){
-									return RESULT_VALID;
+								//Try local accounts first
+								if(!accounts.isEmpty()){
+									if(accounts.containsKey(username) && compare(password, accounts.get(username).toCharArray())){
+										return RESULT_VALID;
+									}
 								}
 
-								URLConnection connection = null;
+								//Try authentication URL next
+								if(authentication_url != null){
+									URLConnection connection = null;
 
-								try{
-									URL url = new URL(authentication_url);
-									connection = url.openConnection();
-									connection.setDoOutput(true);
+									try{
+										URL url = new URL(authentication_url);
+										connection = url.openConnection();
+										connection.setDoOutput(true);
 
-									//Add basic auth header
-									String auth = username + ":" + new String(password);
-									connection.setRequestProperty("Authorization", "Basic " + DatatypeConverter.printBase64Binary(auth.getBytes()));
-									BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-									String userinfo = br.readLine();
-									br.close();
+										//Add basic auth header
+										String auth = username + ":" + new String(password);
+										connection.setRequestProperty("Authorization", "Basic " + DatatypeConverter.printBase64Binary(auth.getBytes()));
+										BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+										String userinfo = br.readLine();
+										br.close();
 
-									return RESULT_VALID;
-								}catch(Exception e){
-									return RESULT_UNSUPPORTED;
+										return RESULT_VALID;
+									}catch(Exception e){
+										return RESULT_INVALID;
+									}
 								}
+
+								//In case not in local account and authentication URL wasn't set
+								return RESULT_INVALID;
 							}
 						};
 
