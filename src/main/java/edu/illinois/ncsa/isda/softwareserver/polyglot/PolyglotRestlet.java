@@ -12,6 +12,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.text.*;
 import javax.servlet.*;
+import javax.xml.bind.DatatypeConverter;
+
 import org.restlet.*;
 import org.restlet.resource.*;
 import org.restlet.data.*;
@@ -38,6 +40,7 @@ public class PolyglotRestlet extends ServerResource
 {
   private static Polyglot polyglot = new PolyglotStewardAMQ(false);
 	private static TreeMap<String,String> accounts = new TreeMap<String,String>();
+	private static String authentication_url = null;
 	private static String nonadmin_user = "";
 	private static int steward_port = -1;
 	private static String context = "";
@@ -763,6 +766,8 @@ public class PolyglotRestlet extends ServerResource
 							HOST_POSTED_FILES = Boolean.valueOf(value);
 	          }else if(key.equals("MaxTaskTime")){
 							if(polyglot instanceof PolyglotSteward) ((PolyglotSteward)polyglot).setMaxTaskTime(Integer.valueOf(value));
+						}else if(key.equals("AuthenticationEndpoint")){
+							authentication_url = value;
 	          }else if(key.equals("Authentication")){
 	  	        username = value.substring(0, value.indexOf(':')).trim();
 	  	        password = value.substring(value.indexOf(':')+1).trim();
@@ -830,37 +835,43 @@ public class PolyglotRestlet extends ServerResource
 				public Restlet createInboundRoot(){
 					Router router = new Router(getContext());
 					router.attachDefault(PolyglotRestlet.class);
-			
-  	    	if(!accounts.isEmpty()){
-    	    	ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
-     	  		MapVerifier verifier = new MapVerifier();
-      	  	boolean FOUND_ADMIN = false;
-       			boolean FOUND_USER = false;
-        
-        		for(String username : accounts.keySet()){
-          		if(username.toLowerCase().startsWith("admin")){
-            		FOUND_ADMIN = true;
-          		}else{
-            		FOUND_USER = true;
-          		}
-            
-          		verifier.getLocalSecrets().put(username, accounts.get(username).toCharArray());
-        		}
-          
-        		if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
-          
-        		guard.setVerifier(verifier);
-        		guard.setNext(router);
 
-          	//Add a CORS filter to allow cross-domain requests
-           	CorsFilter corsfilter = new CorsFilter(getContext(), guard);
-           	corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
-						//corsfilter.setAllowingAllRequestedHeaders(true);
-           	//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
-           	corsfilter.setAllowedCredentials(true);
-						corsfilter.setSkippingResourceForCorsOptions(true);
+					if(!accounts.isEmpty() || (authentication_url != null)) {
+						ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
+						SecretVerifier verifier = new SecretVerifier() {
+							@Override
+							public int verify(String username, char[] password) {
+								if (accounts.containsKey(username) && compare(password, accounts.get(username).toCharArray())) {
+									return RESULT_VALID;
+								}
+								URLConnection connection = null;
+								try {
+									URL url = new URL(authentication_url);
+									connection = url.openConnection();
+									connection.setDoOutput(true);
 
-           	return corsfilter;
+									// add basic auth header
+									String auth = username + ":" + new String(password);
+									connection.setRequestProperty("Authorization", "Basic " + DatatypeConverter.printBase64Binary(auth.getBytes()));
+									BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+									String userinfo = br.readLine();
+									br.close();
+									return RESULT_VALID;
+								} catch (Exception e) {
+									return RESULT_UNSUPPORTED;
+								}
+							}
+						};
+						guard.setVerifier(verifier);
+						guard.setNext(router);
+
+						//Add a CORS filter to allow cross-domain requests
+						CorsFilter corsfilter = new CorsFilter(getContext(), guard);
+						corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+						//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+						corsfilter.setAllowedCredentials(false);
+
+						return corsfilter;
 					}else{
 					 	//Add a CORS filter to allow cross-domain requests
   					CorsFilter corsfilter = new CorsFilter(getContext(), router);

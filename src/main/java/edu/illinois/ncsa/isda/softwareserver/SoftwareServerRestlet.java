@@ -13,6 +13,8 @@ import java.net.*;
 import java.lang.management.*;
 import java.text.*;
 import javax.servlet.*;
+import javax.xml.bind.DatatypeConverter;
+
 import org.json.JSONArray;
 import org.restlet.*;
 import org.restlet.resource.*;
@@ -46,7 +48,8 @@ import org.apache.commons.validator.routines.InetAddressValidator;
 public class SoftwareServerRestlet extends ServerResource
 {
 	private static SoftwareServer server;
-	private static TreeMap<String,String> accounts = new TreeMap<String,String>();	
+	private static TreeMap<String,String> accounts = new TreeMap<String,String>();
+	private static String authentication_url = null;
 	private static Vector<Application> applications;
 	private static Vector<TreeSet<TaskInfo>> application_tasks;
 	private static TreeMap<String,Application> alias_map = new TreeMap<String,Application>();
@@ -1006,6 +1009,8 @@ public class SoftwareServerRestlet extends ServerResource
 	          	rabbitmq_password = value;
 	          }else if(key.equals("RabbitMQWaitToAcknowledge")){
 	          	rabbitmq_WAITTOACK = Boolean.valueOf(value);
+  			  	}else if(key.equals("AuthenticationEndpoint")){
+							authentication_url = value;
 	          }else if(key.equals("Authentication")){
 	  	        last_username = value.substring(0, value.indexOf(':')).trim();
 	  	        last_password = value.substring(value.indexOf(':')+1).trim();
@@ -1111,33 +1116,40 @@ public class SoftwareServerRestlet extends ServerResource
 							component.getDefaultHost().attach("/file/" + files[i].getName() + "/", corsfilter);
 						}
 					}
-			
-					if(!accounts.isEmpty()){
+
+					if(!accounts.isEmpty() || (authentication_url != null)) {
 						ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
-						MapVerifier verifier = new MapVerifier();
-						boolean FOUND_ADMIN = false;
-						boolean FOUND_USER = false;
-				
-						for(String username : accounts.keySet()){
-							if(username.toLowerCase().startsWith("admin")){
-								FOUND_ADMIN = true;
-							}else{
-								FOUND_USER = true;
+						SecretVerifier verifier = new SecretVerifier() {
+							@Override
+							public int verify(String username, char[] password) {
+								if (accounts.containsKey(username) && compare(password, accounts.get(username).toCharArray())) {
+									return RESULT_VALID;
+								}
+								try {
+									URL url = new URL(authentication_url);
+									URLConnection connection = url.openConnection();
+									connection.setDoOutput(true);
+
+									// add basic auth header
+									String auth = username + ":" + new String(password);
+									connection.setRequestProperty("Authorization", "Basic " + DatatypeConverter.printBase64Binary(auth.getBytes()));
+									BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+									String userinfo = br.readLine();
+									br.close();
+									return RESULT_VALID;
+								} catch (Exception e) {
+									return RESULT_UNSUPPORTED;
+								}
 							}
-						
-							verifier.getLocalSecrets().put(username, accounts.get(username).toCharArray());
-						}
-					
-						if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
-					
+						};
 						guard.setVerifier(verifier);
 						guard.setNext(router);
-						
+
 						//Add a CORS filter to allow cross-domain requests
-  					CorsFilter corsfilter = new CorsFilter(getContext(), guard);
-  					corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
-  					//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
-  					corsfilter.setAllowedCredentials(false);
+						CorsFilter corsfilter = new CorsFilter(getContext(), guard);
+						corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+						//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+						corsfilter.setAllowedCredentials(false);
 
 						return corsfilter;
 					}else{
