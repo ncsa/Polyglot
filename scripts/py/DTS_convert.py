@@ -31,4 +31,6 @@ while True:
 
 #Display extracted content
 metadata = requests.get(host + 'api/extractions/' + file_id + '/metadata').json()
-print json.dumps(metadata)
+
+with open(sys.argv[2], "w") as output_file:
+	output_file.write(json.dumps(metadata))
