@@ -1,3 +1,4 @@
 #ImageMagick
+DTS
 demclip
 streamclip
