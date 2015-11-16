@@ -8,6 +8,7 @@ Ghostscript
 ImageMagick
 Kabeja
 ncdump
+ppjson
 rar
 tar
 txt2html
