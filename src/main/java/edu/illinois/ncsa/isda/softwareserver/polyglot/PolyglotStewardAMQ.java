@@ -534,6 +534,16 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 					}
 				}
 			}
+		}catch(com.rabbitmq.client.AlreadyClosedException e){
+			// If the connection is closed, re-create the connection and channel. There seems no need to call connection.close() as it's already closed.
+			// Other types of exceptions are ConsumerCancelledException, JsonRpcException, MalformedFrameException, MissedHeartbeatException, PossibleAuthenticationFailureException, ProtocolVersionMismatchException, TopologyRecoveryException. This AlreadyClosedException occured multiple types and haven't seen other types, so handle this for now. Can add handling of other exceptions while we see them.
+			try {
+				connection = factory.newConnection();
+				channel = connection.createChannel();
+			} catch(Exception e1) {
+				e1.printStackTrace();
+			}
+			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: RabbitMQ connection was closed, submitting job failed. Re-created the connection.");
 		}catch(Exception e){
 			e.printStackTrace();
 		}finally{
