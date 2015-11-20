@@ -30,9 +30,21 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+/**
+ * DataWolf REST interface utility methods
+ * 
+ * @author Chris Navarro
+ */
 public class WorkflowUtilities
 {
-	public static void parseLogfile(String file)
+	/**
+	 * Parses a log file and creates a DataWolf workflow representation.
+	 * 
+	 * @param file
+	 *          log file to parse
+	 * @return HTML link to the created workflow
+	 */
+	public static String parseLogfile(String file)
 	{
 		// Information we need to create/execute software server tools
 		String softwareServerURL = null;
@@ -101,65 +113,86 @@ public class WorkflowUtilities
 			}
 		}
 		JsonObject datawolfUser = getUser();
-		String filename = new File(file).getName();
+		if(datawolfUser != null){
+			String filename = new File(file).getName();
 
-		// Create a workflow with the same name as the polyglot log file
-		JsonObject workflow = createWorkflow(filename, "polyglot workflow from log file", datawolfUser);
-		
-		String datawolfURL = DataWolf.getInstance().getServer();
-		saveWorkflow(workflow, datawolfURL, false);
-		
-		JsonArray workflowSteps = new JsonArray();
-		JsonObject prevTool = null;
-		JsonObject prevStep = null;
-		for(int index = 0; index < softwareServerTools.size(); index++){
-			String toolName = softwareServerTools.get(index);
-			String toolTask = softwareServerTasks.get(index);
-			String toolOutput = softwareServerOutputs.get(index);
-			String toolInput = softwareServerInputs.get(index);
-			
-			String toolId = createDataWolfTool(toolName, toolTask, toolOutput, toolInput, softwareServerURL, datawolfUser);
+			// Create a workflow with the same name as the polyglot log file
+			JsonObject workflow = createWorkflow(filename, "polyglot workflow from log file", datawolfUser);
 
-			// Fetch the created tool, otherwise we get duplicate entries
-			JsonObject tool = getWorkflowTool(datawolfURL, toolId);
-			// Create Workflow step
-			JsonObject workflowStep = createWorkflowStep(tool.get("title").getAsString(), datawolfUser, tool);
-			if(index > 0 && prevTool != null){
-				// Connect input of the current tool to the output of previous
-				Object obj = prevTool.get("outputs");
-				JsonArray outputArray = (JsonArray)obj;
-				// Find correct output
-				JsonObject output = null;
-				for(int arrayIndex = 0; arrayIndex < outputArray.size(); arrayIndex++){
-					output = (JsonObject)outputArray.get(arrayIndex);
-					if(!output.get("title").getAsString().equals("stdout")){
-						arrayIndex = outputArray.size();
+			saveWorkflow(workflow, false);
+
+			JsonArray workflowSteps = new JsonArray();
+			JsonObject prevTool = null;
+			JsonObject prevStep = null;
+			for(int index = 0; index < softwareServerTools.size(); index++){
+				String toolName = softwareServerTools.get(index);
+				String toolTask = softwareServerTasks.get(index);
+				String toolOutput = softwareServerOutputs.get(index);
+				String toolInput = softwareServerInputs.get(index);
+
+				String toolId = createDataWolfTool(toolName, toolTask, toolOutput, toolInput, softwareServerURL, datawolfUser);
+
+				// Fetch the created tool, otherwise we get duplicate entries
+				JsonObject tool = getWorkflowTool(toolId);
+				// Create Workflow step
+				JsonObject workflowStep = createWorkflowStep(tool, datawolfUser);
+				if(index > 0 && prevTool != null){
+					// Connect input of the current tool to the output of previous
+					Object obj = prevTool.get("outputs");
+					JsonArray outputArray = (JsonArray)obj;
+					// Find correct output
+					JsonObject output = null;
+					for(int arrayIndex = 0; arrayIndex < outputArray.size(); arrayIndex++){
+						output = (JsonObject)outputArray.get(arrayIndex);
+						if(!output.get("title").getAsString().equals("stdout")){
+							arrayIndex = outputArray.size();
+						}
+					}
+					if(output != null && prevStep != null){
+						String dataId = output.get("dataId").getAsString();
+						JsonObject outputs = (JsonObject)prevStep.get("outputs");
+						String outputMapId = outputs.get(dataId).getAsString();
+
+						// Current step input
+						JsonArray inputArray = (JsonArray)tool.get("inputs");
+						JsonObject inputToolData = (JsonObject)inputArray.get(0);
+						String toolInputDataId = inputToolData.get("dataId").getAsString();
+						JsonObject inputs = (JsonObject)workflowStep.get("inputs");
+
+						inputs.addProperty(toolInputDataId, outputMapId);
 					}
 				}
-				if(output != null && prevStep != null){
-					String dataId = output.get("dataId").getAsString();
-					JsonObject outputs = (JsonObject)prevStep.get("outputs");
-					String outputMapId = outputs.get(dataId).getAsString();
-
-					// Current step input
-					JsonArray inputArray = (JsonArray)tool.get("inputs");
-					JsonObject inputToolData = (JsonObject)inputArray.get(0);
-					String toolInputDataId = inputToolData.get("dataId").getAsString();
-					JsonObject inputs = (JsonObject)workflowStep.get("inputs");
-
-					inputs.addProperty(toolInputDataId, outputMapId);
-				}
+				workflowSteps.add(workflowStep);
+				prevTool = tool;
+				prevStep = workflowStep;
 			}
-			workflowSteps.add(workflowStep);
-			prevTool = tool;
-			prevStep = workflowStep;
+			// Add to Workflow
+			workflow.add("steps", workflowSteps);
+			// Save workflow
+			updateWorkflow(workflow);
+
+			String workflowURL = DataWolf.getInstance().getServer() + "/editor/execute.html#" + workflow.get("id").getAsString();
+			String buffer = "<p>Follow the link to the DataWolf workflow generated from the log file:</p>\n";
+			buffer += "<a href=\"" + workflowURL + "\" target=\"_blank\">" + workflowURL + "</a>\n";
+
+			return buffer;
+		}else{
+			String buffer = "<p>An error occurred connecting to the DataWolf server. Please check the server URL and user/password in <b>DataWolf.conf</b></p>";
+			return buffer;
 		}
-		// Add to Workflow
-		workflow.add("steps", workflowSteps);
-		// Save workflow
-		updateWorkflow(workflow, datawolfURL);
 	}
 
+	/**
+	 * Creates a workflow with the given title, description and creator.
+	 * 
+	 * @param title
+	 *          Workflow title
+	 * @param description
+	 *          Workflow description
+	 * @param creator
+	 *          Workflow creator
+	 * @return New workflow
+	 */
 	public static JsonObject createWorkflow(String title, String description, JsonObject creator)
 	{
 		JsonObject workflow = new JsonObject();
@@ -172,22 +205,37 @@ public class WorkflowUtilities
 	}
 
 	/**
+	 * Calls the DataWolf REST endpoint to update the workflow
+	 * 
 	 * @param workflow
-	 * @param datawolfURL
-	 * @return
+	 *          Workflow to update
+	 * @return Updated workflow
 	 */
-	public static JsonObject updateWorkflow(JsonObject workflow, String datawolfURL)
+	public static JsonObject updateWorkflow(JsonObject workflow)
 	{
-		return saveWorkflow(workflow, datawolfURL, true);
+		return saveWorkflow(workflow, true);
 	}
 
-	public static JsonObject saveWorkflow(JsonObject workflow, String datawolfURL, boolean update)
+	/**
+	 * Calls the DataWolf REST endpoint to save the workflow. The update flag
+	 * indicates whether the workflow has been created previously and is being
+	 * updated so the correct endpoint is called.
+	 * 
+	 * @param workflow
+	 *          Workflow to save
+	 * @param update
+	 *          True if the workflow is being updated, false if this is the
+	 *          initial save
+	 * @return Saved workflow
+	 */
+	public static JsonObject saveWorkflow(JsonObject workflow, boolean update)
 	{
 		HttpClientBuilder builder = HttpClientBuilder.create();
 		HttpClient client = builder.build();
 
 		StringEntity stringEntity;
 		JsonObject savedWorkflow = null;
+		String datawolfURL = DataWolf.getInstance().getServer();
 		try{
 			stringEntity = new StringEntity(workflow.toString());
 			BasicResponseHandler responseHandler = new BasicResponseHandler();
@@ -220,11 +268,20 @@ public class WorkflowUtilities
 		return savedWorkflow;
 	}
 
-	public static JsonObject createWorkflowStep(String title, JsonObject creator, JsonObject tool)
+	/**
+	 * Creates a new workflow step for a DataWolf tool
+	 * 
+	 * @param tool
+	 *          DataWolf tool to create step for
+	 * @param creator
+	 *          Workflow creator
+	 * @return New workflowStep
+	 */
+	public static JsonObject createWorkflowStep(JsonObject tool, JsonObject creator)
 	{
 		JsonObject workflowStep = new JsonObject();
 		workflowStep.addProperty("id", UUID.randomUUID().toString());
-		workflowStep.addProperty("title", title);
+		workflowStep.addProperty("title", tool.get("title").getAsString());
 		workflowStep.add("creator", creator);
 		workflowStep.add("tool", tool);
 
@@ -257,13 +314,29 @@ public class WorkflowUtilities
 		return workflowStep;
 	}
 
+	/**
+	 * Creates a new DataWolf tool.
+	 * 
+	 * @param toolName
+	 *          Name of the tool
+	 * @param toolTask
+	 *          Tool task
+	 * @param toolOutput
+	 *          Tool output
+	 * @param toolInput
+	 *          Tool input
+	 * @param softwareServerURL
+	 *          SoftwareServer URL
+	 * @param creator
+	 *          Tool creator
+	 * @return String representing the ID of the new tool
+	 */
 	public static String createDataWolfTool(String toolName, String toolTask, String toolOutput, String toolInput,
-			String softwareServerURL, JsonObject datawolfUser)
+			String softwareServerURL, JsonObject creator)
 	{
 
-		// String title = toolName + "-" + toolTask + "-" + toolInput;
 		String title = toolName + "-" + toolInput + "-" + toolOutput;
-		String description = "New Tool";
+		String description = "Converts " + toolInput + " to " + toolOutput;
 		String version = "1";
 		String executor = "commandline";
 
@@ -333,7 +406,7 @@ public class WorkflowUtilities
 		tool.addProperty("description", description);
 		tool.addProperty("version", version);
 		tool.addProperty("executor", executor);
-		tool.add("creator", datawolfUser);
+		tool.add("creator", creator);
 		tool.add("inputs", toolInputs);
 		tool.add("outputs", toolOutputs);
 		tool.add("parameters", toolParameters);
@@ -375,22 +448,29 @@ public class WorkflowUtilities
 			}
 		}
 
-		String datawolfURL = DataWolf.getInstance().getServer();
-		return createDataWolfTool(tool, toolzip, datawolfURL);
+		return createDataWolfTool(toolzip);
 	}
 
-	public static JsonObject getWorkflowTool(String datawolfURL, String toolId)
+	/**
+	 * Fetches a DataWolf tool by ID
+	 * 
+	 * @param toolId
+	 *          ID of the tool
+	 * @return DataWolf tool
+	 */
+	public static JsonObject getWorkflowTool(String toolId)
 	{
 		HttpClientBuilder builder = HttpClientBuilder.create();
 		HttpClient client = builder.build();
 
+		String datawolfURL = DataWolf.getInstance().getServer();
 		String toolURL = datawolfURL + "/workflowtools/" + toolId;
 		HttpGet httpGet = new HttpGet(toolURL);
 		httpGet.setHeader("Content-type", "application/json");
-		
+
 		BasicResponseHandler responseHandler = new BasicResponseHandler();
 		JsonObject tool = null;
-		
+
 		try{
 			String response = client.execute(httpGet, responseHandler);
 			JsonParser parser = new JsonParser();
@@ -404,6 +484,23 @@ public class WorkflowUtilities
 		return tool;
 	}
 
+	/**
+	 * Creates a new workflow tool parameter
+	 * 
+	 * @param title
+	 *          Workflow tool parameter title
+	 * @param description
+	 *          Workflow tool parameter description
+	 * @param allowNull
+	 *          True - can be null, False - must not be null
+	 * @param type
+	 *          Parameter Type
+	 * @param hidden
+	 *          True - hidden from the user, False - not hidden
+	 * @param value
+	 *          Default value for the parameter
+	 * @return New workflow tool parameter
+	 */
 	public static JsonObject createWorkflowToolParameter(String title, String description, boolean allowNull, String type,
 			boolean hidden, String value)
 	{
@@ -419,6 +516,17 @@ public class WorkflowUtilities
 		return toolParameter;
 	}
 
+	/**
+	 * Creates a new workflow tool data
+	 * 
+	 * @param title
+	 *          Workflow tool data field title
+	 * @param description
+	 *          Workflow tool data description
+	 * @param mimeType
+	 *          Workflow tool data type
+	 * @return New workflow tool data
+	 */
 	public static JsonObject createWorkflowToolData(String title, String description, String mimeType)
 	{
 		JsonObject toolData = new JsonObject();
@@ -430,6 +538,28 @@ public class WorkflowUtilities
 		return toolData;
 	}
 
+	/**
+	 * Creates new command line option around a workflow tool parameter or data
+	 * input/output
+	 * 
+	 * @param type
+	 *          The type of command line option
+	 * @param value
+	 *          Fixed value for the option
+	 * @param flag
+	 *          Optional flag for the option
+	 * @param optionId
+	 *          Unique id of the optino
+	 * @param inputOutput
+	 *          Specifies whether an option is an input, output or both (if
+	 *          applicable)
+	 * @param filename
+	 *          Name of the input/output file to store (if applicable)
+	 * @param commandline
+	 *          True - option passed at the command line to the tool, False -
+	 *          option not passed
+	 * @return New command line option
+	 */
 	public static JsonObject createCommandlineOption(String type, String value, String flag, String optionId,
 			String inputOutput, String filename, boolean commandline)
 	{
@@ -448,12 +578,19 @@ public class WorkflowUtilities
 		return commandlineOption;
 	}
 
-	public static String createDataWolfTool(JsonObject tool, File toolzip, String datawolfURL)
+	/**
+	 * Calls DataWolf REST endpoint to create the DataWolf tool
+	 * 
+	 * @param toolzip
+	 *          Zip file containing tool information and data
+	 * @return Unique id representing new tool
+	 */
+	public static String createDataWolfTool(File toolzip)
 	{
 		HttpClientBuilder builder = HttpClientBuilder.create();
 		HttpClient client = builder.build();
 
-		String toolURL = datawolfURL + "/workflowtools";
+		String toolURL = DataWolf.getInstance().getServer() + "/workflowtools";
 		HttpPost httpPost = new HttpPost(toolURL);
 
 		FileBody fileBody = new FileBody(toolzip);
@@ -483,6 +620,12 @@ public class WorkflowUtilities
 
 	}
 
+	/**
+	 * Creates a FileDescriptor to associate the shell script with for the
+	 * DataWolf tool.
+	 * 
+	 * @return FileDescriptor for tool shell script
+	 */
 	public static JsonObject getShellScriptDescriptor()
 	{
 		// ID of the script file so when DataWolf stores the blob, it gets
@@ -527,7 +670,12 @@ public class WorkflowUtilities
 	 */
 	public static JsonObject getUser()
 	{
-		JsonParser jsonParser = new JsonParser();
-		return (JsonObject)jsonParser.parse(DataWolf.getInstance().getUser());
+		String user = DataWolf.getInstance().getUser();
+		if(user != null){
+			JsonParser jsonParser = new JsonParser();
+			return (JsonObject)jsonParser.parse(user);
+		}
+
+		return null;
 	}
 }
