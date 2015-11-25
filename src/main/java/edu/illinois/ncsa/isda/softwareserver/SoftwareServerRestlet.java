@@ -2,6 +2,7 @@ package edu.illinois.ncsa.isda.softwareserver;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Application;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerRESTUtilities.*;
+import edu.illinois.ncsa.isda.softwareserver.datawolf.WorkflowUtilities;
 import kgm.image.ImageUtility;
 import kgm.utility.*;
 import java.util.*;
@@ -628,12 +629,20 @@ public class SoftwareServerRestlet extends ServerResource
 								media_type = MediaType.MULTIPART_ALL;
 							}
 						}
-							
+						
 						FileRepresentation file_representation = new FileRepresentation(file, media_type);
 						//file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
 						return file_representation;
 					}
-				}else{
+				}else if(Utility.getFilenameExtension(part1).equals("wf")) {
+					String logfile = file.replace("wf", "log");
+					if(Utility.exists(logfile)) {
+						return new StringRepresentation(WorkflowUtilities.parseLogfile(logfile), MediaType.TEXT_HTML);
+					} else {
+						setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
+						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
+					}
+				}else {
 					setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
 					return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 				}
