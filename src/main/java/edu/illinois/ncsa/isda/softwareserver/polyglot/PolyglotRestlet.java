@@ -45,6 +45,7 @@ public class PolyglotRestlet extends ServerResource
 	private static String context = "";
 	private static int port = 8184;
 	private static boolean RETURN_URL = false;
+	private static boolean DOWNLOAD_SS_FILE = false;
 	private static boolean MONGO_LOGGING = false;
 	private static int mongo_update_interval = 2000;
 	private static boolean SOFTWARE_SERVER_REST_INTERFACE = false;
@@ -273,7 +274,23 @@ public class PolyglotRestlet extends ServerResource
 		}else if(part0.equals("file")){
 			if(!part1.isEmpty()){
 				file = public_path + part1;
-				
+
+                                // Workaround: If the file is not there, but file.url exists, retrieve and put it there. Configurable using the "DownloadSSFile" field in PolyglotRestlet.conf.
+                                System.out.println("DOWNLOAD_SS_FILE = " + String.valueOf(DOWNLOAD_SS_FILE));
+                                if (DOWNLOAD_SS_FILE) {
+                                    if ( (! Utility.exists(file)) && (Utility.exists(file + ".url")) ) {
+                                        System.out.println("File does not exist, but file.url '" + file + ".url' exists.");
+                                        result_url = Utility.getLine(file + ".url", 2).substring(4);		//Link is on 2nd line after "URL="
+                                        System.out.println("result_url =" + result_url);
+
+                                        if(!result_url.isEmpty()){
+                                            System.out.println("About to download '" + result_url + "' to file '" + file + "'");
+                                            Boolean result_status = Utility.downloadFile(public_path, part1, result_url, false);
+                                            System.out.println("Downloaded '" + result_url + "' to file '" + file + "', result status is " + result_status);
+                                        }
+                                    }
+                                }
+
 				if(Utility.exists(file)){
 					MetadataService metadata_service = new MetadataService();
 					MediaType media_type = metadata_service.getMediaType(Utility.getFilenameExtension(part1));
@@ -751,6 +768,8 @@ public class PolyglotRestlet extends ServerResource
 	        		}
 	          }else if(key.equals("ReturnURL")){
 	          	RETURN_URL = Boolean.valueOf(value);
+	          }else if(key.equals("DownloadSSFile")){
+	          	DOWNLOAD_SS_FILE = Boolean.valueOf(value);
 	          }else if(key.equals("MongoLogging")){
 	          	MONGO_LOGGING = Boolean.valueOf(value);
 	          }else if(key.equals("MongoUpdateInterval")){

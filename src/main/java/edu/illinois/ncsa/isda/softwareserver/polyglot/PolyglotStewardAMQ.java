@@ -46,7 +46,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	private ConnectionFactory factory;
 	private Connection connection;
 	private Channel channel;
-	private String polyglot_ip;
+	private String polyglot_ip = null;
 	private AtomicInteger job_counter = new AtomicInteger();
 
 	/**
@@ -103,8 +103,11 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 			e.printStackTrace();
 		}
 
-		polyglot_ip = Utility.getLocalHostIP();
-    
+                if (null == polyglot_ip) {
+                    polyglot_ip = Utility.getLocalHostIP();
+                }
+                System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: polyglot_ip: " + polyglot_ip);
+
 		if(START) new Thread(this).start();		//Start main thread
 	}
 	
@@ -125,7 +128,9 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#'){
-	        	if(key.equals("RabbitMQURI")){
+	        	if(key.equals("POLYGLOT_IP")){
+	        		polyglot_ip = value;
+                        }else if(key.equals("RabbitMQURI")){
 	        		rabbitmq_uri = value;
 	        	}else if(key.equals("RabbitMQServer")){
 	        		rabbitmq_server = value;
