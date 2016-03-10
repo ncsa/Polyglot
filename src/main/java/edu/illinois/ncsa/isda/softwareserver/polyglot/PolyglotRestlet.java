@@ -281,6 +281,15 @@ public class PolyglotRestlet extends ServerResource
                                     if ( (! Utility.exists(file)) && (Utility.exists(file + ".url")) ) {
                                         System.out.println("File does not exist, but file.url '" + file + ".url' exists.");
                                         result_url = Utility.getLine(file + ".url", 2).substring(4);		//Link is on 2nd line after "URL="
+                                        for (int i = 0; i < 10; i++) {
+                                            if (result_url.trim().isEmpty()) {
+                                                System.out.println("result_url is empty, sleeping for 1 second...");
+                                                try{
+                                                    Thread.sleep(1000);
+                                                }catch(Exception e) {e.printStackTrace();}
+                                                result_url = Utility.getLine(file + ".url", 2).substring(4);		//Link is on 2nd line after "URL="
+                                            }
+                                        }
                                         System.out.println("result_url =" + result_url);
 
                                         if(!result_url.isEmpty()){
