@@ -778,7 +778,7 @@ public class PolyglotRestlet extends ServerResource
 	          	RETURN_URL = Boolean.valueOf(value);
 	          }else if(key.equals("DownloadSSFile")){
 	          	DOWNLOAD_SS_FILE = Boolean.valueOf(value);
-                        System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: DOWNLOAD_SS_FILE = " + String.valueOf(DOWNLOAD_SS_FILE));
+	          	System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: DOWNLOAD_SS_FILE = " + String.valueOf(DOWNLOAD_SS_FILE));
 	          }else if(key.equals("MongoLogging")){
 	          	MONGO_LOGGING = Boolean.valueOf(value);
 	          }else if(key.equals("MongoUpdateInterval")){

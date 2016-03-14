@@ -130,7 +130,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	        if(key.charAt(0) != '#'){
 	        	if(key.equals("POLYGLOT_IP")){
 	        		polyglot_ip = value;
-                        }else if(key.equals("RabbitMQURI")){
+	        	}else if(key.equals("RabbitMQURI")){
 	        		rabbitmq_uri = value;
 	        	}else if(key.equals("RabbitMQServer")){
 	        		rabbitmq_server = value;
