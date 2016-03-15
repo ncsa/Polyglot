@@ -82,7 +82,12 @@ public class PolyglotTest
 		
 		//Download the output of the conversion
 		Utility.downloadFile("data/tmp/", "Lenna2", result);
-		
+
+                //To debug test failures.
+                System.out.println("Content in data/tmp/, especially Lenna2.gif:");
+                //Wait for 10 sec, handle output, show output.
+                Utility.executeAndWait("ls -l data/tmp", 10000, true, true);
+
 		try{
 			assertTrue("Conversion failed", Utility.existsNotEmptyAndRecent("data/tmp/Lenna2.gif", 10000));
 			System.out.println("Conversion OK");
