@@ -1,0 +1,32 @@
+# polyglot server
+polyglot:
+  image: ncsa/polyglot-server:bd-1009
+  #environment:
+    # PUBLICIP: ......
+  ports:
+    - "8184"
+  links:
+    - mongo
+    - rabbitmq
+
+# example extractor
+im:
+  image: ncsa/ss-imagemagick
+  links:
+    - rabbitmq
+
+htmldoc:
+  image: ncsa/ss-htmldoc
+  links:
+    - rabbitmq
+
+# mongo database used to store data
+mongo:
+  image: mongo:latest
+
+# rabbitmq to connect to extractors
+rabbitmq:
+  image: rabbitmq:management
+  ports:
+    - "5672"
+    - "15672"
