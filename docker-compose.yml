@@ -2,7 +2,7 @@
 polyglot:
   image: ncsa/polyglot-server
   environment:
-    DOWNLOAD_SS_FILE: 'true'
+    DOWNLOAD_SS_FILE: "true"
   ports:
     - "8184:8184"
   links:
