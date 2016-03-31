@@ -47,6 +47,10 @@ else
   PUSH=${PUSH:-""}
 fi
 
+# Back up ncsa/polyglot-server:latest, and later restore it.
+docker rmi --force ncsa/polyglot-server:latest_backup 2>/dev/null
+docker tag ncsa/polyglot-server:latest ncsa/polyglot-server:latest_backup 2>/dev/null
+
 for app in polyglot-server ss-imagemagick ss-htmldoc; do
 
     if [ ! "${PROJECT}" = "" ]; then
@@ -66,6 +70,11 @@ for app in polyglot-server ss-imagemagick ss-htmldoc; do
         exit -1
     fi
 
+    # Tag this polyglot-server image as ncsa/polyglot-server:latest, since the SS converters are based on it.
+    if [ "$app" = "polyglot-server" ]; then
+        docker tag ${app}__$$ ncsa/polyglot-server:latest
+    fi
+
     # tag all versions and push if need be
     for v in $VERSION; do
         ${DEBUG} docker tag ${app}__$$ ${REPO}:${v}
@@ -79,4 +88,7 @@ for app in polyglot-server ss-imagemagick ss-htmldoc; do
     ${DEBUG} rm -rf ${FILES}
 
 done
+
+# Restore ncsa/polyglot-server:latest.
+docker tag ncsa/polyglot-server:latest_backup ncsa/polyglot-server:latest 2>/dev/null || true
 
