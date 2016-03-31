@@ -1,4 +1,4 @@
-Use this file to build the ncsa/polyglot-server:bd-1009 docker image
-and upload it to the docker hub.
-    docker build -t ncsa/polyglot-server:bd-1009 .
-    docker push ncsa/polyglot-server:bd-1009
+To build the ncsa/polyglot-server docker image, go to the
+top level of the source tree, and run "docker.sh".
+    cd ..
+    ./docker.sh
