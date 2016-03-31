@@ -17,7 +17,10 @@ if [ "$1" = 'polyglot' ]; then
 	if [ "$POL_AUTH" != "" ]; then
 		/bin/sed -i -e "s#.*Authentication=.*#Authentication=${POL_AUTH}#" PolyglotRestlet.conf
 	fi
-	/bin/echo "DownloadSSFile=true" >> PolyglotRestlet.conf
+	if [ "$DOWNLOAD_SS_FILE" != "" ]; then
+		#/bin/echo "DownloadSSFile=${DOWNLOAD_SS_FILE}" >> PolyglotRestlet.conf
+		/bin/sed -i -e "s#.*DownloadSSFile=.*#DownloadSSFile=${DOWNLOAD_SS_FILE}#" PolyglotRestlet.conf
+	fi
 
 	# connect to other servers
 	if [ "$RABBITMQURI" != "" ]; then

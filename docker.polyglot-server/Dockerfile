@@ -5,7 +5,8 @@ MAINTAINER Rui Liu <ruiliu@illinois.edu>
 # expose some properties of the container
 EXPOSE 8184 8182
 ENV 	POL_IP="" \
-    	POL_AUTH="" \
+	POL_AUTH="" \
+	DOWNLOAD_SS_FILE="" \
 	MONGO_SERVER="" \
 	MONGO_DATABASE="" \
 	MONGO_LOGGING="false" \
@@ -14,11 +15,12 @@ ENV 	POL_IP="" \
 
 # install requirements
 RUN apt-get update && apt-get -y install \
-		openjdk-7-jre-headless && \
+		openjdk-7-jre-headless \
+		wget && \
 	useradd -m -s /bin/bash polyglot
 
 # install polyglot
-USER polyglot
+# POL rewrites tmp/iograph.txt; user 'polyglot' does not have permission to do so. So keep using 'root'.
 COPY files /home/polyglot/
 RUN cd /home/polyglot && \
 	/bin/sed -i -e 's/^\([^#]*Scripts=\)/#\1/' polyglot/SoftwareServer.conf && \
