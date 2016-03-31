@@ -1,5 +1,7 @@
 #!/bin/sh
 
+#set -x
+
 # variables that can be set
 # DEBUG   : set to echo to print command and not execute
 # PUSH    : set to push to push, anthing else not to push. If not set
@@ -10,31 +12,22 @@
 
 # make sure PROJECT ends with /
 PROJECT=${PROJECT:-"ncsa"}
-if [ ! "${PROJECT}" = "" ]; then
-  if [ ! "$( echo $PROJECT | tail -c 2)" = "/" ]; then
-    REPO="${PROJECT}/polyglot-server"
-  else
-    REPO="polyglot-server"
-  fi
-else
-  REPO="polyglot-server"
-fi
 
 # copy dist file to docker folder
-ZIPFILE=$( /bin/ls -1rt target/universal/polyglot-*.zip 2>/dev/null | tail -1 )
+ZIPFILE=$( /bin/ls -1rt target/polyglot-*.zip 2>/dev/null | tail -1 )
 if [ "$ZIPFILE" = "" ]; then
-  echo "Running ./sbt dist"
-  ./sbt dist
-  ZIPFILE=$( /bin/ls -1rt target/universal/polyglot-*.zip 2>/dev/null | tail -1 )
+  echo "Running mvn package"
+  mvn package
+  ZIPFILE=$( /bin/ls -1rt target/polyglot-*.zip 2>/dev/null | tail -1 )
   if [ "$ZIPFILE" = "" ]; then
     exit -1
   fi
 fi
-${DEBUG} rm -rf docker/files
-${DEBUG} mkdir -p docker/files
-${DEBUG} unzip -q -d docker ${ZIPFILE}
-${DEBUG} mv docker/$( basename ${ZIPFILE} .zip ) docker/files/polyglot
-${DEBUG} mkdir docker/files/polyglot/custom
+FILES=docker.polyglot-server/files
+${DEBUG} rm -rf ${FILES}
+${DEBUG} mkdir -p ${FILES}
+${DEBUG} unzip -q -d ${FILES} ${ZIPFILE}
+${DEBUG} mv ${FILES}/$( basename ${ZIPFILE} -bin.zip ) ${FILES}/polyglot
 
 # find version if we are develop/latest/release and if should be pushed
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
@@ -56,21 +49,36 @@ else
   PUSH=${PUSH:-""}
 fi
 
-# create image using temp id
-${DEBUG} docker build --pull --tag $$ docker
-if [ $? -ne 0 ]; then
-  echo "FAILED build of $1/Dockerfile"
-  exit -1
-fi
+for app in polyglot-server ss-imagemagick ss-htmldoc; do
 
-# tag all versions and push if need be
-for v in $VERSION; do
-  ${DEBUG} docker tag $$ ${REPO}:${v}
-  if [ ! -z "$PUSH" -a ! "$PROJECT" = "" ]; then
-    ${DEBUG} docker push ${REPO}:${v}
-  fi
+    if [ ! "${PROJECT}" = "" ]; then
+        if [ ! "$( echo $PROJECT | tail -c 2)" = "/" ]; then
+            REPO="${PROJECT}/${app}"
+        else
+            REPO="${app}"
+        fi
+    else
+        REPO="${app}"
+    fi
+
+    # create image using temp id
+    ${DEBUG} docker build --pull --tag ${app}__$$ docker.${app}
+    if [ $? -ne 0 ]; then
+        echo "FAILED build of docker.${app}/Dockerfile"
+        exit -1
+    fi
+
+    # tag all versions and push if need be
+    for v in $VERSION; do
+        ${DEBUG} docker tag ${app}__$$ ${REPO}:${v}
+        if [ ! -z "$PUSH" -a ! "$PROJECT" = "" ]; then
+            ${DEBUG} docker push ${REPO}:${v}
+        fi
+    done
+
+    # cleanup
+    ${DEBUG} docker rmi ${app}__$$
+    ${DEBUG} rm -rf ${FILES}
+
 done
 
-# cleanup
-${DEBUG} docker rmi $$
-${DEBUG} rm -rf docker/files
