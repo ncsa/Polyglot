@@ -15,7 +15,7 @@ PROJECT=${PROJECT:-"ncsa"}
 ZIPFILE=$( /bin/ls -1rt target/polyglot-*.zip 2>/dev/null | tail -1 )
 if [ "$ZIPFILE" = "" ]; then
   echo "Running mvn package"
-  mvn package
+  mvn package -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
   ZIPFILE=$( /bin/ls -1rt target/polyglot-*.zip 2>/dev/null | tail -1 )
   if [ "$ZIPFILE" = "" ]; then
     exit -1
@@ -64,7 +64,7 @@ for app in polyglot-server ss-imagemagick ss-htmldoc; do
     fi
 
     # create image using temp id
-    ${DEBUG} docker build --pull --tag ${app}__$$ docker.${app}
+    ${DEBUG} docker build --tag ${app}_$$ docker.${app}
     if [ $? -ne 0 ]; then
         echo "FAILED build of docker.${app}/Dockerfile"
         exit -1
@@ -72,19 +72,19 @@ for app in polyglot-server ss-imagemagick ss-htmldoc; do
 
     # Tag this polyglot-server image as ncsa/polyglot-server:latest, since the SS converters are based on it.
     if [ "$app" = "polyglot-server" ]; then
-        docker tag ${app}__$$ ncsa/polyglot-server:latest
+        docker tag ${app}_$$ ncsa/polyglot-server:latest
     fi
 
     # tag all versions and push if need be
     for v in $VERSION; do
-        ${DEBUG} docker tag ${app}__$$ ${REPO}:${v}
+        ${DEBUG} docker tag ${app}_$$ ${REPO}:${v}
         if [ ! -z "$PUSH" -a ! "$PROJECT" = "" ]; then
             ${DEBUG} docker push ${REPO}:${v}
         fi
     done
 
     # cleanup
-    ${DEBUG} docker rmi ${app}__$$
+    ${DEBUG} docker rmi ${app}_$$
     ${DEBUG} rm -rf ${FILES}
 
 done
