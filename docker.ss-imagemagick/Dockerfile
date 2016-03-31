@@ -1,5 +1,5 @@
 # Create softwareserver for polyglot.
-FROM ncsa/polyglot-server:bd-1009
+FROM ncsa/polyglot-server
 MAINTAINER Rob Kooper <kooper@illinois.edu>
 
 USER root
@@ -16,6 +16,5 @@ COPY ImageMagick_convert.sh /home/polyglot/polyglot/scripts/sh/
 RUN chown polyglot /home/polyglot/polyglot/scripts/sh/ImageMagick_convert.sh && \
     chmod +x /home/polyglot/polyglot/scripts/sh/ImageMagick_convert.sh
 
-# back to polyglot
-USER polyglot
+# SS creates a public/ folder at run time; user 'polyglot' does not have permission to do so. So keep using 'root'.
 CMD ["softwareserver"]
