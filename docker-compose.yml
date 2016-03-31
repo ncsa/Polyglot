@@ -1,10 +1,10 @@
 # polyglot server
 polyglot:
-  image: ncsa/polyglot-server:bd-1009
-  #environment:
-    # PUBLICIP: ......
+  image: ncsa/polyglot-server
+  environment:
+    DOWNLOAD_SS_FILE: 'true'
   ports:
-    - "8184"
+    - "8184:8184"
   links:
     - mongo
     - rabbitmq
