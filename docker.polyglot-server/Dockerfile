@@ -1,10 +1,11 @@
 # Install polyglot server
 FROM ubuntu:14.04
-MAINTAINER Rob Kooper <kooper@illinois.edu>
+MAINTAINER Rui Liu <ruiliu@illinois.edu>
 
 # expose some properties of the container
 EXPOSE 8184 8182
-ENV 	POL_AUTH="" \
+ENV 	POL_IP="" \
+    	POL_AUTH="" \
 	MONGO_SERVER="" \
 	MONGO_DATABASE="" \
 	MONGO_LOGGING="false" \
@@ -13,9 +14,7 @@ ENV 	POL_AUTH="" \
 
 # install requirements
 RUN apt-get update && apt-get -y install \
-		openjdk-7-jre-headless \
-		unzip \
-		wget && \
+		openjdk-7-jre-headless && \
 	useradd -m -s /bin/bash polyglot
 
 # install polyglot

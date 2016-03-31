@@ -1,7 +1,5 @@
 #!/bin/sh
 
-#set -x
-
 # variables that can be set
 # DEBUG   : set to echo to print command and not execute
 # PUSH    : set to push to push, anthing else not to push. If not set
