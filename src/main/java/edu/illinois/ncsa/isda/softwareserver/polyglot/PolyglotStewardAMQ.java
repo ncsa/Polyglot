@@ -32,6 +32,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	private static String polyglot_username = null;
 	private static String polyglot_password = null;
 	private static String rabbitmq_uri = null;
+	private static int rabbitmq_recon_period = 5;  // RabbitMQ reconnection time period in seconds in initialization, default to 5 if not set in the conf file.
 	private static String rabbitmq_server = null;
 	private static String rabbitmq_vhost = "/";
 	private static String rabbitmq_username = null;
@@ -45,7 +46,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	private DBCollection collection;
 	private ConnectionFactory factory;
 	private Connection connection;
-	private Channel channel;
+	private Channel channel = null;
 	private String polyglot_ip = null;
 	private AtomicInteger job_counter = new AtomicInteger();
 
@@ -96,12 +97,24 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	  	}
 		}
 
-		try {
-			connection = factory.newConnection();
-			channel = connection.createChannel();
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
+		// Only print the first exception for brevity.
+		boolean firstError = true;
+		while (null == channel) {
+			int sleep1 = rabbitmq_recon_period;  // Sleep  5 seconds for the connection error.
+			try {
+				connection = factory.newConnection();
+				channel = connection.createChannel();
+			} catch(Exception e) {
+				if (firstError) {
+					firstError = false;
+					e.printStackTrace();
+				}
+				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: waiting " + String.valueOf(sleep1) + " seconds before reconnecting to RabbitMQ...");
+				Utility.pause(1000*sleep1);
+			}
+                }
+		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Successfully connected to RabbitMQ: server: " + rabbitmq_server + ", vhost: " + rabbitmq_vhost + ".");
+
 
                 if (null == polyglot_ip) {
                     polyglot_ip = Utility.getLocalHostIP();
@@ -132,6 +145,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	        		polyglot_ip = value;
 	        	}else if(key.equals("RabbitMQURI")){
 	        		rabbitmq_uri = value;
+	        	}else if(key.equals("RabbitMQReconnectPeriodInSeconds")){
+	        		rabbitmq_recon_period = Integer.valueOf(value);
 	        	}else if(key.equals("RabbitMQServer")){
 	        		rabbitmq_server = value;
 	        	}else if(key.equals("RabbitMQVirtualHost")){
@@ -542,12 +557,23 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		}catch(com.rabbitmq.client.AlreadyClosedException e){
 			// If the connection is closed, re-create the connection and channel. There seems no need to call connection.close() as it's already closed.
 			// Other types of exceptions are ConsumerCancelledException, JsonRpcException, MalformedFrameException, MissedHeartbeatException, PossibleAuthenticationFailureException, ProtocolVersionMismatchException, TopologyRecoveryException. This AlreadyClosedException occured multiple types and haven't seen other types, so handle this for now. Can add handling of other exceptions while we see them.
-			try {
-				connection = factory.newConnection();
-				channel = connection.createChannel();
-			} catch(Exception e1) {
-				e1.printStackTrace();
-			}
+			// Only print the first exception for brevity.
+			boolean firstError = true;
+			channel = null;
+			while (null == channel) {
+				int sleep1 = rabbitmq_recon_period;  // Sleep  5 seconds for the connection error.
+				try {
+					connection = factory.newConnection();
+					channel = connection.createChannel();
+				} catch(Exception e1) {
+					if (firstError) {
+						firstError = false;
+						e1.printStackTrace();
+					}
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: waiting " + String.valueOf(sleep1) + " seconds before reconnecting to RabbitMQ....");
+					Utility.pause(1000*sleep1);
+				}
+                	}
 			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: RabbitMQ connection was closed, submitting job failed. Re-created the connection.");
 		}catch(Exception e){
 			e.printStackTrace();
