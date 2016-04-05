@@ -573,7 +573,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: waiting " + String.valueOf(sleep1) + " seconds before reconnecting to RabbitMQ....");
 					Utility.pause(1000*sleep1);
 				}
-                	}
+			}
 			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: RabbitMQ connection was closed, submitting job failed. Re-created the connection.");
 		}catch(Exception e){
 			e.printStackTrace();
