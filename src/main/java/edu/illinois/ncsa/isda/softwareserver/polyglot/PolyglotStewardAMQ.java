@@ -112,7 +112,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: waiting " + String.valueOf(sleep1) + " seconds before reconnecting to RabbitMQ...");
 				Utility.pause(1000*sleep1);
 			}
-                }
+		}
 		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Successfully connected to RabbitMQ: server: " + rabbitmq_server + ", vhost: " + rabbitmq_vhost + ".");
 
 
@@ -538,8 +538,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						message.put("output_format", output_format);
 						
 						//Submit the next step for execution
-				    channel.queueDeclare(application, true, false, false, null);
-				    channel.basicPublish("", application, MessageProperties.PERSISTENT_TEXT_PLAIN, message.toString().getBytes());
+						channel.queueDeclare(application, true, false, false, null);
+						channel.basicPublish("", application, MessageProperties.PERSISTENT_TEXT_PLAIN, message.toString().getBytes());
 						
 						//Update the job entry
 						document.put("step", step);
