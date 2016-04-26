@@ -12,6 +12,7 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.AMQP;
 
 /**
  * Software Server REST interface utility functions.
@@ -609,4 +610,59 @@ public class SoftwareServerRESTUtilities
 			}
 		}.start();
 	}
+
+    /* A SS sends its capability to the RabbitMQ SS-registration queue. */
+    public static void registration(String rabbitmq_uri, String msg)
+    {
+	// FIXME: hardcoded registration queue name.
+	final String QUEUE_NAME = "SS-registration";
+	final ConnectionFactory factory = new ConnectionFactory();
+	factory.setRequestedHeartbeat(180);
+
+	if(rabbitmq_uri != null){
+	    try{
+		factory.setUri(rabbitmq_uri);
+	    }catch(Exception e) {e.printStackTrace(); System.exit(1);}
+	}else{
+	    System.out.println("Software Server now requires a defined rabbitmq_uri.");
+	    System.exit(1);
+	}
+
+	final AMQP.BasicProperties properties = new AMQP.BasicProperties();
+	// FIXME: hardcoded the msg TTL to 5 seconds. Make it configurable later.
+	final String msgTTL = "5000";
+	properties.setExpiration(msgTTL);
+	final String sentmsg = msg;
+
+	//Maintain connection to rabbitmq in a constantly running thread 
+	new Thread(){
+	    public void run(){
+		while(true){ 
+		    System.out.println("Connecting to RabbitMQ server and starting registration thread");
+
+		    try{
+			Connection connection = factory.newConnection();
+			final Channel channel = connection.createChannel();
+	    
+			//Create the registration queue if not yet created
+			channel.queueDeclare(QUEUE_NAME, true, false, false, null);
+			channel.basicQos(1);	//Fetch only one message at a time
+
+			// Send the registration message
+			while (true) {
+			    try {
+				channel.basicPublish("", QUEUE_NAME, properties, sentmsg.getBytes());
+				// FIXME. Hardcoded to post message every 10 seconds.
+				Utility.pause(10000);
+			    } catch (Exception e) {
+				e.printStackTrace();
+			    }
+			}
+		    } catch(Exception e1) {
+			e1.printStackTrace();
+		    }
+		}
+	    }
+	}.start();
+    }
 }
