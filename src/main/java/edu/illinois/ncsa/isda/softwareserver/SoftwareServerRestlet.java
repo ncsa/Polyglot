@@ -62,10 +62,13 @@ public class SoftwareServerRestlet extends ServerResource
 	private static boolean USE_OPENSTACK_PUBLIC_IP = false;
 	private static String openstack_public_ipv4_url = "";		//Default value is "http://169.254.169.254/2009-04-04/meta-data/public-ipv4".
 	private static String public_ip = "";
+	private static String orig_public_ip = "";
 	private static String external_public_ip_services = "";
 	private static String download_method = "";
 	private static Component component;
-	
+
+        private static String pidStr = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+
 	/**
 	 * Initialize.
 	 */
@@ -1020,6 +1023,8 @@ public class SoftwareServerRestlet extends ServerResource
 				public_ip = Utility.getLocalHostIP();
 			}
 
+			orig_public_ip = public_ip;
+
 			if(!public_ip.startsWith("http://")) public_ip = "http://" + public_ip;
 			if(!public_ip.endsWith(":8182")) public_ip = public_ip + ":8182";
 	  }catch(Exception e){
@@ -1241,6 +1246,9 @@ public class SoftwareServerRestlet extends ServerResource
 		    }
 				
 		    application_info.put("conversions", conversions_list);
+		    // A unique ID for the host: now ip:pid.
+		    application_info.put("unique_ip_string", orig_public_ip + ":" + pidStr);
+		    //application_info.put("start_time", String.valueOf(initialization_time));
 		    json.put(application_info);
 		}
 	    }catch(Exception e) {e.printStackTrace();}

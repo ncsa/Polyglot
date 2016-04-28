@@ -639,6 +639,7 @@ public class SoftwareServerRESTUtilities
 	    public void run(){
 		while(true){ 
 		    System.out.println("Connecting to RabbitMQ server and starting registration thread");
+		    System.out.println("Registration msg to sent: " + sentmsg);
 
 		    try{
 			Connection connection = factory.newConnection();

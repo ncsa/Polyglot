@@ -11,6 +11,7 @@ import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.text.*;
 import org.apache.http.*;
 import org.apache.http.impl.client.*;
@@ -39,7 +40,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	private static String rabbitmq_password = null;
 	private static String softwareserver_authentication = "";
 	private int heartbeat;
-	private TreeMap<String,Long> software_servers = new TreeMap<String,Long>();
+	private ConcurrentSkipListMap<String,Long> software_servers = new ConcurrentSkipListMap<String,Long>();
 	private IOGraph<String,SoftwareServerApplication> iograph = new IOGraph<String,SoftwareServerApplication>();
 	private MongoClient mongoClient;
 	private DB db;
@@ -410,6 +411,51 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	/**
 	 * Discover Software Servers consuming on the given RabbitMQ bus (adds them to I/O-graph).
 	 */
+	public void discoveryAMQ1()
+	{
+	    final String QUEUE_NAME = "SS-registration";
+	    ObjectMapper mapper = new ObjectMapper();
+	    final QueueingConsumer consumer = new QueueingConsumer(channel);
+	    try {
+		channel.queueDeclare(QUEUE_NAME, true, false, false, null);
+		channel.basicQos(1); // Fetch only one message at a time.
+		channel.basicConsume(QUEUE_NAME, false, consumer);
+	    } catch(Exception e){e.printStackTrace();}
+
+	    QueueingConsumer.Delivery delivery;
+	    while(true){
+		try{
+		    //Wait for next message
+		    delivery = consumer.nextDelivery();
+		    boolean UPDATED = false;
+		    try{
+			JsonNode applications = mapper.readValue(delivery.getBody(), JsonNode.class);
+			String host = applications.get(0).get("unique_ip_string").asText();
+			long now = System.currentTimeMillis();
+
+			if (! software_servers.containsKey(host)) {
+			    System.out.println("disc: applications: '" + applications.toString() + "'");
+			    System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
+			    UPDATED = true;
+
+			    iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
+			    System.out.println("disc: iograph.printEdgeInformation():");
+			    iograph.printEdgeInformation();
+			    software_servers.put(host, now);
+			} else {
+			    System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Updating timestamp of " + host);
+			    software_servers.put(host, now);
+			}
+			channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+			if(UPDATED) iograph.save("tmp/iograph.txt");
+		    }catch(Exception e) {e.printStackTrace();}
+		}catch(Exception e){
+		    e.printStackTrace();
+		    break;
+		}
+	    }
+	}
+
 	public void discoveryAMQ()
 	{
 		JsonNode consumers = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/consumers/" + Utility.urlEncode(rabbitmq_vhost));
@@ -456,6 +502,23 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	/**
 	 * Checks on Software Servers to see if they are still alive (removes them from I/O-graph).
 	 */
+	public void heartbeat1()
+	{
+	    long now = System.currentTimeMillis();
+	    boolean UPDATED = false;
+
+	    for (Map.Entry<String, Long> entry : software_servers.entrySet()) {
+		String host = entry.getKey();
+		Long lastTimeSeen = entry.getValue();
+		if ( (now - lastTimeSeen) > heartbeat ) {
+		    System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Dropping " + host + ", last time seen: " + String.valueOf(lastTimeSeen));
+		    UPDATED = true;
+		    iograph.removeEdges(host);
+		    software_servers.remove(host);
+		}
+	    }
+	    if(UPDATED) iograph.save("tmp/iograph.txt");
+	}
 	public void heartbeat()
 	{
 		Set<String> hosts = null;
@@ -613,7 +676,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
   		public void run(){
   			while(true){
 					try{	//If rabbitmq goes down it will throw an excpetion
-  					discoveryAMQ();
+  					discoveryAMQ1();
 					}catch(Exception e) {e.printStackTrace();}
 
   				Utility.pause(30000);
@@ -636,7 +699,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
   	new Thread(){
   		public void run(){
 	  		while(true){
-	  			heartbeat();
+	  			heartbeat1();
 	  			Utility.pause(heartbeat);
   			}
   		}
