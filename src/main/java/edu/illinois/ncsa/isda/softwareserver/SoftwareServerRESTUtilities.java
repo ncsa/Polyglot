@@ -639,7 +639,7 @@ public class SoftwareServerRESTUtilities
 	    public void run(){
 		while(true){ 
 		    System.out.println("Connecting to RabbitMQ server and starting registration thread");
-		    System.out.println("Registration msg to sent: " + sentmsg);
+		    System.out.println("Registration msg to send: " + sentmsg);
 
 		    Connection connection = null;
 		    Channel channel = null;
