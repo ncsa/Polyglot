@@ -34,6 +34,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	private static String polyglot_password = null;
 	private static String rabbitmq_uri = null;
 	private static int rabbitmq_recon_period = 5;  // RabbitMQ reconnection time period in seconds in initialization, default to 5 if not set in the conf file.
+	private static String ss_registration_queue_name = "SS-registration";
 	private static String rabbitmq_server = null;
 	private static String rabbitmq_vhost = "/";
 	private static String rabbitmq_username = null;
@@ -156,6 +157,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	        		rabbitmq_username = value;
 	        	}else if(key.equals("RabbitMQPassword")){
 	        		rabbitmq_password = value;
+	        	}else if(key.equals("SSRegistrationQueueName")){
+	        		ss_registration_queue_name = value;
 	        	}else if(key.equals("SoftwareServerAuthentication")){
 							softwareserver_authentication = value + "@";
 	  	        final String username = value.substring(0, value.indexOf(':')).trim();

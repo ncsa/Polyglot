@@ -935,6 +935,8 @@ public class SoftwareServerRestlet extends ServerResource
 		String rabbitmq_username = null;
 		String rabbitmq_password = null;
 		boolean rabbitmq_WAITTOACK = true;
+		String ss_registration_queue_name = "SS-registration";
+		int ss_registration_msg_ttl = 5000;
 		
 		//Load configuration file
 	  try{
@@ -967,6 +969,10 @@ public class SoftwareServerRestlet extends ServerResource
 	          	rabbitmq_WAITTOACK = Boolean.valueOf(value);
   			  	}else if(key.equals("AuthenticationEndpoint")){
 							authentication_url = value;
+	          }else if(key.equals("SSRegistrationQueueName")){
+	          	ss_registration_queue_name = value;
+	          }else if(key.equals("SSRegistrationMsgTTL")){
+			ss_registration_msg_ttl = Integer.valueOf(value);
 	          }else if(key.equals("Authentication")){
 	  	        last_username = value.substring(0, value.indexOf(':')).trim();
 	  	        last_password = value.substring(value.indexOf(':')+1).trim();
@@ -999,7 +1005,11 @@ public class SoftwareServerRestlet extends ServerResource
 	    }
 	    
 	    ins.close();
-	  }catch(Exception e) {e.printStackTrace();}
+	  }catch(Exception e) {
+	      e.printStackTrace();
+	      // Hard stop. We should fix the config errors. :)
+	      System.exit(1);
+	  }
 		
 		try{
 			if(USE_OPENSTACK_PUBLIC_IP){
@@ -1184,7 +1194,7 @@ public class SoftwareServerRestlet extends ServerResource
 
 		// Create a thread to publish msgs to the registration queue.
 	 	if (rabbitmq_uri != null) {
-		    SoftwareServerRESTUtilities.registration(rabbitmq_uri, getApplicationsJson().toString());
+		    SoftwareServerRESTUtilities.registration(rabbitmq_uri, ss_registration_queue_name, ss_registration_msg_ttl, getApplicationsJson().toString());
 		}
 
 		//A gap before message streams start.

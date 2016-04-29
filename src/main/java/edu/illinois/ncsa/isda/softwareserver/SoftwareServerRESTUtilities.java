@@ -612,10 +612,10 @@ public class SoftwareServerRESTUtilities
 	}
 
     /* A SS sends its capability to the RabbitMQ SS-registration queue. */
-    public static void registration(String rabbitmq_uri, String msg)
+    public static void registration(String rabbitmq_uri, String regis_queue_name, int regis_msg_ttl, String msg)
     {
-	// FIXME: hardcoded registration queue name.
-	final String QUEUE_NAME = "SS-registration";
+	System.out.println("Registration: regis_queue_name: '" + regis_queue_name + "', regis_msg_ttl: " + regis_msg_ttl/1000 + " seconds.");
+	final String QUEUE_NAME = regis_queue_name;
 	final ConnectionFactory factory = new ConnectionFactory();
 	factory.setRequestedHeartbeat(180);
 
@@ -629,9 +629,9 @@ public class SoftwareServerRESTUtilities
 	}
 
 	final AMQP.BasicProperties properties = new AMQP.BasicProperties();
-	// FIXME: hardcoded the msg TTL to 5 seconds. Make it configurable later.
-	final String msgTTL = "5000";
-	properties.setExpiration(msgTTL);
+	final int msgTTL = regis_msg_ttl;
+	final String msgTTLStr = String.valueOf(regis_msg_ttl);
+	properties.setExpiration(msgTTLStr);
 	final String sentmsg = msg;
 
 	//Maintain connection to rabbitmq in a constantly running thread 
@@ -641,9 +641,11 @@ public class SoftwareServerRESTUtilities
 		    System.out.println("Connecting to RabbitMQ server and starting registration thread");
 		    System.out.println("Registration msg to sent: " + sentmsg);
 
+		    Connection connection = null;
+		    Channel channel = null;
 		    try{
-			Connection connection = factory.newConnection();
-			final Channel channel = connection.createChannel();
+			connection = factory.newConnection();
+			channel = connection.createChannel();
 	    
 			//Create the registration queue if not yet created
 			channel.queueDeclare(QUEUE_NAME, true, false, false, null);
@@ -653,14 +655,25 @@ public class SoftwareServerRESTUtilities
 			while (true) {
 			    try {
 				channel.basicPublish("", QUEUE_NAME, properties, sentmsg.getBytes());
-				// FIXME. Hardcoded to post message every 10 seconds.
-				Utility.pause(10000);
+				// Post registration messages every TTL seconds.
+				Utility.pause(msgTTL);
 			    } catch (Exception e) {
 				e.printStackTrace();
+				// Pause for a while, otherwise logs flood when basicPublish has errors. Happened.
+				Utility.pause(3000);
 			    }
 			}
 		    } catch(Exception e1) {
 			e1.printStackTrace();
+		    } finally {
+			try {
+			    if (null != channel) {
+				channel.close();
+			    }
+			    if (null != connection) {
+				connection.close();
+			    }
+			} catch(Exception e2) {e2.printStackTrace();}
 		    }
 		}
 	    }
