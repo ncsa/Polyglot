@@ -411,74 +411,74 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		polyglot_password = password;
 	}
 
-	/**
-	 * Discover Software Servers consuming on the given RabbitMQ bus (adds them to I/O-graph).
-	 */
-	public void discoveryAMQ()
-	{
-	    final String QUEUE_NAME = "SS-registration";
-	    ObjectMapper mapper = new ObjectMapper();
-	    final QueueingConsumer consumer = new QueueingConsumer(channel);
-	    try {
-		channel.queueDeclare(QUEUE_NAME, true, false, false, null);
-		channel.basicQos(1); // Fetch only one message at a time.
-		channel.basicConsume(QUEUE_NAME, false, consumer);
-	    } catch(Exception e){e.printStackTrace();}
+        /**
+         * Discover Software Servers consuming on the given RabbitMQ bus (adds them to I/O-graph).
+         */
+        public void discoveryAMQ()
+        {
+            final String QUEUE_NAME = "SS-registration";
+            ObjectMapper mapper = new ObjectMapper();
+            final QueueingConsumer consumer = new QueueingConsumer(channel);
+            try {
+                channel.queueDeclare(QUEUE_NAME, true, false, false, null);
+                channel.basicQos(1); // Fetch only one message at a time.
+                channel.basicConsume(QUEUE_NAME, false, consumer);
+            } catch(Exception e){e.printStackTrace();}
 
-	    QueueingConsumer.Delivery delivery;
-	    while(true){
-		try{
-		    //Wait for next message
-		    delivery = consumer.nextDelivery();
-		    boolean UPDATED = false;
-		    try{
-			JsonNode applications = mapper.readValue(delivery.getBody(), JsonNode.class);
-			String host = applications.get(0).get("unique_ip_string").asText();
-			long now = System.currentTimeMillis();
+            QueueingConsumer.Delivery delivery;
+            while(true){
+                try{
+                    //Wait for next message
+                    delivery = consumer.nextDelivery();
+                    boolean UPDATED = false;
+                    try{
+                        JsonNode applications = mapper.readValue(delivery.getBody(), JsonNode.class);
+                        String host = applications.get(0).get("unique_ip_string").asText();
+                        long now = System.currentTimeMillis();
 
-			if (! software_servers.containsKey(host)) {
-			    System.out.println("disc: applications: '" + applications.toString() + "'");
-			    System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
-			    UPDATED = true;
+                        if (! software_servers.containsKey(host)) {
+                            System.out.println("disc: applications: '" + applications.toString() + "'");
+                            System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
+                            UPDATED = true;
 
-			    iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
-			    //System.out.println("disc: iograph.printEdgeInformation():");
-			    //iograph.printEdgeInformation();
-			    software_servers.put(host, now);
-			} else {
-			    System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Updating timestamp of " + host);
-			    software_servers.put(host, now);
-			}
-			channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-			if(UPDATED) iograph.save("tmp/iograph.txt");
-		    }catch(Exception e) {e.printStackTrace();}
-		}catch(Exception e){
-		    e.printStackTrace();
-		    break;
-		}
-	    }
-	}
+                            iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
+                            //System.out.println("disc: iograph.printEdgeInformation():");
+                            //iograph.printEdgeInformation();
+                            software_servers.put(host, now);
+                        } else {
+                            System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Updating timestamp of " + host);
+                            software_servers.put(host, now);
+                        }
+                        channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+                        if(UPDATED) iograph.save("tmp/iograph.txt");
+                    }catch(Exception e) {e.printStackTrace();}
+                }catch(Exception e){
+                    e.printStackTrace();
+                    break;
+                }
+            }
+        }
 
-	/**
-	 * Checks on Software Servers to see if they are still alive (removes them from I/O-graph).
-	 */
-	public void heartbeat()
-	{
-	    long now = System.currentTimeMillis();
-	    boolean UPDATED = false;
+        /**
+         * Checks on Software Servers to see if they are still alive (removes them from I/O-graph).
+         */
+        public void heartbeat()
+        {
+            long now = System.currentTimeMillis();
+            boolean UPDATED = false;
 
-	    for (Map.Entry<String, Long> entry : software_servers.entrySet()) {
-		String host = entry.getKey();
-		Long lastTimeSeen = entry.getValue();
-		if ( (now - lastTimeSeen) > heartbeat ) {
-		    System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Dropping " + host + ", last time seen: " + String.valueOf(lastTimeSeen));
-		    UPDATED = true;
-		    iograph.removeEdges(host);
-		    software_servers.remove(host);
-		}
-	    }
-	    if(UPDATED) iograph.save("tmp/iograph.txt");
-	}
+            for (Map.Entry<String, Long> entry : software_servers.entrySet()) {
+                String host = entry.getKey();
+                Long lastTimeSeen = entry.getValue();
+                if ( (now - lastTimeSeen) > heartbeat ) {
+                    System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Dropping " + host + ", last time seen: " + String.valueOf(lastTimeSeen));
+                    UPDATED = true;
+                    iograph.removeEdges(host);
+                    software_servers.remove(host);
+                }
+            }
+            if(UPDATED) iograph.save("tmp/iograph.txt");
+        }
 
 	/**
 	 * Process jobs pending in mongo.
