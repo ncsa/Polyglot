@@ -659,22 +659,24 @@ public class SoftwareServerRESTUtilities
 				Utility.pause(msgTTL);
 			    } catch (Exception e) {
 				e.printStackTrace();
-				// Pause for a while, otherwise logs flood when basicPublish has errors. Happened.
-				Utility.pause(3000);
+				break;  // So it goes out and retries the RabbitMQ connection, otherwise stays in this error condition and exception msgs flood.
 			    }
 			}
 		    } catch(Exception e1) {
 			e1.printStackTrace();
-		    } finally {
-			try {
-			    if (null != channel) {
-				channel.close();
-			    }
-			    if (null != connection) {
-				connection.close();
-			    }
-			} catch(Exception e2) {e2.printStackTrace();}
 		    }
+		    try {
+			if (null != channel) {
+			    channel.close();
+			}
+			if (null != connection) {
+			    connection.close();
+			}
+		    } catch(Exception e2) {
+			e2.printStackTrace();
+		    }
+		    System.out.println("SS having issues, wait for a while before retrying...");
+		    Utility.pause(10000); // Pause 10 secs before retrying, otherwise logs flood.
 		}
 	    }
 	}.start();
