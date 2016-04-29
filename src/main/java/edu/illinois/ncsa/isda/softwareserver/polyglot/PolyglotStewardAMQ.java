@@ -470,8 +470,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
             for (Map.Entry<String, Long> entry : software_servers.entrySet()) {
                 String host = entry.getKey();
                 Long lastTimeSeen = entry.getValue();
-                if ( (now - lastTimeSeen) > heartbeat ) {
-                    System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Dropping " + host + ", last time seen: " + String.valueOf(lastTimeSeen));
+                if ( (now - lastTimeSeen) >= heartbeat ) {
+                    System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Dropping " + host + ", last time seen: " + (new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy")).format(new Date(lastTimeSeen)));
                     UPDATED = true;
                     iograph.removeEdges(host);
                     software_servers.remove(host);
