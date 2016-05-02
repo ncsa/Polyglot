@@ -433,7 +433,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
                     boolean UPDATED = false;
                     try{
                         JsonNode applications = mapper.readValue(delivery.getBody(), JsonNode.class);
-                        String host = applications.get(0).get("unique_ip_string").asText();
+                        String host = applications.get(0).get("unique_id_string").asText();
                         long now = System.currentTimeMillis();
 
                         if (! software_servers.containsKey(host)) {
