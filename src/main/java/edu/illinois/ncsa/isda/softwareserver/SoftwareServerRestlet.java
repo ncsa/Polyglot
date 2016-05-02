@@ -1258,8 +1258,8 @@ public class SoftwareServerRestlet extends ServerResource
                 }
                                 
                 application_info.put("conversions", conversions_list);
+                // Added a field to uniquely identify the SS, since POL does not use the IP address to query the SS any more.
                 application_info.put("unique_id_string", UNIQUE_ID_STRING);
-                //application_info.put("start_time", String.valueOf(initialization_time));
                 json.put(application_info);
             }
         }catch(Exception e) {e.printStackTrace();}

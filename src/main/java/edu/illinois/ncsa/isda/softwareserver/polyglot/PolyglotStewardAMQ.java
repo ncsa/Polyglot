@@ -437,7 +437,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
                         long now = System.currentTimeMillis();
 
                         if (! software_servers.containsKey(host)) {
-                            System.out.println("disc: applications: '" + applications.toString() + "'");
+                            //System.out.println("disc: applications: '" + applications.toString() + "'");
                             System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
                             UPDATED = true;
 
