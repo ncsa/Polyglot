@@ -67,7 +67,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static String download_method = "";
 	private static Component component;
 
-        private static String pidStr = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+	private static String pidStr = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 
 	/**
 	 * Initialize.
@@ -972,7 +972,7 @@ public class SoftwareServerRestlet extends ServerResource
 	          }else if(key.equals("SSRegistrationQueueName")){
 	          	ss_registration_queue_name = value;
 	          }else if(key.equals("SSRegistrationMsgTTL")){
-			ss_registration_msg_ttl = Integer.valueOf(value);
+	  	        ss_registration_msg_ttl = Integer.valueOf(value);
 	          }else if(key.equals("Authentication")){
 	  	        last_username = value.substring(0, value.indexOf(':')).trim();
 	  	        last_password = value.substring(value.indexOf(':')+1).trim();
@@ -1202,67 +1202,66 @@ public class SoftwareServerRestlet extends ServerResource
 		System.out.println();
 	}
 
-        //public static JsonRepresentation getApplicationsJson()
-	public static JSONArray getApplicationsJson()
-	{
-	    Application application;
-	    Operation operation;
-	    JSONArray json = new JSONArray();
-	    JSONObject application_info = null;
-	    JSONArray conversions_list;
-	    JSONObject conversions;
-	    JSONArray inputs, outputs;
-			
-	    try{
-		for(int a=0; a<applications.size(); a++){
-		    application = applications.get(a);
-		    application_info = new JSONObject();
-		    application_info.put("alias", application.alias);
-		    conversions_list = new JSONArray();
+    public static JSONArray getApplicationsJson()
+    {
+	Application application;
+	Operation operation;
+	JSONArray json = new JSONArray();
+	JSONObject application_info = null;
+	JSONArray conversions_list;
+	JSONObject conversions;
+	JSONArray inputs, outputs;
+                        
+	try{
+	    for(int a=0; a<applications.size(); a++){
+		application = applications.get(a);
+		application_info = new JSONObject();
+		application_info.put("alias", application.alias);
+		conversions_list = new JSONArray();
 
-		    for(int o=0; o<application.operations.size(); o++){
-       			operation = application.operations.get(o);
-			conversions = new JSONObject();
-			inputs = new JSONArray();
-			outputs = new JSONArray();
+		for(int o=0; o<application.operations.size(); o++){
+		    operation = application.operations.get(o);
+		    conversions = new JSONObject();
+		    inputs = new JSONArray();
+		    outputs = new JSONArray();
 
-       			if(!operation.inputs.isEmpty()){
-			    if(!operation.outputs.isEmpty()){   //Conversion operation
-           			for(int i=0; i<operation.inputs.size(); i++){
-				    inputs.put(operation.inputs.get(i));
-				}
-
-				for(int j=0; j<operation.outputs.size(); j++){
-				    outputs.put(operation.outputs.get(j));
-           			}
-			    }else{                              //Open/Import operation
-				for(int j=0; j<operation.inputs.size(); j++){
-				    inputs.put(operation.inputs.get(j));
-				}
-           			
-				for(int i=0; i<application.operations.size(); i++){
-				    if(application.operations.get(i).inputs.isEmpty() && !application.operations.get(i).outputs.isEmpty()){
-					for(int k=0; k<application.operations.get(i).outputs.size(); k++){
-					    outputs.put(application.operations.get(i).outputs.get(k));
-					}
-				    }
-           			}
+		    if(!operation.inputs.isEmpty()){
+			if(!operation.outputs.isEmpty()){   //Conversion operation
+			    for(int i=0; i<operation.inputs.size(); i++){
+				inputs.put(operation.inputs.get(i));
 			    }
-					
-			    conversions.put("inputs", inputs);
-			    conversions.put("outputs", outputs);
-			    conversions_list.put(conversions);
-       			}
-		    }
-				
-		    application_info.put("conversions", conversions_list);
-		    // A unique ID for the host: now ip:pid.
-		    application_info.put("unique_ip_string", orig_public_ip + ":" + pidStr);
-		    //application_info.put("start_time", String.valueOf(initialization_time));
-		    json.put(application_info);
-		}
-	    }catch(Exception e) {e.printStackTrace();}
 
-	    return json;
-	}
+			    for(int j=0; j<operation.outputs.size(); j++){
+				outputs.put(operation.outputs.get(j));
+			    }
+			}else{                              //Open/Import operation
+			    for(int j=0; j<operation.inputs.size(); j++){
+				inputs.put(operation.inputs.get(j));
+			    }
+                                
+			    for(int i=0; i<application.operations.size(); i++){
+				if(application.operations.get(i).inputs.isEmpty() && !application.operations.get(i).outputs.isEmpty()){
+				    for(int k=0; k<application.operations.get(i).outputs.size(); k++){
+					outputs.put(application.operations.get(i).outputs.get(k));
+				    }
+				}
+			    }
+			}
+                                        
+			conversions.put("inputs", inputs);
+			conversions.put("outputs", outputs);
+			conversions_list.put(conversions);
+		    }
+		}
+                                
+		application_info.put("conversions", conversions_list);
+		// A unique ID for the host: now ip:pid.
+		application_info.put("unique_ip_string", orig_public_ip + ":" + pidStr);
+		//application_info.put("start_time", String.valueOf(initialization_time));
+		json.put(application_info);
+	    }
+	}catch(Exception e) {e.printStackTrace();}
+
+	return json;
+    }
 }
