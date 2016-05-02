@@ -446,7 +446,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
                             //iograph.printEdgeInformation();
                             software_servers.put(host, now);
                         } else {
-                            System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Updating timestamp of " + host);
+                            //System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Updating timestamp of " + host);
                             software_servers.put(host, now);
                         }
                         channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
