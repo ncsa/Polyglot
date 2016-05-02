@@ -1204,64 +1204,64 @@ public class SoftwareServerRestlet extends ServerResource
 
     public static JSONArray getApplicationsJson()
     {
-	Application application;
-	Operation operation;
-	JSONArray json = new JSONArray();
-	JSONObject application_info = null;
-	JSONArray conversions_list;
-	JSONObject conversions;
-	JSONArray inputs, outputs;
+        Application application;
+        Operation operation;
+        JSONArray json = new JSONArray();
+        JSONObject application_info = null;
+        JSONArray conversions_list;
+        JSONObject conversions;
+        JSONArray inputs, outputs;
                         
-	try{
-	    for(int a=0; a<applications.size(); a++){
-		application = applications.get(a);
-		application_info = new JSONObject();
-		application_info.put("alias", application.alias);
-		conversions_list = new JSONArray();
+        try{
+            for(int a=0; a<applications.size(); a++){
+                application = applications.get(a);
+                application_info = new JSONObject();
+                application_info.put("alias", application.alias);
+                conversions_list = new JSONArray();
 
-		for(int o=0; o<application.operations.size(); o++){
-		    operation = application.operations.get(o);
-		    conversions = new JSONObject();
-		    inputs = new JSONArray();
-		    outputs = new JSONArray();
+                for(int o=0; o<application.operations.size(); o++){
+                    operation = application.operations.get(o);
+                    conversions = new JSONObject();
+                    inputs = new JSONArray();
+                    outputs = new JSONArray();
 
-		    if(!operation.inputs.isEmpty()){
-			if(!operation.outputs.isEmpty()){   //Conversion operation
-			    for(int i=0; i<operation.inputs.size(); i++){
-				inputs.put(operation.inputs.get(i));
-			    }
+                    if(!operation.inputs.isEmpty()){
+                        if(!operation.outputs.isEmpty()){   //Conversion operation
+                            for(int i=0; i<operation.inputs.size(); i++){
+                                inputs.put(operation.inputs.get(i));
+                            }
 
-			    for(int j=0; j<operation.outputs.size(); j++){
-				outputs.put(operation.outputs.get(j));
-			    }
-			}else{                              //Open/Import operation
-			    for(int j=0; j<operation.inputs.size(); j++){
-				inputs.put(operation.inputs.get(j));
-			    }
+                            for(int j=0; j<operation.outputs.size(); j++){
+                                outputs.put(operation.outputs.get(j));
+                            }
+                        }else{                              //Open/Import operation
+                            for(int j=0; j<operation.inputs.size(); j++){
+                                inputs.put(operation.inputs.get(j));
+                            }
                                 
-			    for(int i=0; i<application.operations.size(); i++){
-				if(application.operations.get(i).inputs.isEmpty() && !application.operations.get(i).outputs.isEmpty()){
-				    for(int k=0; k<application.operations.get(i).outputs.size(); k++){
-					outputs.put(application.operations.get(i).outputs.get(k));
-				    }
-				}
-			    }
-			}
+                            for(int i=0; i<application.operations.size(); i++){
+                                if(application.operations.get(i).inputs.isEmpty() && !application.operations.get(i).outputs.isEmpty()){
+                                    for(int k=0; k<application.operations.get(i).outputs.size(); k++){
+                                        outputs.put(application.operations.get(i).outputs.get(k));
+                                    }
+                                }
+                            }
+                        }
                                         
-			conversions.put("inputs", inputs);
-			conversions.put("outputs", outputs);
-			conversions_list.put(conversions);
-		    }
-		}
+                        conversions.put("inputs", inputs);
+                        conversions.put("outputs", outputs);
+                        conversions_list.put(conversions);
+                    }
+                }
                                 
-		application_info.put("conversions", conversions_list);
-		// A unique ID for the host: now ip:pid.
-		application_info.put("unique_ip_string", orig_public_ip + ":" + pidStr);
-		//application_info.put("start_time", String.valueOf(initialization_time));
-		json.put(application_info);
-	    }
-	}catch(Exception e) {e.printStackTrace();}
+                application_info.put("conversions", conversions_list);
+                // A unique ID for the host: now ip:pid.
+                application_info.put("unique_ip_string", orig_public_ip + ":" + pidStr);
+                //application_info.put("start_time", String.valueOf(initialization_time));
+                json.put(application_info);
+            }
+        }catch(Exception e) {e.printStackTrace();}
 
-	return json;
+        return json;
     }
 }
