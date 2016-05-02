@@ -444,11 +444,10 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
                             iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
                             //System.out.println("disc: iograph.printEdgeInformation():");
                             //iograph.printEdgeInformation();
-                            software_servers.put(host, now);
                         } else {
                             //System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Updating timestamp of " + host);
-                            software_servers.put(host, now);
                         }
+                        software_servers.put(host, now);
                         channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                         if(UPDATED) iograph.save("tmp/iograph.txt");
                     }catch(Exception e) {e.printStackTrace();}
