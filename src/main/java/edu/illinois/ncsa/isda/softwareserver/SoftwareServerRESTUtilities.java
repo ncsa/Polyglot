@@ -614,71 +614,71 @@ public class SoftwareServerRESTUtilities
     /* A SS sends its capability to the RabbitMQ SS-registration queue. */
     public static void registration(String rabbitmq_uri, String regis_queue_name, int regis_msg_ttl, String msg)
     {
-	System.out.println("Registration: regis_queue_name: '" + regis_queue_name + "', regis_msg_ttl: " + regis_msg_ttl/1000 + " seconds.");
-	final String QUEUE_NAME = regis_queue_name;
-	final ConnectionFactory factory = new ConnectionFactory();
-	factory.setRequestedHeartbeat(180);
+        System.out.println("Registration: regis_queue_name: '" + regis_queue_name + "', regis_msg_ttl: " + regis_msg_ttl/1000 + " seconds.");
+        final String QUEUE_NAME = regis_queue_name;
+        final ConnectionFactory factory = new ConnectionFactory();
+        factory.setRequestedHeartbeat(180);
 
-	if(rabbitmq_uri != null){
-	    try{
-		factory.setUri(rabbitmq_uri);
-	    }catch(Exception e) {e.printStackTrace(); System.exit(1);}
-	}else{
-	    System.out.println("Software Server now requires a defined rabbitmq_uri.");
-	    System.exit(1);
-	}
+        if(rabbitmq_uri != null){
+            try{
+                factory.setUri(rabbitmq_uri);
+            }catch(Exception e) {e.printStackTrace(); System.exit(1);}
+        }else{
+            System.out.println("Software Server now requires a defined rabbitmq_uri.");
+            System.exit(1);
+        }
 
-	final AMQP.BasicProperties properties = new AMQP.BasicProperties();
-	final int msgTTL = regis_msg_ttl;
-	final String msgTTLStr = String.valueOf(regis_msg_ttl);
-	properties.setExpiration(msgTTLStr);
-	final String sentmsg = msg;
+        final AMQP.BasicProperties properties = new AMQP.BasicProperties();
+        final int msgTTL = regis_msg_ttl;
+        final String msgTTLStr = String.valueOf(regis_msg_ttl);
+        properties.setExpiration(msgTTLStr);
+        final String sentmsg = msg;
 
-	//Maintain connection to rabbitmq in a constantly running thread 
-	new Thread(){
-	    public void run(){
-		while(true){ 
-		    System.out.println("Connecting to RabbitMQ server and starting registration thread");
-		    System.out.println("Registration msg to send: " + sentmsg);
+        //Maintain connection to rabbitmq in a constantly running thread 
+        new Thread(){
+            public void run(){
+                while(true){ 
+                    System.out.println("Connecting to RabbitMQ server and starting registration thread");
+                    System.out.println("Registration msg to send: " + sentmsg);
 
-		    Connection connection = null;
-		    Channel channel = null;
-		    try{
-			connection = factory.newConnection();
-			channel = connection.createChannel();
-	    
-			//Create the registration queue if not yet created
-			channel.queueDeclare(QUEUE_NAME, true, false, false, null);
-			channel.basicQos(1);	//Fetch only one message at a time
+                    Connection connection = null;
+                    Channel channel = null;
+                    try{
+                        connection = factory.newConnection();
+                        channel = connection.createChannel();
+            
+                        //Create the registration queue if not yet created
+                        channel.queueDeclare(QUEUE_NAME, true, false, false, null);
+                        channel.basicQos(1);    //Fetch only one message at a time
 
-			// Send the registration message
-			while (true) {
-			    try {
-				channel.basicPublish("", QUEUE_NAME, properties, sentmsg.getBytes());
-				// Post registration messages every TTL seconds.
-				Utility.pause(msgTTL);
-			    } catch (Exception e) {
-				e.printStackTrace();
-				break;  // So it goes out and retries the RabbitMQ connection, otherwise stays in this error condition and exception msgs flood.
-			    }
-			}
-		    } catch(Exception e1) {
-			e1.printStackTrace();
-		    }
-		    try {
-			if (null != channel) {
-			    channel.close();
-			}
-			if (null != connection) {
-			    connection.close();
-			}
-		    } catch(Exception e2) {
-			e2.printStackTrace();
-		    }
-		    System.out.println("SS having issues, wait for a while before retrying...");
-		    Utility.pause(10000); // Pause 10 secs before retrying, otherwise logs flood.
-		}
-	    }
-	}.start();
+                        // Send the registration message
+                        while (true) {
+                            try {
+                                channel.basicPublish("", QUEUE_NAME, properties, sentmsg.getBytes());
+                                // Post registration messages every TTL seconds.
+                                Utility.pause(msgTTL);
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                                break;  // So it goes out and retries the RabbitMQ connection, otherwise stays in this error condition and exception msgs flood.
+                            }
+                        }
+                    } catch(Exception e1) {
+                        e1.printStackTrace();
+                    }
+                    try {
+                        if (null != channel) {
+                            channel.close();
+                        }
+                        if (null != connection) {
+                            connection.close();
+                        }
+                    } catch(Exception e2) {
+                        e2.printStackTrace();
+                    }
+                    System.out.println("SS having issues, wait for a while before retrying...");
+                    Utility.pause(10000); // Pause 10 secs before retrying, otherwise logs flood.
+                }
+            }
+        }.start();
     }
 }
