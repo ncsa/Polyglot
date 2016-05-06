@@ -401,7 +401,8 @@ public class PolyglotRestlet extends ServerResource
 					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getServers()), Utility.endSlash(getReference().toString()), true, "Servers"), MediaType.TEXT_HTML);
 				}
 			}else{
-				url = "http://" + part1 + ":8182";
+				String ss_ip = part1.split(":")[0];
+				url = "http://" + ss_ip + ":8182";
 
 				//Add on additional parts if any
 				if(!part2.isEmpty()) url += "/software";
