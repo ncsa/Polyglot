@@ -416,7 +416,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
          */
         public void discoveryAMQ()
         {
-            final String QUEUE_NAME = "SS-registration";
+            final String QUEUE_NAME = ss_registration_queue_name;
             ObjectMapper mapper = new ObjectMapper();
             final QueueingConsumer consumer = new QueueingConsumer(channel);
             try {
