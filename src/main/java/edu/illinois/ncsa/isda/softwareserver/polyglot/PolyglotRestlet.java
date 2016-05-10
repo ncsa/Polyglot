@@ -423,30 +423,27 @@ public class PolyglotRestlet extends ServerResource
 					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getSoftware()), Utility.endSlash(getReference().toString()), true, "Software"), MediaType.TEXT_HTML);
 				}
 			}else{
-				//Find a server with the specified application, TODO: this may need to be more efficient
-				Vector<String> servers = polyglot.getServers();
+                            //Find a server with the specified application.
+                            TreeSet<String> swHosts = ((PolyglotStewardAMQ)polyglot).getSoftwareHosts();
+                            String targetPrefix = part1 + ":";
+                            for(String sh: swHosts) {
+                                if (sh.startsWith(targetPrefix)) {
+                                    String ip = sh.split(":")[1];
+                                    System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Redirecting request for " + part1 + " to " + ip);
 
-				for(int i=0; i<servers.size(); i++){
-					String[] lines = SoftwareServerUtility.readURL("http://" + servers.get(i) + ":8182/software", "text/plain").split("\\r?\\n");
+                                    //Redirect to found software server
+                                    url = "http://" + ip + ":8182/software";
 
-					for(int j=0; j<lines.length; j++){
-						if(lines[j].split(" ")[0].equals(part1)){
-							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Redirecting request for " + part1 + " to " + servers.get(i));
+                                    for(int k=1; k<parts.size(); k++){
+                                        url += "/" + parts.get(k);
+                                    }
 
-							//Redirect to found software server
-							url = "http://" + servers.get(i) + ":8182/software";
+                                    this.getResponse().redirectTemporary(url);
+                                    return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+                                }
+                            }
 
-							for(int k=1; k<parts.size(); k++){
-								url += "/" + parts.get(k);
-							}
-
-							this.getResponse().redirectTemporary(url);
-							return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
-						}
-					}
-				}
-
-				return new StringRepresentation("error: application not available", MediaType.TEXT_PLAIN);
+                            return new StringRepresentation("error: application not available", MediaType.TEXT_PLAIN);
 			}
 		}else if(part0.equals("inputs")){
 			if(part1.isEmpty()){
