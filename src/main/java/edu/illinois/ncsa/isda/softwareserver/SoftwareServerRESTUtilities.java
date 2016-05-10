@@ -604,7 +604,7 @@ public class SoftwareServerRESTUtilities
 	  	    	}
 	  			}catch(Exception e){
 						e.printStackTrace();
-						Utility.pause(1000);		//Wait a bit before reconnecting to rabbitmq
+						Utility.pause(10000);		//Wait a bit before reconnecting to rabbitmq, changed from 1 to 10 secs, otherwise logs flood.
 					}
 				}
 			}
