@@ -611,7 +611,13 @@ public class SoftwareServerRESTUtilities
 		}.start();
 	}
 
-    /* A SS sends its capability to the RabbitMQ SS-registration queue. */
+    /**
+     * Create a thread to send registration messages to the RabbitMQ SS-registration queue.
+     * @param rabbitmq_uri the rabbitmq URI
+     * @param regis_queue_name the name of the SS registration queue in RabbitMQ
+     * @param regis_msg_ttl the TTL (in milliseconds) for the registration msgs
+     * @param msg the string to be published into the queue
+     */
     public static void registration(String rabbitmq_uri, String regis_queue_name, int regis_msg_ttl, String msg)
     {
         System.out.println("Registration: regis_queue_name: '" + regis_queue_name + "', regis_msg_ttl: " + regis_msg_ttl/1000 + " seconds.");
