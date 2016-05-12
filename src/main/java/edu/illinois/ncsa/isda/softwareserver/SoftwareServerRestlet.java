@@ -1032,6 +1032,12 @@ public class SoftwareServerRestlet extends ServerResource
 				public_ip = Utility.getLocalHostIP();
 			}
 
+
+                        /* Create a unique ID for the SS to put in a
+                         * registration msg, since POL does not use an
+                         * IP address to query a SS any more. Now
+                         * <public_ip>:<pid>:<last-8-chars-of-UUID-randomUUID>.
+                         */
 			String orig_public_ip = public_ip;
 			String pidStr = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 			String uuidStr = UUID.randomUUID().toString();
