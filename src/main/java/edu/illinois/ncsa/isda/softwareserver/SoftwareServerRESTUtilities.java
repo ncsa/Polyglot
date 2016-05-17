@@ -590,7 +590,7 @@ public class SoftwareServerRESTUtilities
                                                 Utility.pause(5000);
                                                 System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Second attempt at checkin result with Polyglot, " + checkin_call);
 
-                                                if(Utility.readURL(checkin_call).equals("ok")){
+                                                if(Utility.postFile(checkin_call, filename_checkin).equals("ok")){
                                                     channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
                                                     System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Second checkin acknowledged!");
                                                 }else{

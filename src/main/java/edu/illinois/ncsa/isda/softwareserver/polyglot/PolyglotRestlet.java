@@ -510,7 +510,7 @@ public class PolyglotRestlet extends ServerResource
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
 		boolean FORM_POST = !part0.isEmpty() && part0.equals("form");
 		boolean SOFTWARESERVER_POST = !part0.isEmpty() && (part0.equals("servers") || part0.equals("software") || part0.equals("checkin"));
-		boolean TASK_POST = !part1.isEmpty() && !part0.equals("servers") && !part0.equals("software");
+		boolean TASK_POST = !part1.isEmpty() && !part0.equals("servers") && !part0.equals("software") && !part0.equals("checkin");
 		TreeMap<String,String> parameters = new TreeMap<String,String>();
 		String file=null, output = null, result_file = null, result_url, url;
 		String client = getClientInfo().getAddress();
