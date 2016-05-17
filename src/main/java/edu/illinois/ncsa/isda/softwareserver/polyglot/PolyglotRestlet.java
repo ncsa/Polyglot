@@ -509,7 +509,7 @@ public class PolyglotRestlet extends ServerResource
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
 		boolean FORM_POST = !part0.isEmpty() && part0.equals("form");
-		boolean SOFTWARESERVER_POST = !part0.isEmpty() && (part0.equals("servers") || part0.equals("software"));
+		boolean SOFTWARESERVER_POST = !part0.isEmpty() && (part0.equals("servers") || part0.equals("software") || part0.equals("checkin"));
 		boolean TASK_POST = !part1.isEmpty() && !part0.equals("servers") && !part0.equals("software");
 		TreeMap<String,String> parameters = new TreeMap<String,String>();
 		String file=null, output = null, result_file = null, result_url, url;
@@ -532,7 +532,12 @@ public class PolyglotRestlet extends ServerResource
 						if(fi.getName() == null){
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
 						}else{
-							if(HOST_POSTED_FILES){
+                                                    if(part0.equals("checkin")) {
+                                                        String tmp_file_name = (fi.getName()).replace(" ","_");
+                                                        // The file name posted by SS contains SS session id, but Polyglot needs to save it using Polyglot job id. So change the file name. "part1" is job_id.
+                                                        file = public_path + part1 + tmp_file_name.substring(tmp_file_name.indexOf('_'));
+                                                        fi.write(new File(file));
+                                                    } else if(HOST_POSTED_FILES){
 								file = public_path + (fi.getName()).replace(" ","_");
 								fi.write(new File(file));
 

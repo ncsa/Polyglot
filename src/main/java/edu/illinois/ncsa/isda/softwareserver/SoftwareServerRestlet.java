@@ -1198,7 +1198,7 @@ public class SoftwareServerRestlet extends ServerResource
 	 	
 	 	//Connect to RabbitMQ bus
 	 	if(rabbitmq_uri != null || rabbitmq_server != null){
-	 		SoftwareServerRESTUtilities.rabbitMQHandler(last_username, last_password, port, applications, rabbitmq_uri, rabbitmq_server, rabbitmq_vhost, rabbitmq_username, rabbitmq_password, rabbitmq_WAITTOACK);
+                    SoftwareServerRESTUtilities.rabbitMQHandler(last_username, last_password, port, applications, rabbitmq_uri, rabbitmq_server, rabbitmq_vhost, rabbitmq_username, rabbitmq_password, rabbitmq_WAITTOACK, public_path);
 		}
 
 		// Create a thread to publish msgs to the registration queue.
