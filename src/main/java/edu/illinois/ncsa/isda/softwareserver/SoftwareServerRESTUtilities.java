@@ -486,6 +486,10 @@ public class SoftwareServerRESTUtilities
         final Vector<Application> softwareserver_applications_final = softwareserver_applications;
         final ConnectionFactory factory = new ConnectionFactory();
         // public_path contains a trailing slash "/".
+        
+        if(public_path.charAt(public_path.length()-1) != File.separatorChar){
+        	public_path += File.separator;
+        }
         final String CONVERTED_FILE_PATH = public_path;
 
         //Set heartbeat

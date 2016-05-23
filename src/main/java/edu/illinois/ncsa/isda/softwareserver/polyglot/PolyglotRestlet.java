@@ -28,6 +28,7 @@ import org.json.*;
 import org.restlet.service.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
+import org.apache.commons.lang3.*;
 import com.mongodb.*;
 
 /**
@@ -532,12 +533,21 @@ public class PolyglotRestlet extends ServerResource
 						if(fi.getName() == null){
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
 						}else{
-                                                    if(part0.equals("checkin")) {
-                                                        String tmp_file_name = (fi.getName()).replace(" ","_");
-                                                        // The file name posted by SS contains SS session id, but Polyglot needs to save it using Polyglot job id. So change the file name. "part1" is job_id.
-                                                        file = public_path + part1 + tmp_file_name.substring(tmp_file_name.indexOf('_'));
-                                                        fi.write(new File(file));
-                                                    } else if(HOST_POSTED_FILES){
+
+                            if(part0.equals("checkin")) {
+                            	String tmp_file_name = (fi.getName()).replace(" ","_");
+                            	if(StringUtils.isNumeric(part1) && tmp_file_name.indexOf('_') != -1){                     
+	                                
+	                                // The file name posted by SS contains SS session id, but Polyglot needs to save it using Polyglot job id. So change the file name. "part1" is job_id.
+
+	                                file = public_path + part1 + tmp_file_name.substring(tmp_file_name.indexOf('_'));
+	                                fi.write(new File(file));
+	                            } else {
+	                            	System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: File not being processed due to security concern - either the file id is non-numeric or the filename is invalid.");
+	                            	continue;
+	                            }
+
+                            } else if(HOST_POSTED_FILES){
 								file = public_path + (fi.getName()).replace(" ","_");
 								fi.write(new File(file));
 
