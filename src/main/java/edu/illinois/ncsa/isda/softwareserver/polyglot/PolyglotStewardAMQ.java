@@ -208,6 +208,21 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	}
 	
 	/**
+	 * Get the software available, with the hosts they run on.
+	 * @return the set of software with the hosts
+	 * Used in PolyglotRestlet's /software/<sw1> URL to find and redirect to a SS containing "sw1".
+	 */
+	public TreeSet<String> getSoftwareHosts()
+	{
+            TreeSet<SoftwareServerApplication> edges = iograph.getUniqueEdges();
+            TreeSet<String> edge_strings = new TreeSet<String>();
+            for (SoftwareServerApplication app : edges ) {
+                edge_strings.add(app.name + ":" + app.host);
+            }
+            return edge_strings;
+	}
+
+	/**
 	 * Get the outputs available.
 	 * @return the list of outputs
 	 */
