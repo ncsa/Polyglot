@@ -99,24 +99,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	  	}
 		}
 
-		// Only print the first exception for brevity.
-		boolean firstError = true;
-		while (null == channel) {
-			int sleep1 = rabbitmq_recon_period;  // Sleep  5 seconds for the connection error.
-			try {
-				connection = factory.newConnection();
-				channel = connection.createChannel();
-			} catch(Exception e) {
-				if (firstError) {
-					firstError = false;
-					e.printStackTrace();
-				}
-				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: waiting " + String.valueOf(sleep1) + " seconds before reconnecting to RabbitMQ...");
-				Utility.pause(1000*sleep1);
-			}
-		}
-		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Successfully connected to RabbitMQ: server: " + rabbitmq_server + ", vhost: " + rabbitmq_vhost + ".");
-
+                connectToRabbitmq();
 
                 if (null == polyglot_ip) {
                     polyglot_ip = Utility.getLocalHostIP();
@@ -125,6 +108,32 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 
 		if(START) new Thread(this).start();		//Start main thread
 	}
+
+    /* A utility method to reconnect to RabbitMQ when conn is
+     * initialized or lost.  Uses the re-connection time period in the
+     * config file.
+     */
+    private void connectToRabbitmq()
+    {
+        // Only print the first exception for brevity.
+        boolean firstError = true;
+        channel = null;
+        while (null == channel) {
+            int sleep1 = rabbitmq_recon_period;  // Sleep  5 seconds for the connection error.
+            try {
+                connection = factory.newConnection();
+                channel = connection.createChannel();
+            } catch(Exception e) {
+                if (firstError) {
+                    firstError = false;
+                    e.printStackTrace();
+                }
+                System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: waiting " + String.valueOf(sleep1) + " seconds before reconnecting to RabbitMQ...");
+                Utility.pause(1000*sleep1);
+            }
+        }
+        System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Successfully connected to RabbitMQ: server: " + rabbitmq_server + ", vhost: " + rabbitmq_vhost + ".");
+    }
 	
 	/**
 	 * Initialize based on parameters within the given configuration file.
@@ -466,6 +475,10 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
                 channel.queueDeclare(QUEUE_NAME, true, false, false, null);
                 channel.basicQos(1); // Fetch only one message at a time.
                 channel.basicConsume(QUEUE_NAME, false, consumer);
+            } catch(com.rabbitmq.client.AlreadyClosedException e){
+                // Reconnect and set channel properly. Return to get other values properly set.
+                connectToRabbitmq();
+                return;
             } catch(Exception e){e.printStackTrace();}
 
             QueueingConsumer.Delivery delivery;
@@ -623,24 +636,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		}catch(com.rabbitmq.client.AlreadyClosedException e){
 			// If the connection is closed, re-create the connection and channel. There seems no need to call connection.close() as it's already closed.
 			// Other types of exceptions are ConsumerCancelledException, JsonRpcException, MalformedFrameException, MissedHeartbeatException, PossibleAuthenticationFailureException, ProtocolVersionMismatchException, TopologyRecoveryException. This AlreadyClosedException occured multiple types and haven't seen other types, so handle this for now. Can add handling of other exceptions while we see them.
-			// Only print the first exception for brevity.
-			boolean firstError = true;
-			channel = null;
-			while (null == channel) {
-				int sleep1 = rabbitmq_recon_period;  // Sleep  5 seconds for the connection error.
-				try {
-					connection = factory.newConnection();
-					channel = connection.createChannel();
-				} catch(Exception e1) {
-					if (firstError) {
-						firstError = false;
-						e1.printStackTrace();
-					}
-					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: waiting " + String.valueOf(sleep1) + " seconds before reconnecting to RabbitMQ....");
-					Utility.pause(1000*sleep1);
-				}
-			}
-			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: RabbitMQ connection was closed, submitting job failed. Re-created the connection.");
+			connectToRabbitmq();
 		}catch(Exception e){
 			e.printStackTrace();
 		}finally{
@@ -681,8 +677,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 					try{	//If rabbitmq goes down it will throw an excpetion
   					discoveryAMQ_push();
 					}catch(Exception e) {e.printStackTrace();}
-
-  				Utility.pause(30000);
+                                        // For push, changed from 30 to 3 seconds since Polyglot waits on msgs in the registration queue. Pause 3 seconds to throttle exception handling just in case there are other types of exceptions than RabbitMQ reboot. For pulling 30 seconds is reasonable.
+  				Utility.pause(3000);
   			}
   		}
   	}.start();
