@@ -619,6 +619,7 @@ public class SoftwareServerRESTUtilities
         }.start();
     }
 
+
     /**
      * Create a thread to send registration messages to the RabbitMQ SS-registration queue.
      * @param rabbitmq_uri the rabbitmq URI
