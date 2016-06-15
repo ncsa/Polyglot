@@ -276,29 +276,33 @@ public class PolyglotRestlet extends ServerResource
 			if(!part1.isEmpty()){
 				file = public_path + part1;
 
-                                // Workaround: If the file is not there, but file.url exists, retrieve and put it there. Configurable using the "DownloadSSFile" field in PolyglotRestlet.conf.
-                                if (DOWNLOAD_SS_FILE) {
-                                    if ( (! Utility.exists(file)) && (Utility.exists(file + ".url")) ) {
-                                        //System.out.println("File does not exist, but file.url '" + file + ".url' exists.");
-                                        result_url = Utility.getLine(file + ".url", 2).substring(4).trim();		//Link is on 2nd line after "URL="
-                                        if (result_url.isEmpty()) {
-                                            for (int i = 0; i < 10; i++) {
-                                                System.out.println("result_url is empty, sleeping for 1 second...");
-                                                try{
-                                                    Thread.sleep(1000);
-                                                }catch(Exception e) {e.printStackTrace();}
-                                                result_url = Utility.getLine(file + ".url", 2).substring(4).trim();		//Link is on 2nd line after "URL="
-                                            }
-                                        }
-                                        System.out.println("result_url = '" + result_url + "'.");
+				//Workaround: If the file is not there, but file.url exists, retrieve and put it there. Configurable using the "DownloadSSFile" field in PolyglotRestlet.conf.
+				if(DOWNLOAD_SS_FILE){
+					if((! Utility.exists(file)) && (Utility.exists(file + ".url"))){
+						//System.out.println("File does not exist, but file.url '" + file + ".url' exists.");
+						result_url = Utility.getLine(file + ".url", 2).substring(4).trim();		//Link is on 2nd line after "URL="
 
-                                        if(!result_url.isEmpty()){
-                                            //System.out.println("About to download '" + result_url + "' to file '" + file + "'");
-                                            Boolean result_status = Utility.downloadFile(public_path, part1, result_url, false);
-                                            System.out.println("Downloaded '" + result_url + "' to file '" + file + "', result status is " + result_status);
-                                        }
-                                    }
-                                }
+						if(result_url.isEmpty()){
+							for(int i=0; i<10; i++){
+								System.out.println("result_url is empty, sleeping for 1 second...");
+								
+								try{
+									Thread.sleep(1000);
+								}catch(Exception e) {e.printStackTrace();}
+
+								result_url = Utility.getLine(file + ".url", 2).substring(4).trim();		//Link is on 2nd line after "URL="
+							}
+						}
+
+						System.out.println("result_url = '" + result_url + "'.");
+
+						if(!result_url.isEmpty()){
+							//System.out.println("About to download '" + result_url + "' to file '" + file + "'");
+							Boolean result_status = Utility.downloadFile(public_path, part1, result_url, false);
+							System.out.println("Downloaded '" + result_url + "' to file '" + file + "', result status is " + result_status);
+						}
+					}
+				}
 
 				if(Utility.exists(file)){
 					MetadataService metadata_service = new MetadataService();
@@ -791,7 +795,7 @@ public class PolyglotRestlet extends ServerResource
 	          	RETURN_URL = Boolean.valueOf(value);
 	          }else if(key.equals("DownloadSSFile")){
 	          	DOWNLOAD_SS_FILE = Boolean.valueOf(value);
-	          	System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: DOWNLOAD_SS_FILE = " + String.valueOf(DOWNLOAD_SS_FILE));
+	          	//System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: DOWNLOAD_SS_FILE = " + String.valueOf(DOWNLOAD_SS_FILE));
 	          }else if(key.equals("MongoLogging")){
 	          	MONGO_LOGGING = Boolean.valueOf(value);
 	          }else if(key.equals("MongoUpdateInterval")){

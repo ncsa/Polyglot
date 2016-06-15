@@ -58,6 +58,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static String context = "";
 	private static boolean GUESTS_ENABLED = false;
 	private static boolean ADMINISTRATORS_ENABLED = false;
+	private static boolean CHECKIN_URL = false;
 	private static boolean ATOMIC_EXECUTION = true;
 	private static boolean USE_OPENSTACK_PUBLIC_IP = false;
 	private static String openstack_public_ipv4_url = "";		//Default value is "http://169.254.169.254/2009-04-04/meta-data/public-ipv4".
@@ -934,8 +935,8 @@ public class SoftwareServerRestlet extends ServerResource
 		String rabbitmq_username = null;
 		String rabbitmq_password = null;
 		boolean rabbitmq_WAITTOACK = true;
-		String ss_registration_queue_name = "SS-registration";
-		int ss_registration_msg_ttl = 5000;
+		String registration_queue_name = "SS-registration";
+		int registration_msg_ttl = 5000;
 		
 		//Load configuration file
 	  try{
@@ -966,12 +967,12 @@ public class SoftwareServerRestlet extends ServerResource
 	          	rabbitmq_password = value;
 	          }else if(key.equals("RabbitMQWaitToAcknowledge")){
 	          	rabbitmq_WAITTOACK = Boolean.valueOf(value);
+	          }else if(key.equals("RegistrationQueueName") || key.equals("SSRegistrationQueueName")){
+	          	registration_queue_name = value;
+	          }else if(key.equals("RegistrationMsgTTL") || key.equals("SSRegistrationMsgTTL")){
+	  	        registration_msg_ttl = Integer.valueOf(value);
   			  	}else if(key.equals("AuthenticationEndpoint")){
 							authentication_url = value;
-	          }else if(key.equals("SSRegistrationQueueName")){
-	          	ss_registration_queue_name = value;
-	          }else if(key.equals("SSRegistrationMsgTTL")){
-	  	        ss_registration_msg_ttl = Integer.valueOf(value);
 	          }else if(key.equals("Authentication")){
 	  	        last_username = value.substring(0, value.indexOf(':')).trim();
 	  	        last_password = value.substring(value.indexOf(':')+1).trim();
@@ -985,17 +986,19 @@ public class SoftwareServerRestlet extends ServerResource
 	          	ADMINISTRATORS_ENABLED = Boolean.valueOf(value);
 	          }else if(key.equals("DownloadMethod")){
 	          	download_method = value;
+	          }else if(key.equals("CheckinURL")){
+	          	CHECKIN_URL = Boolean.valueOf(value);
 	          }else if(key.equals("AtomicExecution")){
 	          	ATOMIC_EXECUTION = Boolean.valueOf(value);
 	          }else if(key.equals("UseOpenStackPublicIP")){
 							USE_OPENSTACK_PUBLIC_IP = Boolean.valueOf(value);
-							System.out.println("Setting USE_OPENSTACK_PUBLIC_IP to " + USE_OPENSTACK_PUBLIC_IP);
+							//System.out.println("Setting USE_OPENSTACK_PUBLIC_IP to " + USE_OPENSTACK_PUBLIC_IP);
 	          }else if(key.equals("OpenStackPublicIPv4URL")){
 							openstack_public_ipv4_url = value;
-							System.out.println("Setting Openstack Public IPv4 URL to " + openstack_public_ipv4_url);
+							//System.out.println("Setting Openstack Public IPv4 URL to " + openstack_public_ipv4_url);
 	          }else if(key.equals("ExternalPublicIPServices")){
 							external_public_ip_services = value;
-							System.out.println("Setting External Public IP Services to " + external_public_ip_services);
+							//System.out.println("Setting External Public IP Services to " + external_public_ip_services);
 	          }else if(key.equals("PublicIp")){
 	          	public_ip = value;
 	          }
@@ -1005,9 +1008,10 @@ public class SoftwareServerRestlet extends ServerResource
 	    
 	    ins.close();
 	  }catch(Exception e) {
-	      e.printStackTrace();
-	      // Hard stop. We should fix the config errors. :)
-	      System.exit(1);
+			e.printStackTrace();
+			
+			//Hard stop. We should fix the config errors. :)
+			System.exit(1);
 	  }
 		
 		try{
@@ -1032,12 +1036,8 @@ public class SoftwareServerRestlet extends ServerResource
 				public_ip = Utility.getLocalHostIP();
 			}
 
-
-                        /* Create a unique ID for the SS to put in a
-                         * registration msg, since POL does not use an
-                         * IP address to query a SS any more. Now
-                         * <public_ip>:<pid>:<last-8-chars-of-UUID-randomUUID>.
-                         */
+ 			//Create a unique ID for the SS to put in a registration msg, since POL does not use an IP address to query a SS any more.
+			//Now <public_ip>:<pid>:<last-8-chars-of-UUID-randomUUID>.
 			String orig_public_ip = public_ip;
 			String pidStr = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
 			String uuidStr = UUID.randomUUID().toString();
@@ -1198,12 +1198,12 @@ public class SoftwareServerRestlet extends ServerResource
 	 	
 	 	//Connect to RabbitMQ bus
 	 	if(rabbitmq_uri != null || rabbitmq_server != null){
-                    SoftwareServerRESTUtilities.rabbitMQHandler(last_username, last_password, port, applications, rabbitmq_uri, rabbitmq_server, rabbitmq_vhost, rabbitmq_username, rabbitmq_password, rabbitmq_WAITTOACK, public_path);
+			SoftwareServerRESTUtilities.rabbitMQHandler(last_username, last_password, port, applications, rabbitmq_uri, rabbitmq_server, rabbitmq_vhost, rabbitmq_username, rabbitmq_password, rabbitmq_WAITTOACK, CHECKIN_URL, public_path);
 		}
 
-		// Create a thread to publish msgs to the registration queue.
-	 	if (rabbitmq_uri != null) {
-		    SoftwareServerRESTUtilities.registration(rabbitmq_uri, ss_registration_queue_name, ss_registration_msg_ttl, getApplicationsJson().toString());
+		//Create a thread to publish msgs to the registration queue.
+	 	if(rabbitmq_uri != null){
+			SoftwareServerRESTUtilities.registration(rabbitmq_uri, registration_queue_name, registration_msg_ttl, getApplicationsJson().toString());
 		}
 
 		//A gap before message streams start.
@@ -1211,65 +1211,64 @@ public class SoftwareServerRestlet extends ServerResource
 		System.out.println();
 	}
 
-    public static JSONArray getApplicationsJson()
-    {
-        Application application;
-        Operation operation;
-        JSONArray json = new JSONArray();
-        JSONObject application_info = null;
-        JSONArray conversions_list;
-        JSONObject conversions;
-        JSONArray inputs, outputs;
+	public static JSONArray getApplicationsJson()
+	{
+		Application application;
+		Operation operation;
+		JSONArray json = new JSONArray();
+		JSONObject application_info = null;
+		JSONArray conversions_list;
+		JSONObject conversions;
+		JSONArray inputs, outputs;
                         
-        try{
-            for(int a=0; a<applications.size(); a++){
-                application = applications.get(a);
-                application_info = new JSONObject();
-                application_info.put("alias", application.alias);
-                conversions_list = new JSONArray();
+		try{
+			for(int a=0; a<applications.size(); a++){
+				application = applications.get(a);
+				application_info = new JSONObject();
+				application_info.put("alias", application.alias);
+				conversions_list = new JSONArray();
 
-                for(int o=0; o<application.operations.size(); o++){
-                    operation = application.operations.get(o);
-                    conversions = new JSONObject();
-                    inputs = new JSONArray();
-                    outputs = new JSONArray();
+				for(int o=0; o<application.operations.size(); o++){
+					operation = application.operations.get(o);
+					conversions = new JSONObject();
+					inputs = new JSONArray();
+					outputs = new JSONArray();
 
-                    if(!operation.inputs.isEmpty()){
-                        if(!operation.outputs.isEmpty()){   //Conversion operation
-                            for(int i=0; i<operation.inputs.size(); i++){
-                                inputs.put(operation.inputs.get(i));
-                            }
+					if(!operation.inputs.isEmpty()){
+						if(!operation.outputs.isEmpty()){   //Conversion operation
+							for(int i=0; i<operation.inputs.size(); i++){
+								inputs.put(operation.inputs.get(i));
+							}
 
-                            for(int j=0; j<operation.outputs.size(); j++){
-                                outputs.put(operation.outputs.get(j));
-                            }
-                        }else{                              //Open/Import operation
-                            for(int j=0; j<operation.inputs.size(); j++){
-                                inputs.put(operation.inputs.get(j));
-                            }
+							for(int j=0; j<operation.outputs.size(); j++){
+								outputs.put(operation.outputs.get(j));
+							}
+						}else{                              //Open/Import operation
+							for(int j=0; j<operation.inputs.size(); j++){
+								inputs.put(operation.inputs.get(j));
+							}
                                 
-                            for(int i=0; i<application.operations.size(); i++){
-                                if(application.operations.get(i).inputs.isEmpty() && !application.operations.get(i).outputs.isEmpty()){
-                                    for(int k=0; k<application.operations.get(i).outputs.size(); k++){
-                                        outputs.put(application.operations.get(i).outputs.get(k));
-                                    }
-                                }
-                            }
-                        }
+							for(int i=0; i<application.operations.size(); i++){
+								if(application.operations.get(i).inputs.isEmpty() && !application.operations.get(i).outputs.isEmpty()){
+									for(int k=0; k<application.operations.get(i).outputs.size(); k++){
+										outputs.put(application.operations.get(i).outputs.get(k));
+									}
+								}
+							}
+						}
                                         
-                        conversions.put("inputs", inputs);
-                        conversions.put("outputs", outputs);
-                        conversions_list.put(conversions);
-                    }
-                }
+						conversions.put("inputs", inputs);
+						conversions.put("outputs", outputs);
+						conversions_list.put(conversions);
+					}
+				}
                                 
-                application_info.put("conversions", conversions_list);
-                // Added a field to uniquely identify the SS, since POL does not use the IP address to query the SS any more.
-                application_info.put("unique_id_string", UNIQUE_ID_STRING);
-                json.put(application_info);
-            }
-        }catch(Exception e) {e.printStackTrace();}
+				application_info.put("conversions", conversions_list);
+				application_info.put("unique_id_string", UNIQUE_ID_STRING);		//Added a field to uniquely identify the SS, since POL does not use the IP address to query the SS any more.
+				json.put(application_info);
+			}
+		}catch(Exception e) {e.printStackTrace();}
 
-        return json;
-    }
+		return json;
+	}
 }
