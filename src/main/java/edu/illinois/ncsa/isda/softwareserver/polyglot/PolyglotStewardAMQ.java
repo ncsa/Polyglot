@@ -435,9 +435,9 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		polyglot_password = password;
 	}
 
-        /**
-         * Discover Software Servers consuming on the given RabbitMQ bus (adds them to I/O-graph).
-         */
+	/**
+	 * Discover Software Servers consuming on the given RabbitMQ bus (adds them to I/O-graph).
+	 */
 	public void discoveryAMQ_pull()
 	{
 		JsonNode consumers = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/consumers/" + Utility.urlEncode(rabbitmq_vhost));
@@ -447,7 +447,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		long startup_time;
 		boolean UPDATED = false;
 	
-		for(int i=0; i<consumers.size(); i++) {
+		for(int i=0; i<consumers.size(); i++){
 			String host = consumers.get(i).get("channel_details").get("peer_host").asText();
 			
 			//Make sure we use the public IP for local software servers 
@@ -458,7 +458,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 			hosts.add(host);
 		}
 
-		for (String host: hosts) {
+		for(String host: hosts){
 			try{
 				startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
 
@@ -473,7 +473,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						software_servers.put(host, startup_time);
 					}
 				}
-			}catch(NumberFormatException e) {
+			}catch(NumberFormatException e){
 				//e.printStackTrace();
 			}
 		}
@@ -481,57 +481,64 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		if(UPDATED) iograph.save("tmp/iograph.txt");
 	}
 	
-        public void discoveryAMQ_push()
-        {
-            final String QUEUE_NAME = ss_registration_queue_name;
-            ObjectMapper mapper = new ObjectMapper();
-            final QueueingConsumer consumer = new QueueingConsumer(channel);
-            try {
-                channel.queueDeclare(QUEUE_NAME, true, false, false, null);
-                channel.basicQos(1); // Fetch only one message at a time.
-                channel.basicConsume(QUEUE_NAME, false, consumer);
-            } catch(com.rabbitmq.client.AlreadyClosedException e){
-                // Reconnect and set channel properly. Return to get other values properly set.
-                connectToRabbitmq();
-                return;
-            } catch(Exception e){e.printStackTrace();}
+	/**
+	 * Discover Software Servers pushing info to a seperate regristration RabbitMQ bus (adds them to I/O-graph).
+	 */
+	public void discoveryAMQ_push()
+	{
+		final String QUEUE_NAME = ss_registration_queue_name;
+		ObjectMapper mapper = new ObjectMapper();
+		final QueueingConsumer consumer = new QueueingConsumer(channel);
 
-            QueueingConsumer.Delivery delivery;
-            while(true){
-                try{
-                    //Wait for next message
-                    delivery = consumer.nextDelivery();
-                    boolean UPDATED = false;
-                    try{
-                        JsonNode applications = mapper.readValue(delivery.getBody(), JsonNode.class);
-                        String host = applications.get(0).get("unique_id_string").asText();
-                        long now = System.currentTimeMillis();
+		try{
+			channel.queueDeclare(QUEUE_NAME, true, false, false, null);
+			channel.basicQos(1);		//Fetch only one message at a time.
+			channel.basicConsume(QUEUE_NAME, false, consumer);
+		}catch(com.rabbitmq.client.AlreadyClosedException e){		//Reconnect and set channel properly. Return to get other values properly set.
+			connectToRabbitmq();
+			return;
+		}catch(Exception e){e.printStackTrace();}
 
-                        if (! software_servers.containsKey(host)) {
-                            //System.out.println("disc: applications: '" + applications.toString() + "'");
-                            System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
-                            UPDATED = true;
+		QueueingConsumer.Delivery delivery;
 
-                            iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
-                            //System.out.println("disc: iograph.printEdgeInformation():");
-                            //iograph.printEdgeInformation();
-                        } else {
-                            //System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Updating timestamp of " + host);
-                        }
-                        software_servers.put(host, now);
-                        channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-                        if(UPDATED) iograph.save("tmp/iograph.txt");
-                    }catch(Exception e) {e.printStackTrace();}
-                }catch(Exception e){
-                    e.printStackTrace();
-                    break;
-                }
-            }
-        }
+		while(true){
+			//Wait for next message
+			try{
+				delivery = consumer.nextDelivery();
+				boolean UPDATED = false;
 
-        /**
-         * Checks on Software Servers to see if they are still alive (removes them from I/O-graph).
-         */
+				try{
+					JsonNode applications = mapper.readValue(delivery.getBody(), JsonNode.class);
+					String host = applications.get(0).get("unique_id_string").asText();
+					long now = System.currentTimeMillis();
+
+					if(!software_servers.containsKey(host)){
+						//System.out.println("disc: applications: '" + applications.toString() + "'");
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
+						UPDATED = true;
+
+						iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
+						//System.out.println("disc: iograph.printEdgeInformation():");
+						//iograph.printEdgeInformation();
+					}else{
+						//System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Updating timestamp of " + host);
+					}
+
+					software_servers.put(host, now);
+					channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+
+					if(UPDATED) iograph.save("tmp/iograph.txt");
+				}catch(Exception e) {e.printStackTrace();}
+			}catch(Exception e){
+				e.printStackTrace();
+				break;
+			}
+		}
+	}
+
+	/**
+	 * Checks on Software Servers to see if they are still alive by hitting their 'alive' andpoint (removes them from I/O-graph if not).
+	 */
 	public void heartbeat_pull()
 	{
 		Set<String> hosts = null;
@@ -561,23 +568,28 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		if(UPDATED) iograph.save("tmp/iograph.txt");
 	}
 
-        public void heartbeat_push()
-        {
-            long now = System.currentTimeMillis();
-            boolean UPDATED = false;
+	/**
+	 * Checks on Software Servers leaving heartbeats on the regristration queue to see if they are still alive (removes them from I/O-graph if not).
+	 */
+	public void heartbeat_push()
+	{
+		long now = System.currentTimeMillis();
+		boolean UPDATED = false;
 
-            for (Map.Entry<String, Long> entry : software_servers.entrySet()) {
-                String host = entry.getKey();
-                Long lastTimeSeen = entry.getValue();
-                if ( (now - lastTimeSeen) >= heartbeat ) {
-                    System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Dropping " + host + ", last time seen: " + (new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy")).format(new Date(lastTimeSeen)));
-                    UPDATED = true;
-                    iograph.removeEdges(host);
-                    software_servers.remove(host);
-                }
-            }
-            if(UPDATED) iograph.save("tmp/iograph.txt");
-        }
+		for(Map.Entry<String, Long> entry : software_servers.entrySet()){
+			String host = entry.getKey();
+			Long lastTimeSeen = entry.getValue();
+
+			if((now - lastTimeSeen) >= heartbeat){
+				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Dropping " + host + ", last time seen: " + (new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy")).format(new Date(lastTimeSeen)));
+				UPDATED = true;
+				iograph.removeEdges(host);
+				software_servers.remove(host);
+			}
+		}
+
+		if(UPDATED) iograph.save("tmp/iograph.txt");
+	}
 
 	/**
 	 * Process jobs pending in mongo.
@@ -592,9 +604,9 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		String polyglot_auth = "", input, application, output_format, output_path;
 		boolean MULTIPLE_EXTENSIONS;	//Was a path found for an input with multiple extensions
 		
-                if(polyglot_username != null && polyglot_password != null) {
-                    polyglot_auth = polyglot_username + ":" + polyglot_password;
-                }
+		if(polyglot_username != null && polyglot_password != null){
+			polyglot_auth = polyglot_username + ":" + polyglot_password;
+		}
 
 		try{
 			while(cursor.hasNext()){
@@ -692,7 +704,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 					try{	//If rabbitmq goes down it will throw an excpetion
   					discoveryAMQ_push();
 					}catch(Exception e) {e.printStackTrace();}
-                                        // For push, changed from 30 to 3 seconds since Polyglot waits on msgs in the registration queue. Pause 3 seconds to throttle exception handling just in case there are other types of exceptions than RabbitMQ reboot. For pulling 30 seconds is reasonable.
+					
+					//For push, changed from 30 to 3 seconds since Polyglot waits on msgs in the registration queue. Pause 3 seconds to throttle exception handling just in case there are other types of exceptions than RabbitMQ reboot. For pulling 30 seconds is reasonable.
   				Utility.pause(3000);
   			}
   		}
@@ -703,7 +716,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
   		public void run(){
   			while(true){
   				process_jobs();
-				// It was 100 -- 0.1 s, too frequent to cause high CPU usage. Changed to 3000 - 3 seconds.
+					
+					//It was 100 -- 0.1 s, too frequent to cause high CPU usage. Changed to 3000 - 3 seconds.
   				Utility.pause(3000);
   			}
   		}

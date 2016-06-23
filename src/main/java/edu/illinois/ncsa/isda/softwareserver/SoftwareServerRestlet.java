@@ -957,6 +957,7 @@ public class SoftwareServerRestlet extends ServerResource
 	          	distributed_server = value;
 	          }else if(key.equals("RabbitMQURI")){
 	          	rabbitmq_uri = value;
+							System.out.println("Setting RabbitMQURI to " + rabbitmq_uri);
 	          }else if(key.equals("RabbitMQServer")){
 	          	rabbitmq_server = value;
 	          }else if(key.equals("RabbitMQVirtualHost")){
