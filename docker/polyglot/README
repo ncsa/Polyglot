@@ -1,3 +1,4 @@
 To build the ncsa/polyglot-server docker image, go to the top level of the source tree, and run "docker.sh".
-    cd ..
-    ./docker.sh
+
+	cd ../..
+	./docker.sh
