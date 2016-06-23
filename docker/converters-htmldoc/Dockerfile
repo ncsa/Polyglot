@@ -1,5 +1,5 @@
 # Create softwareserver for polyglot.
-FROM ncsa/polyglot-server
+FROM ncsa/polyglot
 MAINTAINER Rui Liu <ruiliu@illinois.edu>
 
 USER root

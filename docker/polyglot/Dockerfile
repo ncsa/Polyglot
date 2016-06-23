@@ -10,7 +10,7 @@ ENV 	POL_IP="" \
 	MONGO_SERVER="" \
 	MONGO_DATABASE="" \
 	MONGO_LOGGING="false" \
-	RABBITMQURI="" \
+	RABBITMQ_URI="" \
 	PUBLICIP=""
 
 # install requirements
@@ -30,4 +30,3 @@ RUN cd /home/polyglot && \
 COPY entrypoint.sh /home/polyglot/
 ENTRYPOINT ["/home/polyglot/entrypoint.sh"]
 CMD ["polyglot"]
-

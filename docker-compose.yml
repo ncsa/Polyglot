@@ -1,30 +1,30 @@
-# polyglot server
+#Polyglot
 polyglot:
-  image: ncsa/polyglot-server
+  image: ncsa/polyglot:develop
   environment:
-    DOWNLOAD_SS_FILE: "true"
+    RABBITMQ_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
   ports:
     - "8184:8184"
   links:
     - mongo
     - rabbitmq
 
-# example extractor
-im:
-  image: ncsa/ss-imagemagick
+#Example converters
+converters-imagemagick:
+  image: ncsa/converters-imagemagick:develop
   links:
     - rabbitmq
 
-htmldoc:
-  image: ncsa/ss-htmldoc
+converters-htmldoc:
+  image: ncsa/converters-htmldoc:develop
   links:
     - rabbitmq
 
-# mongo database used to store data
+#Mongo database used to store data
 mongo:
   image: mongo:latest
 
-# rabbitmq to connect to extractors
+#Rabbitmq to connect to converters
 rabbitmq:
   image: rabbitmq:management
   ports:

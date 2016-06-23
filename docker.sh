@@ -21,7 +21,7 @@ if [ "$ZIPFILE" = "" ]; then
     exit -1
   fi
 fi
-FILES=docker.polyglot-server/files
+FILES=docker/polyglot/files
 ${DEBUG} rm -rf ${FILES}
 ${DEBUG} mkdir -p ${FILES}
 ${DEBUG} unzip -q -d ${FILES} ${ZIPFILE}
@@ -47,12 +47,12 @@ else
   PUSH=${PUSH:-""}
 fi
 
-# Back up ncsa/polyglot-server:latest, and later restore it.
-docker rmi --force ncsa/polyglot-server:latest_backup 2>/dev/null
-docker tag ncsa/polyglot-server:latest ncsa/polyglot-server:latest_backup 2>/dev/null
+# Back up ncsa/polyglot:latest, and later restore it.
+docker rmi --force ncsa/polyglot:latest_backup 2>/dev/null
+docker tag ncsa/polyglot:latest ncsa/polyglot:latest_backup 2>/dev/null
 
-for app in polyglot-server ss-imagemagick ss-htmldoc; do
-
+for app in polyglot converters-imagemagick converters-htmldoc; do
+#for app in polyglot; do
     if [ ! "${PROJECT}" = "" ]; then
         if [ ! "$( echo $PROJECT | tail -c 2)" = "/" ]; then
             REPO="${PROJECT}/${app}"
@@ -64,15 +64,15 @@ for app in polyglot-server ss-imagemagick ss-htmldoc; do
     fi
 
     # create image using temp id
-    ${DEBUG} docker build --tag ${app}_$$ docker.${app}
+    ${DEBUG} docker build --tag ${app}_$$ docker/${app}
     if [ $? -ne 0 ]; then
-        echo "FAILED build of docker.${app}/Dockerfile"
+        echo "FAILED build of docker/${app}/Dockerfile"
         exit -1
     fi
 
-    # Tag this polyglot-server image as ncsa/polyglot-server:latest, since the SS converters are based on it.
-    if [ "$app" = "polyglot-server" ]; then
-        docker tag ${app}_$$ ncsa/polyglot-server:latest
+    # Tag this polyglot image as ncsa/polyglot:latest, since the converters are based on it.
+    if [ "$app" = "polyglot" ]; then
+        docker tag ${app}_$$ ncsa/polyglot:latest
     fi
 
     # tag all versions and push if need be
@@ -86,9 +86,7 @@ for app in polyglot-server ss-imagemagick ss-htmldoc; do
     # cleanup
     ${DEBUG} docker rmi ${app}_$$
     ${DEBUG} rm -rf ${FILES}
-
 done
 
-# Restore ncsa/polyglot-server:latest.
-docker tag ncsa/polyglot-server:latest_backup ncsa/polyglot-server:latest 2>/dev/null || true
-
+# Restore ncsa/polyglot:latest.
+docker tag ncsa/polyglot:latest_backup ncsa/polyglot:latest 2>/dev/null || true

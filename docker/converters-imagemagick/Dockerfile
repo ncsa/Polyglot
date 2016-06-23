@@ -1,5 +1,5 @@
 # Create softwareserver for polyglot.
-FROM ncsa/polyglot-server
+FROM ncsa/polyglot
 MAINTAINER Rob Kooper <kooper@illinois.edu>
 
 USER root

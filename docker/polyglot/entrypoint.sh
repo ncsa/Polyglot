@@ -2,7 +2,7 @@
 set -e
 
 if [ -n "$RABBITMQ_PORT_5672_TCP_PORT" ]; then
-	RABBITMQURI="amqp://guest:guest@${RABBITMQ_PORT_5672_TCP_ADDR}:${RABBITMQ_PORT_5672_TCP_PORT}/%2F"
+	RABBITMQ_URI="amqp://guest:guest@${RABBITMQ_PORT_5672_TCP_ADDR}:${RABBITMQ_PORT_5672_TCP_PORT}/%2F"
 fi
 if [ -n "$MONGO_PORT_27017_TCP_ADDR" ]; then
 	MONGO_SERVER="$MONGO_PORT_27017_TCP_ADDR"
@@ -23,8 +23,8 @@ if [ "$1" = 'polyglot' ]; then
 	fi
 
 	# connect to other servers
-	if [ "$RABBITMQURI" != "" ]; then
-		/bin/sed -i -e "s#RabbitMQURI=.*#RabbitMQURI=${RABBITMQURI}#" PolyglotStewardAMQ.conf
+	if [ "$RABBITMQ_URI" != "" ]; then
+		/bin/sed -i -e "s#RabbitMQURI=.*#RabbitMQURI=${RABBITMQ_URI}#" PolyglotStewardAMQ.conf
 	fi	
 	if [ "$MONGO_SERVER" != "" ]; then
 		/bin/sed -i -e "s/server=.*$/server=${MONGO_SERVER}/" mongo.properties
@@ -45,8 +45,8 @@ if [ "$1" = 'polyglot' ]; then
 elif [ "$1" = 'softwareserver' ]; then
 	# setup softwareserver
 	cd /home/polyglot/polyglot	
-	if [ "$RABBITMQURI" != "" ]; then
-		/bin/sed -i -e "s#RabbitMQURI=.*#RabbitMQURI=${RABBITMQURI}#" SoftwareServerRestlet.conf
+	if [ "$RABBITMQ_URI" != "" ]; then
+		/bin/sed -i -e "s#RabbitMQURI=.*#RabbitMQURI=${RABBITMQ_URI}#" SoftwareServerRestlet.conf
 	fi
 	if [ "$PUBLICIP" != "" ]; then
 		/bin/echo "PublicIp=${PUBLICIP}" >> SoftwareServerRestlet.conf
@@ -60,4 +60,3 @@ elif [ "$1" = 'softwareserver' ]; then
 fi
 
 exec "$@"
-
