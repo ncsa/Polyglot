@@ -1000,7 +1000,7 @@ public class SoftwareServerRestlet extends ServerResource
 	          }else if(key.equals("ExternalPublicIPServices")){
 							external_public_ip_services = value;
 							//System.out.println("Setting External Public IP Services to " + external_public_ip_services);
-	          }else if(key.equals("PublicIp")){
+	          }else if(key.equals("PublicIP") || key.equals("PublicIp")){
 	          	public_ip = value;
 	          }
 	        }

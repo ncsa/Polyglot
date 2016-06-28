@@ -584,19 +584,20 @@ public class SoftwareServerRESTUtilities
 											
 											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: API call complete, result at " + result);
 
+											//System.out.println("Setting Polylgot authentication for " + polyglot_ip + ": " + polyglot_auth);
 											SoftwareServerUtility.setDefaultAuthentication(polyglot_auth);
 											checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
 											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Checking in result with Polyglot, " + checkin_call);
 		  	    	
-											if(CHECKIN_URL){		//Checkin an URL to the output file hosted on the Software Server
-												if(Utility.readURL(checkin_call).equals("ok")){
+											if(CHECKIN_URL){		//Checkin a URL to the output file hosted on the Software Server
+												if(SoftwareServerUtility.readURL(checkin_call).equals("ok")){
 													channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 													System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Checkin acknowledged!");
-												}else{		//Wait a bit and try one more time
+												}else{						//Wait a bit and try one more time
 													Utility.pause(5000);
 													System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Second attempt at checkin result with Polyglot, " + checkin_call);
 
-													if(Utility.readURL(checkin_call).equals("ok")){
+													if(SoftwareServerUtility.readURL(checkin_call).equals("ok")){
 														channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 														System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Second checkin acknowledged!");
 													}else{
@@ -607,14 +608,15 @@ public class SoftwareServerRESTUtilities
 											}else{							//Checkin the actual output file
 												//The filename to post: <public_path>/<session>_<filename>. "result" is http://.../file/<session>_<filename>, so strip out the path (after last '/').
 												String filename_checkin = CONVERTED_FILE_PATH + result.substring(result.lastIndexOf('/')+1);
-												if(Utility.postFile(checkin_call, filename_checkin).equals("ok")){
+
+												if(SoftwareServerUtility.postFile(checkin_call, filename_checkin, null, polyglot_auth).equals("ok")){
 													channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 													System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Checkin acknowledged!");
-												}else{		//Wait a bit and try one more time
+												}else{						//Wait a bit and try one more time
 													Utility.pause(5000);
 													System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Second attempt at checkin result with Polyglot, " + checkin_call);
 
-													if(Utility.postFile(checkin_call, filename_checkin).equals("ok")){
+													if(SoftwareServerUtility.postFile(checkin_call, filename_checkin, null, polyglot_auth).equals("ok")){
 														channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 														System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Second checkin acknowledged!");
 													}else{
