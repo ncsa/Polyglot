@@ -364,7 +364,7 @@ public class PolyglotRestlet extends ServerResource
 			if(!part1.isEmpty()){
 				try{
 					final int job_id = Integer.parseInt(part1);
-					String log_file;
+					String log_file, ss_log_file = "", line;
 				
 					if(!part2.isEmpty()){
 						try{
@@ -385,7 +385,16 @@ public class PolyglotRestlet extends ServerResource
 						
 						//Append Software Server log
 						SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: [Begin Software Server Log - " + getClientInfo().getAddress() + "] =========", log_file);
-						SoftwareServerUtility.println(SoftwareServerUtility.readURL(part2 + ".log", null).trim(), log_file);
+						Scanner s = new Scanner(SoftwareServerUtility.readURL(part2 + ".log", null).trim());
+
+						while(s.hasNextLine()){
+							line = s.nextLine();
+
+							if(line.contains("Setting session to")) ss_log_file = "";	//If this server has done several parts don't duplicate previous log outputs!
+							ss_log_file += line + "\n";
+						}
+
+						SoftwareServerUtility.println(ss_log_file.trim(), log_file);
 						SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: ============ [End Software Server Log - " + getClientInfo().getAddress() + "]", log_file);
 
 						return new StringRepresentation(((PolyglotStewardAMQ)polyglot).checkin(getClientInfo().getAddress(), job_id, part2), MediaType.TEXT_PLAIN);

@@ -13,14 +13,17 @@ PROJECT=${PROJECT:-"ncsa"}
 
 # copy dist file to docker folder
 ZIPFILE=$( /bin/ls -1rt target/polyglot-*.zip 2>/dev/null | tail -1 )
+
 if [ "$ZIPFILE" = "" ]; then
   echo "Running mvn package"
   mvn package -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
   ZIPFILE=$( /bin/ls -1rt target/polyglot-*.zip 2>/dev/null | tail -1 )
+
   if [ "$ZIPFILE" = "" ]; then
     exit -1
   fi
 fi
+
 FILES=docker/polyglot/files
 ${DEBUG} rm -rf ${FILES}
 ${DEBUG} mkdir -p ${FILES}
@@ -30,6 +33,7 @@ ${DEBUG} mv ${FILES}/$( basename ${ZIPFILE} -bin.zip ) ${FILES}/polyglot
 # find version if we are develop/latest/release and if should be pushed
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 VERSION=${VERSION:-""}
+
 if [ "$VERSION" = "" ]; then
   if [ "$BRANCH" = "master" ]; then
     PUSH=${PUSH:-"push"}
@@ -51,8 +55,8 @@ fi
 docker rmi --force ncsa/polyglot:latest_backup 2>/dev/null
 docker tag ncsa/polyglot:latest ncsa/polyglot:latest_backup 2>/dev/null
 
-for app in polyglot converters-imagemagick converters-htmldoc; do
-#for app in polyglot; do
+#for app in polyglot converters-imagemagick converters-htmldoc; do
+for app in polyglot; do
     if [ ! "${PROJECT}" = "" ]; then
         if [ ! "$( echo $PROJECT | tail -c 2)" = "/" ]; then
             REPO="${PROJECT}/${app}"
@@ -65,6 +69,7 @@ for app in polyglot converters-imagemagick converters-htmldoc; do
 
     # create image using temp id
     ${DEBUG} docker build --tag ${app}_$$ docker/${app}
+
     if [ $? -ne 0 ]; then
         echo "FAILED build of docker/${app}/Dockerfile"
         exit -1
