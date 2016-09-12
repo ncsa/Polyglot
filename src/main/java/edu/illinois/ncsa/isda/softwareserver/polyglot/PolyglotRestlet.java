@@ -278,7 +278,7 @@ public class PolyglotRestlet extends ServerResource
 
 				//Workaround: If the file is not there, but file.url exists, retrieve and put it there. Configurable using the "DownloadSSFile" field in PolyglotRestlet.conf.
 				if(DOWNLOAD_SS_FILE){
-					if((! Utility.exists(file)) && (Utility.exists(file + ".url"))){
+					if((!Utility.exists(file)) && (Utility.exists(file + ".url"))){
 						//System.out.println("File does not exist, but file.url '" + file + ".url' exists.");
 						result_url = Utility.getLine(file + ".url", 2).substring(4).trim();		//Link is on 2nd line after "URL="
 
@@ -437,27 +437,28 @@ public class PolyglotRestlet extends ServerResource
 					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getSoftware()), Utility.endSlash(getReference().toString()), true, "Software"), MediaType.TEXT_HTML);
 				}
 			}else{
-                            //Find a server with the specified application.
-                            TreeSet<String> swHosts = ((PolyglotStewardAMQ)polyglot).getSoftwareHosts();
-                            String targetPrefix = part1 + ":";
-                            for(String sh: swHosts) {
-                                if (sh.startsWith(targetPrefix)) {
-                                    String ip = sh.split(":")[1];
-                                    System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Redirecting request for " + part1 + " to " + ip);
+				//Find a server with the specified application.
+				TreeSet<String> swHosts = ((PolyglotStewardAMQ)polyglot).getSoftwareHosts();
+				String targetPrefix = part1 + ":";
 
-                                    //Redirect to found software server
-                                    url = "http://" + ip + ":8182/software";
+				for(String sh:swHosts) {
+					if(sh.startsWith(targetPrefix)) {
+						String ip = sh.split(":")[1];
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Redirecting request for " + part1 + " to " + ip);
 
-                                    for(int k=1; k<parts.size(); k++){
-                                        url += "/" + parts.get(k);
-                                    }
+						//Redirect to found software server
+						url = "http://" + ip + ":8182/software";
 
-                                    this.getResponse().redirectTemporary(url);
-                                    return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
-                                }
-                            }
+						for(int k=1; k<parts.size(); k++){
+							url += "/" + parts.get(k);
+						}
 
-                            return new StringRepresentation("error: application not available", MediaType.TEXT_PLAIN);
+						this.getResponse().redirectTemporary(url);
+						return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+					}
+				}
+
+				return new StringRepresentation("error: application not available", MediaType.TEXT_PLAIN);
 			}
 		}else if(part0.equals("inputs")){
 			if(part1.isEmpty()){
@@ -545,12 +546,47 @@ public class PolyglotRestlet extends ServerResource
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
 						}else{
 							if(part0.equals("checkin")) {
+								String filename, file_url;
+								String log_file, ss_log_file = "", line;
 								String tmp_file_name = (fi.getName()).replace(" ","_");
 						
 								if(StringUtils.isNumeric(part1) && tmp_file_name.indexOf('_') != -1){                     
+									final int job_id = Integer.parseInt(part1);
+
 									// The file name posted by SS contains SS session id, but Polyglot needs to save it using Polyglot job id. So change the file name. "part1" is job_id.
-									file = public_path + part1 + tmp_file_name.substring(tmp_file_name.indexOf('_'));
+									filename = tmp_file_name.substring(tmp_file_name.indexOf('_')+1);
+									if(!filename.startsWith(job_id + "_")) filename = job_id + "_" + filename;	//TODO: warning if by chance the original filename by coincedence started with the job id number and an underscore!?
+									file = public_path + filename;
 									fi.write(new File(file));
+									file_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + filename;
+						
+									//Find relevant log file to append to. TODO: Replace with an index to avoid this possibly costly search step
+									File[] files = new File(public_path).listFiles(new FilenameFilter() {
+										public boolean accept(File dir, String name) {
+											return name.startsWith(job_id + "_") && name.endsWith(".log");
+										}
+									});
+
+									log_file = files[0].getAbsolutePath();
+
+									System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: Software Server at " + getClientInfo().getAddress() + " checked in result for job-" + job_id + ", \033[94m" + file_url + "\033[0m" + " (" + SoftwareServerUtility.getFileSizeHR(file) + ")");
+									SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: Software Server at " + getClientInfo().getAddress() + " checked in result for job-" + job_id + ", " + file_url + " (" + SoftwareServerUtility.getFileSizeHR(file) + ")", log_file);
+						
+									//Append Software Server log
+									SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: [Begin Software Server Log - " + getClientInfo().getAddress() + "] =========", log_file);
+									Scanner s = new Scanner(URLDecoder.decode(part2).trim());
+
+									while(s.hasNextLine()){
+										line = s.nextLine();
+
+										if(line.contains("Setting session to")) ss_log_file = "";	//If this server has done several parts don't duplicate previous log outputs!
+										ss_log_file += line + "\n";
+									}
+
+									SoftwareServerUtility.println(ss_log_file.trim(), log_file);
+									SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: ============ [End Software Server Log - " + getClientInfo().getAddress() + "]", log_file);
+
+									return new StringRepresentation(((PolyglotStewardAMQ)polyglot).checkin(getClientInfo().getAddress(), job_id, file_url), MediaType.TEXT_PLAIN);
 								}else{
 									System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: File not being processed due to security concern - either the file id is non-numeric or the filename is invalid.");
 									continue;
