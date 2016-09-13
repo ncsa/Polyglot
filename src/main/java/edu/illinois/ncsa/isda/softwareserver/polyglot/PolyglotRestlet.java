@@ -305,20 +305,28 @@ public class PolyglotRestlet extends ServerResource
 				}
 
 				if(Utility.exists(file)){
-					MetadataService metadata_service = new MetadataService();
-					MediaType media_type = metadata_service.getMediaType(Utility.getFilenameExtension(part1));
+					if(Utility.isDirectory(file)){
+						url = Utility.endSlash(getRootRef().toString()) + "file/" + part1 + "/";
+
+						//Redirect to directory endpoint, added a "/"
+						this.getResponse().redirectTemporary(url);
+						return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+					}else{
+						MetadataService metadata_service = new MetadataService();
+						MediaType media_type = metadata_service.getMediaType(Utility.getFilenameExtension(part1));
 					
-					if(media_type == null){
-						if(Utility.getFilenameExtension(part1).equals("log")){
-							media_type = MediaType.TEXT_PLAIN;
-						}else{
-							media_type = MediaType.MULTIPART_ALL;
+						if(media_type == null){
+							if(Utility.getFilenameExtension(part1).equals("log")){
+								media_type = MediaType.TEXT_PLAIN;
+							}else{
+								media_type = MediaType.MULTIPART_ALL;
+							}
 						}
-					}
 							
-					FileRepresentation file_representation = new FileRepresentation(file, media_type);
-					//file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
-					return file_representation;
+						FileRepresentation file_representation = new FileRepresentation(file, media_type);
+						//file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
+						return file_representation;
+					}
 				}else{
 					if(Utility.exists(file + ".url")){
 						result_url = Utility.getLine(file + ".url", 2).substring(4).trim();		//Link is on 2nd line after "URL="
@@ -558,6 +566,24 @@ public class PolyglotRestlet extends ServerResource
 									if(!filename.startsWith(job_id + "_")) filename = job_id + "_" + filename;	//TODO: warning if by chance the original filename by coincedence started with the job id number and an underscore!?
 									file = public_path + filename;
 									fi.write(new File(file));
+
+									//Unzip the checkin if its a directory
+									if(file.endsWith(".checkin.zip")){
+										SoftwareServerUtility.unzip(public_path, file);
+										filename = Utility.getFilenameName(file);
+										filename = filename.substring(0, filename.length()-8);
+
+										//Attach directory as a new endpoint
+										Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + filename));
+										directory.setListingAllowed(true);
+
+										//Add CORS filter
+										CorsFilter corsfilter = new CorsFilter(getContext(), directory);
+										corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+										corsfilter.setAllowedCredentials(true);
+										component.getDefaultHost().attach("/file/" + filename + "/", corsfilter);
+									}
+
 									file_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + filename;
 						
 									//Find relevant log file to append to. TODO: Replace with an index to avoid this possibly costly search step
@@ -914,6 +940,7 @@ public class PolyglotRestlet extends ServerResource
 			component = new Component();
 			component.getServers().add(Protocol.HTTP, port);
 			component.getClients().add(Protocol.HTTP);
+			component.getClients().add(Protocol.FILE);
 			component.getLogService().setEnabled(false);
 
 			org.restlet.Application application = new org.restlet.Application(){
@@ -921,6 +948,25 @@ public class PolyglotRestlet extends ServerResource
 				public Restlet createInboundRoot(){
 					Router router = new Router(getContext());
 					router.attachDefault(PolyglotRestlet.class);
+
+          //Examine public path and reattach any previous directories to an endpoint
+          File folder = new File(public_path);
+          File[] files = folder.listFiles();
+
+          for(int i=0; i<files.length; i++){
+            if(files[i].isDirectory()){
+              //System.out.println("[REST]: Re-attaching " + files[i].getName());
+              Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + files[i].getName()));
+              directory.setListingAllowed(true);
+
+              //Add CORS filter
+              CorsFilter corsfilter = new CorsFilter(getContext(), directory);
+              corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+              //corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+              corsfilter.setAllowedCredentials(true);
+              component.getDefaultHost().attach("/file/" + files[i].getName() + "/", corsfilter);
+            }
+          }
 
 					if(!accounts.isEmpty() || (authentication_url != null)){
 						ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");

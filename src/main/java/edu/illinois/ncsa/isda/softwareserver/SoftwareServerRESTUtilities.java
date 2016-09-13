@@ -614,7 +614,14 @@ public class SoftwareServerRESTUtilities
 												//System.out.println("Setting Polylgot authentication for " + polyglot_ip + ": " + polyglot_auth);
 												SoftwareServerUtility.setDefaultAuthentication(polyglot_auth);
 												checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + URLEncoder.encode(log_file, "UTF-8");
-												System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Checking in result with Polyglot, " + checkin_call);
+												//System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Checking in result with Polyglot, " + checkin_call);
+												System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Checking in result with Polyglot, " + checkin_call.substring(0, checkin_call.lastIndexOf('/')+1) + "...");
+												
+												//If a directory was created zip it up to send it back
+												if(Utility.isDirectory(absolute_filename)){
+													SoftwareServerUtility.zip(absolute_filename + ".checkin.zip", absolute_filename);
+													absolute_filename += ".checkin.zip";
+												}
 
 												if(SoftwareServerUtility.postFile(checkin_call, absolute_filename, null, polyglot_auth).equals("ok")){
 													channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);

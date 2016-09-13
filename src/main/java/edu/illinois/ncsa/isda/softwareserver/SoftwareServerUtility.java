@@ -395,6 +395,120 @@ public class SoftwareServerUtility
 		return new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy").format(new Date(System.currentTimeMillis()));
 	}
 
+	/**
+	 * Unzip a zip file into the given path.
+	 * @param path the path to unzip to
+	 * @param filename the name of the zip file
+	 */
+	public static void unzip(String path, String filename)
+	{
+		byte[] buffer = new byte[1024];
+		int length;
+		String root = null;
+	
+		if(Utility.getFilenameExtension(filename).equals("zip")){
+			try{
+				ZipFile zf = new ZipFile(filename);
+				Enumeration entries = zf.entries();
+				
+				while(entries.hasMoreElements()){
+					ZipEntry entry = (ZipEntry)entries.nextElement();
+					if(root == null) root = entry.getName();
+					
+					if(entry.isDirectory()){
+						(new File(path + entry.getName())).mkdir();
+					}else{						
+						InputStream ins = zf.getInputStream(entry);
+						OutputStream outs = new BufferedOutputStream(new FileOutputStream(path + entry.getName()));
+						
+						while((length = ins.read(buffer)) >= 0){
+							outs.write(buffer, 0, length);
+						}
+						
+						ins.close();
+						outs.close();
+					}
+				}
+				
+				zf.close();
+
+				//Rename extracted files to match filename
+				String new_root = Utility.getFilenameName(filename);
+				if(new_root.endsWith(".checkin")) new_root = new_root.substring(0, new_root.length()-8);
+				Files.move(Paths.get(path + root), Paths.get(path + new_root));
+			}catch(Exception e) {e.printStackTrace();}
+		}
+	}
+  
+/**
+   * Zip a file or directory.
+   * @param output the output zip file
+   * @param files a file
+   */
+  public static void zip(String output, String file)
+  {
+    try{
+      ZipOutputStream outs = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(output)));
+      zip(outs, Utility.getFilenamePath(file), Utility.getFilename(file));
+      outs.close();
+    }catch(Exception e) {e.printStackTrace();}
+  }
+
+  /**
+   * Zip a given set of files.
+   * @param output the output zip file
+   * @param files a vector of files
+   */
+  public static void zip(String output, Vector<String> files)
+  {
+    try{
+      ZipOutputStream outs = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(output)));
+
+      for(int i=0; i<files.size(); i++){
+        zip(outs, Utility.getFilenamePath(files.get(i)), Utility.getFilename(files.get(i)));
+      }
+
+      outs.close();
+    }catch(Exception e) {e.printStackTrace();}
+  }
+
+	/**
+	 * Add a file to the given zip file output stream.
+	 * @param outs the zip file output stream
+	 * @param path the path to the file (minus the portion of the path that should be stored in the zip file)
+	 * @param filename the name of the file to add (plus the portion of the path that should be stored in the zip file)
+	 */
+	public static void zip(ZipOutputStream outs, String path, String filename)
+	{
+		File file = new File(path + filename);
+
+		try{		
+			if(file.isDirectory()){
+				File[] files = file.listFiles();
+				
+				outs.putNextEntry(new ZipEntry(filename + "/"));
+	
+				for(int i=0; i<files.length; i++){
+					zip(outs, path, file.getName() + "/" + files[i].getName());
+				}
+			}else{
+				if(file.exists()){
+					BufferedInputStream ins = new BufferedInputStream(new FileInputStream(file));
+					byte[] buffer = new byte[1024];
+					int length;
+				
+					outs.putNextEntry(new ZipEntry(filename));
+				
+					while((length = ins.read(buffer, 0, 1024)) != -1){
+						outs.write(buffer, 0, length);
+					}
+				
+					ins.close();
+				}
+			}
+		}catch(Exception e) {e.printStackTrace();}
+	}
+
   /**
    * A main for debug purposes.
    * @param args the command line arguments
