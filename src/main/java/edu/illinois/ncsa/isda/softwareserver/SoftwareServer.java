@@ -212,6 +212,15 @@ public class SoftwareServer implements Runnable
 	}
 
 	/**
+	 * Set the cache path
+	 * @param path the path to use
+	 */
+	public void setCachePath(String path)
+	{
+		cache_path = path;
+	}
+
+	/**
 	 * Add operation scripts within the given directory.  Script info will be looked up.
 	 * Note: all scripts must follow the text header convention
 	 * @param path the path to the scripts
@@ -868,21 +877,23 @@ public class SoftwareServer implements Runnable
 		//args = new String[]{"-test", "../../Data/Temp/PolyglotDemo"};
 
 		if(args.length > 0){
+			String filename, name, extension;
+			CachedFileData input_file, output_file;
+			Vector<Subtask> task = new Vector<Subtask>();
+			int session;
+				
+			server.waitUntilRunning();
+
 			if(args[0].equals("-test")){
 				String test_path = args[1] + "/";
 				TreeMap<String,String> test_files = new TreeMap<String,String>();
 				File folder = new File(test_path);
 				File[] folder_files = folder.listFiles();
-				String filename, name, extension;
 				Application application;
 				Operation operation;
 				int input_operation, input_extension, output_operation, output_extension;
-				CachedFileData input_file, output_file;
-				Vector<Subtask> task = new Vector<Subtask>();
 				String results = "";
 				
-				server.waitUntilRunning();
-	
 				//Read in test files
 				for(int i=0; i<folder_files.length; i++){
 					filename = folder_files[i].getName();
@@ -981,6 +992,54 @@ public class SoftwareServer implements Runnable
 				System.out.println("\nResults:");
 				System.out.print(results);
 				System.exit(0);
+			}else{
+				int application = -1, operation = -1;
+				session = 0;
+			
+				//Run a single job from the command line
+				if(args[0].equals("-nocache")){							//Run in a manner that doesn't move the original file
+					System.out.println("Running single job: " + args[1] + ", " + args[2] + ", " + args[3] + " on " + args[4] + " ...");
+
+					//Find application and operation indices
+					application = server.applications.indexOf(new Application(args[1]));
+					operation = server.applications.get(application).operations.indexOf(new Operation(args[2]));
+				
+					if(application != -1 && operation != -1){	
+						filename = args[4];
+						server.setCachePath(Utility.getFilenamePath(filename));
+						input_file = new CachedFileData(Utility.getFilename(filename));
+						input_file.setSessionPrefix(false);
+										
+						name = Utility.getFilenameName(filename);
+						extension = args[3];
+						output_file = new CachedFileData(name + "." + extension);
+						output_file.setSessionPrefix(false);
+
+						task.add(new Subtask(application, operation, input_file, output_file));
+						server.executeTaskAtomically("localhost", session, task);	//Use application index as the session
+					}
+				}else{																				//Run in normal manner
+					System.out.println("Runnging single job: " + args[0] + ", " + args[1] + ", " + args[2] + " on " + args[3] + "...");
+
+					//Find application and operation indices
+					application = server.applications.indexOf(new Application(args[0]));
+					operation = server.applications.get(application).operations.indexOf(new Operation(args[1]));
+				
+					if(application != -1 && operation != -1){	
+						filename = args[3];
+						input_file = new CachedFileData(new FileData(filename, true), session, server.cache_path);
+										
+						name = Utility.getFilenameName(filename);
+						extension = args[2];
+						output_file = new CachedFileData(name + "." + extension);
+
+						task.add(new Subtask(application, operation, input_file, output_file));
+						server.executeTaskAtomically("localhost", session, task);	//Use application index as the session
+					}
+				}
+	
+				System.out.println("Job complete.");
+				System.exit(1);
 			}
 		}
 	}
