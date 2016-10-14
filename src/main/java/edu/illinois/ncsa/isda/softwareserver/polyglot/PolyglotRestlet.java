@@ -257,15 +257,17 @@ public class PolyglotRestlet extends ServerResource
 					JSONArray json = new JSONArray();
 					JSONObject step;
 
-					try{
-						for(int i=0; i<conversions.size(); i++){
-							step = new JSONObject();
-							step.put("application", conversions.get(i).edge);
-							step.put("input", conversions.get(i).input);
-							step.put("output", conversions.get(i).output);
-							json.put(step);
-						}
-					}catch(Exception e) {e.printStackTrace();}
+					if(conversions != null){
+						try{
+							for(int i=0; i<conversions.size(); i++){
+								step = new JSONObject();
+								step.put("application", conversions.get(i).edge);
+								step.put("input", conversions.get(i).input);
+								step.put("output", conversions.get(i).output);
+								json.put(step);
+							}
+						}catch(Exception e) {e.printStackTrace();}
+					}
 
 					return new JsonRepresentation(json);
 				}
