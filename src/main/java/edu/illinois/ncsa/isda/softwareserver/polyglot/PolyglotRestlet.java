@@ -238,6 +238,38 @@ public class PolyglotRestlet extends ServerResource
 					}
 				}
 			}
+		}else if(part0.equals("path")){		//Return the conversion path for the given output and input
+			if(part1.isEmpty()){
+				if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+					return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getOutputs()), MediaType.TEXT_PLAIN);
+				}else{
+					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getOutputs()), Utility.endSlash(getReference().toString()), true, "Outputs"), MediaType.TEXT_HTML);
+				}
+			}else{
+				if(part2.isEmpty()){
+					if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+						return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getInputs(part1)), MediaType.TEXT_PLAIN);
+					}else{
+						return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getInputs(part1)), Utility.endSlash(getReference().toString()), true, "Inputs"), MediaType.TEXT_HTML);
+					}
+				}else{
+					Vector<PolyglotAuxiliary.Conversion<String,String>> conversions = polyglot.getInputOutputGraph().getShortestConversionPath(part2, part1, false);
+					JSONArray json = new JSONArray();
+					JSONObject step;
+
+					try{
+						for(int i=0; i<conversions.size(); i++){
+							step = new JSONObject();
+							step.put("application", conversions.get(i).edge);
+							step.put("input", conversions.get(i).input);
+							step.put("output", conversions.get(i).output);
+							json.put(step);
+						}
+					}catch(Exception e) {e.printStackTrace();}
+
+					return new JsonRepresentation(json);
+				}
+			}
 		}else if(part0.equals("form")){
 			if(part1.isEmpty()){
 				buffer = "";
