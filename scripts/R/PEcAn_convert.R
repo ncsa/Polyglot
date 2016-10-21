@@ -29,13 +29,13 @@ if (length(args) < 2) {
 }
 
 # load required libraries
-require(XML)
-require(RPostgreSQL)
-require(PEcAn.data.atmosphere)
-require(PEcAn.DB)
+library(XML)
+library(RPostgreSQL)
+library(PEcAn.data.atmosphere)
+library(PEcAn.DB)
 
 # 1st argument is the input xml file
-input <- xmlToList(xmlParse(args[1]))
+input <- XML::xmlToList(xmlParse(args[1]))
 
 # 2nd argument is the output file
 outputfile <- args[2]
@@ -70,14 +70,16 @@ if(length(site) < 0){
 db.close(con)
 
 #assign default model according to output file 
-if (grepl("\\.ed.zip$", outputfile) ){
-  model      <- ifelse(is.null(input$model), 'ED2', input$model)
-} else if (grepl("\\.cf$", outputfile)) {
-  model      <- ifelse(is.null(input$model), 'LINKAGES', input$model)
-} else if (grepl("\\.clim$", outputfile)){
-  model      <- ifelse(is.null(input$model), 'SIPNET', input$model)
-} else {
-  model      <- ifelse(is.null(input$model), 'BIOCRO', input$model)
+if (is.null(input$model)) {
+  if (grepl("\\.ed.zip$", outputfile)) {
+    model <- "ED2"
+  } else if (grepl("\\.cf$", outputfile)) {
+    model <- "LINKAGES"
+  } else if (grepl("\\.clim$", outputfile)) {
+    model <- "SIPNET"
+  } else {
+    model <- "BIOCRO"
+  }
 }
 mettype    <- ifelse(is.null(input$type), 'CRUNCEP', input$type)
 input_met <- list(username = "pecan", source = mettype)
@@ -90,8 +92,8 @@ print("Using met.process to download files")
 outfile_met <-  met.process(site, input_met, start_date, end_date, model, host, dbparams, cacheDir)
 
 # get start/end year code works on whole years only
-start_year <- year(start_date)
-end_year <- year(end_date)
+start_year <- lubridate::year(start_date)
+end_year <- lubridate::year(end_date)
 
 # if more than 1 year for *.pecan.nc, or zip specified, zip result
 if (grepl("\\.zip$", outputfile) || (end_year - start_year > 1) && grepl("\\.pecan.nc$", outputfile)) {
