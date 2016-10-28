@@ -9,17 +9,17 @@
 #DEBUG=echo
 
 # make sure PROJECT ends with /
-PROJECT=${PROJECT:-"ncsa"}
+PROJECT=${PROJECT:-"ncsapolyglot"}
 
 # copy dist file to docker folder
 ZIPFILE=$( /bin/ls -1rt target/polyglot-*.zip 2>/dev/null | tail -1 )
 
 if [ "$ZIPFILE" = "" ]; then
   echo "Running mvn package"
-  mvn package -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
+  ${DEBUG} mvn package -Dmaven.test.skip=true -Dmaven.javadoc.skip=true
   ZIPFILE=$( /bin/ls -1rt target/polyglot-*.zip 2>/dev/null | tail -1 )
 
-  if [ "$ZIPFILE" = "" ]; then
+  if [ "$DEBUG" = "" -a "$ZIPFILE" = "" ]; then
     exit -1
   fi
 fi
@@ -51,10 +51,6 @@ else
   PUSH=${PUSH:-""}
 fi
 
-# Back up ncsa/polyglot:latest, and later restore it.
-docker rmi --force ncsa/polyglot:latest_backup 2>/dev/null
-docker tag ncsa/polyglot:latest ncsa/polyglot:latest_backup 2>/dev/null
-
 #for app in polyglot converters-imagemagick converters-htmldoc; do
 for app in polyglot; do
     if [ ! "${PROJECT}" = "" ]; then
@@ -77,7 +73,7 @@ for app in polyglot; do
 
     # Tag this polyglot image as ncsa/polyglot:latest, since the converters are based on it.
     if [ "$app" = "polyglot" ]; then
-        docker tag ${app}_$$ ncsa/polyglot:latest
+        ${DEBUG} docker tag ${app}_$$ ncsa/polyglot:latest
     fi
 
     # tag all versions and push if need be
@@ -92,6 +88,3 @@ for app in polyglot; do
     ${DEBUG} docker rmi ${app}_$$
     ${DEBUG} rm -rf ${FILES}
 done
-
-# Restore ncsa/polyglot:latest.
-docker tag ncsa/polyglot:latest_backup ncsa/polyglot:latest 2>/dev/null || true
