@@ -1,5 +1,5 @@
 # Install polyglot server
-FROM ubuntu:14.04
+FROM openjdk:jre
 MAINTAINER Rui Liu <ruiliu@illinois.edu>
 
 # expose some properties of the container
@@ -15,7 +15,6 @@ ENV 	POL_IP="" \
 
 # install requirements
 RUN apt-get update && apt-get -y install \
-		openjdk-7-jre-headless \
 		wget && \
 	useradd -m -s /bin/bash polyglot
 
