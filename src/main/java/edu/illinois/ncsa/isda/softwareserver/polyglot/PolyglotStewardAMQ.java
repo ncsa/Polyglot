@@ -305,7 +305,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Searching for conversion paths for " + input + "->" + output_format);
 		
 		//Get conversion path, give multiple extensions precedence (i.e. if a script exists that supports such a thing it should be run)
-		input_format = Utility.getFilenameExtension(Utility.getFilename(input), true).toLowerCase();
+		input_format = Utility.getFilenameExtension(SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(input)), true).toLowerCase();
 		conversions = iograph.getShortestConversionPath(input_format, output_format, false);
 
 		if(conversions == null){
