@@ -529,6 +529,15 @@ public class PolyglotRestlet extends ServerResource
 			}
 			
 			return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
+		}else if(part0.equals("requests?hr=true")){
+			buffer = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss").format(new Date(start_time)) + "\n";
+			buffer += new SimpleDateFormat("yyyy-mm-dd HH:mm:ss").format(new Date(System.currentTimeMillis())) + "\n";
+			
+			for(Iterator<RequestInformation> itr=requests.iterator(); itr.hasNext();){
+				buffer += itr.next().toString() + "\n";
+			}
+			
+			return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
 		}else{
 			buffer = "";
 			buffer += "convert\n";
