@@ -55,8 +55,13 @@ elif [ "$1" = 'softwareserver' ]; then
 	# Sleep a while to wait for rabbitmq and mongo to start.
 	/bin/sleep 10
 
-	# start softwareserver
-	exec /usr/bin/java -cp polyglot.jar:lib/* -Xmx1g edu.illinois.ncsa.isda.softwareserver.SoftwareServerRestlet
+	# Condition for local processing
+	if [ "$LOCAL_PROCESSING" != "" ] || [ "$RABBITMQ_URI" == "" ]; then
+		sh SoftwareServer.sh -nocache "$APPLICATION" "$OPERATION" "$OUTPUT_FORMAT" "$INPUT_FILE_PATH"
+	else
+		# start softwareserver
+		exec /usr/bin/java -cp polyglot.jar:lib/* -Xmx1g edu.illinois.ncsa.isda.softwareserver.SoftwareServerRestlet
+	fi
 fi
 
 exec "$@"
