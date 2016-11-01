@@ -347,7 +347,7 @@ public class PolyglotRestlet extends ServerResource
 						return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
 					}else{
 						MetadataService metadata_service = new MetadataService();
-						MediaType media_type = metadata_service.getMediaType(Utility.getFilenameExtension(part1));
+						MediaType media_type = metadata_service.getMediaType(SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(part1)));
 					
 						if(media_type == null){
 							if(Utility.getFilenameExtension(part1).equals("log")){
