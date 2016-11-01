@@ -215,12 +215,14 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	 */
 	public TreeSet<String> getSoftwareHosts()
 	{
-            TreeSet<SoftwareServerApplication> edges = iograph.getUniqueEdges();
-            TreeSet<String> edge_strings = new TreeSet<String>();
-            for (SoftwareServerApplication app : edges ) {
-                edge_strings.add(app.name + ":" + app.host);
-            }
-            return edge_strings;
+		TreeSet<SoftwareServerApplication> edges = iograph.getUniqueEdges();
+		TreeSet<String> edge_strings = new TreeSet<String>();
+
+		for(SoftwareServerApplication app : edges ){
+			edge_strings.add(app.name + ":" + app.host);
+		}
+
+		return edge_strings;
 	}
 
 	/**
@@ -242,6 +244,17 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	public TreeSet<String> getOutputs(String input)
 	{
 		return iograph.getRangeStrings(input);
+	}
+	
+	/**
+	 * Get the outputs available for the given input type.
+	 * @param input the input type
+	 * @param n the maximum number of hops
+	 * @return the list of outputs
+	 */
+	public TreeSet<String> getOutputs(String input, int n)
+	{
+		return iograph.getRangeStrings(input, n);
 	}
 
 	/**

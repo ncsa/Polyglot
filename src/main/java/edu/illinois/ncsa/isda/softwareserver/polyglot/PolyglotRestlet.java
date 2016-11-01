@@ -131,6 +131,7 @@ public class PolyglotRestlet extends ServerResource
 		String buffer;
 		Form form;
 		Parameter p;
+		int chain = -1;
 
 		//Parse endpoint	
 		if(part0.equals("convert")){
@@ -510,12 +511,15 @@ public class PolyglotRestlet extends ServerResource
 					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getInputs()), Utility.endSlash(getReference().toString()), true, "Inputs"), MediaType.TEXT_HTML);
 				}
 			}else{
-				part1 = part1.toLowerCase();	//Ignore case of file extension
+				part1 = SoftwareServerRESTUtilities.removeParameters(part1).toLowerCase();	//Ignore case of file extension
+	
+				form = getRequest().getResourceRef().getQueryAsForm();
+        p = form.getFirst("chain"); if(p != null) chain = Integer.parseInt(p.getValue());
 
 				if(SoftwareServerRestlet.isJSONRequest(Request.getCurrent())){
-					return new JsonRepresentation(new JSONArray(polyglot.getOutputs(part1)));
+					return new JsonRepresentation(new JSONArray(polyglot.getOutputs(part1, chain)));
 				}else{
-					return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getOutputs(part1)), MediaType.TEXT_PLAIN);
+					return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getOutputs(part1, chain)), MediaType.TEXT_PLAIN);
 				}
 			}
 		}else if(part0.equals("outputs")){				

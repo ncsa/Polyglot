@@ -26,6 +26,17 @@ public abstract class Polyglot
 	public abstract IOGraph<String,String> getDistributedInputOutputGraph();
 
 	/**
+	 * Get the outputs available for the given input type, pruning any that requre more than n hops.  Should be overridden, by default returns all possible outputs.
+	 * @param input the input type
+	 * @param n the maximum number of hops
+	 * @return the list of outputs
+	 */
+	public TreeSet<String> getOutputs(String input, int n)
+	{	
+		return getOutputs(input);
+	}
+
+	/**
 	 * Convert a files format (asynchronously).
 	 * @param input_filename the absolute name of the input file
 	 * @param output_path the output path
