@@ -602,7 +602,7 @@ public class PolyglotRestlet extends ServerResource
 						}else{
 							if(part0.equals("checkin")) {
 								String filename, file_url;
-								String log_file, ss_log_file = "", line;
+								String log_file, ss_log_file = "", sf_log, line;
 								String tmp_file_name = (fi.getName()).replace(" ","_");
 						
 								if(StringUtils.isNumeric(part1) && tmp_file_name.indexOf('_') != -1){                     
@@ -658,6 +658,15 @@ public class PolyglotRestlet extends ServerResource
 
 									SoftwareServerUtility.println(ss_log_file.trim(), log_file);
 									SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: ============ [End Software Server Log - " + getClientInfo().getAddress() + "]", log_file);
+						
+									//Append Siegfried output
+									sf_log = SoftwareServerUtility.executeAndWait("sf " + file, 60000, true, true);
+
+									if(sf_log != null){
+										SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: [Begin Siegfried Log - " + Utility.getFilename(file) + "] =========", log_file);
+										SoftwareServerUtility.print(sf_log, log_file);
+										SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: ============ [End Siegfried Log - " + Utility.getFilename(file) + "]", log_file);
+									}
 
 									return new StringRepresentation(((PolyglotStewardAMQ)polyglot).checkin(getClientInfo().getAddress(), job_id, file_url), MediaType.TEXT_PLAIN);
 								}else{
