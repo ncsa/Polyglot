@@ -53,6 +53,7 @@ public class PolyglotRestlet extends ServerResource
 	private static boolean PURGE_JOBS = false;
 	private static String download_method = "";
 	private static boolean HOST_POSTED_FILES = false;
+	private static boolean REDIRECT_TO_SOFTWARESERVER = false;
 	private static boolean NEW_TEMP_FOLDERS = true;
 	private static String root_path = "./";
 	private static String temp_path = root_path + "Temp";
@@ -127,7 +128,7 @@ public class PolyglotRestlet extends ServerResource
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
 		String part3 = (parts.size() > 3) ? parts.get(3) : "";
-		String client, file = null, output = null, input = null, result_file = null, result_url, url, type;
+		String client, application = null, file = null, output = null, input = null, result_file = null, result_url, url, type;
 		String buffer;
 		Form form;
 		Parameter p;
@@ -148,9 +149,17 @@ public class PolyglotRestlet extends ServerResource
 					client = getClientInfo().getAddress();
 					output = part1;
 					file = URLDecoder.decode(part2);
+			
+					//Check if a specific application is requested
+					form = getRequest().getResourceRef().getQueryAsForm();
+        	p = form.getFirst("application"); if(p != null) application = p.getValue();
 					
 					//Do the conversion
-					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+					if(application == null){
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+					}else{
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " using " + application + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+					}
 					
 					//Download URLs
 					if(!(polyglot instanceof PolyglotStewardAMQ)){
@@ -189,7 +198,11 @@ public class PolyglotRestlet extends ServerResource
 					if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
 						((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 					}else{
-						result_file = polyglot.convert(file, public_path, output);
+						if(application == null){
+							result_file = polyglot.convert(file, public_path, output);
+						}else{
+							result_file = polyglot.convert(application, file, public_path, output);
+						}
 
 						if(result_file.equals("404")){
 							setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
@@ -480,24 +493,42 @@ public class PolyglotRestlet extends ServerResource
 					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getSoftware()), Utility.endSlash(getReference().toString()), true, "Software"), MediaType.TEXT_HTML);
 				}
 			}else{
-				//Find a server with the specified application.
-				TreeSet<String> swHosts = ((PolyglotStewardAMQ)polyglot).getSoftwareHosts();
-				String targetPrefix = part1 + ":";
+				if(REDIRECT_TO_SOFTWARESERVER){
+					//Find a server with the specified application.
+					TreeSet<String> swHosts = ((PolyglotStewardAMQ)polyglot).getSoftwareHosts();
+					String targetPrefix = part1 + ":";
 
-				for(String sh:swHosts) {
-					if(sh.startsWith(targetPrefix)) {
-						String ip = sh.split(":")[1];
-						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Redirecting request for " + part1 + " to " + ip);
+					for(String sh:swHosts) {
+						if(sh.startsWith(targetPrefix)) {
+							String ip = sh.split(":")[1];
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Redirecting request for " + part1 + " to " + ip);
 
-						//Redirect to found software server
-						url = "http://" + ip + ":8182/software";
+							//Redirect to found software server
+							url = "http://" + ip + ":8182/software";
 
-						for(int k=1; k<parts.size(); k++){
-							url += "/" + parts.get(k);
+							for(int k=1; k<parts.size(); k++){
+								url += "/" + parts.get(k);
+							}
+
+							this.getResponse().redirectTemporary(url);
+							return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
 						}
-
-						this.getResponse().redirectTemporary(url);
-						return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+					}
+				}else{
+					if(part2.isEmpty()){
+						if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+							return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getInputOutputGraph().getEdgeOutputs(part1)), MediaType.TEXT_PLAIN);
+						}else{
+							return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getInputOutputGraph().getEdgeOutputs(part1)), Utility.endSlash(getReference().toString()), true, "Outputs"), MediaType.TEXT_HTML);
+						}
+					}else{
+						if(part3.isEmpty()){
+							if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+								return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getInputOutputGraph().getEdgeInputs(part1)), MediaType.TEXT_PLAIN);
+							}else{
+								return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getInputOutputGraph().getEdgeInputs(part1)), Utility.endSlash(getReference().toString()), true, "Inputs"), MediaType.TEXT_HTML);
+							}
+						}
 					}
 				}
 
@@ -580,7 +611,7 @@ public class PolyglotRestlet extends ServerResource
 		boolean SOFTWARESERVER_POST = !part0.isEmpty() && (part0.equals("servers") || part0.equals("software") || part0.equals("checkin"));
 		boolean TASK_POST = !part1.isEmpty() && !part0.equals("servers") && !part0.equals("software") && !part0.equals("checkin");
 		TreeMap<String,String> parameters = new TreeMap<String,String>();
-		String file=null, output = null, result_file = null, result_url, url;
+		String application=null, file=null, output = null, result_file = null, result_url, url;
 		String client = getClientInfo().getAddress();
 	
 		if(FORM_POST || TASK_POST || SOFTWARESERVER_POST){
@@ -712,16 +743,27 @@ public class PolyglotRestlet extends ServerResource
 
 			//Do the conversion
 			if(file != null && output != null){
-				//Removed calling of SoftwareServerUtility.getFileSizeHR(file), which seems to cause a deadlock when "file" is hosted on this host:8184 itself.
-				//System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
-				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " ...");
+				//Check if a specific application is requested
+				application = parameters.get("application");
+
+				if(application == null){
+					//Removed calling of SoftwareServerUtility.getFileSizeHR(file), which seems to cause a deadlock when "file" is hosted on this host:8184 itself.
+					//System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " ...");
+				}else{
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " using " + application + " ...");
+				}
 				
 				request = new RequestInformation(client, file, output);
 
 				if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
 					((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 				}else{
-					result_file = polyglot.convert(file, public_path, output);
+					if(application == null){
+						result_file = polyglot.convert(file, public_path, output);
+					}else{
+						result_file = polyglot.convert(application, file, public_path, output);
+					}
 				}
 
 				if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;
@@ -934,6 +976,8 @@ public class PolyglotRestlet extends ServerResource
 							HOST_POSTED_FILES = Boolean.valueOf(value);
 	          }else if(key.equals("MaxTaskTime")){
 							if(polyglot instanceof PolyglotSteward) ((PolyglotSteward)polyglot).setMaxTaskTime(Integer.valueOf(value));
+	          }else if(key.equals("RedirectToSoftwareServer")){
+							REDIRECT_TO_SOFTWARESERVER = Boolean.valueOf(value);
 						}else if(key.equals("AuthenticationEndpoint")){
 							authentication_url = value;
 	          }else if(key.equals("Authentication")){

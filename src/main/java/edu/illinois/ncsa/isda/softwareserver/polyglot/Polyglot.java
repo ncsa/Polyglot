@@ -35,6 +35,19 @@ public abstract class Polyglot
 	{	
 		return getOutputs(input);
 	}
+	
+	/**
+	 * Convert a files format.  Should be overriden, by default searches for a conversion path.
+	 * @param application the specific application to use
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convert(String application, String input, String output_path, String output_format)
+	{
+		return convert(input, output_path, output_format);
+	}
 
 	/**
 	 * Convert a files format (asynchronously).

@@ -22,6 +22,8 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
 	private TreeMap<V,Integer> vertex_map = new TreeMap<V,Integer>();
 	private TreeMap<String,Integer> vertex_string_map = new TreeMap<String,Integer>();  
 	private Vector<Vector<E>> edges = new Vector<Vector<E>>();
+	private TreeMap<E,TreeSet<V>> edge_inputs = new TreeMap<E,TreeSet<V>>();
+	private TreeMap<E,TreeSet<V>> edge_outputs = new TreeMap<E,TreeSet<V>>();
 	private Vector<Vector<Integer>> adjacency_list = new Vector<Vector<Integer>>();
 	private Vector<Vector<Double>> weights = new Vector<Vector<Double>>();
 	private Vector<Vector<Boolean>> active = new Vector<Vector<Boolean>>();
@@ -204,6 +206,8 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
 		vertex_map.clear();
 	  vertex_string_map.clear();  
 		edges.clear();
+		edge_inputs.clear();
+		edge_outputs.clear();
 		adjacency_list.clear();
 		weights.clear();
 		active.clear();
@@ -260,6 +264,11 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
 		adjacency_list.get(source_index).add(target_index);
 		weights.get(source_index).add(w);
 		active.get(source_index).add(true);
+
+		if(edge_inputs.get(edge) == null) edge_inputs.put(edge, new TreeSet<V>());
+		edge_inputs.get(edge).add(source);
+		if(edge_outputs.get(edge) == null) edge_outputs.put(edge, new TreeSet<V>());
+		edge_outputs.get(edge).add(target);
 	}
 	
 	/**
@@ -351,6 +360,24 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
 	public Vector<Vector<E>> getEdges()
 	{
 		return edges;
+	}
+
+	/**
+	 * Get an edges inputs.
+	 * @return the inputs
+	 */
+	public TreeSet<V> getEdgeInputs(E edge)
+	{
+		return edge_inputs.get(edge);
+	}
+	
+	/**
+	 * Get an edges outputs.
+	 * @return the outputs
+	 */
+	public TreeSet<V> getEdgeOutputs(E edge)
+	{
+		return edge_outputs.get(edge);
 	}
 	
 	/**

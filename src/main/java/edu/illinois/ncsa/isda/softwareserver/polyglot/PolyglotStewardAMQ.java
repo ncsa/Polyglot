@@ -368,6 +368,55 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	}
 	
 	/**
+	 * Convert a files format.
+	 * @param application the specific application to use
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	@Override
+	public String convert(String application, String input, String output_path, String output_format)
+	{
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode request, task;
+		ArrayNode path;
+		int job_id = job_counter.incrementAndGet();
+		String input_format = Utility.getFilenameExtension(SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(input)), true).toLowerCase();
+		boolean MULTIPLE_EXTENSIONS = true;
+			
+		//Add to mongo
+		String ts_str = SoftwareServerUtility.getTimeStamp();
+		System.out.println("[" + ts_str + "] [steward] [" + job_id + "]: Using " + application + " for " + input + "->" + output_format + ", submitting as job-" + job_id);
+
+		request = mapper.createObjectNode();
+		request.put("job_id", job_id);
+		request.put("timestamp", ts_str);
+		request.put("multiple_extensions", MULTIPLE_EXTENSIONS);
+		request.put("input", input);
+		request.put("output_path", output_path);
+		request.put("output_format", output_format);
+		request.put("step", -1);
+		request.put("step_status", 1);	//0 = waiting for something, 1 = ready to move on
+			
+		path = mapper.createArrayNode();
+		task = mapper.createObjectNode();
+		task.put("input", input_format);
+		task.put("application", application);
+		task.put("output", output_format);
+		task.put("result", "");
+		path.add(task);
+
+		request.put("path", path);
+		collection.insert((DBObject)JSON.parse(request.toString()));
+			
+		//Create a place holder file, URL is empty
+		Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(input) + "." + output_format + ".url", "[InternetShortcut]\nURL=");
+		
+		return job_id + "_" + Utility.getFilenameName(input, MULTIPLE_EXTENSIONS) + "." + output_format;
+	}
+	
+	/**
 	 * Get a list of connected software servers.
 	 * @return a list of connected software servers
 	 */
