@@ -48,6 +48,33 @@ public abstract class Polyglot
 	{
 		return convert(input, output_path, output_format);
 	}
+	
+	/**
+	 * Convert a files format and email the result.  Should be overriden, by default searches for a conversion path.
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @param email address to send result to
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convertAndEmail(String input, String output_path, String output_format, String email)
+	{
+		return convert(input, output_path, output_format);
+	}
+	
+	/**
+	 * Convert a files format and email the result.  Should be overriden, by default searches for a conversion path.
+	 * @param application the specific application to use
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @param email address to send result to
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convertAndEmail(String application, String input, String output_path, String output_format, String email)
+	{
+		return convert(application, input, output_path, output_format);
+	}
 
 	/**
 	 * Convert a files format (asynchronously).

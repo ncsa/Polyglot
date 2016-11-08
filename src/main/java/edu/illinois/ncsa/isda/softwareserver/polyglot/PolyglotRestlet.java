@@ -129,7 +129,9 @@ public class PolyglotRestlet extends ServerResource
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
 		String part3 = (parts.size() > 3) ? parts.get(3) : "";
 		String client, application = null, file = null, output = null, input = null, result_file = null, result_url, url, type;
+		String bd_useremail = "", bd_host = "", bd_token = "";
 		String buffer;
+		Boolean MAIL = false;
 		Form form;
 		Parameter p;
 		int chain = -1;
@@ -153,7 +155,16 @@ public class PolyglotRestlet extends ServerResource
 					//Check if a specific application is requested
 					form = getRequest().getResourceRef().getQueryAsForm();
         	p = form.getFirst("application"); if(p != null) application = p.getValue();
-					
+        	p = form.getFirst("mail"); if(p != null) MAIL = Boolean.valueOf(p.getValue());
+
+					if(MAIL){
+						Series<Header> series = (Series<Header>)getRequestAttributes().get("org.restlet.http.headers");
+    				bd_useremail = series.getFirstValue("X-bd-username");
+    				bd_host = series.getFirstValue("Bd-host");
+    				bd_token = series.getFirstValue("Bd-access-token");
+						bd_useremail += "," + bd_host + "," + bd_token + ",GET";
+					}
+				
 					//Do the conversion
 					if(application == null){
 						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
@@ -199,9 +210,9 @@ public class PolyglotRestlet extends ServerResource
 						((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 					}else{
 						if(application == null){
-							result_file = polyglot.convert(file, public_path, output);
+							result_file = polyglot.convertAndEmail(file, public_path, output, bd_useremail);
 						}else{
-							result_file = polyglot.convert(application, file, public_path, output);
+							result_file = polyglot.convertAndEmail(application, file, public_path, output, bd_useremail);
 						}
 
 						if(result_file.equals("404")){
@@ -322,6 +333,7 @@ public class PolyglotRestlet extends ServerResource
 			}
 		}else if(part0.equals("file")){
 			if(!part1.isEmpty()){
+				part1 = SoftwareServerRESTUtilities.removeParameters(part1);
 				file = public_path + part1;
 
 				//Workaround: If the file is not there, but file.url exists, retrieve and put it there. Configurable using the "DownloadSSFile" field in PolyglotRestlet.conf.
@@ -612,7 +624,9 @@ public class PolyglotRestlet extends ServerResource
 		boolean TASK_POST = !part1.isEmpty() && !part0.equals("servers") && !part0.equals("software") && !part0.equals("checkin");
 		TreeMap<String,String> parameters = new TreeMap<String,String>();
 		String application=null, file=null, output = null, result_file = null, result_url, url;
+		String bd_useremail = "", bd_host = "", bd_token = "";
 		String client = getClientInfo().getAddress();
+		Boolean MAIL = false;
 	
 		if(FORM_POST || TASK_POST || SOFTWARESERVER_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
@@ -745,6 +759,15 @@ public class PolyglotRestlet extends ServerResource
 			if(file != null && output != null){
 				//Check if a specific application is requested
 				application = parameters.get("application");
+				MAIL = Boolean.valueOf(parameters.get("mail"));
+
+				if(MAIL){
+					Series<Header> series = (Series<Header>)getRequestAttributes().get("org.restlet.http.headers");
+    			bd_useremail = series.getFirstValue("X-bd-username");
+    			bd_host = series.getFirstValue("Bd-host");
+    			bd_token = series.getFirstValue("Bd-access-token");
+					bd_useremail += "," + bd_host + "," + bd_token + ",POST";
+				}
 
 				if(application == null){
 					//Removed calling of SoftwareServerUtility.getFileSizeHR(file), which seems to cause a deadlock when "file" is hosted on this host:8184 itself.
@@ -760,9 +783,9 @@ public class PolyglotRestlet extends ServerResource
 					((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 				}else{
 					if(application == null){
-						result_file = polyglot.convert(file, public_path, output);
+						result_file = polyglot.convertAndEmail(file, public_path, output, bd_useremail);
 					}else{
-						result_file = polyglot.convert(application, file, public_path, output);
+						result_file = polyglot.convertAndEmail(application, file, public_path, output, bd_useremail);
 					}
 				}
 

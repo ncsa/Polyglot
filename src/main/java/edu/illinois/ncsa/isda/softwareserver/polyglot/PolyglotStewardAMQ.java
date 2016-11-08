@@ -23,6 +23,9 @@ import com.fasterxml.jackson.databind.node.*;
 import com.mongodb.*;
 import com.mongodb.util.*;
 import com.rabbitmq.client.*;
+import javax.mail.*;
+import javax.mail.internet.*;
+import javax.activation.*;
 
 /**
  * A class that coordinates the use of several software servers to perform file format conversions.
@@ -296,7 +299,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	{
 		return iograph.getIOGraphStrings();
 	}
-
+	
 	/**
 	 * Convert a files format.
 	 * @param input the absolute name of the input file
@@ -306,6 +309,32 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	 */
 	@Override
 	public String convert(String input, String output_path, String output_format)
+	{
+		return convertAndEmail(input, output_path, output_format, "");
+	}
+	
+	/**
+	 * Convert a files format.
+	 * @param application the specific application to use
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convert(String application, String input, String output_path, String output_format)
+	{
+		return convertAndEmail(application, input, output_path, output_format, "");
+	}
+
+	/**
+	 * Convert a files format and email result.
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @param email address to send result to
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convertAndEmail(String input, String output_path, String output_format, String email)
 	{
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode request, task;
@@ -335,6 +364,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 			request = mapper.createObjectNode();
 			request.put("job_id", job_id);
 			request.put("timestamp", ts_str);
+			request.put("email", email);
 			request.put("multiple_extensions", MULTIPLE_EXTENSIONS);
 			request.put("input", input);
 			request.put("output_path", output_path);
@@ -368,15 +398,16 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	}
 	
 	/**
-	 * Convert a files format.
+	 * Convert a files format and email result.
 	 * @param application the specific application to use
 	 * @param input the absolute name of the input file
 	 * @param output_path the output path
 	 * @param output_format the output format
+	 * @param email address to send result to
 	 * @return the output file name (if changed, null otherwise)
 	 */
 	@Override
-	public String convert(String application, String input, String output_path, String output_format)
+	public String convertAndEmail(String application, String input, String output_path, String output_format, String email)
 	{
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode request, task;
@@ -392,6 +423,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		request = mapper.createObjectNode();
 		request.put("job_id", job_id);
 		request.put("timestamp", ts_str);
+		request.put("email", email);
 		request.put("multiple_extensions", MULTIPLE_EXTENSIONS);
 		request.put("input", input);
 		request.put("output_path", output_path);
@@ -664,6 +696,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode message;
 		int job_id, step, step_status;
+		String input_file, output_file;
+		String email, bd_host = "", bd_token = "", type = "";
 		String polyglot_auth = "", input, application, output_format, output_path;
 		boolean MULTIPLE_EXTENSIONS;	//Was a path found for an input with multiple extensions
 		
@@ -676,6 +710,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 				document = cursor.next();
 				//polyglot_ip = InetAddress.getLocalHost().getHostAddress();
 				job_id = Integer.parseInt(document.get("job_id").toString());
+				email = document.get("email").toString();
 				MULTIPLE_EXTENSIONS = Boolean.parseBoolean(document.get("multiple_extensions").toString());
 				step = Integer.parseInt(document.get("step").toString());
 				step_status = Integer.parseInt(document.get("step_status").toString());
@@ -715,11 +750,50 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						document.put("step_status", 0);
 						collection.update(new BasicDBObject().append("job_id", job_id), document);
 					}else{
+						if(email.contains(",")){	//Split out brown dog host and token
+							Vector<String> strings = Utility.split(email, ',');
+							email = strings.get(0);
+							bd_host = strings.get(1);
+							bd_token = strings.get(2);
+							type = strings.get(3);
+						}
+
 						output_path = document.get("output_path").toString();
 						output_format = document.get("output_format").toString();
 						Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(document.get("input").toString(), MULTIPLE_EXTENSIONS) + "." + output_format + ".url", "[InternetShortcut]\nURL=" + URLDecoder.decode(input, "UTF-8"));
 						collection.remove(document);
 						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward] [" + job_id + "]: Job-" + job_id + " completed, result hosted at " + URLDecoder.decode(input, "UTF-8"));
+
+						if(email != null && !email.isEmpty()){
+							Properties properties = new Properties();
+							Session session = Session.getDefaultInstance(properties, null);
+							Message msg = new MimeMessage(session);
+							String msg_text = "";
+
+							msg.addRecipient(Message.RecipientType.TO, new InternetAddress(email));
+							msg.setFrom(new InternetAddress("\"Brown Dog\" <devnull@ncsa.illinois.edu>"));
+							msg.setSubject("Brown Dog Conversion Completed");
+							
+							input_file = document.get("input").toString();
+							output_file = input;
+				
+							if(type.equals("GET") && input_file.endsWith("?mail=true")){	//TODO: this doesn't seem to be a good way of doing this!
+								input_file = input_file.substring(0, input_file.indexOf("?mail=true")); 
+							}
+	
+							if(!bd_host.isEmpty() && !bd_token.isEmpty()){	//Rewrite URLs if through Fence API gateway
+								if(type.equals("POST")) input_file = bd_host + "/dap" + input_file.substring(input_file.indexOf("/file/")) + "?token=" + bd_token;
+								output_file = bd_host + "/dap" + output_file.substring(output_file.indexOf("/file/")) + "?token=" + bd_token;
+							}
+	
+							msg_text += "Job-" + job_id + "\n";
+							msg_text += "Input file: " + input_file + "\n";
+							msg_text += "Output file: " + output_file;
+							msg.setText(msg_text);
+
+							Transport.send(msg);
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward] [" + job_id + "]: Emailed result to " + email);
+						}
 					}
 				}
 			}
