@@ -565,6 +565,7 @@ public class SoftwareServerRESTUtilities
 											String polyglot_ip = message.get("polyglot_ip").asText();
 											String polyglot_auth = message.get("polyglot_auth").asText();
 											int job_id = Integer.parseInt(message.get("job_id").asText());
+											int step = Integer.parseInt(message.get("step").asText());
 											String input = message.get("input").asText();
 											String application = message.get("application").asText();
 											String output_format = message.get("output_format").asText();
@@ -572,7 +573,12 @@ public class SoftwareServerRESTUtilities
 											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Consuming job-" + job_id + ", " + input + "->" + output_format + " via " + application);
 		  	    	
 											//Execute job using Software Server REST interface (leverage implementation)
-											api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(input, "UTF-8");
+											if(step > 0){
+												api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(SoftwareServerUtility.addAuthentication(input, polyglot_auth), "UTF-8");
+											}else{
+												api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(input, "UTF-8");
+											}
+
 											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: API call, " + api_call);
 
 											result = SoftwareServerUtility.readURL(api_call, "text/plain");

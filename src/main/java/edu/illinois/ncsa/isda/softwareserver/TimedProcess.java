@@ -123,6 +123,7 @@ public class TimedProcess implements Runnable
 				if(SHOW_OUTPUT) System.out.println(line);
 			}
 		}catch(IOException e){	//Do nothing, the process was killed
+			e.printStackTrace();
     }catch(Exception e) {e.printStackTrace();}
 
 		return output;

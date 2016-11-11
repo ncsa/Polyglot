@@ -5,21 +5,26 @@
   <version>2.2.0-SNAPSHOT</version>
 
   <repositories>
-	<repository>
-		<id>maven-restlet</id>
-		<name>Public online Restlet repository</name>
-		<url>http://maven.restlet.com</url>
-	</repository>
-	<repository>
-		<id>maven-javacv</id>
-		<name>Public online JavaCV repository</name>
-		<url>http://maven2.javacv.googlecode.com/git/</url>
-	</repository>
-	<repository>
-		<id>NCSA-thridparty</id>
-		<name>NCSA Thirdparty</name>
-		<url>https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty/</url>
-	</repository>
+		<repository>
+			<id>maven-restlet</id>
+			<name>Public online Restlet repository</name>
+			<url>http://maven.restlet.com</url>
+		</repository>
+		<repository>
+			<id>maven-java.net</id>
+			<name>Java.net</name>
+			<url>http://maven.java.net</url>
+		</repository>
+		<repository>
+			<id>maven-javacv</id>
+			<name>Public online JavaCV repository</name>
+			<url>http://maven2.javacv.googlecode.com/git/</url>
+		</repository>
+		<repository>
+			<id>NCSA-thridparty</id>
+			<name>NCSA Thirdparty</name>
+			<url>https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty/</url>
+		</repository>
   </repositories>
 
   <properties>
@@ -247,6 +252,11 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>3.4</version>
+    </dependency>   
+    <dependency>
+      <groupId>javax.mail</groupId>
+      <artifactId>mail</artifactId>
+      <version>1.4.7</version>
     </dependency>   
   </dependencies>
   

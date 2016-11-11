@@ -73,7 +73,7 @@ for app in polyglot; do
 
     # Tag this polyglot image as ncsa/polyglot:latest, since the converters are based on it.
     if [ "$app" = "polyglot" ]; then
-        ${DEBUG} docker tag ${app}_$$ ncsa/polyglot:latest
+        ${DEBUG} docker tag ${app}_$$ ncsapolyglot/polyglot:latest
     fi
 
     # tag all versions and push if need be

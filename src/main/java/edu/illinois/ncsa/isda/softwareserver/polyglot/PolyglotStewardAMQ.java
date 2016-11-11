@@ -737,6 +737,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						message.put("polyglot_ip", polyglot_ip);
 						message.put("polyglot_auth", polyglot_auth);
 						message.put("job_id", job_id);
+						message.put("step", step);
 						message.put("input", input);
 						message.put("application", application);
 						message.put("output_format", output_format);

@@ -14,7 +14,9 @@ ENV 	POL_IP="" \
 	PUBLICIP=""
 
 # install requirements
-RUN apt-get update && apt-get -y install \
+RUN wget -qO - https://bintray.com/user/downloadSubjectPublicKey?username=bintray | apt-key add -
+RUN echo "deb http://dl.bintray.com/siegfried/debian wheezy main" | tee -a /etc/apt/sources.list
+RUN apt-get update && apt-get -y install siegfried \
 		wget && \
 	useradd -m -s /bin/bash polyglot
 
