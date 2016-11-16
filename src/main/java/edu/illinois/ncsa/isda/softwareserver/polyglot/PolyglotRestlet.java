@@ -588,12 +588,14 @@ public class PolyglotRestlet extends ServerResource
 		}else{
 			buffer = "";
 			buffer += "convert\n";
+			buffer += "path\n";
 			buffer += "form\n";
 			buffer += "alive\n";
-			buffer += "servers\n";
-			buffer += "software\n";
 			buffer += "inputs\n";
 			buffer += "outputs\n";
+			buffer += "servers\n";
+			buffer += "software\n";
+			buffer += "alive\n";
 			buffer += "requests\n";
 			
 			if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
