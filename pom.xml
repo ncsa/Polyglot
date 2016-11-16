@@ -200,6 +200,8 @@
   		<groupId>com.googlecode.javacv</groupId>
   		<artifactId>javacv</artifactId>
   		<version>0.6</version>
+		<scope>system</scope>
+		<systemPath>${project.basedir}/lib/deprecated/javacv-20110219/javacv.jar</systemPath>
   	</dependency>
   	<dependency>
   		<groupId>com.googlecode.javacv</groupId>
@@ -207,6 +209,8 @@
   		<version>0.6</version>
   		<!-- <classifier>${platform.name}</classifier> -->
   		<classifier>windows-x86_64</classifier>
+		<scope>system</scope>
+		<systemPath>${project.basedir}/lib/deprecated/javacv-20110219/javacv-windows-x86_64.jar</systemPath>
   	</dependency>
   	<dependency>
   		<groupId>commons-fileupload</groupId>
