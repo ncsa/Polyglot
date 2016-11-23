@@ -1,4 +1,4 @@
+Clowder
 #ImageMagick
-DTS
 #demclip
 #streamclip
