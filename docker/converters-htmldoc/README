@@ -1,0 +1,4 @@
+Use this file to build the ncsa/ss-htmldoc docker image and upload it to the docker hub.
+
+	docker build -t ncsa/converters-htmldoc .
+	docker push ncsa/converters-htmldoc

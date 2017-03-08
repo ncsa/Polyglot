@@ -1,16 +1,18 @@
 package edu.illinois.ncsa.isda.softwareserver;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerUtility;
+import kgm.utility.Utility;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-import kgm.utility.Utility;
+import java.text.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
+import com.rabbitmq.client.AMQP;
 
 /**
  * Software Server REST interface utility functions.
@@ -475,13 +477,25 @@ public class SoftwareServerRESTUtilities
 	 * @param rabbitmq_username the rabbitmq user
 	 * @param rabbitmq_password the rabbitmq user password
 	 * @param WAIT true if should wait for jobs to finish before acknowledging completion
+	 * @param CHECKIN_URL true if the URL to the output file should be sent back to Polygot as opposed to the actual file
+	 * @param public_path the path where the converted files reside, has trailing slash "/"
 	 */
-	public static void rabbitMQHandler(final String softwareserver_username, final String softwareserver_password, int softwareserver_port, Vector<Application> softwareserver_applications, String rabbitmq_uri, String rabbitmq_server, String rabbitmq_vhost, String rabbitmq_username, String rabbitmq_password, final boolean WAIT)
+	public static void rabbitMQHandler(final String softwareserver_username, final String softwareserver_password, int softwareserver_port, Vector<Application> softwareserver_applications, String rabbitmq_uri, String rabbitmq_server, String rabbitmq_vhost, String rabbitmq_username, String rabbitmq_password, final boolean WAIT, final boolean CHECKIN_URL, String public_path)
 	{
 		String softwareserver_authentication = "";
 		final int softwareserver_port_final = softwareserver_port;
 		final Vector<Application> softwareserver_applications_final = softwareserver_applications;
-	  final ConnectionFactory factory = new ConnectionFactory();
+		final ConnectionFactory factory = new ConnectionFactory();
+		
+		//public_path contains a trailing slash "/".
+		if(public_path.charAt(public_path.length()-1) != File.separatorChar){
+			public_path += File.separator;
+		}
+
+		final String public_path_final = public_path;
+
+		//Set heartbeat
+		factory.setRequestedHeartbeat(180);
 
 		if(softwareserver_username != null && softwareserver_password != null){
 			Authenticator.setDefault (new Authenticator() {
@@ -498,13 +512,13 @@ public class SoftwareServerRESTUtilities
 				factory.setUri(rabbitmq_uri);
 			}catch(Exception e) {e.printStackTrace();}
 		}else{
-	  	factory.setHost(rabbitmq_server);
-	  	factory.setVirtualHost(rabbitmq_vhost);
+			factory.setHost(rabbitmq_server);
+			factory.setVirtualHost(rabbitmq_vhost);
 	  
-	  	if((rabbitmq_username != null) && (rabbitmq_password != null)){
-	  		factory.setUsername(rabbitmq_username);
-	  		factory.setPassword(rabbitmq_password);
-	  	}
+			if((rabbitmq_username != null) && (rabbitmq_password != null)){
+				factory.setUsername(rabbitmq_username);
+				factory.setPassword(rabbitmq_password);
+			}
 		}
 
 		final String softwareserver_authentication_final = softwareserver_authentication;
@@ -513,76 +527,122 @@ public class SoftwareServerRESTUtilities
 		new Thread(){
 			public void run(){
 				while(true){ 
- 					System.out.println("\nConnecting to RabbitMQ server and starting consumer thread ...\n");
+					System.out.println("Connecting to RabbitMQ server and starting consumer thread");
 
-	  			try{
-	    			Connection connection = factory.newConnection();
-	    			final Channel channel = connection.createChannel();
-	    			final QueueingConsumer consumer = new QueueingConsumer(channel);
-	    
-	    			//Create queues if not yet created
+					try{
+						Connection connection = factory.newConnection();
+						final Channel channel = connection.createChannel();
+						final QueueingConsumer consumer = new QueueingConsumer(channel);
+
+						//Create queues if not yet created
 						for(int i=0; i<softwareserver_applications_final.size(); i++){
 							channel.queueDeclare(softwareserver_applications_final.get(i).alias, true, false, false, null);
 						}
 			
-	  			  channel.basicQos(1);	//Fetch only one message at a time
+						channel.basicQos(1);	//Fetch only one message at a time
 			
-	  			  //Bind to needed queues
+						//Bind to needed queues
 						for(int i=0; i<softwareserver_applications_final.size(); i++){
-		    			channel.basicConsume(softwareserver_applications_final.get(i).alias, false, consumer);
+							channel.basicConsume(softwareserver_applications_final.get(i).alias, false, consumer);
 						}
 			
 						final int port = softwareserver_port_final;
 
 						//Monitor bus
-	  	    	while(true){
+						while(true){
 							try{
-	  	    			//Wait for next message
-		  	   			final QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+								//Wait for next message
+								final QueueingConsumer.Delivery delivery = consumer.nextDelivery();
 		  	    
-		  	  	 		//Process each message in a new thread
+								//Process each message in a new thread
 								new Thread(){
 									public void run(){
-	  								ObjectMapper mapper = new ObjectMapper();
-	  								String api_call, result, checkin_call;
+										ObjectMapper mapper = new ObjectMapper();
+										String api_call, result, checkin_call;
 
 										try{
-		  								JsonNode message = mapper.readValue(delivery.getBody(), JsonNode.class);
-		  								String polyglot_ip = message.get("polyglot_ip").asText();
-		  								String polyglot_auth = message.get("polyglot_auth").asText();
-		  								int job_id = Integer.parseInt(message.get("job_id").asText());
-		  	   						String input = message.get("input").asText();
-		  	   						String application = message.get("application").asText();
-		  	   						String output_format = message.get("output_format").asText();
+											JsonNode message = mapper.readValue(delivery.getBody(), JsonNode.class);
+											String polyglot_ip = message.get("polyglot_ip").asText();
+											String polyglot_auth = message.get("polyglot_auth").asText();
+											int job_id = Integer.parseInt(message.get("job_id").asText());
+											int step = Integer.parseInt(message.get("step").asText());
+											String input = message.get("input").asText();
+											String application = message.get("application").asText();
+											String output_format = message.get("output_format").asText();
+											
+											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Consuming job-" + job_id + ", " + input + "->" + output_format + " via " + application);
 		  	    	
-		  	   		 				//Execute job using Software Server REST interface (leverage implementation)
-		  	   						api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(input, "UTF-8");
-		  	   						System.out.println("[AMQ]: " + api_call);
+											//Execute job using Software Server REST interface (leverage implementation)
+											if(step > 0){
+												api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(SoftwareServerUtility.addAuthentication(input, polyglot_auth), "UTF-8");
+											}else{
+												api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(input, "UTF-8");
+											}
+
+											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: API call, " + api_call);
 
 											result = SoftwareServerUtility.readURL(api_call, "text/plain");
 											//result = SoftwareServerUtility.addAuthentication(result, softwareserver_authentication_final);	//Make sure restlet doesn't already use guest!
 
-		  	   						while(WAIT && !SoftwareServerUtility.existsURL(result)){
-		  	   							Utility.pause(1000);
-		  	   						}
+											while(WAIT && !SoftwareServerUtility.existsURL(result)){
+												Utility.pause(1000);
+											}
+											
+											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: API call complete, result at " + result);
 
-											SoftwareServerUtility.setDefaultAuthentication(polyglot_auth);
-		  	   						checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
-		  	   						System.out.println("[AMQ]: " + checkin_call);
-		  	    	
-		  	   						if(Utility.readURL(checkin_call).equals("ok")){
-		  	   							channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-		  	   							System.out.println("[AMQ]: " + checkin_call + ", job acknowledged!");
-		  	   						}else{		//Wait a bit and try one more time
-												Utility.pause(5000);
-		  	   							System.out.println("[AMQ]: " + checkin_call + ", second attempt ...");
+											if(CHECKIN_URL){		//Checkin a URL to the output file hosted on the Software Server
+												//System.out.println("Setting Polylgot authentication for " + polyglot_ip + ": " + polyglot_auth);
+												SoftwareServerUtility.setDefaultAuthentication(polyglot_auth);
+												checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + Utility.urlEncode(result);
+												System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Checking in result with Polyglot, " + checkin_call);
 
-		  	   							if(Utility.readURL(checkin_call).equals("ok")){
-		  	   								channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
-		  	   								System.out.println("[AMQ]: " + checkin_call + ", job acknowledged!");
-												}else{
-		  	   								channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
-		  	   								System.out.println("[AMQ]: " + checkin_call + ", job un-acknowledged, rejecting!");
+												if(SoftwareServerUtility.readURL(checkin_call).equals("ok")){
+													channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+													System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Checkin acknowledged!");
+												}else{						//Wait a bit and try one more time
+													Utility.pause(5000);
+													System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Second attempt at checkin result with Polyglot, " + checkin_call);
+
+													if(SoftwareServerUtility.readURL(checkin_call).equals("ok")){
+														channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+														System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Second checkin acknowledged!");
+													}else{
+														channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
+														System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Rejecting job after second checkin un-acknowledged!");
+													}
+												}
+											}else{							//Checkin the actual output file
+												//The filename to post: <public_path>/<session>_<filename>. "result" is http://.../file/<session>_<filename>, so strip out the path (after last '/').
+												String filename = result.substring(result.lastIndexOf('/')+1);
+												String absolute_filename = public_path_final + filename;
+												String log_file = Utility.readURL("http://localhost:8182/file/" + filename + ".log");
+												
+												//System.out.println("Setting Polylgot authentication for " + polyglot_ip + ": " + polyglot_auth);
+												SoftwareServerUtility.setDefaultAuthentication(polyglot_auth);
+												checkin_call = "http://" + polyglot_ip + ":8184/checkin/" + job_id + "/" + URLEncoder.encode(log_file, "UTF-8");
+												//System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Checking in result with Polyglot, " + checkin_call);
+												System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Checking in result with Polyglot, " + checkin_call.substring(0, checkin_call.lastIndexOf('/')+1) + "...");
+												
+												//If a directory was created zip it up to send it back
+												if(Utility.isDirectory(absolute_filename)){
+													SoftwareServerUtility.zip(absolute_filename + ".checkin.zip", absolute_filename);
+													absolute_filename += ".checkin.zip";
+												}
+
+												if(SoftwareServerUtility.postFile(checkin_call, absolute_filename, null, polyglot_auth).equals("ok")){
+													channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+													System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Checkin acknowledged!");
+												}else{						//Wait a bit and try one more time
+													Utility.pause(5000);
+													System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Second attempt at checkin result with Polyglot, " + checkin_call);
+
+													if(SoftwareServerUtility.postFile(checkin_call, absolute_filename, null, polyglot_auth).equals("ok")){
+														channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+														System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Second checkin acknowledged!");
+													}else{
+														channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
+														System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Rejecting job after second checkin un-acknowledged!");
+													}
 												}
 											}
 										}catch(Exception e) {e.printStackTrace();}
@@ -592,11 +652,84 @@ public class SoftwareServerRESTUtilities
 								e.printStackTrace();
 								break;
 							}
-	  	    	}
-	  			}catch(Exception e){
+						}
+					}catch(Exception e){
 						e.printStackTrace();
 						Utility.pause(1000);		//Wait a bit before reconnecting to rabbitmq
 					}
+				}
+			}
+		}.start();
+	}
+
+
+	/**
+	 * Create a thread to send registration messages to the RabbitMQ SS-registration queue.
+	 * @param rabbitmq_uri the rabbitmq URI
+	 * @param regis_queue_name the name of the SS registration queue in RabbitMQ
+	 * @param regis_msg_ttl the TTL (in milliseconds) for the registration msgs
+	 * @param msg the string to be published into the queue
+	 */
+	public static void registration(String rabbitmq_uri, String regis_queue_name, int regis_msg_ttl, String msg)
+	{
+		//System.out.println("Registration: regis_queue_name: '" + regis_queue_name + "', regis_msg_ttl: " + regis_msg_ttl/1000 + " seconds.");
+		final String QUEUE_NAME = regis_queue_name;
+		final ConnectionFactory factory = new ConnectionFactory();
+		factory.setRequestedHeartbeat(180);
+
+		if(rabbitmq_uri != null){
+			try{
+				factory.setUri(rabbitmq_uri);
+			}catch(Exception e) {e.printStackTrace(); System.exit(1);}
+		}else{
+			System.out.println("Software Server now requires a defined rabbitmq_uri.");
+			System.exit(1);
+		}
+
+		final AMQP.BasicProperties properties = new AMQP.BasicProperties();
+		final int msgTTL = regis_msg_ttl;
+		final String msgTTLStr = String.valueOf(regis_msg_ttl);
+		properties.setExpiration(msgTTLStr);
+		final String sentmsg = msg;
+
+		//Maintain connection to rabbitmq in a constantly running thread 
+		new Thread(){
+			public void run(){
+				while(true){ 
+					System.out.println("Connecting to RabbitMQ server and starting registration thread");
+					//System.out.println("Registration msg to send: " + sentmsg);
+
+					Connection connection = null;
+					Channel channel = null;
+					try{
+						connection = factory.newConnection();
+						channel = connection.createChannel();
+            
+						//Create the registration queue if not yet created
+						channel.queueDeclare(QUEUE_NAME, true, false, false, null);
+						channel.basicQos(1);    //Fetch only one message at a time
+
+						//Send the registration message
+						while(true){
+							try{
+								channel.basicPublish("", QUEUE_NAME, properties, sentmsg.getBytes());
+
+								//Post registration messages every TTL seconds.
+								Utility.pause(msgTTL);
+							}catch(Exception e){
+								e.printStackTrace();
+								break;  //So it goes out and retries the RabbitMQ connection, otherwise stays in this error condition and exception msgs flood.
+							}
+						}
+					}catch(Exception e1) {e1.printStackTrace();}
+					
+					try{
+						if(null != channel) channel.close();
+						if(null != connection) connection.close();
+					}catch(Exception e2) {e2.printStackTrace();}
+						
+					System.out.println("SS having issues, wait for a while before retrying...");
+					Utility.pause(10000); // Pause 10 secs before retrying, otherwise logs flood.
 				}
 			}
 		}.start();

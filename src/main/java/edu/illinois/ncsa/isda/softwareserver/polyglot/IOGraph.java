@@ -22,6 +22,8 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
 	private TreeMap<V,Integer> vertex_map = new TreeMap<V,Integer>();
 	private TreeMap<String,Integer> vertex_string_map = new TreeMap<String,Integer>();  
 	private Vector<Vector<E>> edges = new Vector<Vector<E>>();
+	private TreeMap<E,TreeSet<V>> edge_inputs = new TreeMap<E,TreeSet<V>>();
+	private TreeMap<E,TreeSet<V>> edge_outputs = new TreeMap<E,TreeSet<V>>();
 	private Vector<Vector<Integer>> adjacency_list = new Vector<Vector<Integer>>();
 	private Vector<Vector<Double>> weights = new Vector<Vector<Double>>();
 	private Vector<Vector<Boolean>> active = new Vector<Vector<Boolean>>();
@@ -204,6 +206,8 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
 		vertex_map.clear();
 	  vertex_string_map.clear();  
 		edges.clear();
+		edge_inputs.clear();
+		edge_outputs.clear();
 		adjacency_list.clear();
 		weights.clear();
 		active.clear();
@@ -260,6 +264,11 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
 		adjacency_list.get(source_index).add(target_index);
 		weights.get(source_index).add(w);
 		active.get(source_index).add(true);
+
+		if(edge_inputs.get(edge) == null) edge_inputs.put(edge, new TreeSet<V>());
+		edge_inputs.get(edge).add(source);
+		if(edge_outputs.get(edge) == null) edge_outputs.put(edge, new TreeSet<V>());
+		edge_outputs.get(edge).add(target);
 	}
 	
 	/**
@@ -351,6 +360,24 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
 	public Vector<Vector<E>> getEdges()
 	{
 		return edges;
+	}
+
+	/**
+	 * Get an edges inputs.
+	 * @return the inputs
+	 */
+	public TreeSet<V> getEdgeInputs(E edge)
+	{
+		return edge_inputs.get(edge);
+	}
+	
+	/**
+	 * Get an edges outputs.
+	 * @return the outputs
+	 */
+	public TreeSet<V> getEdgeOutputs(E edge)
+	{
+		return edge_outputs.get(edge);
 	}
 	
 	/**
@@ -809,13 +836,15 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
 	/**
    * Perform a breadth first search from the vertex at the given index and store the resulting paths.
    * @param source the index of the source vertex
+	 * @param max_depth the maximum depth to search
    * @return the paths vector indicating from which vertex we must come to get to this vertex
    */
-  public Vector<Integer> getShortestPaths(int source)
+  public Vector<Integer> getShortestPaths(int source, int max_depth)
   {
     Vector<Integer> path = new Vector<Integer>();
     Vector<Boolean> visited = new Vector<Boolean>();
-    
+    int depth = 0;
+
     for(int i=0; i<vertices.size(); i++){
       visited.add(false);
       path.add(-1);
@@ -834,10 +863,23 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
           queue.add(adjacency_list.get(source).get(i));
         }
       }
+
+			depth++;
+			if(max_depth >= 0 && depth >= max_depth) break;
     }
     
     return path;
   }
+	
+	/**
+   * Perform a breadth first search from the vertex at the given index and store the resulting paths.
+   * @param source the index of the source vertex
+   * @return the paths vector indicating from which vertex we must come to get to this vertex
+   */
+  public Vector<Integer> getShortestPaths(int source)
+	{
+		return getShortestPaths(source, -1);
+	}
   
   /**
    * Dijstra shortest path. This is a greedy algorithm and will not be able to handle negative weights.
@@ -1172,21 +1214,32 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
 	/**
    * Return a set of all reachable vertices from the given source.
    * @param index the index of the source vertex
+	 * @param max_depth the maximum depth to search
    * @return the set of reachable vertex indices
    */
-  public TreeSet<Integer> getRange(int index)
+  public TreeSet<Integer> getRange(int index, int max_depth)
   {
     TreeSet<Integer> range = new TreeSet<Integer>(); 
-    Vector<Integer> path = getShortestPaths(index);
+    Vector<Integer> path = getShortestPaths(index, max_depth);
     
     for(int j=0; j<path.size(); j++){
       if(path.get(j)>=0 && j!=index){
         range.add(j);    
       }
     }
-    
+
     return range;
   }
+	
+	/**
+   * Return a set of all reachable vertices from the given source.
+   * @param index the index of the source vertex
+   * @return the set of reachable vertex indices
+   */
+  public TreeSet<Integer> getRange(int index)
+  {
+		return getRange(index, -1);
+	}
   
   /**
    * Returns a set of vertex strings that are reachable from other vertices.
@@ -1211,9 +1264,10 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
   /**
    * Returns a set of vertex strings that are reachable from a given source vertex.
    * @param string string associated with the input vertex
+	 * @param max_depth the maximum depth to search
    * @return the set of reachable vertex strings
    */
-  public TreeSet<String> getRangeStrings(String string)
+  public TreeSet<String> getRangeStrings(String string, int max_depth)
   {
     TreeSet<String> range = new TreeSet<String>();
     Set<Integer> range_indices;
@@ -1221,16 +1275,26 @@ public class IOGraph<V extends Comparable, E extends Comparable> implements Seri
     Integer index = vertex_string_map.get(string);
     
     if(index != null){
-      range_indices = getRange(index);
+      range_indices = getRange(index, max_depth);
       itr = range_indices.iterator();
       
       while(itr.hasNext()){
         range.add(vertices.get(itr.next()).toString());
       }
     }
-    
+
     return range;
   }
+  
+	/**
+   * Returns a set of vertex strings that are reachable from a given source vertex.
+   * @param string string associated with the input vertex
+   * @return the set of reachable vertex strings
+   */
+  public TreeSet<String> getRangeStrings(String string)
+  {
+		return getRangeStrings(string, -1);
+	}
   
   /**
    * Get the set of all vertices that can reach the target vertex.

@@ -5,21 +5,26 @@
   <version>2.2.0-SNAPSHOT</version>
 
   <repositories>
-	<repository>
-		<id>maven-restlet</id>
-		<name>Public online Restlet repository</name>
-		<url>http://maven.restlet.com</url>
-	</repository>
-	<repository>
-		<id>maven-javacv</id>
-		<name>Public online JavaCV repository</name>
-		<url>http://maven2.javacv.googlecode.com/git/</url>
-	</repository>
-	<repository>
-		<id>NCSA-thridparty</id>
-		<name>NCSA Thirdparty</name>
-		<url>https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty/</url>
-	</repository>
+		<repository>
+			<id>maven-restlet</id>
+			<name>Public online Restlet repository</name>
+			<url>http://maven.restlet.com</url>
+		</repository>
+		<repository>
+			<id>maven-java.net</id>
+			<name>Java.net</name>
+			<url>http://maven.java.net</url>
+		</repository>
+		<repository>
+			<id>maven-javacv</id>
+			<name>Public online JavaCV repository</name>
+			<url>http://maven2.javacv.googlecode.com/git/</url>
+		</repository>
+		<repository>
+			<id>NCSA-thridparty</id>
+			<name>NCSA Thirdparty</name>
+			<url>https://opensource.ncsa.illinois.edu/nexus/content/repositories/thirdparty/</url>
+		</repository>
   </repositories>
 
   <properties>
@@ -195,6 +200,8 @@
   		<groupId>com.googlecode.javacv</groupId>
   		<artifactId>javacv</artifactId>
   		<version>0.6</version>
+		<scope>system</scope>
+		<systemPath>${project.basedir}/lib/deprecated/javacv-20110219/javacv.jar</systemPath>
   	</dependency>
   	<dependency>
   		<groupId>com.googlecode.javacv</groupId>
@@ -202,6 +209,8 @@
   		<version>0.6</version>
   		<!-- <classifier>${platform.name}</classifier> -->
   		<classifier>windows-x86_64</classifier>
+		<scope>system</scope>
+		<systemPath>${project.basedir}/lib/deprecated/javacv-20110219/javacv-windows-x86_64.jar</systemPath>
   	</dependency>
   	<dependency>
   		<groupId>commons-fileupload</groupId>
@@ -214,9 +223,9 @@
   		<version>2.11.3</version>
   	</dependency>
   	<dependency>
-  		<groupId>org.apache.commons</groupId>
-  		<artifactId>commons-io</artifactId>
-  		<version>1.3.2</version>
+		<groupId>commons-io</groupId>
+		<artifactId>commons-io</artifactId>
+		<version>1.3.2</version>
   	</dependency>
   	<dependency>
   		<groupId>commons-validator</groupId>
@@ -234,12 +243,39 @@
   		<version>4.3.1</version>
   	</dependency>
   	<dependency>
+  		<groupId>org.apache.httpcomponents</groupId>
+  		<artifactId>httpmime</artifactId>
+  		<version>4.3.1</version>
+  	</dependency>
+  	<dependency>
   		<groupId>com.fasterxml.jackson.core</groupId>
   		<artifactId>jackson-databind</artifactId>
   		<version>2.2.3</version>
   	</dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+      <version>3.4</version>
+    </dependency>   
+    <dependency>
+      <groupId>javax.mail</groupId>
+      <artifactId>mail</artifactId>
+      <version>1.4.7</version>
+    </dependency>   
   </dependencies>
   
+  <profiles>
+    <profile>
+      <id>doclint-java8-disable</id>
+      <activation>
+        <jdk>[1.8,)</jdk>
+      </activation>
+      <properties>
+        <javadoc.opts>-Xdoclint:none</javadoc.opts>
+      </properties>
+    </profile>
+  </profiles>
+
   <build>
 		<plugins>
 			<plugin>
@@ -262,6 +298,9 @@
 						<goals>
 							<goal>javadoc</goal>
 						</goals>
+						<configuration>
+							<additionalparam>${javadoc.opts}</additionalparam>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>

@@ -1,3 +1,4 @@
+Clowder
 #ImageMagick
-demclip
-streamclip
+#demclip
+#streamclip

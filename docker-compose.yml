@@ -1,0 +1,32 @@
+#Polyglot
+polyglot:
+  image: ncsa/polyglot:develop
+  environment:
+    RABBITMQ_URI: "amqp://guest:guest@rabbitmq:5672/%2f"
+  ports:
+    - "8184:8184"
+  links:
+    - mongo
+    - rabbitmq
+
+#Example converters
+converters-imagemagick:
+  image: ncsa/converters-imagemagick:develop
+  links:
+    - rabbitmq
+
+converters-htmldoc:
+  image: ncsa/converters-htmldoc:develop
+  links:
+    - rabbitmq
+
+#Mongo database used to store data
+mongo:
+  image: mongo:latest
+
+#Rabbitmq to connect to converters
+rabbitmq:
+  image: rabbitmq:management
+  ports:
+    - "5672"
+    - "15672"

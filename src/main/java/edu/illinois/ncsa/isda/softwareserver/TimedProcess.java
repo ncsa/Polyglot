@@ -1,4 +1,5 @@
 package edu.illinois.ncsa.isda.softwareserver;
+import java.io.*;
 
 /**
  * A process with a time limit.  Allows a process to be executed pseudo-synchronously.
@@ -9,6 +10,7 @@ package edu.illinois.ncsa.isda.softwareserver;
 public class TimedProcess implements Runnable
 {
   private Process process;
+	private String output;
   private boolean HANDLE_OUTPUT = false;
   private boolean SHOW_OUTPUT = false;
   private boolean RUNNING = false;
@@ -36,6 +38,15 @@ public class TimedProcess implements Runnable
     this.SHOW_OUTPUT = SHOW_OUTPUT;
     RUNNING = true;
   }
+
+	/**
+	 * Get the process output (stdout and stderr).
+	 * @return the process output
+	 */
+	public String getOutput()
+	{
+		return output;
+	}
   
   /**
    * The starting point for the thread that will monitor the process.
@@ -44,7 +55,7 @@ public class TimedProcess implements Runnable
   {
     try{
     	if(HANDLE_OUTPUT){
-    		SoftwareServerUtility.handleProcessOutput(process, SHOW_OUTPUT);
+    		output = handleProcessOutput(process, SHOW_OUTPUT);
     	}else{
     		process.waitFor();
     	}
@@ -71,9 +82,11 @@ public class TimedProcess implements Runnable
       t1 = System.currentTimeMillis();
       
       if(!RUNNING){
+				System.out.println();
         return true;
       }else if((t1-t0) > n){
       	process.destroy();
+				System.out.println();
         return false;
       }
 
@@ -82,5 +95,37 @@ public class TimedProcess implements Runnable
         System.out.print(".");
       }catch(Exception e) {e.printStackTrace();}
     }
+  }
+
+  /**
+   * Handle the output of a process.
+   * @param process the process
+   * @param SHOW_OUTPUT true if the output should be printed
+	 * @return the process output
+   */
+  public static String handleProcessOutput(Process process, boolean SHOW_OUTPUT)
+  {
+		String output = "";
+		BufferedReader stdInput = new BufferedReader(new InputStreamReader(process.getInputStream()));
+		BufferedReader stdError = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+    String line = null;
+
+		try{
+			//Read output
+			while((line = stdInput.readLine()) != null){
+				output += line + "\n";
+    		if(SHOW_OUTPUT) System.out.println(line);
+			}
+
+			//Read errors
+			while((line = stdError.readLine()) != null){
+				output += line + "\n";
+				if(SHOW_OUTPUT) System.out.println(line);
+			}
+		}catch(IOException e){	//Do nothing, the process was killed
+			e.printStackTrace();
+    }catch(Exception e) {e.printStackTrace();}
+
+		return output;
   }
 }

@@ -11,6 +11,8 @@ import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.text.*;
 import org.apache.http.*;
 import org.apache.http.impl.client.*;
 import org.apache.http.util.*;
@@ -21,6 +23,9 @@ import com.fasterxml.jackson.databind.node.*;
 import com.mongodb.*;
 import com.mongodb.util.*;
 import com.rabbitmq.client.*;
+import javax.mail.*;
+import javax.mail.internet.*;
+import javax.activation.*;
 
 /**
  * A class that coordinates the use of several software servers to perform file format conversions.
@@ -31,20 +36,25 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	private static String polyglot_username = null;
 	private static String polyglot_password = null;
 	private static String rabbitmq_uri = null;
+	private static int rabbitmq_recon_period = 5;  // RabbitMQ reconnection time period in seconds in initialization, default to 5 if not set in the conf file.
+	private static String ss_registration_queue_name = "SS-registration";
 	private static String rabbitmq_server = null;
 	private static String rabbitmq_vhost = "/";
 	private static String rabbitmq_username = null;
 	private static String rabbitmq_password = null;
 	private static String softwareserver_authentication = "";
 	private int heartbeat;
-	private TreeMap<String,Long> software_servers = new TreeMap<String,Long>();
+	private ConcurrentSkipListMap<String,Long> software_servers = new ConcurrentSkipListMap<String,Long>();
 	private IOGraph<String,SoftwareServerApplication> iograph = new IOGraph<String,SoftwareServerApplication>();
 	private MongoClient mongoClient;
 	private DB db;
 	private DBCollection collection;
 	private ConnectionFactory factory;
+	private Connection connection;
+	private Channel channel = null;
+	private String polyglot_ip = null;
 	private AtomicInteger job_counter = new AtomicInteger();
-	
+
 	/**
 	 * Class constructor.
 	 */
@@ -63,8 +73,11 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		
 		//Connect to MongoDB
 		try{
-			mongoClient = new MongoClient("localhost");
-			db = mongoClient.getDB("polyglot");
+			Properties properties = new Properties();
+			properties.load(new FileInputStream("mongo.properties"));
+			mongoClient = new MongoClient(properties.getProperty("server"));
+			//db = mongoClient.getDB(properties.getProperty("database"));
+			db = mongoClient.getDB("polyglot");		//Use this database as mongo.properties file will set this for DAP level
 			collection = db.getCollection("steward");
 		}catch(Exception e) {e.printStackTrace();}
 		
@@ -88,9 +101,43 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	  		factory.setPassword(rabbitmq_password);
 	  	}
 		}
-    
+
+		connectToRabbitmq();
+
+		if (null == polyglot_ip) {
+			polyglot_ip = Utility.getLocalHostIP();
+		}
+
+		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: polyglot_ip: " + polyglot_ip);
+
 		if(START) new Thread(this).start();		//Start main thread
 	}
+
+    /* A utility method to reconnect to RabbitMQ when conn is
+     * initialized or lost.  Uses the re-connection time period in the
+     * config file.
+     */
+    private void connectToRabbitmq()
+    {
+        // Only print the first exception for brevity.
+        boolean firstError = true;
+        channel = null;
+        while (null == channel) {
+            int sleep1 = rabbitmq_recon_period;  // Sleep  5 seconds for the connection error.
+            try {
+                connection = factory.newConnection();
+                channel = connection.createChannel();
+            } catch(Exception e) {
+                if (firstError) {
+                    firstError = false;
+                    e.printStackTrace();
+                }
+                System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: waiting " + String.valueOf(sleep1) + " seconds before reconnecting to RabbitMQ...");
+                Utility.pause(1000*sleep1);
+            }
+        }
+        System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Successfully connected to RabbitMQ: server: " + rabbitmq_server + ", vhost: " + rabbitmq_vhost + ".");
+    }
 	
 	/**
 	 * Initialize based on parameters within the given configuration file.
@@ -109,8 +156,12 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	        value = line.substring(line.indexOf('=')+1);
 	        
 	        if(key.charAt(0) != '#'){
-	        	if(key.equals("RabbitMQURI")){
+	        	if(key.equals("PolyglotIP") || key.equals("POLYGLOT_IP")){
+	        		polyglot_ip = value;
+	        	}else if(key.equals("RabbitMQURI")){
 	        		rabbitmq_uri = value;
+	        	}else if(key.equals("RabbitMQReconnectPeriodInSeconds")){
+	        		rabbitmq_recon_period = Integer.valueOf(value);
 	        	}else if(key.equals("RabbitMQServer")){
 	        		rabbitmq_server = value;
 	        	}else if(key.equals("RabbitMQVirtualHost")){
@@ -119,6 +170,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	        		rabbitmq_username = value;
 	        	}else if(key.equals("RabbitMQPassword")){
 	        		rabbitmq_password = value;
+	        	}else if(key.equals("SSRegistrationQueueName")){
+	        		ss_registration_queue_name = value;
 	        	}else if(key.equals("SoftwareServerAuthentication")){
 							softwareserver_authentication = value + "@";
 	  	        final String username = value.substring(0, value.indexOf(':')).trim();
@@ -159,6 +212,23 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	}
 	
 	/**
+	 * Get the software available, with the hosts they run on.
+	 * @return the set of software with the hosts
+	 * Used in PolyglotRestlet's /software/<sw1> URL to find and redirect to a SS containing "sw1".
+	 */
+	public TreeSet<String> getSoftwareHosts()
+	{
+		TreeSet<SoftwareServerApplication> edges = iograph.getUniqueEdges();
+		TreeSet<String> edge_strings = new TreeSet<String>();
+
+		for(SoftwareServerApplication app : edges ){
+			edge_strings.add(app.name + ":" + app.host);
+		}
+
+		return edge_strings;
+	}
+
+	/**
 	 * Get the outputs available.
 	 * @return the list of outputs
 	 */
@@ -177,6 +247,17 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	public TreeSet<String> getOutputs(String input)
 	{
 		return iograph.getRangeStrings(input);
+	}
+	
+	/**
+	 * Get the outputs available for the given input type.
+	 * @param input the input type
+	 * @param n the maximum number of hops
+	 * @return the list of outputs
+	 */
+	public TreeSet<String> getOutputs(String input, int n)
+	{
+		return iograph.getRangeStrings(input, n);
 	}
 
 	/**
@@ -218,7 +299,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	{
 		return iograph.getIOGraphStrings();
 	}
-
+	
 	/**
 	 * Convert a files format.
 	 * @param input the absolute name of the input file
@@ -229,6 +310,32 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	@Override
 	public String convert(String input, String output_path, String output_format)
 	{
+		return convertAndEmail(input, output_path, output_format, "");
+	}
+	
+	/**
+	 * Convert a files format.
+	 * @param application the specific application to use
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convert(String application, String input, String output_path, String output_format)
+	{
+		return convertAndEmail(application, input, output_path, output_format, "");
+	}
+
+	/**
+	 * Convert a files format and email result.
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @param email address to send result to
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convertAndEmail(String input, String output_path, String output_format, String email)
+	{
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode request, task;
 		ArrayNode path;
@@ -236,9 +343,11 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		String input_format;
 		Vector<Conversion<String,SoftwareServerApplication>> conversions;
 		boolean MULTIPLE_EXTENSIONS = true;
+			
+		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Searching for conversion paths for " + input + "->" + output_format);
 		
 		//Get conversion path, give multiple extensions precedence (i.e. if a script exists that supports such a thing it should be run)
-		input_format = Utility.getFilenameExtension(Utility.getFilename(input), true).toLowerCase();
+		input_format = Utility.getFilenameExtension(SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(input)), true).toLowerCase();
 		conversions = iograph.getShortestConversionPath(input_format, output_format, false);
 
 		if(conversions == null){
@@ -249,8 +358,13 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 
 		//Add to mongo
 		if(conversions != null){
+			String ts_str = SoftwareServerUtility.getTimeStamp();
+			System.out.println("[" + ts_str + "] [steward] [" + job_id + "]: Found path for " + input + "->" + output_format + ", submitting as job-" + job_id);
+
 			request = mapper.createObjectNode();
 			request.put("job_id", job_id);
+			request.put("timestamp", ts_str);
+			request.put("email", email);
 			request.put("multiple_extensions", MULTIPLE_EXTENSIONS);
 			request.put("input", input);
 			request.put("output_path", output_path);
@@ -281,6 +395,57 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		}else{
 			return "404";
 		}
+	}
+	
+	/**
+	 * Convert a files format and email result.
+	 * @param application the specific application to use
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @param email address to send result to
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	@Override
+	public String convertAndEmail(String application, String input, String output_path, String output_format, String email)
+	{
+		ObjectMapper mapper = new ObjectMapper();
+		ObjectNode request, task;
+		ArrayNode path;
+		int job_id = job_counter.incrementAndGet();
+		String input_format = Utility.getFilenameExtension(SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(input)), true).toLowerCase();
+		boolean MULTIPLE_EXTENSIONS = true;
+			
+		//Add to mongo
+		String ts_str = SoftwareServerUtility.getTimeStamp();
+		System.out.println("[" + ts_str + "] [steward] [" + job_id + "]: Using " + application + " for " + input + "->" + output_format + ", submitting as job-" + job_id);
+
+		request = mapper.createObjectNode();
+		request.put("job_id", job_id);
+		request.put("timestamp", ts_str);
+		request.put("email", email);
+		request.put("multiple_extensions", MULTIPLE_EXTENSIONS);
+		request.put("input", input);
+		request.put("output_path", output_path);
+		request.put("output_format", output_format);
+		request.put("step", -1);
+		request.put("step_status", 1);	//0 = waiting for something, 1 = ready to move on
+			
+		path = mapper.createArrayNode();
+		task = mapper.createObjectNode();
+		task.put("input", input_format);
+		task.put("application", application);
+		task.put("output", output_format);
+		task.put("result", "");
+		path.add(task);
+
+		request.put("path", path);
+		collection.insert((DBObject)JSON.parse(request.toString()));
+			
+		//Create a place holder file, URL is empty
+		Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(input) + "." + output_format + ".url", "[InternetShortcut]\nURL=");
+		
+		return job_id + "_" + Utility.getFilenameName(input, MULTIPLE_EXTENSIONS) + "." + output_format;
 	}
 	
 	/**
@@ -368,50 +533,108 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	/**
 	 * Discover Software Servers consuming on the given RabbitMQ bus (adds them to I/O-graph).
 	 */
-	public void discoveryAMQ()
+	public void discoveryAMQ_pull()
 	{
-		JsonNode queues = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/queues/" + Utility.urlEncode(rabbitmq_vhost) + "/");
+		JsonNode consumers = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/consumers/" + Utility.urlEncode(rabbitmq_vhost));
+		Set<String> hosts = new TreeSet<String>();
 		JsonNode queue;
 		JsonNode applications;
-		String name, host;
 		long startup_time;
 		boolean UPDATED = false;
 	
-		for(int i=0; i<queues.size(); i++) {
-			name = queues.get(i).get("name").asText();
-	    queue = queryEndpoint("http://" + rabbitmq_username + ":" + rabbitmq_password + "@" + rabbitmq_server + ":15672/api/queues/" + Utility.urlEncode(rabbitmq_vhost) + "/" + name);
-	    	    
-	    for(int j=0; j<queue.get("consumer_details").size(); j++){
-	    	host = queue.get("consumer_details").get(j).get("channel_details").get("peer_host").asText();
-	    	
-	    	try{
-		    	startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
-			    //System.out.println(name + ", " + host + ", " + startup_time);
+		for(int i=0; i<consumers.size(); i++){
+			String host = consumers.get(i).get("channel_details").get("peer_host").asText();
+			
+			//Make sure we use the public IP for local software servers 
+			if(host.equals("127.0.0.1") || host.equals("localhost")){
+				host = Utility.getLocalHostIP();
+			}
 
-		    	synchronized(software_servers){
-			    	if(!software_servers.containsKey(host) || software_servers.get(host) != startup_time){
-			    		System.out.println("[Steward]: Adding " + host);
-			    		UPDATED = true;
+			hosts.add(host);
+		}
 
-			    		//Get applications on server
-			    		applications = queryEndpoint("http://" + softwareserver_authentication + host + ":8182/applications");
-			    		iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
-			    		software_servers.put(host, startup_time);
-			    	}
-		    	}
-	    	}catch(NumberFormatException e) {
-					//e.printStackTrace();
+		for(String host: hosts){
+			try{
+				startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
+
+				synchronized(software_servers){
+					if(!software_servers.containsKey(host) || software_servers.get(host) != startup_time){
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
+						UPDATED = true;
+
+						//Get applications on server
+						applications = queryEndpoint("http://" + softwareserver_authentication + host + ":8182/applications");
+						iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
+						software_servers.put(host, startup_time);
+					}
 				}
-	    }
-	  }
+			}catch(NumberFormatException e){
+				//e.printStackTrace();
+			}
+		}
 		
 		if(UPDATED) iograph.save("tmp/iograph.txt");
 	}
 	
 	/**
-	 * Checks on Software Servers to see if they are still alive (removes them from I/O-graph).
+	 * Discover Software Servers pushing info to a seperate regristration RabbitMQ bus (adds them to I/O-graph).
 	 */
-	public void heartbeat()
+	public void discoveryAMQ_push()
+	{
+		final String QUEUE_NAME = ss_registration_queue_name;
+		ObjectMapper mapper = new ObjectMapper();
+		final QueueingConsumer consumer = new QueueingConsumer(channel);
+
+		try{
+			channel.queueDeclare(QUEUE_NAME, true, false, false, null);
+			channel.basicQos(1);		//Fetch only one message at a time.
+			channel.basicConsume(QUEUE_NAME, false, consumer);
+		}catch(com.rabbitmq.client.AlreadyClosedException e){		//Reconnect and set channel properly. Return to get other values properly set.
+			connectToRabbitmq();
+			return;
+		}catch(Exception e){e.printStackTrace();}
+
+		QueueingConsumer.Delivery delivery;
+
+		while(true){
+			//Wait for next message
+			try{
+				delivery = consumer.nextDelivery();
+				boolean UPDATED = false;
+
+				try{
+					JsonNode applications = mapper.readValue(delivery.getBody(), JsonNode.class);
+					String host = applications.get(0).get("unique_id_string").asText();
+					long now = System.currentTimeMillis();
+
+					if(!software_servers.containsKey(host)){
+						//System.out.println("disc: applications: '" + applications.toString() + "'");
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Adding " + host);
+						UPDATED = true;
+
+						iograph.addGraph(new IOGraph<String,SoftwareServerApplication>(applications, host));
+						//System.out.println("disc: iograph.printEdgeInformation():");
+						//iograph.printEdgeInformation();
+					}else{
+						//System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Updating timestamp of " + host);
+					}
+
+					software_servers.put(host, now);
+					channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+
+					if(UPDATED) iograph.save("tmp/iograph.txt");
+				}catch(Exception e) {e.printStackTrace();}
+			}catch(Exception e){
+				e.printStackTrace();
+				break;
+			}
+		}
+	}
+
+	/**
+	 * Checks on Software Servers to see if they are still alive by hitting their 'alive' andpoint (removes them from I/O-graph if not).
+	 */
+	public void heartbeat_pull()
 	{
 		Set<String> hosts = null;
 		String host = null;
@@ -428,7 +651,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	    	startup_time = Long.parseLong(SoftwareServerRESTUtilities.queryEndpoint("http://" + softwareserver_authentication + host + ":8182/alive"));
 	  	}catch(NumberFormatException e){
 	  		synchronized(software_servers){
-		  		System.out.println("[Steward]: Dropping " + host);
+		  		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Dropping " + host);
 		  		UPDATED = true;
 		  		
 	  			iograph.removeEdges(host);
@@ -437,6 +660,29 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	  	}
 		}
 		
+		if(UPDATED) iograph.save("tmp/iograph.txt");
+	}
+
+	/**
+	 * Checks on Software Servers leaving heartbeats on the regristration queue to see if they are still alive (removes them from I/O-graph if not).
+	 */
+	public void heartbeat_push()
+	{
+		long now = System.currentTimeMillis();
+		boolean UPDATED = false;
+
+		for(Map.Entry<String, Long> entry : software_servers.entrySet()){
+			String host = entry.getKey();
+			Long lastTimeSeen = entry.getValue();
+
+			if((now - lastTimeSeen) >= heartbeat){
+				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Dropping " + host + ", last time seen: " + (new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy")).format(new Date(lastTimeSeen)));
+				UPDATED = true;
+				iograph.removeEdges(host);
+				software_servers.remove(host);
+			}
+		}
+
 		if(UPDATED) iograph.save("tmp/iograph.txt");
 	}
 
@@ -450,16 +696,21 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode message;
 		int job_id, step, step_status;
-		String polyglot_ip, polyglot_auth = "", input, application, output_format, output_path;
+		String input_file, output_file;
+		String email, bd_host = "", bd_token = "", type = "";
+		String polyglot_auth = "", input, application, output_format, output_path;
 		boolean MULTIPLE_EXTENSIONS;	//Was a path found for an input with multiple extensions
 		
+		if(polyglot_username != null && polyglot_password != null){
+			polyglot_auth = polyglot_username + ":" + polyglot_password;
+		}
+
 		try{
 			while(cursor.hasNext()){
 				document = cursor.next();
 				//polyglot_ip = InetAddress.getLocalHost().getHostAddress();
-				polyglot_ip = Utility.getLocalHostIP();
-				if(polyglot_username != null && polyglot_password != null) polyglot_auth = polyglot_username + ":" + polyglot_password;
 				job_id = Integer.parseInt(document.get("job_id").toString());
+				email = document.get("email").toString();
 				MULTIPLE_EXTENSIONS = Boolean.parseBoolean(document.get("multiple_extensions").toString());
 				step = Integer.parseInt(document.get("step").toString());
 				step_status = Integer.parseInt(document.get("step_status").toString());
@@ -479,38 +730,78 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 						application = ((BasicDBObject)((BasicDBList)document.get("path")).get(step)).get("application").toString();
 						output_format = ((BasicDBObject)((BasicDBList)document.get("path")).get(step)).get("output").toString();
 						
-						System.out.println("[Steward]: submitting Job-" + job_id + "'s next step, " + application + "->" + output_format);
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward] [" + job_id + "]: Submitting job-" + job_id + "'s next step, " + Utility.getFilename(input) + "->" + output_format + " via " + application);
 						
 						//Build message
 						message = mapper.createObjectNode();
 						message.put("polyglot_ip", polyglot_ip);
 						message.put("polyglot_auth", polyglot_auth);
 						message.put("job_id", job_id);
+						message.put("step", step);
 						message.put("input", input);
 						message.put("application", application);
 						message.put("output_format", output_format);
 						
 						//Submit the next step for execution
-				    Connection connection = factory.newConnection();
-				    Channel channel = connection.createChannel();
-				    channel.queueDeclare(application, true, false, false, null);
-				    channel.basicPublish("", application, MessageProperties.PERSISTENT_TEXT_PLAIN, message.toString().getBytes());
-				    channel.close();
-				    connection.close();
+						channel.queueDeclare(application, true, false, false, null);
+						channel.basicPublish("", application, MessageProperties.PERSISTENT_TEXT_PLAIN, message.toString().getBytes());
 						
 						//Update the job entry
 						document.put("step", step);
 						document.put("step_status", 0);
 						collection.update(new BasicDBObject().append("job_id", job_id), document);
 					}else{
+						if(email.contains(",")){	//Split out brown dog host and token
+							Vector<String> strings = Utility.split(email, ',');
+							email = strings.get(0);
+							bd_host = strings.get(1);
+							bd_token = strings.get(2);
+							type = strings.get(3);
+						}
+
 						output_path = document.get("output_path").toString();
 						output_format = document.get("output_format").toString();
 						Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(document.get("input").toString(), MULTIPLE_EXTENSIONS) + "." + output_format + ".url", "[InternetShortcut]\nURL=" + URLDecoder.decode(input, "UTF-8"));
 						collection.remove(document);
-						System.out.println("[Steward]: Job-" + job_id + " completed!, " + URLDecoder.decode(input, "UTF-8"));
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward] [" + job_id + "]: Job-" + job_id + " completed, result hosted at " + URLDecoder.decode(input, "UTF-8"));
+
+						if(email != null && !email.isEmpty()){
+							Properties properties = new Properties();
+							Session session = Session.getDefaultInstance(properties, null);
+							Message msg = new MimeMessage(session);
+							String msg_text = "";
+
+							msg.addRecipient(Message.RecipientType.TO, new InternetAddress(email));
+							msg.setFrom(new InternetAddress("\"Brown Dog\" <devnull@ncsa.illinois.edu>"));
+							msg.setSubject("Brown Dog Conversion Completed");
+							
+							input_file = document.get("input").toString();
+							output_file = input;
+				
+							if(type.equals("GET") && input_file.endsWith("?mail=true")){	//TODO: this doesn't seem to be a good way of doing this!
+								input_file = input_file.substring(0, input_file.indexOf("?mail=true")); 
+							}
+	
+							if(!bd_host.isEmpty() && !bd_token.isEmpty()){	//Rewrite URLs if through Fence API gateway
+								if(type.equals("POST")) input_file = bd_host + "/dap" + input_file.substring(input_file.indexOf("/file/")) + "?token=" + bd_token;
+								output_file = bd_host + "/dap" + output_file.substring(output_file.indexOf("/file/")) + "?token=" + bd_token;
+							}
+	
+							msg_text += "Job-" + job_id + "\n";
+							msg_text += "Input file: " + input_file + "\n";
+							msg_text += "Output file: " + output_file;
+							msg.setText(msg_text);
+
+							Transport.send(msg);
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward] [" + job_id + "]: Emailed result to " + email);
+						}
 					}
 				}
 			}
+		}catch(com.rabbitmq.client.AlreadyClosedException e){
+			// If the connection is closed, re-create the connection and channel. There seems no need to call connection.close() as it's already closed.
+			// Other types of exceptions are ConsumerCancelledException, JsonRpcException, MalformedFrameException, MissedHeartbeatException, PossibleAuthenticationFailureException, ProtocolVersionMismatchException, TopologyRecoveryException. This AlreadyClosedException occured multiple types and haven't seen other types, so handle this for now. Can add handling of other exceptions while we see them.
+			connectToRabbitmq();
 		}catch(Exception e){
 			e.printStackTrace();
 		}finally{
@@ -549,10 +840,11 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
   		public void run(){
   			while(true){
 					try{	//If rabbitmq goes down it will throw an excpetion
-  					discoveryAMQ();
+  					discoveryAMQ_push();
 					}catch(Exception e) {e.printStackTrace();}
-
-  				Utility.pause(1000);
+					
+					//For push, changed from 30 to 3 seconds since Polyglot waits on msgs in the registration queue. Pause 3 seconds to throttle exception handling just in case there are other types of exceptions than RabbitMQ reboot. For pulling 30 seconds is reasonable.
+  				Utility.pause(3000);
   			}
   		}
   	}.start();
@@ -562,7 +854,9 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
   		public void run(){
   			while(true){
   				process_jobs();
-  				Utility.pause(100);
+					
+					//It was 100 -- 0.1 s, too frequent to cause high CPU usage. Changed to 3000 - 3 seconds.
+  				Utility.pause(3000);
   			}
   		}
   	}.start();
@@ -571,7 +865,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
   	new Thread(){
   		public void run(){
 	  		while(true){
-	  			heartbeat();
+	  			heartbeat_push();
 	  			Utility.pause(heartbeat);
   			}
   		}
@@ -617,7 +911,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		BufferedReader reader;
 		String command, line;
 	
-		System.out.println("[Steward]: Purging mongo & rabbitmq ...");
+		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Purging mongo & rabbitmq ...");
 	
 		//Purge mongo
 		command = "mongo polyglot --eval \"db.steward.drop()\"";

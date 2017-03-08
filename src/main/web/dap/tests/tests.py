@@ -18,6 +18,7 @@ from pymongo import MongoClient
 failure_report = ''
 enable_threads = False
 threads = 0
+timeout = 300 # 5 minutes
 lock = threading.Lock()
 total_success = 0
 
@@ -277,7 +278,7 @@ def convert(host, input_filename, output, output_path):
 	api_call = 'http://' + host + ':8184/convert/' + output + '/' + urllib.quote_plus(input_filename)
 
 	try:
-		r = requests.get(api_call, auth=(username, password), headers=headers)
+		r = requests.get(api_call, auth=(username, password), headers=headers, timeout=timeout)
 
 		if(r.status_code != 404):
 			result = r.text

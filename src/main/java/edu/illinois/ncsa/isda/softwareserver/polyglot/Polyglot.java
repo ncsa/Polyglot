@@ -26,6 +26,57 @@ public abstract class Polyglot
 	public abstract IOGraph<String,String> getDistributedInputOutputGraph();
 
 	/**
+	 * Get the outputs available for the given input type, pruning any that requre more than n hops.  Should be overridden, by default returns all possible outputs.
+	 * @param input the input type
+	 * @param n the maximum number of hops
+	 * @return the list of outputs
+	 */
+	public TreeSet<String> getOutputs(String input, int n)
+	{	
+		return getOutputs(input);
+	}
+	
+	/**
+	 * Convert a files format.  Should be overriden, by default searches for a conversion path.
+	 * @param application the specific application to use
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convert(String application, String input, String output_path, String output_format)
+	{
+		return convert(input, output_path, output_format);
+	}
+	
+	/**
+	 * Convert a files format and email the result.  Should be overriden, by default searches for a conversion path.
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @param email address to send result to
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convertAndEmail(String input, String output_path, String output_format, String email)
+	{
+		return convert(input, output_path, output_format);
+	}
+	
+	/**
+	 * Convert a files format and email the result.  Should be overriden, by default searches for a conversion path.
+	 * @param application the specific application to use
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @param email address to send result to
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convertAndEmail(String application, String input, String output_path, String output_format, String email)
+	{
+		return convert(application, input, output_path, output_format);
+	}
+
+	/**
 	 * Convert a files format (asynchronously).
 	 * @param input_filename the absolute name of the input file
 	 * @param output_path the output path

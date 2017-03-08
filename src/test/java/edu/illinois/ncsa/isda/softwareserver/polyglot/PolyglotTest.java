@@ -69,7 +69,7 @@ public class PolyglotTest
 		//Run the test
 		Utility.pause(2000);
 		String result = Utility.postFile("http://localhost:8184/convert/gif/", "data/demo/Lenna.png", "text/plain");
-		Utility.pause(5000);
+		Utility.pause(10000);
 		
 		//Check if the output endpoint is available
 		try{
@@ -82,7 +82,7 @@ public class PolyglotTest
 		
 		//Download the output of the conversion
 		Utility.downloadFile("data/tmp/", "Lenna2", result);
-		
+
 		try{
 			assertTrue("Conversion failed", Utility.existsNotEmptyAndRecent("data/tmp/Lenna2.gif", 10000));
 			System.out.println("Conversion OK");

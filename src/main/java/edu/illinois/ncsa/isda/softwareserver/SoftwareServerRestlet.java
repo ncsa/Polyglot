@@ -2,6 +2,7 @@ package edu.illinois.ncsa.isda.softwareserver;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Application;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerRESTUtilities.*;
+import edu.illinois.ncsa.isda.softwareserver.datawolf.WorkflowUtilities;
 import kgm.image.ImageUtility;
 import kgm.utility.*;
 import java.util.*;
@@ -11,7 +12,9 @@ import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
 import java.lang.management.*;
+import java.text.*;
 import javax.servlet.*;
+import javax.xml.bind.DatatypeConverter;
 import org.json.JSONArray;
 import org.restlet.*;
 import org.restlet.resource.*;
@@ -45,7 +48,8 @@ import org.apache.commons.validator.routines.InetAddressValidator;
 public class SoftwareServerRestlet extends ServerResource
 {
 	private static SoftwareServer server;
-	private static TreeMap<String,String> accounts = new TreeMap<String,String>();	
+	private static TreeMap<String,String> accounts = new TreeMap<String,String>();
+	private static String authentication_url = null;
 	private static Vector<Application> applications;
 	private static Vector<TreeSet<TaskInfo>> application_tasks;
 	private static TreeMap<String,Application> alias_map = new TreeMap<String,Application>();
@@ -54,14 +58,17 @@ public class SoftwareServerRestlet extends ServerResource
 	private static String context = "";
 	private static boolean GUESTS_ENABLED = false;
 	private static boolean ADMINISTRATORS_ENABLED = false;
+	private static boolean CHECKIN_URL = false;
 	private static boolean ATOMIC_EXECUTION = true;
 	private static boolean USE_OPENSTACK_PUBLIC_IP = false;
 	private static String openstack_public_ipv4_url = "";		//Default value is "http://169.254.169.254/2009-04-04/meta-data/public-ipv4".
 	private static String public_ip = "";
+	// A unique ID for the SS that's put in the registration msg, now public_ip:pid:<last-8-chars-of-UUID-randomUUID>.
+	private static String UNIQUE_ID_STRING = "";
 	private static String external_public_ip_services = "";
 	private static String download_method = "";
 	private static Component component;
-	
+
 	/**
 	 * Initialize.
 	 */
@@ -321,7 +328,8 @@ public class SoftwareServerRestlet extends ServerResource
 				//file = SoftwareServer.getFilename(Utility.getFilename(file));
 				file = getFilename(file);
 			}else{																											//Download remote files
-				System.out.print("[localhost]: Downloading " + file + " ");
+				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading \033[94m" + file + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+				SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading " + file + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...", server.getCachePath() + ".session_" + session + ".log");
 					
 				if(file.contains("@")){
 					String[] strings = file.split("@");
@@ -336,13 +344,14 @@ public class SoftwareServerRestlet extends ServerResource
 				if(download_method.equals("wget")){
 					try{
 						if(username != null && password != null){
-							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false);
+							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
 						}else{
-							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false);
+							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
 						}
 
 						if(!DOWNLOAD_COMPLETED){
-							System.out.println("[localhost]: Download failed!");
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + file + " failed");
+							SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + file + " failed", server.getCachePath() + ".session_" + session + ".log");
 						}
 					}catch(Exception e){e.printStackTrace();}
 				}else if(download_method.equals("nio")){
@@ -367,12 +376,15 @@ public class SoftwareServerRestlet extends ServerResource
 			}else{
 				result = server.executeTask("localhost", session, task);
 			}
-	
+							
 			//Create empty output if not created (e.g. when no conversion path was found)
 			if(result == null){
 				result = server.getCachePath() + session + "_" + Utility.getFilenameName(file) + "." + format;
 				Utility.touch(result);
 			}
+			
+			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at \033[94m" + result + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
+			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at " + result + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")", server.getCachePath() + ".session_" + session + ".log");
 
 			//Move result to public folder
 			if(!Utility.isDirectory(result)){
@@ -394,6 +406,12 @@ public class SoftwareServerRestlet extends ServerResource
   			corsfilter.setAllowedCredentials(true);
 				component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", corsfilter);
 			}
+			
+			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder");
+			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder", server.getCachePath() + ".session_" + session + ".log");
+		
+			//Move log file		
+			Utility.copyFile(server.getCachePath() + ".session_" + session + ".log", public_path + session + "_" + getFilename(result) + ".log");
 		}
 	}
 	
@@ -534,8 +552,10 @@ public class SoftwareServerRestlet extends ServerResource
 								session = server.getSession();
 								result = Utility.endSlash(localhost) + "file/" + session + "_" + Utility.getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
 							}
-
+				
 							if(GUESTS_ENABLED) result = result.substring(0, 7) + "guest:guest@" + result.substring(7);
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Setting session to session-" + session + ", result will be at \033[94m" + result + "\033[0m");
+							SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Setting session to session-" + session + ", result will be at " + result, server.getCachePath() + ".session_" + session + ".log");
 
 							executeTaskLater(session, application_alias, task, file, format);
 							
@@ -604,13 +624,28 @@ public class SoftwareServerRestlet extends ServerResource
 					}else{
 						MetadataService metadata_service = new MetadataService();
 						MediaType media_type = metadata_service.getMediaType(Utility.getFilenameExtension(part1));
-						if(media_type == null) media_type = MediaType.MULTIPART_ALL;
-							
+
+						if(media_type == null){
+							if(Utility.getFilenameExtension(part1).equals("log")){
+								media_type = MediaType.TEXT_PLAIN;
+							}else{
+								media_type = MediaType.MULTIPART_ALL;
+							}
+						}
+						
 						FileRepresentation file_representation = new FileRepresentation(file, media_type);
 						//file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
 						return file_representation;
 					}
-				}else{
+				}else if(Utility.getFilenameExtension(part1).equals("wf")) {
+					String logfile = file.replace("wf", "log");
+					if(Utility.exists(logfile)) {
+						return new StringRepresentation(WorkflowUtilities.parseLogfile(logfile), MediaType.TEXT_HTML);
+					} else {
+						setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
+						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
+					}
+				}else {
 					setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
 					return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 				}
@@ -635,62 +670,7 @@ public class SoftwareServerRestlet extends ServerResource
 			//return new StringRepresentation("yes", MediaType.TEXT_PLAIN);
 			return new StringRepresentation(Long.toString(initialization_time), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("applications")){
-			Application application;
-			Operation operation;
-			JSONArray json = new JSONArray();
-			JSONObject application_info;
-			JSONArray conversions_list;
-			JSONObject conversions;
-			JSONArray inputs, outputs;
-			
-			try{
-				for(int a=0; a<applications.size(); a++){
- 			  	application = applications.get(a);
-					application_info = new JSONObject();
-					application_info.put("alias", application.alias);
-					conversions_list = new JSONArray();
-
-     			for(int o=0; o<application.operations.size(); o++){
-       			operation = application.operations.get(o);
-						conversions = new JSONObject();
-						inputs = new JSONArray();
-						outputs = new JSONArray();
-
-       			if(!operation.inputs.isEmpty()){
-         			if(!operation.outputs.isEmpty()){   //Conversion operation
-           			for(int i=0; i<operation.inputs.size(); i++){
-             			inputs.put(operation.inputs.get(i));
-								}
-
-             		for(int j=0; j<operation.outputs.size(); j++){
-               		outputs.put(operation.outputs.get(j));
-           			}
-         			}else{                              //Open/Import operation
-               	for(int j=0; j<operation.inputs.size(); j++){
-                	inputs.put(operation.inputs.get(j));
-								}
-           			
-								for(int i=0; i<application.operations.size(); i++){
-             			if(application.operations.get(i).inputs.isEmpty() && !application.operations.get(i).outputs.isEmpty()){
-                 		for(int k=0; k<application.operations.get(i).outputs.size(); k++){
-                   		outputs.put(application.operations.get(i).outputs.get(k));
-               			}
-             			}
-           			}
-         			}
-					
-							conversions.put("inputs", inputs);
-							conversions.put("outputs", outputs);
-							conversions_list.put(conversions);
-       			}
-					}
-				
-					application_info.put("conversions", conversions_list);
-					json.put(application_info);
-				}
-			}catch(Exception e) {e.printStackTrace();}
-			
-			return new JsonRepresentation(json);
+		    return new JsonRepresentation(getApplicationsJson());
 		}else if(part0.equals("busy")){
 			return new StringRepresentation("" + server.isBusy(), MediaType.TEXT_PLAIN);
 		}else if(part0.equals("processors")){
@@ -747,6 +727,9 @@ public class SoftwareServerRestlet extends ServerResource
 		//localhost = getReference().getBaseRef().toString();
 		//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
 		localhost = public_ip;
+							
+		System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Setting session to session-" + session);
+		SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Setting session to session-" + session, server.getCachePath() + ".session_" + session + ".log");
 				
 		if(FORM_POST || TASK_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
@@ -952,6 +935,8 @@ public class SoftwareServerRestlet extends ServerResource
 		String rabbitmq_username = null;
 		String rabbitmq_password = null;
 		boolean rabbitmq_WAITTOACK = true;
+		String registration_queue_name = "SS-registration";
+		int registration_msg_ttl = 5000;
 		
 		//Load configuration file
 	  try{
@@ -972,6 +957,7 @@ public class SoftwareServerRestlet extends ServerResource
 	          	distributed_server = value;
 	          }else if(key.equals("RabbitMQURI")){
 	          	rabbitmq_uri = value;
+							System.out.println("Setting RabbitMQURI to " + rabbitmq_uri);
 	          }else if(key.equals("RabbitMQServer")){
 	          	rabbitmq_server = value;
 	          }else if(key.equals("RabbitMQVirtualHost")){
@@ -982,6 +968,12 @@ public class SoftwareServerRestlet extends ServerResource
 	          	rabbitmq_password = value;
 	          }else if(key.equals("RabbitMQWaitToAcknowledge")){
 	          	rabbitmq_WAITTOACK = Boolean.valueOf(value);
+	          }else if(key.equals("RegistrationQueueName") || key.equals("SSRegistrationQueueName")){
+	          	registration_queue_name = value;
+	          }else if(key.equals("RegistrationMsgTTL") || key.equals("SSRegistrationMsgTTL")){
+	  	        registration_msg_ttl = Integer.valueOf(value);
+  			  	}else if(key.equals("AuthenticationEndpoint")){
+							authentication_url = value;
 	          }else if(key.equals("Authentication")){
 	  	        last_username = value.substring(0, value.indexOf(':')).trim();
 	  	        last_password = value.substring(value.indexOf(':')+1).trim();
@@ -995,24 +987,33 @@ public class SoftwareServerRestlet extends ServerResource
 	          	ADMINISTRATORS_ENABLED = Boolean.valueOf(value);
 	          }else if(key.equals("DownloadMethod")){
 	          	download_method = value;
+	          }else if(key.equals("CheckinURL")){
+	          	CHECKIN_URL = Boolean.valueOf(value);
 	          }else if(key.equals("AtomicExecution")){
 	          	ATOMIC_EXECUTION = Boolean.valueOf(value);
 	          }else if(key.equals("UseOpenStackPublicIP")){
 							USE_OPENSTACK_PUBLIC_IP = Boolean.valueOf(value);
-							System.out.println("[localhost]: USE_OPENSTACK_PUBLIC_IP = " + USE_OPENSTACK_PUBLIC_IP);
+							//System.out.println("Setting USE_OPENSTACK_PUBLIC_IP to " + USE_OPENSTACK_PUBLIC_IP);
 	          }else if(key.equals("OpenStackPublicIPv4URL")){
 							openstack_public_ipv4_url = value;
-							System.out.println("[localhost]: Openstack Public IPv4 URL = " + openstack_public_ipv4_url);
+							//System.out.println("Setting Openstack Public IPv4 URL to " + openstack_public_ipv4_url);
 	          }else if(key.equals("ExternalPublicIPServices")){
 							external_public_ip_services = value;
-							System.out.println("[localhost]: External Public IP Services = " + external_public_ip_services);
+							//System.out.println("Setting External Public IP Services to " + external_public_ip_services);
+	          }else if(key.equals("PublicIP") || key.equals("PublicIp")){
+	          	public_ip = value;
 	          }
 	        }
 	      }
 	    }
 	    
 	    ins.close();
-	  }catch(Exception e) {e.printStackTrace();}
+	  }catch(Exception e) {
+			e.printStackTrace();
+			
+			//Hard stop. We should fix the config errors. :)
+			System.exit(1);
+	  }
 		
 		try{
 			if(USE_OPENSTACK_PUBLIC_IP){
@@ -1025,22 +1026,33 @@ public class SoftwareServerRestlet extends ServerResource
 						ip = Utility.readURL(urlList[i], "text/plain");
 
 						if(InetAddressValidator.getInstance().isValid(ip)){
-							System.out.println("[localhost]: Public IP " + ip + " resolved by '" + urlList[i] + "'.");
+							System.out.println("Public IP " + ip + " resolved by '" + urlList[i] + "'.");
 							break;
 						}
 					}
 				}
 
-				public_ip = "http://" + ip + ":8182";
-	    }else{
-				public_ip = "http://" + Utility.getLocalHostIP() + ":8182";
+				public_ip = ip;
+	    }else if(public_ip.equals("")){
+				public_ip = Utility.getLocalHostIP();
 			}
+
+ 			//Create a unique ID for the SS to put in a registration msg, since POL does not use an IP address to query a SS any more.
+			//Now <public_ip>:<pid>:<last-8-chars-of-UUID-randomUUID>.
+			String orig_public_ip = public_ip;
+			String pidStr = ManagementFactory.getRuntimeMXBean().getName().split("@")[0];
+			String uuidStr = UUID.randomUUID().toString();
+			int uuidStrLen = uuidStr.length();
+			UNIQUE_ID_STRING = orig_public_ip + ":" + pidStr + ":" + uuidStr.substring(uuidStrLen-8, uuidStrLen);
+ 
+			if(!public_ip.startsWith("http://")) public_ip = "http://" + public_ip;
+			if(!public_ip.endsWith(":8182")) public_ip = public_ip + ":8182";
 	  }catch(Exception e){
 			System.out.println("Error in getting public IP: " + e.getMessage());
 			//e.printStackTrace();
 	  }
 
-	  System.out.println("[localhost]: Public IP = " + public_ip);
+	  System.out.println("Setting Public IP to " + public_ip);
 
 	  //Initialize and start the service
 	  initialize();
@@ -1082,33 +1094,66 @@ public class SoftwareServerRestlet extends ServerResource
 							component.getDefaultHost().attach("/file/" + files[i].getName() + "/", corsfilter);
 						}
 					}
-			
-					if(!accounts.isEmpty()){
+
+					if(!accounts.isEmpty() || (authentication_url != null)) {
 						ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
-						MapVerifier verifier = new MapVerifier();
+
+						SecretVerifier verifier = new SecretVerifier(){
+							@Override
+							public int verify(String username, char[] password){
+								//Try local accounts first
+								if(!accounts.isEmpty()){
+									if(accounts.containsKey(username) && compare(password, accounts.get(username).toCharArray())){
+										return RESULT_VALID;
+									}
+								}
+
+								//Try authentication URL next
+								if(authentication_url != null){
+									try{
+										URL url = new URL(authentication_url);
+										URLConnection connection = url.openConnection();
+										connection.setDoOutput(true);
+
+										//Add basic auth header
+										String auth = username + ":" + new String(password);
+										connection.setRequestProperty("Authorization", "Basic " + DatatypeConverter.printBase64Binary(auth.getBytes()));
+										BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+										String userinfo = br.readLine();
+										br.close();
+
+										return RESULT_VALID;
+									}catch(Exception e){
+										return RESULT_INVALID;
+									}
+								}
+								
+								//In case not in local account and authentication URL wasn't set
+								return RESULT_INVALID;
+							}
+						};
+					
+						//Check for admin account, if found with no users make authentication optional	
 						boolean FOUND_ADMIN = false;
 						boolean FOUND_USER = false;
-				
+
 						for(String username : accounts.keySet()){
 							if(username.toLowerCase().startsWith("admin")){
 								FOUND_ADMIN = true;
 							}else{
 								FOUND_USER = true;
 							}
-						
-							verifier.getLocalSecrets().put(username, accounts.get(username).toCharArray());
 						}
-					
+
 						if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
-					
 						guard.setVerifier(verifier);
 						guard.setNext(router);
-						
+
 						//Add a CORS filter to allow cross-domain requests
-  					CorsFilter corsfilter = new CorsFilter(getContext(), guard);
-  					corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
-  					//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
-  					corsfilter.setAllowedCredentials(false);
+						CorsFilter corsfilter = new CorsFilter(getContext(), guard);
+						corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+						//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+						corsfilter.setAllowedCredentials(false);
 
 						return corsfilter;
 					}else{
@@ -1132,7 +1177,7 @@ public class SoftwareServerRestlet extends ServerResource
 	 		final int port_final = port;
 	 		final String distributed_server_final = distributed_server;
 	  		  		
-	 		System.out.println("\nStarting distributed software restlet notification thread...\n");
+	 		System.out.println("Starting distributed software restlet notification thread");
 
 	  	new Thread(){
 	  		public void run(){
@@ -1154,7 +1199,77 @@ public class SoftwareServerRestlet extends ServerResource
 	 	
 	 	//Connect to RabbitMQ bus
 	 	if(rabbitmq_uri != null || rabbitmq_server != null){
-	 		SoftwareServerRESTUtilities.rabbitMQHandler(last_username, last_password, port, applications, rabbitmq_uri, rabbitmq_server, rabbitmq_vhost, rabbitmq_username, rabbitmq_password, rabbitmq_WAITTOACK);
+			SoftwareServerRESTUtilities.rabbitMQHandler(last_username, last_password, port, applications, rabbitmq_uri, rabbitmq_server, rabbitmq_vhost, rabbitmq_username, rabbitmq_password, rabbitmq_WAITTOACK, CHECKIN_URL, public_path);
 		}
+
+		//Create a thread to publish msgs to the registration queue.
+	 	if(rabbitmq_uri != null){
+			SoftwareServerRESTUtilities.registration(rabbitmq_uri, registration_queue_name, registration_msg_ttl, getApplicationsJson().toString());
+		}
+
+		//A gap before message streams start.
+		Utility.pause(1000);
+		System.out.println();
+	}
+
+	public static JSONArray getApplicationsJson()
+	{
+		Application application;
+		Operation operation;
+		JSONArray json = new JSONArray();
+		JSONObject application_info = null;
+		JSONArray conversions_list;
+		JSONObject conversions;
+		JSONArray inputs, outputs;
+                        
+		try{
+			for(int a=0; a<applications.size(); a++){
+				application = applications.get(a);
+				application_info = new JSONObject();
+				application_info.put("alias", application.alias);
+				conversions_list = new JSONArray();
+
+				for(int o=0; o<application.operations.size(); o++){
+					operation = application.operations.get(o);
+					conversions = new JSONObject();
+					inputs = new JSONArray();
+					outputs = new JSONArray();
+
+					if(!operation.inputs.isEmpty()){
+						if(!operation.outputs.isEmpty()){   //Conversion operation
+							for(int i=0; i<operation.inputs.size(); i++){
+								inputs.put(operation.inputs.get(i));
+							}
+
+							for(int j=0; j<operation.outputs.size(); j++){
+								outputs.put(operation.outputs.get(j));
+							}
+						}else{                              //Open/Import operation
+							for(int j=0; j<operation.inputs.size(); j++){
+								inputs.put(operation.inputs.get(j));
+							}
+                                
+							for(int i=0; i<application.operations.size(); i++){
+								if(application.operations.get(i).inputs.isEmpty() && !application.operations.get(i).outputs.isEmpty()){
+									for(int k=0; k<application.operations.get(i).outputs.size(); k++){
+										outputs.put(application.operations.get(i).outputs.get(k));
+									}
+								}
+							}
+						}
+                                        
+						conversions.put("inputs", inputs);
+						conversions.put("outputs", outputs);
+						conversions_list.put(conversions);
+					}
+				}
+                                
+				application_info.put("conversions", conversions_list);
+				application_info.put("unique_id_string", UNIQUE_ID_STRING);		//Added a field to uniquely identify the SS, since POL does not use the IP address to query the SS any more.
+				json.put(application_info);
+			}
+		}catch(Exception e) {e.printStackTrace();}
+
+		return json;
 	}
 }

@@ -1,0 +1,4 @@
+Use this file to build the ncsa/ss-imagemagick docker image and upload it to the docker hub.
+
+	docker build -t ncsa/converters-imagemagick .
+	docker push ncsa/converters-imagemagick

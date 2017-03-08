@@ -5,6 +5,7 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.concurrent.atomic.*;
+import java.text.*;
 import org.apache.commons.io.*;
 
 /**
@@ -197,6 +198,8 @@ public class SoftwareServer implements Runnable
   			}
   		}
   	}
+
+		System.out.println();
 	}
 
 	/**
@@ -206,6 +209,15 @@ public class SoftwareServer implements Runnable
 	public int getMaxOperationTime()
 	{
 		return max_operation_time;
+	}
+
+	/**
+	 * Set the cache path
+	 * @param path the path to use
+	 */
+	public void setCachePath(String path)
+	{
+		cache_path = path;
 	}
 
 	/**
@@ -310,7 +322,7 @@ public class SoftwareServer implements Runnable
 	    	
 	    	if(application.monitor_operation != null){
 	    		if(!STARTED_MONITORS) System.out.println();
-	    		System.out.println("Starting monitor for " + application.alias + "...");
+	    		System.out.println("Starting monitor for " + application.alias);
 	    		Script.execute(application.monitor_operation.script);
 	    		STARTED_MONITORS = true;
 	    	}
@@ -409,6 +421,7 @@ public class SoftwareServer implements Runnable
   	String source, target, temp;
   	String temp_target, temp_target_path;
   	String command = "";
+		String command_output = "";
   	String result = null;
   	boolean COMMAND_COMPLETED;
   	boolean TASK_COMPLETED = false;
@@ -462,17 +475,26 @@ public class SoftwareServer implements Runnable
 				if(WINDOWS) temp = Utility.windowsPath(temp);
 		  
 		  	command = Script.getCommand(operation.script, source, temp_target != null ? temp_target : target, temp);
-		  	System.out.print("[" + host + "](" + session + "): " + command + " ");
+				System.out.print("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Executing, " + command + " ...");
+				SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Executing, " + command + " ...", cache_path + ".session_" + session + ".log");
 		  	
 		  	//Execute the command (note: this script execution has knowledge of other scripts, e.g. monitor and kill)
 		  	if(!command.isEmpty()){
-		  		COMMAND_COMPLETED = SoftwareServerUtility.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
-			  	
+		  		command_output = SoftwareServerUtility.executeAndWait(command, max_operation_time, HANDLE_OPERATION_OUTPUT, SHOW_OPERATION_OUTPUT);
+					COMMAND_COMPLETED = command_output != null;
+			
+					if(command_output != null && !command_output.isEmpty()){
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Printing execution output ...\n" + command_output.trim());
+						SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Printing execution output ...\n" + command_output.trim(), cache_path + ".session_" + session + ".log");
+					}
+	
           if(!COMMAND_COMPLETED){
             if(i < (task_attempts-1)){
-              System.out.println("retrying...");
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Retrying, " + command + " ...");
+							SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Retrying, " + command + " ...", cache_path + ".session_" + session + ".log");
             }else{
-              System.out.println("killing...");
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Killing, " + command + " ...");
+							SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Killing, " + command + " ...", cache_path + ".session_" + session + ".log");
             }  
             
           	if(application.kill_operation != null){
@@ -521,7 +543,8 @@ public class SoftwareServer implements Runnable
   		application = applications.get(itr.next());
   		
 	    if(application.exit_operation != null){
-				System.out.println("exiting " + application.alias + "...");
+				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Exiting " + application.alias + " ...");
+				SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Exiting " + application.alias + " ...", cache_path + ".session_" + session + ".log");
 	      Script.executeAndWait(application.exit_operation.script);
 	    }
   	}
@@ -562,7 +585,7 @@ public class SoftwareServer implements Runnable
   	
   	//Notify a Polyglot steward
   	if(steward_server != null){
-  		System.out.println("\nStarting steward notification thread...");
+  		System.out.println("Starting steward notification thread");
   		
 	  	new Thread(){
 	  		public void run(){
@@ -585,7 +608,7 @@ public class SoftwareServer implements Runnable
 	  		}
 	  	}.start();
   	}else if(broadcast_group != null){
-   		System.out.println("\nStarting UDP broadcast thread...\n");
+   		System.out.println("Starting UDP broadcast thread");
 
 	  	new Thread(){
 	  		public void run(){
@@ -609,7 +632,7 @@ public class SoftwareServer implements Runnable
   	}
   	
   	//Begin accepting connections
-  	System.out.println("\nSoftware server is running...\n");
+  	System.out.println("Software server is running ...");
 		RUNNING = true;
 		
 		while(RUNNING){
@@ -854,21 +877,23 @@ public class SoftwareServer implements Runnable
 		//args = new String[]{"-test", "../../Data/Temp/PolyglotDemo"};
 
 		if(args.length > 0){
+			String filename, name, extension;
+			CachedFileData input_file, output_file;
+			Vector<Subtask> task = new Vector<Subtask>();
+			int session;
+				
+			server.waitUntilRunning();
+
 			if(args[0].equals("-test")){
 				String test_path = args[1] + "/";
 				TreeMap<String,String> test_files = new TreeMap<String,String>();
 				File folder = new File(test_path);
 				File[] folder_files = folder.listFiles();
-				String filename, name, extension;
 				Application application;
 				Operation operation;
 				int input_operation, input_extension, output_operation, output_extension;
-				CachedFileData input_file, output_file;
-				Vector<Subtask> task = new Vector<Subtask>();
 				String results = "";
 				
-				server.waitUntilRunning();
-	
 				//Read in test files
 				for(int i=0; i<folder_files.length; i++){
 					filename = folder_files[i].getName();
@@ -967,6 +992,54 @@ public class SoftwareServer implements Runnable
 				System.out.println("\nResults:");
 				System.out.print(results);
 				System.exit(0);
+			}else{
+				int application = -1, operation = -1;
+				session = 0;
+			
+				//Run a single job from the command line
+				if(args[0].equals("-nocache")){							//Run in a manner that doesn't move the original file
+					System.out.println("Running single job: " + args[1] + ", " + args[2] + ", " + args[3] + " on " + args[4] + " ...");
+
+					//Find application and operation indices
+					application = server.applications.indexOf(new Application(args[1]));
+					operation = server.applications.get(application).operations.indexOf(new Operation(args[2]));
+				
+					if(application != -1 && operation != -1){	
+						filename = args[4];
+						server.setCachePath(Utility.getFilenamePath(filename));
+						input_file = new CachedFileData(Utility.getFilename(filename));
+						input_file.setSessionPrefix(false);
+										
+						name = Utility.getFilenameName(filename);
+						extension = args[3];
+						output_file = new CachedFileData(name + "." + extension);
+						output_file.setSessionPrefix(false);
+
+						task.add(new Subtask(application, operation, input_file, output_file));
+						server.executeTaskAtomically("localhost", session, task);	//Use application index as the session
+					}
+				}else{																				//Run in normal manner
+					System.out.println("Runnging single job: " + args[0] + ", " + args[1] + ", " + args[2] + " on " + args[3] + "...");
+
+					//Find application and operation indices
+					application = server.applications.indexOf(new Application(args[0]));
+					operation = server.applications.get(application).operations.indexOf(new Operation(args[1]));
+				
+					if(application != -1 && operation != -1){	
+						filename = args[3];
+						input_file = new CachedFileData(new FileData(filename, true), session, server.cache_path);
+										
+						name = Utility.getFilenameName(filename);
+						extension = args[2];
+						output_file = new CachedFileData(name + "." + extension);
+
+						task.add(new Subtask(application, operation, input_file, output_file));
+						server.executeTaskAtomically("localhost", session, task);	//Use application index as the session
+					}
+				}
+	
+				System.out.println("Job complete.");
+				System.exit(1);
 			}
 		}
 	}

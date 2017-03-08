@@ -10,7 +10,9 @@ import java.net.*;
 import java.lang.*;
 import java.util.*;
 import java.util.concurrent.*;
+import java.text.*;
 import javax.servlet.*;
+import javax.xml.bind.DatatypeConverter;
 import org.restlet.*;
 import org.restlet.resource.*;
 import org.restlet.data.*;
@@ -26,6 +28,7 @@ import org.json.*;
 import org.restlet.service.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
+import org.apache.commons.lang3.*;
 import com.mongodb.*;
 
 /**
@@ -37,17 +40,20 @@ public class PolyglotRestlet extends ServerResource
 {
   private static Polyglot polyglot = new PolyglotStewardAMQ(false);
 	private static TreeMap<String,String> accounts = new TreeMap<String,String>();
+	private static String authentication_url = null;
 	private static String nonadmin_user = "";
 	private static int steward_port = -1;
 	private static String context = "";
 	private static int port = 8184;
 	private static boolean RETURN_URL = false;
+	private static boolean DOWNLOAD_SS_FILE = false;
 	private static boolean MONGO_LOGGING = false;
 	private static int mongo_update_interval = 2000;
 	private static boolean SOFTWARE_SERVER_REST_INTERFACE = false;
 	private static boolean PURGE_JOBS = false;
 	private static String download_method = "";
 	private static boolean HOST_POSTED_FILES = false;
+	private static boolean REDIRECT_TO_SOFTWARESERVER = false;
 	private static boolean NEW_TEMP_FOLDERS = true;
 	private static String root_path = "./";
 	private static String temp_path = root_path + "Temp";
@@ -122,10 +128,13 @@ public class PolyglotRestlet extends ServerResource
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
 		String part3 = (parts.size() > 3) ? parts.get(3) : "";
-		String client, file = null, output = null, input = null, result_file = null, result_url, url, type;
+		String client, application = null, file = null, output = null, input = null, result_file = null, result_url, url, type;
+		String bd_useremail = "", bd_host = "", bd_token = "";
 		String buffer;
+		Boolean MAIL = false;
 		Form form;
 		Parameter p;
+		int chain = -1;
 
 		//Parse endpoint	
 		if(part0.equals("convert")){
@@ -142,9 +151,26 @@ public class PolyglotRestlet extends ServerResource
 					client = getClientInfo().getAddress();
 					output = part1;
 					file = URLDecoder.decode(part2);
-					
+			
+					//Check if a specific application is requested
+					form = getRequest().getResourceRef().getQueryAsForm();
+        	p = form.getFirst("application"); if(p != null) application = p.getValue();
+        	p = form.getFirst("mail"); if(p != null) MAIL = Boolean.valueOf(p.getValue());
+
+					if(MAIL){
+						Series<Header> series = (Series<Header>)getRequestAttributes().get("org.restlet.http.headers");
+    				bd_useremail = series.getFirstValue("X-bd-username");
+    				bd_host = series.getFirstValue("Bd-host");
+    				bd_token = series.getFirstValue("Bd-access-token");
+						bd_useremail += "," + bd_host + "," + bd_token + ",GET";
+					}
+				
 					//Do the conversion
-					System.out.print("[" + client + "]: " + Utility.getFilename(file) + " -> " + output + "...");
+					if(application == null){
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+					}else{
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " using " + application + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+					}
 					
 					//Download URLs
 					if(!(polyglot instanceof PolyglotStewardAMQ)){
@@ -183,7 +209,11 @@ public class PolyglotRestlet extends ServerResource
 					if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
 						((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 					}else{
-						result_file = polyglot.convert(file, public_path, output);
+						if(application == null){
+							result_file = polyglot.convertAndEmail(file, public_path, output, bd_useremail);
+						}else{
+							result_file = polyglot.convertAndEmail(application, file, public_path, output, bd_useremail);
+						}
 
 						if(result_file.equals("404")){
 							setStatus(org.restlet.data.Status.CLIENT_ERROR_NOT_FOUND);
@@ -193,13 +223,15 @@ public class PolyglotRestlet extends ServerResource
 
 					if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;		//If a name wasn't suggested assume this.
 					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
+					int job_id = SoftwareServerRestlet.getSession(result_url);
 
 					if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 						request.setEndOfRequest(true);
-						System.out.println(" [Converting]");
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at \033[94m" + result_url + "\033[0m");
+						SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at " + result_url, public_path + result_file + ".log");
 					}else{
 						request.setEndOfRequest(false);
-						System.out.println(" [Failed]");
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " request for " + file + "->" + output + " failed.");
 					}
 					
 					requests.add(request);
@@ -229,6 +261,40 @@ public class PolyglotRestlet extends ServerResource
 							return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 						}
 					}
+				}
+			}
+		}else if(part0.equals("path")){		//Return the conversion path for the given output and input
+			if(part1.isEmpty()){
+				if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+					return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getOutputs()), MediaType.TEXT_PLAIN);
+				}else{
+					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getOutputs()), Utility.endSlash(getReference().toString()), true, "Outputs"), MediaType.TEXT_HTML);
+				}
+			}else{
+				if(part2.isEmpty()){
+					if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+						return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getInputs(part1)), MediaType.TEXT_PLAIN);
+					}else{
+						return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getInputs(part1)), Utility.endSlash(getReference().toString()), true, "Inputs"), MediaType.TEXT_HTML);
+					}
+				}else{
+					Vector<PolyglotAuxiliary.Conversion<String,String>> conversions = polyglot.getInputOutputGraph().getShortestConversionPath(part2, part1, false);
+					JSONArray json = new JSONArray();
+					JSONObject step;
+
+					if(conversions != null){
+						try{
+							for(int i=0; i<conversions.size(); i++){
+								step = new JSONObject();
+								step.put("application", conversions.get(i).edge);
+								step.put("input", conversions.get(i).input);
+								step.put("output", conversions.get(i).output);
+								json.put(step);
+							}
+						}catch(Exception e) {e.printStackTrace();}
+					}
+
+					return new JsonRepresentation(json);
 				}
 			}
 		}else if(part0.equals("form")){
@@ -267,14 +333,64 @@ public class PolyglotRestlet extends ServerResource
 			}
 		}else if(part0.equals("file")){
 			if(!part1.isEmpty()){
+				part1 = SoftwareServerRESTUtilities.removeParameters(part1);
 				file = public_path + part1;
-				
+
+				//Workaround: If the file is not there, but file.url exists, retrieve and put it there. Configurable using the "DownloadSSFile" field in PolyglotRestlet.conf.
+				if(DOWNLOAD_SS_FILE){
+					if((!Utility.exists(file)) && (Utility.exists(file + ".url"))){
+						//System.out.println("File does not exist, but file.url '" + file + ".url' exists.");
+						result_url = Utility.getLine(file + ".url", 2).substring(4).trim();		//Link is on 2nd line after "URL="
+
+						if(result_url.isEmpty()){
+							for(int i=0; i<10; i++){
+								System.out.println("result_url is empty, sleeping for 1 second...");
+								
+								try{
+									Thread.sleep(1000);
+								}catch(Exception e) {e.printStackTrace();}
+
+								result_url = Utility.getLine(file + ".url", 2).substring(4).trim();		//Link is on 2nd line after "URL="
+							}
+						}
+
+						System.out.println("result_url = '" + result_url + "'.");
+
+						if(!result_url.isEmpty()){
+							//System.out.println("About to download '" + result_url + "' to file '" + file + "'");
+							Boolean result_status = Utility.downloadFile(public_path, part1, result_url, false);
+							System.out.println("Downloaded '" + result_url + "' to file '" + file + "', result status is " + result_status);
+						}
+					}
+				}
+
 				if(Utility.exists(file)){
-					return new FileRepresentation(file, MediaType.MULTIPART_ALL);
+					if(Utility.isDirectory(file)){
+						url = Utility.endSlash(getRootRef().toString()) + "file/" + part1 + "/";
+
+						//Redirect to directory endpoint, added a "/"
+						this.getResponse().redirectTemporary(url);
+						return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+					}else{
+						MetadataService metadata_service = new MetadataService();
+						MediaType media_type = metadata_service.getMediaType(SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(part1)));
+					
+						if(media_type == null){
+							if(Utility.getFilenameExtension(part1).equals("log")){
+								media_type = MediaType.TEXT_PLAIN;
+							}else{
+								media_type = MediaType.MULTIPART_ALL;
+							}
+						}
+							
+						FileRepresentation file_representation = new FileRepresentation(file, media_type);
+						//file_representation.getDisposition().setType(Disposition.TYPE_INLINE);
+						return file_representation;
+					}
 				}else{
 					if(Utility.exists(file + ".url")){
-						result_url = Utility.getLine(file + ".url", 2).substring(4);		//Link is on 2nd line after "URL="
-						
+						result_url = Utility.getLine(file + ".url", 2).substring(4).trim();		//Link is on 2nd line after "URL="
+
 						if(!result_url.isEmpty()){
 							this.getResponse().redirectTemporary(result_url);
 							return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
@@ -315,12 +431,39 @@ public class PolyglotRestlet extends ServerResource
 		}else if(part0.equals("checkin") && polyglot instanceof PolyglotStewardAMQ){
 			if(!part1.isEmpty()){
 				try{
-					int job_id = Integer.parseInt(part1);
+					final int job_id = Integer.parseInt(part1);
+					String log_file, ss_log_file = "", line;
 				
 					if(!part2.isEmpty()){
 						try{
 							part2 = URLDecoder.decode(part2, "UTF-8");
 						}catch(Exception e) {e.printStackTrace();}
+					
+						//Find relevant log file to append to. TODO: Replace with an index to avoid this possibly costly search step
+						File[] files = new File(public_path).listFiles(new FilenameFilter() {
+							public boolean accept(File dir, String name) {
+								return name.startsWith(job_id + "_") && name.endsWith(".log");
+							}
+						});
+
+						log_file = files[0].getAbsolutePath();
+	
+						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: Software Server at " + getClientInfo().getAddress() + " checked in result for job-" + job_id + ", \033[94m" + part2 + "\033[0m" + " (" + SoftwareServerUtility.getFileSizeHR(part2) + ")");
+						SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: Software Server at " + getClientInfo().getAddress() + " checked in result for job-" + job_id + ", " + part2 + " (" + SoftwareServerUtility.getFileSizeHR(part2) + ")", log_file);
+						
+						//Append Software Server log
+						SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: [Begin Software Server Log - " + getClientInfo().getAddress() + "] =========", log_file);
+						Scanner s = new Scanner(SoftwareServerUtility.readURL(part2 + ".log", null).trim());
+
+						while(s.hasNextLine()){
+							line = s.nextLine();
+
+							if(line.contains("Setting session to")) ss_log_file = "";	//If this server has done several parts don't duplicate previous log outputs!
+							ss_log_file += line + "\n";
+						}
+
+						SoftwareServerUtility.println(ss_log_file.trim(), log_file);
+						SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: ============ [End Software Server Log - " + getClientInfo().getAddress() + "]", log_file);
 
 						return new StringRepresentation(((PolyglotStewardAMQ)polyglot).checkin(getClientInfo().getAddress(), job_id, part2), MediaType.TEXT_PLAIN);
 					}else{
@@ -332,10 +475,77 @@ public class PolyglotRestlet extends ServerResource
 			}else{
 				return new StringRepresentation("error: invalid job id", MediaType.TEXT_PLAIN);
 			}
-		}else if(part0.equals("servers")){				
-			return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getServers()), MediaType.TEXT_PLAIN);
+		}else if(part0.equals("servers")){
+			if(part1.isEmpty()){
+				if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+					return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getServers()), MediaType.TEXT_PLAIN);
+				}else{
+					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getServers()), Utility.endSlash(getReference().toString()), true, "Servers"), MediaType.TEXT_HTML);
+				}
+			}else{
+				String ss_ip = part1.split(":")[0];
+				url = "http://" + ss_ip + ":8182";
+
+				//Add on additional parts if any
+				if(!part2.isEmpty()) url += "/software";
+
+				for(int i=2; i<parts.size(); i++){
+					url += "/" + parts.get(i);
+				}
+
+				//Redirect to specified Software Server
+				this.getResponse().redirectTemporary(url);
+				return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+			}
 		}else if(part0.equals("software")){
-			return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getSoftware()), MediaType.TEXT_PLAIN);
+			if(part1.isEmpty()){
+				if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+					return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getSoftware()), MediaType.TEXT_PLAIN);
+				}else{
+					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getSoftware()), Utility.endSlash(getReference().toString()), true, "Software"), MediaType.TEXT_HTML);
+				}
+			}else{
+				if(REDIRECT_TO_SOFTWARESERVER){
+					//Find a server with the specified application.
+					TreeSet<String> swHosts = ((PolyglotStewardAMQ)polyglot).getSoftwareHosts();
+					String targetPrefix = part1 + ":";
+
+					for(String sh:swHosts) {
+						if(sh.startsWith(targetPrefix)) {
+							String ip = sh.split(":")[1];
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Redirecting request for " + part1 + " to " + ip);
+
+							//Redirect to found software server
+							url = "http://" + ip + ":8182/software";
+
+							for(int k=1; k<parts.size(); k++){
+								url += "/" + parts.get(k);
+							}
+
+							this.getResponse().redirectTemporary(url);
+							return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+						}
+					}
+				}else{
+					if(part2.isEmpty()){
+						if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+							return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getInputOutputGraph().getEdgeOutputs(part1)), MediaType.TEXT_PLAIN);
+						}else{
+							return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getInputOutputGraph().getEdgeOutputs(part1)), Utility.endSlash(getReference().toString()), true, "Outputs"), MediaType.TEXT_HTML);
+						}
+					}else{
+						if(part3.isEmpty()){
+							if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
+								return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getInputOutputGraph().getEdgeInputs(part1)), MediaType.TEXT_PLAIN);
+							}else{
+								return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getInputOutputGraph().getEdgeInputs(part1)), Utility.endSlash(getReference().toString()), true, "Inputs"), MediaType.TEXT_HTML);
+							}
+						}
+					}
+				}
+
+				return new StringRepresentation("error: application not available", MediaType.TEXT_PLAIN);
+			}
 		}else if(part0.equals("inputs")){
 			if(part1.isEmpty()){
 				if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
@@ -344,12 +554,15 @@ public class PolyglotRestlet extends ServerResource
 					return new StringRepresentation(SoftwareServerRESTUtilities.createHTMLList(PolyglotRESTUtilities.toString(polyglot.getInputs()), Utility.endSlash(getReference().toString()), true, "Inputs"), MediaType.TEXT_HTML);
 				}
 			}else{
-				part1 = part1.toLowerCase();	//Ignore case of file extension
+				part1 = SoftwareServerRESTUtilities.removeParameters(part1).toLowerCase();	//Ignore case of file extension
+	
+				form = getRequest().getResourceRef().getQueryAsForm();
+        p = form.getFirst("chain"); if(p != null) chain = Integer.parseInt(p.getValue());
 
 				if(SoftwareServerRestlet.isJSONRequest(Request.getCurrent())){
-					return new JsonRepresentation(new JSONArray(polyglot.getOutputs(part1)));
+					return new JsonRepresentation(new JSONArray(polyglot.getOutputs(part1, chain)));
 				}else{
-					return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getOutputs(part1)), MediaType.TEXT_PLAIN);
+					return new StringRepresentation(PolyglotRESTUtilities.toString(polyglot.getOutputs(part1, chain)), MediaType.TEXT_PLAIN);
 				}
 			}
 		}else if(part0.equals("outputs")){				
@@ -363,15 +576,26 @@ public class PolyglotRestlet extends ServerResource
 			}
 			
 			return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
+		}else if(part0.equals("requests?hr=true")){
+			buffer = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss").format(new Date(start_time)) + "\n";
+			buffer += new SimpleDateFormat("yyyy-mm-dd HH:mm:ss").format(new Date(System.currentTimeMillis())) + "\n";
+			
+			for(Iterator<RequestInformation> itr=requests.iterator(); itr.hasNext();){
+				buffer += itr.next().toString() + "\n";
+			}
+			
+			return new StringRepresentation(buffer, MediaType.TEXT_PLAIN);
 		}else{
 			buffer = "";
 			buffer += "convert\n";
+			buffer += "path\n";
 			buffer += "form\n";
 			buffer += "alive\n";
-			buffer += "servers\n";
-			buffer += "software\n";
 			buffer += "inputs\n";
 			buffer += "outputs\n";
+			buffer += "servers\n";
+			buffer += "software\n";
+			buffer += "alive\n";
 			buffer += "requests\n";
 			
 			if(SoftwareServerRestlet.isPlainRequest(Request.getCurrent())){
@@ -398,12 +622,15 @@ public class PolyglotRestlet extends ServerResource
 		String part1 = (parts.size() > 1) ? parts.get(1) : "";
 		String part2 = (parts.size() > 2) ? parts.get(2) : "";
 		boolean FORM_POST = !part0.isEmpty() && part0.equals("form");
-		boolean TASK_POST = !part1.isEmpty();
+		boolean SOFTWARESERVER_POST = !part0.isEmpty() && (part0.equals("servers") || part0.equals("software") || part0.equals("checkin"));
+		boolean TASK_POST = !part1.isEmpty() && !part0.equals("servers") && !part0.equals("software") && !part0.equals("checkin");
 		TreeMap<String,String> parameters = new TreeMap<String,String>();
-		String file=null, output = null, result_file = null, result_url;
+		String application=null, file=null, output = null, result_file = null, result_url, url;
+		String bd_useremail = "", bd_host = "", bd_token = "";
 		String client = getClientInfo().getAddress();
-		
-		if(FORM_POST || TASK_POST){
+		Boolean MAIL = false;
+	
+		if(FORM_POST || TASK_POST || SOFTWARESERVER_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
 				DiskFileItemFactory factory = new DiskFileItemFactory();
 				factory.setSizeThreshold(1000240);
@@ -420,7 +647,80 @@ public class PolyglotRestlet extends ServerResource
 						if(fi.getName() == null){
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
 						}else{
-							if(HOST_POSTED_FILES){
+							if(part0.equals("checkin")) {
+								String filename, file_url;
+								String log_file, ss_log_file = "", sf_log, line;
+								String tmp_file_name = (fi.getName()).replace(" ","_");
+						
+								if(StringUtils.isNumeric(part1) && tmp_file_name.indexOf('_') != -1){                     
+									final int job_id = Integer.parseInt(part1);
+
+									// The file name posted by SS contains SS session id, but Polyglot needs to save it using Polyglot job id. So change the file name. "part1" is job_id.
+									filename = tmp_file_name.substring(tmp_file_name.indexOf('_')+1);
+									if(!filename.startsWith(job_id + "_")) filename = job_id + "_" + filename;	//TODO: warning if by chance the original filename by coincedence started with the job id number and an underscore!?
+									file = public_path + filename;
+									fi.write(new File(file));
+
+									//Unzip the checkin if its a directory
+									if(file.endsWith(".checkin.zip")){
+										SoftwareServerUtility.unzip(public_path, file);
+										filename = Utility.getFilenameName(file);
+										filename = filename.substring(0, filename.length()-8);
+
+										//Attach directory as a new endpoint
+										Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + filename));
+										directory.setListingAllowed(true);
+
+										//Add CORS filter
+										CorsFilter corsfilter = new CorsFilter(getContext(), directory);
+										corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+										corsfilter.setAllowedCredentials(true);
+										component.getDefaultHost().attach("/file/" + filename + "/", corsfilter);
+									}
+
+									file_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + filename;
+						
+									//Find relevant log file to append to. TODO: Replace with an index to avoid this possibly costly search step
+									File[] files = new File(public_path).listFiles(new FilenameFilter() {
+										public boolean accept(File dir, String name) {
+											return name.startsWith(job_id + "_") && name.endsWith(".log");
+										}
+									});
+
+									log_file = files[0].getAbsolutePath();
+
+									System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: Software Server at " + getClientInfo().getAddress() + " checked in result for job-" + job_id + ", \033[94m" + file_url + "\033[0m" + " (" + SoftwareServerUtility.getFileSizeHR(file) + ")");
+									SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: Software Server at " + getClientInfo().getAddress() + " checked in result for job-" + job_id + ", " + file_url + " (" + SoftwareServerUtility.getFileSizeHR(file) + ")", log_file);
+						
+									//Append Software Server log
+									SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: [Begin Software Server Log - " + getClientInfo().getAddress() + "] =========", log_file);
+									Scanner s = new Scanner(URLDecoder.decode(part2).trim());
+
+									while(s.hasNextLine()){
+										line = s.nextLine();
+
+										if(line.contains("Setting session to")) ss_log_file = "";	//If this server has done several parts don't duplicate previous log outputs!
+										ss_log_file += line + "\n";
+									}
+
+									SoftwareServerUtility.println(ss_log_file.trim(), log_file);
+									SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: ============ [End Software Server Log - " + getClientInfo().getAddress() + "]", log_file);
+						
+									//Append Siegfried output
+									sf_log = SoftwareServerUtility.executeAndWait("sf " + file, 60000, true, true);
+
+									if(sf_log != null){
+										SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: [Begin Siegfried Log - " + Utility.getFilename(file) + "] =========", log_file);
+										SoftwareServerUtility.print(sf_log, log_file);
+										SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + job_id + "]: ============ [End Siegfried Log - " + Utility.getFilename(file) + "]", log_file);
+									}
+
+									return new StringRepresentation(((PolyglotStewardAMQ)polyglot).checkin(getClientInfo().getAddress(), job_id, file_url), MediaType.TEXT_PLAIN);
+								}else{
+									System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: File not being processed due to security concern - either the file id is non-numeric or the filename is invalid.");
+									continue;
+								}
+							}else if(HOST_POSTED_FILES){
 								file = public_path + (fi.getName()).replace(" ","_");
 								fi.write(new File(file));
 
@@ -441,7 +741,7 @@ public class PolyglotRestlet extends ServerResource
 								//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
 								file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file);
 								if(!nonadmin_user.isEmpty()) file = SoftwareServerUtility.addAuthentication(file, nonadmin_user + ":" + accounts.get(nonadmin_user));
-								System.out.println("[" + client + "]: Temporarily hosting file \"" + Utility.getFilename(file) + "\", " + file);
+								System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Temporarily hosting file \"" + Utility.getFilename(file) + "\" for " + client + " at " + file);
 							}else{
 								file = temp_path + (fi.getName()).replace(" ","_");
 								fi.write(new File(file));
@@ -456,28 +756,52 @@ public class PolyglotRestlet extends ServerResource
 			}else if(TASK_POST){
 				output = part1;				
 			}
-							
+
 			//Do the conversion
-			if(file != null && output != null){	
-				System.out.print("[" + client + "]: " + Utility.getFilename(file) + " -> " + output + "...");
+			if(file != null && output != null){
+				//Check if a specific application is requested
+				application = parameters.get("application");
+				MAIL = Boolean.valueOf(parameters.get("mail"));
+
+				if(MAIL){
+					Series<Header> series = (Series<Header>)getRequestAttributes().get("org.restlet.http.headers");
+    			bd_useremail = series.getFirstValue("X-bd-username");
+    			bd_host = series.getFirstValue("Bd-host");
+    			bd_token = series.getFirstValue("Bd-access-token");
+					bd_useremail += "," + bd_host + "," + bd_token + ",POST";
+				}
+
+				if(application == null){
+					//Removed calling of SoftwareServerUtility.getFileSizeHR(file), which seems to cause a deadlock when "file" is hosted on this host:8184 itself.
+					//System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " ...");
+				}else{
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " requesting \033[94m" + file + "\033[0m->" + output + " using " + application + " ...");
+				}
 				
 				request = new RequestInformation(client, file, output);
 
 				if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
 					((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 				}else{
-					result_file = polyglot.convert(file, public_path, output);
+					if(application == null){
+						result_file = polyglot.convertAndEmail(file, public_path, output, bd_useremail);
+					}else{
+						result_file = polyglot.convertAndEmail(application, file, public_path, output, bd_useremail);
+					}
 				}
 
 				if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;
 				result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
+				int job_id = SoftwareServerRestlet.getSession(result_url);
 
 				if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 					request.setEndOfRequest(true);
-					System.out.println(" [Converting]");
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at \033[94m" + result_url + "\033[0m");
+					SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at " + result_url, public_path + result_file + ".log");
 				}else{
 					request.setEndOfRequest(false);
-					System.out.println(" [Failed]");
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " request for " + file + "->" + output + " failed.");
 				}
 				
 				requests.add(request);
@@ -507,6 +831,61 @@ public class PolyglotRestlet extends ServerResource
 						return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 					}
 				}
+			}
+		}
+
+		//Check for direct software server requests
+		if(part0.equals("servers")){
+			if(!part1.isEmpty()){
+				url = "http://" + part1 + ":8182";
+
+				//Add on additional parts if any
+				if(!part2.isEmpty()) url += "/software";
+
+				for(int i=2; i<parts.size(); i++){
+					url += "/" + parts.get(i);
+				}
+							
+				//TODO: For some reasone this doesn't seem to be necessary for the task to go through?
+				try{
+					url += "/" + URLEncoder.encode(file, "UTF-8");
+				}catch(Exception e) {e.printStackTrace();}
+
+				//Redirect to specified Software Server
+				this.getResponse().redirectTemporary(url);
+				return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+			}
+		}else if(part0.equals("software")){
+			if(!part1.isEmpty()){
+				//Find a server with the specified application, TODO: this may need to be more efficient
+				Vector<String> servers = polyglot.getServers();
+
+				for(int i=0; i<servers.size(); i++){
+					String[] lines = SoftwareServerUtility.readURL("http://" + servers.get(i) + ":8182/software", "text/plain").split("\\r?\\n");
+
+					for(int j=0; j<lines.length; j++){
+						if(lines[j].split(" ")[0].equals(part1)){
+							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Redirecting request for " + part1 + " to " + servers.get(i));
+
+							//Redirect to found software server
+							url = "http://" + servers.get(i) + ":8182/software";
+
+							for(int k=1; k<parts.size(); k++){
+								url += "/" + parts.get(k);
+							}
+
+							//TODO: For some reasone this doesn't seem to be necessary for the task to go through?
+							try{
+								url += "/" + URLEncoder.encode(file, "UTF-8");
+							}catch(Exception e) {e.printStackTrace();}
+
+							this.getResponse().redirectTemporary(url);
+							return new StringRepresentation("Redirecting...", MediaType.TEXT_PLAIN);
+						}
+					}
+				}
+
+				return new StringRepresentation("error: application not available", MediaType.TEXT_PLAIN);
 			}
 		}
 		
@@ -605,6 +984,9 @@ public class PolyglotRestlet extends ServerResource
 	        		}
 	          }else if(key.equals("ReturnURL")){
 	          	RETURN_URL = Boolean.valueOf(value);
+	          }else if(key.equals("DownloadSSFile")){
+	          	DOWNLOAD_SS_FILE = Boolean.valueOf(value);
+	          	//System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: DOWNLOAD_SS_FILE = " + String.valueOf(DOWNLOAD_SS_FILE));
 	          }else if(key.equals("MongoLogging")){
 	          	MONGO_LOGGING = Boolean.valueOf(value);
 	          }else if(key.equals("MongoUpdateInterval")){
@@ -619,6 +1001,10 @@ public class PolyglotRestlet extends ServerResource
 							HOST_POSTED_FILES = Boolean.valueOf(value);
 	          }else if(key.equals("MaxTaskTime")){
 							if(polyglot instanceof PolyglotSteward) ((PolyglotSteward)polyglot).setMaxTaskTime(Integer.valueOf(value));
+	          }else if(key.equals("RedirectToSoftwareServer")){
+							REDIRECT_TO_SOFTWARESERVER = Boolean.valueOf(value);
+						}else if(key.equals("AuthenticationEndpoint")){
+							authentication_url = value;
 	          }else if(key.equals("Authentication")){
 	  	        username = value.substring(0, value.indexOf(':')).trim();
 	  	        password = value.substring(value.indexOf(':')+1).trim();
@@ -654,7 +1040,7 @@ public class PolyglotRestlet extends ServerResource
 	    	//DBCollection collection = db.getCollection(properties.getProperty("collection"));
 	    	db.getLastError();		//Test the connection, will cause an exception if not connected.
 			}catch(Exception e){
-				System.out.println("\nMongo database not found, disabiling Mongo logging...");
+				System.out.println("\nMongo database not found, disabling Mongo logging...");
 				MONGO_LOGGING = false;
 			}
 
@@ -679,6 +1065,7 @@ public class PolyglotRestlet extends ServerResource
 			component = new Component();
 			component.getServers().add(Protocol.HTTP, port);
 			component.getClients().add(Protocol.HTTP);
+			component.getClients().add(Protocol.FILE);
 			component.getLogService().setEnabled(false);
 
 			org.restlet.Application application = new org.restlet.Application(){
@@ -686,10 +1073,67 @@ public class PolyglotRestlet extends ServerResource
 				public Restlet createInboundRoot(){
 					Router router = new Router(getContext());
 					router.attachDefault(PolyglotRestlet.class);
-			
-  	    	if(!accounts.isEmpty()){
-    	    	ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
-     	  		MapVerifier verifier = new MapVerifier();
+
+          //Examine public path and reattach any previous directories to an endpoint
+          File folder = new File(public_path);
+          File[] files = folder.listFiles();
+
+          for(int i=0; i<files.length; i++){
+            if(files[i].isDirectory()){
+              //System.out.println("[REST]: Re-attaching " + files[i].getName());
+              Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + files[i].getName()));
+              directory.setListingAllowed(true);
+
+              //Add CORS filter
+              CorsFilter corsfilter = new CorsFilter(getContext(), directory);
+              corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+              //corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+              corsfilter.setAllowedCredentials(true);
+              component.getDefaultHost().attach("/file/" + files[i].getName() + "/", corsfilter);
+            }
+          }
+
+					if(!accounts.isEmpty() || (authentication_url != null)){
+						ChallengeAuthenticator guard = new ChallengeAuthenticator(null, ChallengeScheme.HTTP_BASIC, "realm-NCSA");
+
+						SecretVerifier verifier = new SecretVerifier(){
+							@Override
+							public int verify(String username, char[] password){
+								//Try local accounts first
+								if(!accounts.isEmpty()){
+									if(accounts.containsKey(username) && compare(password, accounts.get(username).toCharArray())){
+										return RESULT_VALID;
+									}
+								}
+
+								//Try authentication URL next
+								if(authentication_url != null){
+									URLConnection connection = null;
+
+									try{
+										URL url = new URL(authentication_url);
+										connection = url.openConnection();
+										connection.setDoOutput(true);
+
+										//Add basic auth header
+										String auth = username + ":" + new String(password);
+										connection.setRequestProperty("Authorization", "Basic " + DatatypeConverter.printBase64Binary(auth.getBytes()));
+										BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+										String userinfo = br.readLine();
+										br.close();
+
+										return RESULT_VALID;
+									}catch(Exception e){
+										return RESULT_INVALID;
+									}
+								}
+
+								//In case not in local account and authentication URL wasn't set
+								return RESULT_INVALID;
+							}
+						};
+
+						//Check for admin account, if found with no users make authentication optional	
       	  	boolean FOUND_ADMIN = false;
        			boolean FOUND_USER = false;
         
@@ -699,24 +1143,22 @@ public class PolyglotRestlet extends ServerResource
           		}else{
             		FOUND_USER = true;
           		}
-            
-          		verifier.getLocalSecrets().put(username, accounts.get(username).toCharArray());
-        		}
-          
-        		if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
-          
-        		guard.setVerifier(verifier);
-        		guard.setNext(router);
+						}
 
-          	//Add a CORS filter to allow cross-domain requests
-           	CorsFilter corsfilter = new CorsFilter(getContext(), guard);
-           	corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+        		if(FOUND_ADMIN && !FOUND_USER) guard.setOptional(true);
+						guard.setVerifier(verifier);
+						guard.setNext(router);
+
+						//Add a CORS filter to allow cross-domain requests
+						CorsFilter corsfilter = new CorsFilter(getContext(), guard);
+						corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
 						//corsfilter.setAllowingAllRequestedHeaders(true);
-           	//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+						//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
            	corsfilter.setAllowedCredentials(true);
+						//corsfilter.setAllowedCredentials(false);
 						corsfilter.setSkippingResourceForCorsOptions(true);
 
-           	return corsfilter;
+						return corsfilter;
 					}else{
 					 	//Add a CORS filter to allow cross-domain requests
   					CorsFilter corsfilter = new CorsFilter(getContext(), router);
@@ -733,6 +1175,6 @@ public class PolyglotRestlet extends ServerResource
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
   	
-		System.out.println("\nPolyglot restlet is running...");
+		System.out.println("\nPolyglot restlet is running...\n");
 	}
 }

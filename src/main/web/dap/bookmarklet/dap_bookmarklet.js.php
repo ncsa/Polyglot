@@ -52,6 +52,15 @@ function checkAuthorization() {
 function addMenuToLinks() {
 	//Add graphic
 	addGraphic();
+	
+	//Add link back to self	
+	var self = $('<a/>')
+		.text('This file')
+		.attr('href', window.location.href)
+		.attr('id', 'self');
+		
+	$("body").append('<br>');
+	$("body").append(self);
 
 	//Proccess links
 	$('a').each(function() {
@@ -196,7 +205,7 @@ function scrollMenu(event) {
 	event.originalEvent.preventDefault();
 }
 
-//Brown Dog graph
+//Brown Dog graphic
 function addGraphic() {
 	//Preload images
 	//$.get(protocol + dap + '/dap/images/browndog-small-transparent.gif');
@@ -206,7 +215,7 @@ function addGraphic() {
 		.attr('src', protocol + dap + '/dap/images/browndog-small-transparent.gif')
 		.attr('width', '25')
 		.attr('id', 'graphic')
-		.css('position', 'absolute')
+		.css('position', 'fixed')
 		.css('left', '0px')
 		.css('bottom', '25px');
 	$("body").append(graphic);
@@ -226,7 +235,8 @@ function moveGraphicRight() {
 
 		//Add powered by graphic
 		graphic = $('<img>')
-			.attr('src', protocol + dap + '/dap/images/poweredby-transparent.gif')
+			//.attr('src', protocol + dap + '/dap/images/poweredby-transparent.gif')
+			.attr('src', protocol + dap + '/dap/images/poweredby.gif')
 			.attr('width', '100');
 
 		var link = $('<a/>')

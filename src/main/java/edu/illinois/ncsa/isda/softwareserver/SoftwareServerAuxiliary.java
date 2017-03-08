@@ -222,6 +222,7 @@ public class SoftwareServerAuxiliary
 		private String name;
 		private String format;
 		private String formats;		//Consider multiple extensions, TODO: need to revisit the need for this variable
+		private boolean SESSION_PREFIX = true;
 
 		public CachedFileData() {}
 		
@@ -343,6 +344,15 @@ public class SoftwareServerAuxiliary
   			return -1;
   		}
   	}
+
+		/**
+		 * Set session prefix
+		 * @param value true if filenames should have session prefixed to them
+		 */
+		public void setSessionPrefix(boolean value)
+		{
+			SESSION_PREFIX = value;
+		}
   	
   	/**
   	 * Get the files name.
@@ -378,7 +388,11 @@ public class SoftwareServerAuxiliary
 		 */
 		public String getCacheName(int session)
 		{
-			return session + "_" + name;
+			if(SESSION_PREFIX){
+				return session + "_" + name;
+			}else{
+				return name;
+			}
 		}
 		
 		/**
@@ -388,8 +402,12 @@ public class SoftwareServerAuxiliary
 		 */
 		public String getCacheFilename(int session)
 		{
-			//return getCacheName(session) + "." + format;
-			return session + "_" + toString();
+			if(SESSION_PREFIX){
+				//return getCacheName(session) + "." + format;
+				return session + "_" + toString();
+			}else{
+				return toString();
+			}
 		}
 		
 		/**
@@ -1173,6 +1191,16 @@ public class SoftwareServerAuxiliary
       this.alias = alias;
     }
     
+		/**
+     * Class constructor.
+     * @param name the name of the application
+     */
+    public Application(String name)
+    {
+    	this.name = name;
+      this.alias = name;
+    }
+    
     /**
      * Class constructor.
      * @param script a scripted operation within an application
@@ -1204,6 +1232,24 @@ public class SoftwareServerAuxiliary
   			return ((Application)object).toString().compareTo(toString());
   		}else{
   			return -1;
+  		}
+  	}
+		
+		/**
+  	 * Compare this object to another object for equality.
+  	 * @param object the object to compare to
+  	 * @return true if equal
+  	 */
+  	public boolean equals(Object object)
+  	{
+  		if(this == object){
+  			return true;
+  		}else if(object instanceof Application){
+  			return ((Application)object).toString().equals(toString());
+			}else if(object instanceof String){
+				return ((String)object).equals(toString());
+  		}else{
+  			return false;
   		}
   	}
 
@@ -1322,6 +1368,24 @@ public class SoftwareServerAuxiliary
 		{
 			return application.toString();
 		}
+		
+		/**
+  	 * Compare this object to another object for equality.
+  	 * @param object the object to compare to
+  	 * @return true if equal
+  	 */
+  	public boolean equals(Object object)
+  	{
+  		if(this == object){
+  			return true;
+  		}else if(object instanceof Operation){
+  			return ((Operation)object).name.equals(name);
+			}else if(object instanceof String){
+				return ((String)object).equals(name);
+  		}else{
+  			return false;
+  		}
+  	}
   	
     /**
      * Display operation information.
