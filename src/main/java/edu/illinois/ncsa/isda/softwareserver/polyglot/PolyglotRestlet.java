@@ -333,7 +333,6 @@ public class PolyglotRestlet extends ServerResource
 			}
 		}else if(part0.equals("file")){
 			if(!part1.isEmpty()){
-				part1 = part1.replace("?","_");
 				part1 = SoftwareServerRESTUtilities.removeParameters(part1);
 				file = public_path + part1;
 
@@ -722,7 +721,7 @@ public class PolyglotRestlet extends ServerResource
 									continue;
 								}
 							}else if(HOST_POSTED_FILES){
-								file = public_path + (fi.getName()).replace(" ","_").replace("?", "_");
+								file = public_path + (fi.getName()).replace(" ","_");
 								fi.write(new File(file));
 
 								String extension = Utility.getFilenameExtension(fi.getName());
