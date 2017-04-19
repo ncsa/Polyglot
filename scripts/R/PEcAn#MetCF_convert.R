@@ -2,17 +2,7 @@
 #PEcAn
 #data
 #xml
-#clim, ed.zip, linkages, dalec
-
-# input files is a xml file specifying what to get
-#<input>
-#  <type>Ameriflux</type>
-#  <site>US-Dk3</site>
-#  <lat>35.9782</lat>
-#  <lon>-79.0942</lon>
-#  <start_date>2001-01-01 00:00:00</start_date>
-#  <end_date>2001-12-31 23:59:59</end_date>
-#</input>
+#pecan.zip, pecan.nc
 
 #send all output to stdout (incl stderr)
 sink(stdout(), type="message")
@@ -69,18 +59,6 @@ if(length(site) < 0){
 }
 db.close(con)
 
-#assign default model according to output file 
-if (is.null(input$model)) {
-  if (grepl("\\.ed.zip$", outputfile)) {
-    model <- "ED2"
-  } else if (grepl("\\.cf$", outputfile)) {
-    model <- "LINKAGES"
-  } else if (grepl("\\.clim$", outputfile)) {
-    model <- "SIPNET"
-  } else {
-    model <- "BIOCRO"
-  }
-}
 mettype    <- ifelse(is.null(input$type), 'CRUNCEP', input$type)
 input_met <- list(username = "pecan", source = mettype)
 start_date <- input$start_date
@@ -89,7 +67,7 @@ host <- list(name = "localhost")
 
 
 print("Using met.process to download files")
-outfile_met <-  met.process(site, input_met, start_date, end_date, model, host, dbparams, cacheDir)
+outfile_met <-  met.process(site, input_met, start_date, end_date, NULL, host, dbparams, cacheDir)
 
 # get start/end year code works on whole years only
 start_year <- lubridate::year(start_date)
