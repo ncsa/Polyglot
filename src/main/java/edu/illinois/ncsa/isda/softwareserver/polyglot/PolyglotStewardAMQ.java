@@ -623,7 +623,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 					if(UPDATED) iograph.save("tmp/iograph.txt");
 				}catch(Exception e) {
 					System.out.println("BAD MESSAGE");
-					System.out.println("\t" + new String(delivery.getBody());
+					System.out.println("\t" + new String(delivery.getBody()));
 					e.printStackTrace();
 				} finally {
 					channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
