@@ -17,6 +17,27 @@ import javax.xml.bind.DatatypeConverter;
  */
 public class SoftwareServerUtility
 {
+	
+	/**
+	 * delete all files in tempfiles
+	 * @param tempfiles
+	 */
+	public static void deleteCachedFiles(Set<String> tempfiles) {
+		for (String file : tempfiles) {
+  		Path path = Paths.get(file);
+	  	try {
+	      Files.delete(path);
+		  } catch (NoSuchFileException x) {
+		      System.err.format("%s: no such" + " file or directory%n", path);
+		  } catch (DirectoryNotEmptyException x) {
+		      System.err.format("%s not empty%n", path);
+		  } catch (IOException x) {
+		      // File permission problems are caught here.
+		      System.err.println(x);
+		  }
+  	}
+	}
+	
   /**
    * Check if the specified URL exists.
    * @param url the URL to check
@@ -282,7 +303,6 @@ public class SoftwareServerUtility
     Process process;
     TimedProcess timed_process;
 		String output = null;
-
     if(!command.isEmpty()){
       try{
         process = Runtime.getRuntime().exec(command);

@@ -3,6 +3,11 @@ import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import kgm.utility.*;
 import java.io.*;
 import java.net.*;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.*;
 import java.text.*;
@@ -428,7 +433,7 @@ public class SoftwareServer implements Runnable
   	
   	BUSY = true;  
   	task_count++;
-  	
+  	HashSet<String> tempfiles = new HashSet<String>();
   	//Execute each subtask in the task
 		for(int i=0; i<task_attempts; i++){
 	  	for(int j=0; j<task.size(); j++){
@@ -458,7 +463,7 @@ public class SoftwareServer implements Runnable
 	  			//Prevent applications from complaining about overwriting files by creating a temporary output directory (if a file with the same output name exists!)
 	  			temp_target = null;
 	  			
-	  			if(Utility.exists(target)){	
+	  			if(Utility.exists(target)){
 	  			  //Create a new temporary directory (important to not change name as scripts can use the name)
 	  				temp_target_path = temp_path + session + "_" + System.currentTimeMillis() + "/";				
 	  				if(!Utility.exists(temp_target_path)) new File(temp_target_path).mkdir();
@@ -473,8 +478,8 @@ public class SoftwareServer implements Runnable
 				//Suggest a name for a scratch space for the script to use. May be a folder, may be prepended to output files.
 				temp = temp_path + session + "_";
 				if(WINDOWS) temp = Utility.windowsPath(temp);
-		  
-		  	command = Script.getCommand(operation.script, source, temp_target != null ? temp_target : target, temp);
+		  	
+				command = Script.getCommand(operation.script, source, temp_target != null ? temp_target : target, temp);
 				System.out.print("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Executing, " + command + " ...");
 				SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Executing, " + command + " ...", cache_path + ".session_" + session + ".log");
 		  	
@@ -523,8 +528,13 @@ public class SoftwareServer implements Runnable
 							FileUtils.copyDirectory(new File(temp_target), new File(target));
 						}catch(Exception e) {e.printStackTrace();}
 					}
+					tempfiles.add(temp_target);
 				}
 		  	
+		  	// record all generated temporary files
+				tempfiles.add(source);
+				tempfiles.add(target);
+				
 		  	//If we got past the last subtask then the task is complete!
 		  	if(j == task.size()-1) TASK_COMPLETED = true;
 	  	}
@@ -551,7 +561,13 @@ public class SoftwareServer implements Runnable
   	
   	status = "idle";
   	BUSY = false;
-  
+  	
+  	// delete all temporary files except final result file.
+  	if(tempfiles.contains(result)) {
+  		tempfiles.remove(result);
+  	}
+  	// after copying result to public folder, delete temporary files in Cache folder.
+		SoftwareServerUtility.deleteCachedFiles(tempfiles);
   	return result;
   }
   

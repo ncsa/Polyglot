@@ -8,7 +8,6 @@ import kgm.utility.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.io.*;
-import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
 import java.lang.management.*;
@@ -25,17 +24,10 @@ import org.restlet.security.*;
 import org.restlet.ext.fileupload.*;
 import org.restlet.ext.json.JsonRepresentation;
 import org.restlet.service.*;
-import org.restlet.engine.header.*;
 import org.restlet.engine.application.*;
-import org.restlet.util.*;
 import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
 import org.apache.commons.io.*;
-import org.apache.http.util.EntityUtils;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.rabbitmq.client.*;
-import com.rabbitmq.client.Channel;
 import org.json.*;
 // Used to check whether a string is a valid IP address.
 import org.apache.commons.validator.routines.InetAddressValidator;
@@ -407,11 +399,19 @@ public class SoftwareServerRestlet extends ServerResource
 				component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", corsfilter);
 			}
 			
+			
 			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder");
 			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder", server.getCachePath() + ".session_" + session + ".log");
-		
-			//Move log file		
-			Utility.copyFile(server.getCachePath() + ".session_" + session + ".log", public_path + session + "_" + getFilename(result) + ".log");
+			
+			//copy log file to public folder		
+			String cache_log_file = server.getCachePath() + ".session_" + session + ".log";
+			Utility.copyFile(cache_log_file, public_path + session + "_" + getFilename(result) + ".log");
+			
+			// after copying result to public folder, delete temporary files in Cache folder.
+			HashSet<String> tempfiles = new HashSet<String>();
+			tempfiles.add(result);
+			tempfiles.add(cache_log_file);
+			SoftwareServerUtility.deleteCachedFiles(tempfiles);
 		}
 	}
 	
