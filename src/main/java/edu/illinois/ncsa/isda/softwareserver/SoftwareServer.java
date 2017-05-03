@@ -521,20 +521,20 @@ public class SoftwareServer implements Runnable
 		  	
 		  	//Move the output if a temporary target was used
 		  	if(temp_target != null && Utility.exists(temp_target)){
-					if(!Utility.isDirectory(temp_target)){
-						Utility.copyFile(temp_target, target);
-					}else{
-						try{
-							FileUtils.copyDirectory(new File(temp_target), new File(target));
-						}catch(Exception e) {e.printStackTrace();}
-					}
-					tempfiles.add(temp_target);
+				if(!Utility.isDirectory(temp_target)){
+					Utility.copyFile(temp_target, target);
+				}else{
+					try{
+						FileUtils.copyDirectory(new File(temp_target), new File(target));
+					}catch(Exception e) {e.printStackTrace();}
 				}
+				tempfiles.add(temp_target);
+			}
 		  	
 		  	// record all generated temporary files
-				tempfiles.add(source);
-				tempfiles.add(target);
-				
+			tempfiles.add(source);
+			tempfiles.add(target);
+			
 		  	//If we got past the last subtask then the task is complete!
 		  	if(j == task.size()-1) TASK_COMPLETED = true;
 	  	}
