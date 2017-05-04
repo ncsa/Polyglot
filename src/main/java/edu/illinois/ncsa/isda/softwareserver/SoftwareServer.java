@@ -426,16 +426,17 @@ public class SoftwareServer implements Runnable
   	String source, target, temp;
   	String temp_target, temp_target_path;
   	String command = "";
-		String command_output = "";
+    String command_output = "";
   	String result = null;
   	boolean COMMAND_COMPLETED;
   	boolean TASK_COMPLETED = false;
   	
-  	BUSY = true;  
-  	task_count++;
   	HashSet<String> tempfiles = new HashSet<String>();
+    BUSY = true;  
+  	task_count++;
+  	
   	//Execute each subtask in the task
-		for(int i=0; i<task_attempts; i++){
+	for(int i=0; i<task_attempts; i++){
 	  	for(int j=0; j<task.size(); j++){
 	  		subtask = task.get(j);
 	  		application = applications.get(subtask.application); application_set.add(subtask.application);
@@ -528,6 +529,7 @@ public class SoftwareServer implements Runnable
 						FileUtils.copyDirectory(new File(temp_target), new File(target));
 					}catch(Exception e) {e.printStackTrace();}
 				}
+              
 				tempfiles.add(temp_target);
 			}
 		  	
@@ -566,8 +568,10 @@ public class SoftwareServer implements Runnable
   	if(tempfiles.contains(result)) {
   		tempfiles.remove(result);
   	}
+    
   	// after copying result to public folder, delete temporary files in Cache folder.
-		SoftwareServerUtility.deleteCachedFiles(tempfiles);
+	SoftwareServerUtility.deleteCachedFiles(tempfiles);
+    
   	return result;
   }
   
