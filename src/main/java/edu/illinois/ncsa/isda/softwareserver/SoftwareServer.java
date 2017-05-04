@@ -3,14 +3,8 @@ import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import kgm.utility.*;
 import java.io.*;
 import java.net.*;
-import java.nio.file.DirectoryNotEmptyException;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.atomic.*;
-import java.text.*;
 import org.apache.commons.io.*;
 
 /**
@@ -570,7 +564,7 @@ public class SoftwareServer implements Runnable
   	}
     
   	// after copying result to public folder, delete temporary files in Cache folder.
-	SoftwareServerUtility.deleteCachedFiles(tempfiles);
+  	SoftwareServerUtility.deleteCachedFiles(tempfiles);
     
   	return result;
   }
