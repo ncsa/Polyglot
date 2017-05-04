@@ -29,8 +29,7 @@ import org.apache.commons.fileupload.*;
 import org.apache.commons.fileupload.disk.*;
 import org.apache.commons.io.*;
 import org.json.*;
-// Used to check whether a string is a valid IP address.
-import org.apache.commons.validator.routines.InetAddressValidator;
+import org.apache.commons.validator.routines.InetAddressValidator;  //Used to check whether a string is a valid IP address.
 
 /**
  * A restful interface for a software server.
@@ -55,8 +54,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static boolean USE_OPENSTACK_PUBLIC_IP = false;
 	private static String openstack_public_ipv4_url = "";		//Default value is "http://169.254.169.254/2009-04-04/meta-data/public-ipv4".
 	private static String public_ip = "";
-	// A unique ID for the SS that's put in the registration msg, now public_ip:pid:<last-8-chars-of-UUID-randomUUID>.
-	private static String UNIQUE_ID_STRING = "";
+	private static String UNIQUE_ID_STRING = "";                // A unique ID for the SS that's put in the registration msg, now public_ip:pid:<last-8-chars-of-UUID-randomUUID>.
 	private static String external_public_ip_services = "";
 	private static String download_method = "";
 	private static Component component;
@@ -398,7 +396,6 @@ public class SoftwareServerRestlet extends ServerResource
   			corsfilter.setAllowedCredentials(true);
 				component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", corsfilter);
 			}
-			
 			
 			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder");
 			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder", server.getCachePath() + ".session_" + session + ".log");
