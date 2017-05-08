@@ -17,15 +17,36 @@ import javax.xml.bind.DatatypeConverter;
  */
 public class SoftwareServerUtility
 {
-  /**
-   * Delete all files in tempfiles
-   * @param tempfiles
-   */
-  public static void deleteCachedFiles(Set<String> tempfiles) 
+
+	/**
+	 * Delete temporary files for a session under parent_folder
+	 * 
+	 * session temporary files' names start with "sessionid_"
+	 * session log is ".session_" + session + ".log"
+	 * 
+	 * @param parent_folder folder contains session generated temporary files
+	 * @param session	session id
+	 */
+  public static void deleteCachedFiles(String parent_folder, int session) 
   {
-    for (String file : tempfiles) {
-      Path path = Paths.get(file);
-          
+  	File dir = new File(parent_folder);
+  	final String prefix = session+"_";
+  	final String tmp_sessionlog = ".session_" + session + ".log";
+  	
+    File[] files = dir.listFiles(new FileFilter() {
+	    public boolean accept(File file) {	    	
+	    	if (file.getName().startsWith(prefix)) {
+	        return true;
+	      } else if (file.getName().equals(tmp_sessionlog)){
+		      return true;
+		    } else {
+		    	return false;
+		    }
+	    }
+    });
+    
+    for (File file : files) {
+      Path path = Paths.get(file.getAbsolutePath());
       try {
         Files.delete(path);
       } catch (NoSuchFileException x) {

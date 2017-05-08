@@ -557,14 +557,6 @@ public class SoftwareServer implements Runnable
   	
   	status = "idle";
   	BUSY = false;
-  	
-  	// delete all temporary files except final result file.
-  	if(tempfiles.contains(result)) {
-  		tempfiles.remove(result);
-  	}
-    
-  	// after copying result to public folder, delete temporary files in Cache folder.
-  	SoftwareServerUtility.deleteCachedFiles(tempfiles);
     
   	return result;
   }

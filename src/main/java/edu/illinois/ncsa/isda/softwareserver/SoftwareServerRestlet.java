@@ -413,11 +413,10 @@ public class SoftwareServerRestlet extends ServerResource
 			String cache_log_file = server.getCachePath() + ".session_" + session + ".log";
 			Utility.copyFile(cache_log_file, public_path + session + "_" + getFilename(result) + ".log");
 			
-			// after copying result to public folder, delete temporary files in Cache folder.
-			HashSet<String> tempfiles = new HashSet<String>();
-			tempfiles.add(result);
-			tempfiles.add(cache_log_file);
-			SoftwareServerUtility.deleteCachedFiles(tempfiles);
+			if(!CHECKIN_URL) {
+				// after copying result to public folder, delete temporary files in Cache folder.
+				SoftwareServerUtility.deleteCachedFiles(server.getCachePath(), session);
+			}
 		}
 	}
 	
