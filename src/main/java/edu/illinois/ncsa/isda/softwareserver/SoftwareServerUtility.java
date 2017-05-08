@@ -324,7 +324,8 @@ public class SoftwareServerUtility
   {
     Process process;
     TimedProcess timed_process;
-		String output = null;
+    String output = null;
+    
     if(!command.isEmpty()){
       try{
         process = Runtime.getRuntime().exec(command);
