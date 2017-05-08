@@ -26,18 +26,18 @@ public class SoftwareServerUtility
    * 
    * @param parent_folder folder contains session generated temporary files
    * @param session	session id
+   * @param logfilename associated log filename
    */
-  public static void deleteCachedFiles(String parent_folder, int session) 
-  {
+  public static void deleteStoreFiles(String parent_folder, int session, final String logfilename) 
+  {  	
     File dir = new File(parent_folder);
     final String prefix = session+"_";
-    final String tmp_sessionlog = ".session_" + session + ".log";
     
     File[] files = dir.listFiles(new FileFilter() {
       public boolean accept(File file) {	    	
         if (file.getName().startsWith(prefix)) {
           return true;
-        } else if (file.getName().equals(tmp_sessionlog)){
+        } else if (file.getName().equals(logfilename)){
           return true;
         } else {
           return false;

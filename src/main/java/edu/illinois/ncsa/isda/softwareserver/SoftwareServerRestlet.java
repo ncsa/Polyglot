@@ -409,14 +409,8 @@ public class SoftwareServerRestlet extends ServerResource
 			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder");
 			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder", server.getCachePath() + ".session_" + session + ".log");
 			
-			//copy log file to public folder		
-			String cache_log_file = server.getCachePath() + ".session_" + session + ".log";
-			Utility.copyFile(cache_log_file, public_path + session + "_" + getFilename(result) + ".log");
-			
-			if(!CHECKIN_URL) {
-				// after copying result to public folder, delete temporary files in Cache folder.
-				SoftwareServerUtility.deleteCachedFiles(server.getCachePath(), session);
-			}
+			//copy log file to public folder
+			Utility.copyFile(server.getCachePath() + ".session_" + session + ".log", public_path + session + "_" + getFilename(result) + ".log");
 		}
 	}
 	
