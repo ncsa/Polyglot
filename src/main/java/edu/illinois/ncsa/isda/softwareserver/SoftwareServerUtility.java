@@ -18,31 +18,31 @@ import javax.xml.bind.DatatypeConverter;
 public class SoftwareServerUtility
 {
 
-	/**
-	 * Delete temporary files for a session under parent_folder
-	 * 
-	 * session temporary files' names start with "sessionid_"
-	 * session log is ".session_" + session + ".log"
-	 * 
-	 * @param parent_folder folder contains session generated temporary files
-	 * @param session	session id
-	 */
+  /**
+   * Delete temporary files for a session under parent_folder
+   * 
+   * session temporary files' names start with "sessionid_"
+   * session log is ".session_" + session + ".log"
+   * 
+   * @param parent_folder folder contains session generated temporary files
+   * @param session	session id
+   */
   public static void deleteCachedFiles(String parent_folder, int session) 
   {
-  	File dir = new File(parent_folder);
-  	final String prefix = session+"_";
-  	final String tmp_sessionlog = ".session_" + session + ".log";
-  	
+    File dir = new File(parent_folder);
+    final String prefix = session+"_";
+    final String tmp_sessionlog = ".session_" + session + ".log";
+    
     File[] files = dir.listFiles(new FileFilter() {
-	    public boolean accept(File file) {	    	
-	    	if (file.getName().startsWith(prefix)) {
-	        return true;
-	      } else if (file.getName().equals(tmp_sessionlog)){
-		      return true;
-		    } else {
-		    	return false;
-		    }
-	    }
+      public boolean accept(File file) {	    	
+        if (file.getName().startsWith(prefix)) {
+          return true;
+        } else if (file.getName().equals(tmp_sessionlog)){
+          return true;
+        } else {
+          return false;
+        }
+      }
     });
     
     for (File file : files) {
@@ -59,7 +59,7 @@ public class SoftwareServerUtility
       }
     }
   }
-	
+  
   /**
    * Check if the specified URL exists.
    * @param url the URL to check
