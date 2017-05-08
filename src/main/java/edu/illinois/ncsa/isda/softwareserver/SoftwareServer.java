@@ -425,8 +425,7 @@ public class SoftwareServer implements Runnable
   	String result = null;
   	boolean COMMAND_COMPLETED;
   	boolean TASK_COMPLETED = false;
-  	
-  	HashSet<String> tempfiles = new HashSet<String>();
+
     BUSY = true;  
   	task_count++;
   	
@@ -524,14 +523,8 @@ public class SoftwareServer implements Runnable
 						FileUtils.copyDirectory(new File(temp_target), new File(target));
 					}catch(Exception e) {e.printStackTrace();}
 				}
-              
-				tempfiles.add(temp_target);
 			}
-		  	
-		  	// record all generated temporary files
-			tempfiles.add(source);
-			tempfiles.add(target);
-			
+		  		
 		  	//If we got past the last subtask then the task is complete!
 		  	if(j == task.size()-1) TASK_COMPLETED = true;
 	  	}
