@@ -111,4 +111,6 @@ if (grepl("\\.zip$", outputfile) || (end_year - start_year > 1) && grepl("\\.pec
   file.link(outfile_met, outputfile)
 }
 
+db.close(con)
+
 
