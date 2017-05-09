@@ -496,6 +496,7 @@ public class SoftwareServerRESTUtilities
 
 		final String public_path_final = public_path;
 		final String cache_path_final = Paths.get(public_path).getParent().toString();
+      
 		//Set heartbeat
 		factory.setRequestedHeartbeat(180);
 
@@ -613,6 +614,7 @@ public class SoftwareServerRESTUtilities
 														System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Rejecting job after second checkin un-acknowledged!");
 													}
 												}
+                                              
 												//TODO: possible to delete files under cache folder, currently CHECKIN_URL is always set to false.
 											}else{							//Checkin the actual output file
 												//The filename to post: <public_path>/<session>_<filename>. "result" is http://.../file/<session>_<filename>, so strip out the path (after last '/').
@@ -650,16 +652,18 @@ public class SoftwareServerRESTUtilities
 												
 												String result_filename = Utility.getFilename(result);
 												int index = result_filename.indexOf('_');
-												if(-1 != index) {
+                                              
+												if(index != -1) {
 													int session = Integer.parseInt(result_filename.substring(0, index));
-													// delete files under cache folder.
+													
+                                                    // delete files under cache folder.
 													final String tmp_sessionlog = ".session_" + session + ".log";
 													SoftwareServerUtility.deleteStoreFiles(cache_path_final, session, tmp_sessionlog);
-													// delete files under public folder.
+													
+                                                    // delete files under public folder.
 													final String public_sessionlog = result_filename + ".log";
 													SoftwareServerUtility.deleteStoreFiles(public_path_final, session, public_sessionlog);
 												}
-												
 											}
 										}catch(Exception e) {e.printStackTrace();}
 									}
