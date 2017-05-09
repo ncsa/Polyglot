@@ -57,7 +57,7 @@ if(length(site) < 0){
   #remove multiple entries. 
   site <-list(id = site$id[1], name = site$name[1])
 }
-db.close(con)
+
 
 mettype    <- ifelse(is.null(input$type), 'CRUNCEP', input$type)
 input_met <- list(username = "pecan", source = mettype)
@@ -67,7 +67,7 @@ host <- list(name = "localhost")
 
 
 print("Using met.process to download files")
-outfile_met <-  met.process(site, input_met, start_date, end_date, NULL, host, dbparams, cacheDir)
+outfile_met <- met.process(site, input_met, start_date, end_date, NULL, host, dbparams, cacheDir)
 
 # get start/end year code works on whole years only
 start_year <- lubridate::year(start_date)
@@ -81,9 +81,23 @@ if (grepl("\\.zip$", outputfile) || (end_year - start_year > 1) && grepl("\\.pec
   # get list of files we need to zip by matching years, may need matching outname
   files <- c()
   for(year in start_year:end_year) {
-    files <- c(files, files <- file.path(folder, list.files(folder, pattern = paste0("*", year, "*"))))
+    files <- c(files, file.path(folder, list.files(folder, pattern = paste0("*", year, "*"))))
   }
-  
+  if(length(files)==0){
+    # convert csv file that doesn't have year in title to .nc. this is the special case for AmeriFluxLBL
+    files <- file.path(folder, list.files(folder, pattern = paste0(outname, "*")))
+    bety <- list(user='bety', password='bety', host='localhost', dbname='bety', driver='PostgreSQL', write=TRUE, "con" = con)
+    # get file formt csv
+    format <- query.format.vars(input.id=2000000128,bety = bety)
+    outfolder <- paste0(cacheDir, "/CF")
+    if (!file.exists(outfolder)) {
+      dir.create(outfolder, showWarnings = FALSE, recursive = TRUE)
+    }
+    CF <- met2CF.csv(folder, outname, outfolder, start_date, end_date, format)
+    files <- CF$file
+  } 
+  # put the input XML in zip. not necessary. 
+  # files <- c(files, args[1])
   # use intermediate file so it does not get marked as done until really done
   dir.create(tempDir, showWarnings=FALSE, recursive=TRUE)
   zipfile <- file.path(tempDir, "temp.zip")

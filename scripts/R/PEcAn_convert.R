@@ -2,7 +2,7 @@
 #PEcAn
 #data
 #xml
-#clim, ed.zip, linkages, dalec
+#met.ED2, met.SIPNET, met.BIOCRO, met.DALEC, met.CLM45, met.PRELES, met.MAESPA, met.JULES, met.LINKAGES, met.FATES, met.GDAY, met.LPJGUESS, met.MAAT
 
 # input files is a xml file specifying what to get
 #<input>
@@ -16,7 +16,6 @@
 
 #send all output to stdout (incl stderr)
 sink(stdout(), type="message")
-
 # get command line arguments
 args <- commandArgs(trailingOnly = TRUE)
 if (length(args) < 2) {
@@ -70,21 +69,11 @@ if(length(site) < 0){
 db.close(con)
 
 #assign default model according to output file 
-if (is.null(input$model)) {
-  if (grepl("\\.ed.zip$", outputfile)) {
-    model <- "ED2"
-  } else if (grepl("\\.cf$", outputfile)) {
-    model <- "LINKAGES"
-  } else if (grepl("\\.clim$", outputfile)) {
-    model <- "SIPNET"
-  } else {
-    model <- "BIOCRO"
-  }
-}
-mettype    <- ifelse(is.null(input$type), 'CRUNCEP', input$type)
+model <- unlist(strsplit(outputfile, "\\."))[-1]
+mettype <- ifelse(is.null(input$type), 'CRUNCEP', input$type)
 input_met <- list(username = "pecan", source = mettype)
 start_date <- input$start_date
-end_date   <- input$end_date
+end_date <- input$end_date
 host <- list(name = "localhost")
 
 
@@ -95,28 +84,18 @@ outfile_met <-  met.process(site, input_met, start_date, end_date, model, host, 
 start_year <- lubridate::year(start_date)
 end_year <- lubridate::year(end_date)
 
-# if more than 1 year for *.pecan.nc, or zip specified, zip result
-if (grepl("\\.zip$", outputfile) || (end_year - start_year > 1) && grepl("\\.pecan.nc$", outputfile)) {
-  # folder for files with gapfilling 
-  folder  <- dirname(outfile_met)
-  outname <- basename(outfile_met)
-  # get list of files we need to zip by matching years, may need matching outname
-  files <- c()
-  for(year in start_year:end_year) {
-    files <- c(files, files <- file.path(folder, list.files(folder, pattern = paste0("*", year, "*"))))
-  }
-  
-  # use intermediate file so it does not get marked as done until really done
-  dir.create(tempDir, showWarnings=FALSE, recursive=TRUE)
-  zipfile <- file.path(tempDir, "temp.zip")
-  zip(zipfile, files, extras="-j")
-  # move file should be fast
-  file.rename(zipfile, outputfile)
-} else {
-  if(!file.exists(outfile_met)){
-    outfile_met = paste0(outfile_met, ".", start_year, ".nc")
-  }
-  file.link(outfile_met, outputfile)
+# folder for files with gapfilling 
+folder  <- dirname(outfile_met)
+outname <- basename(outfile_met)
+# get list of files we need to zip by matching years, may need matching outname
+files <- c()
+for(year in start_year:end_year) {
+  files <- c(files, file.path(folder, list.files(folder, pattern = paste0("*", year, "*"))))
 }
 
-
+# use intermediate file so it does not get marked as done until really done
+dir.create(tempDir, showWarnings=FALSE, recursive=TRUE)
+zipfile <- file.path(tempDir, "temp.zip")
+zip(zipfile, files, extras="-j")
+# move file should be fast
+file.rename(zipfile, outputfile)
