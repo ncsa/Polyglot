@@ -329,7 +329,6 @@ public class SoftwareServerRestlet extends ServerResource
 			String exception_str = "";
 			
 			// 1. execute this conversion and generate output file
-			
 			try{
 				if(file.startsWith(Utility.endSlash(localhost) + "file/")){	//Remove session id from filenames of locally cached files
 					//file = SoftwareServer.getFilename(Utility.getFilename(file));
@@ -391,7 +390,6 @@ public class SoftwareServerRestlet extends ServerResource
 			}
 							
 			//2. copy output file into public folder.
-			
 			//Create empty output if not created (e.g. when no conversion path was found)
 			if(result == null){
 				result = server.getCachePath() + session + "_" + Utility.getFilenameName(file) + "." + format;
