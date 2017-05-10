@@ -8,6 +8,7 @@ import kgm.utility.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.io.*;
+import java.io.StringWriter;
 import java.nio.*;
 import java.nio.channels.*;
 import java.net.*;
@@ -321,61 +322,73 @@ public class SoftwareServerRestlet extends ServerResource
 		//localhost = getReference().getBaseRef().toString();
 		//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
 		localhost = public_ip;
-
+		
 		if(session >= 0){
-			if(file.startsWith(Utility.endSlash(localhost) + "file/")){	//Remove session id from filenames of locally cached files
-				//file = SoftwareServer.getFilename(Utility.getFilename(file));
-				file = getFilename(file);
-			}else{																											//Download remote files
-				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading \033[94m" + file + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
-				SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading " + file + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...", server.getCachePath() + ".session_" + session + ".log");
-					
-				if(file.contains("@")){
-					String[] strings = file.split("@");
-					strings = strings[0].split("//");
-					strings = strings[1].split(":");
-					username = strings[0];
-					password = strings[1];
+			result = null;
+			String exception_str = "";
+			
+			// 1. execute this conversion and generate output file
+			try{
+				if(file.startsWith(Utility.endSlash(localhost) + "file/")){	//Remove session id from filenames of locally cached files
+					//file = SoftwareServer.getFilename(Utility.getFilename(file));
+					file = getFilename(file);
+				}else{																											//Download remote files
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading \033[94m" + file + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+					SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading " + file + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...", server.getCachePath() + ".session_" + session + ".log");
 
-					SoftwareServerUtility.setDefaultAuthentication(username + ":" + password);
+					if(file.contains("@")){
+						String[] strings = file.split("@");
+						strings = strings[0].split("//");
+						strings = strings[1].split(":");
+						username = strings[0];
+						password = strings[1];
+	
+						SoftwareServerUtility.setDefaultAuthentication(username + ":" + password);
+					}
+	
+					if(download_method.equals("wget")){
+						try{
+							if(username != null && password != null){
+								DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
+							}else{
+								DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
+							}
+	
+							if(!DOWNLOAD_COMPLETED){
+								System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + file + " failed");
+								SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + file + " failed", server.getCachePath() + ".session_" + session + ".log");
+							}
+						}catch(Exception e){e.printStackTrace();}
+					}else if(download_method.equals("nio")){
+						try{
+							URL website = new URL(file);
+							ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+							FileOutputStream fos = new FileOutputStream(server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase());
+							fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+						}catch(Exception e){e.printStackTrace();}
+					}else{
+						Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase(), file);
+					}
+	
+					file = SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(file));
 				}
-
-				if(download_method.equals("wget")){
-					try{
-						if(username != null && password != null){
-							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
-						}else{
-							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
-						}
-
-						if(!DOWNLOAD_COMPLETED){
-							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + file + " failed");
-							SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + file + " failed", server.getCachePath() + ".session_" + session + ".log");
-						}
-					}catch(Exception e){e.printStackTrace();}
-				}else if(download_method.equals("nio")){
-					try{
-						URL website = new URL(file);
-						ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-						FileOutputStream fos = new FileOutputStream(server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase());
-						fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-					}catch(Exception e){e.printStackTrace();}
+			
+				task = getTask(application_alias, task_string, session + "_" + file, format);
+				//Task.print(task, applications);
+			
+				if(ATOMIC_EXECUTION){	
+					result = server.executeTaskAtomically("localhost", session, task);
 				}else{
-					Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase(), file);
+					result = server.executeTask("localhost", session, task);
 				}
-
-				file = SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(file));
-			}
-		
-			task = getTask(application_alias, task_string, session + "_" + file, format);
-			//Task.print(task, applications);
-		
-			if(ATOMIC_EXECUTION){	
-				result = server.executeTaskAtomically("localhost", session, task);
-			}else{
-				result = server.executeTask("localhost", session, task);
+			} catch (Exception ex) {
+				StringWriter exception = new StringWriter();
+				ex.printStackTrace(new PrintWriter(exception));
+				exception_str = exception.toString(); // print exception into session log
+				ex.printStackTrace(); // print exception in console.
 			}
 							
+			//2. copy output file into public folder.
 			//Create empty output if not created (e.g. when no conversion path was found)
 			if(result == null){
 				result = server.getCachePath() + session + "_" + Utility.getFilenameName(file) + "." + format;
@@ -383,7 +396,7 @@ public class SoftwareServerRestlet extends ServerResource
 			}
 			
 			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at \033[94m" + result + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
-			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at " + result + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")", server.getCachePath() + ".session_" + session + ".log");
+			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at " + ((exception_str.isEmpty()) ? result: exception_str) + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")", server.getCachePath() + ".session_" + session + ".log");
 
 			//Move result to public folder
 			if(!Utility.isDirectory(result)){
