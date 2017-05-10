@@ -334,7 +334,7 @@ public class SoftwareServerRestlet extends ServerResource
 					file = getFilename(file);
 				}else{																											//Download remote files
 					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading \033[94m" + file + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
-					SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading " + file + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...", server.getCachePath() + ".session_" + session + ".log");
+					SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading " + SoftwareServerUtility.removeCredentials(file) + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...", server.getCachePath() + ".session_" + session + ".log");
 
 					if(file.contains("@")){
 						String[] strings = file.split("@");

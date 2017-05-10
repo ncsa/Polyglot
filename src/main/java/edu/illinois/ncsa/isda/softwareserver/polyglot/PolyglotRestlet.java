@@ -798,7 +798,7 @@ public class PolyglotRestlet extends ServerResource
 				if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 					request.setEndOfRequest(true);
 					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at \033[94m" + result_url + "\033[0m");
-					SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at " + result_url, public_path + result_file + ".log");
+					SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + SoftwareServerUtility.removeCredentials(file) + "->" + output + " will be at " + result_url, public_path + result_file + ".log");
 				}else{
 					request.setEndOfRequest(false);
 					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: " + client + " request for " + file + "->" + output + " failed.");
