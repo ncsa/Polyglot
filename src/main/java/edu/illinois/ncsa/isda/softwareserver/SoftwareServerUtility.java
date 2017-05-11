@@ -19,22 +19,13 @@ public class SoftwareServerUtility
 {
 
 	/**
-	 * remove credentials in the url string, like username:passwd
+	 * Remove credentials in the url string, like username:passwd
 	 * @param url_str url string
-	 * @return url string with username:passwd
+	 * @return url string without username:passwd
 	 */
-	public static String removeCredentials(String url_str) {
-		String at = "@";
-		int end = url_str.indexOf(at);
-		if(-1 == end) return url_str;
-		end += at.length();
-		
-		String slashslash = "//";
-		int begin = url_str.indexOf(slashslash);
-		if(-1 == begin) return url_str;
-		begin += slashslash.length();
-		String replaced = url_str.substring(begin, end);
-		return url_str.replaceAll(replaced, "");
+	public static String removeCredentials(String url_str) 
+	{
+		return url_str.replaceFirst("//[^@]*@", "//");
 	}
 	
   /**

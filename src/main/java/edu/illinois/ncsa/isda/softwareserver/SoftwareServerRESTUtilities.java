@@ -562,6 +562,7 @@ public class SoftwareServerRESTUtilities
 									public void run(){
 										ObjectMapper mapper = new ObjectMapper();
 										String api_call, result, checkin_call;
+										String api_call_without_credentials;
 
 										try{
 											JsonNode message = mapper.readValue(delivery.getBody(), JsonNode.class);
@@ -570,10 +571,11 @@ public class SoftwareServerRESTUtilities
 											int job_id = Integer.parseInt(message.get("job_id").asText());
 											int step = Integer.parseInt(message.get("step").asText());
 											String input = message.get("input").asText();
+											String input_without_credentials = SoftwareServerUtility.removeCredentials(input);
 											String application = message.get("application").asText();
 											String output_format = message.get("output_format").asText();
 											
-											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Consuming job-" + job_id + ", " + input + "->" + output_format + " via " + application);
+											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Consuming job-" + job_id + ", " + input_without_credentials + "->" + output_format + " via " + application);
 		  	    	
 											//Execute job using Software Server REST interface (leverage implementation)
 											if(step > 0){
@@ -581,8 +583,9 @@ public class SoftwareServerRESTUtilities
 											}else{
 												api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(input, "UTF-8");
 											}
-
-											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: API call, " + api_call);
+											
+											api_call_without_credentials = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(input_without_credentials, "UTF-8");
+											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: API call, " + api_call_without_credentials);
 
 											result = SoftwareServerUtility.readURL(api_call, "text/plain");
 											//result = SoftwareServerUtility.addAuthentication(result, softwareserver_authentication_final);	//Make sure restlet doesn't already use guest!

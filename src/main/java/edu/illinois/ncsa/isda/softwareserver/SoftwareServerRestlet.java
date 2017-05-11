@@ -333,7 +333,7 @@ public class SoftwareServerRestlet extends ServerResource
 					//file = SoftwareServer.getFilename(Utility.getFilename(file));
 					file = getFilename(file);
 				}else{																											//Download remote files
-					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading \033[94m" + file + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading \033[94m" + SoftwareServerUtility.removeCredentials(file) + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
 					SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading " + SoftwareServerUtility.removeCredentials(file) + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...", server.getCachePath() + ".session_" + session + ".log");
 
 					if(file.contains("@")){
@@ -355,8 +355,8 @@ public class SoftwareServerRestlet extends ServerResource
 							}
 	
 							if(!DOWNLOAD_COMPLETED){
-								System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + file + " failed");
-								SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + file + " failed", server.getCachePath() + ".session_" + session + ".log");
+								System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + SoftwareServerUtility.removeCredentials(file) + " failed");
+								SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + SoftwareServerUtility.removeCredentials(file) + " failed", server.getCachePath() + ".session_" + session + ".log");
 							}
 						}catch(Exception e){e.printStackTrace();}
 					}else if(download_method.equals("nio")){
