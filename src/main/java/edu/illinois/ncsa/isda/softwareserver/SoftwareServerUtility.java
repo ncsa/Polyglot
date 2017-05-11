@@ -17,7 +17,6 @@ import javax.xml.bind.DatatypeConverter;
  */
 public class SoftwareServerUtility
 {
-
 	/**
 	 * Remove credentials in the url string, like username:passwd
 	 * @param url_str url string
@@ -26,7 +25,7 @@ public class SoftwareServerUtility
 	public static String removeCredentials(String url_str) 
 	{
 		return url_str.replaceFirst("//[^@]*@", "//");
-	}
+  }
 	
   /**
    * Delete temporary files for a session under parent_folder
