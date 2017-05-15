@@ -69,7 +69,11 @@ if(length(site) < 0){
 db.close(con)
 
 if(grepl("\\.met$", outputfile)){
-  model <- input$model
+  if(is.element("model", input)){
+    quit(status=-1)
+  } else {
+    model <- input$model
+  }
 } else {
   #assign default model according to output file 
   model <- unlist(strsplit(outputfile, "\\."))[-1]
