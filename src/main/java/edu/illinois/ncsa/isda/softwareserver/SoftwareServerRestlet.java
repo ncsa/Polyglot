@@ -1194,9 +1194,7 @@ public class SoftwareServerRestlet extends ServerResource
 				
 			component.getDefaultHost().attach("/", application);
 			component.start();
-		}catch(Exception e) {
-			e.printStackTrace();
-			}
+		}catch(Exception e) {e.printStackTrace();}
 				
 	 	//Notify other services of our existence
 	 	if(distributed_server != null){
