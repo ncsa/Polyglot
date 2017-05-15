@@ -11,6 +11,9 @@ import java.io.*;
 import java.io.StringWriter;
 import java.nio.*;
 import java.nio.channels.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.net.*;
 import java.lang.management.*;
 import java.text.*;
@@ -381,49 +384,58 @@ public class SoftwareServerRestlet extends ServerResource
 				}else{
 					result = server.executeTask("localhost", session, task);
 				}
-			} catch (Exception ex) {
+				
+				// check existence of output file.
+				Path path = Paths.get(result);
+				if(!Files.exists(path)) {
+					throw new Exception("server.executeTask fails to generate output file");
+				}
+				
+			} catch (Throwable t) {
+				result = null;
 				StringWriter exception = new StringWriter();
-				ex.printStackTrace(new PrintWriter(exception));
+				t.printStackTrace(new PrintWriter(exception));
 				exception_str = exception.toString(); // print exception into session log
-				ex.printStackTrace(); // print exception in console.
-			}
+				t.printStackTrace(); // print exception in console.
+			} finally {
 							
-			//2. copy output file into public folder.
-			//Create empty output if not created (e.g. when no conversion path was found)
-			if(result == null){
-				result = server.getCachePath() + session + "_" + Utility.getFilenameName(file) + "." + format;
-				Utility.touch(result);
+				//2. copy output file into public folder.
+				//Create empty output if not created (e.g. when no conversion path was found)
+				if(result == null){
+					result = server.getCachePath() + session + "_" + Utility.getFilenameName(file) + "." + format;
+					Utility.touch(result);
+				}
+				
+				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at \033[94m" + result + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
+				SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at " + ((exception_str.isEmpty()) ? result: exception_str) + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")", server.getCachePath() + ".session_" + session + ".log");
+	
+				//Move result to public folder
+				if(!Utility.isDirectory(result)){
+					Utility.copyFile(result, public_path + session + "_" + getFilename(result));
+				}else{
+					try{
+						FileUtils.copyDirectory(new File(result), new File(public_path + Utility.getFilename(result)));
+					}catch(Exception e) {e.printStackTrace();}
+	
+					//Attach directory as a new endpoint
+					Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + Utility.getFilename(result)));
+					directory.setListingAllowed(true);
+					//component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", directory);
+	
+					//Add CORS filter
+	  			CorsFilter corsfilter = new CorsFilter(getContext(), directory);
+	  			corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+	  			//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+	  			corsfilter.setAllowedCredentials(true);
+					component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", corsfilter);
+				}
+				
+				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder");
+				SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder", server.getCachePath() + ".session_" + session + ".log");
+				
+				//copy log file to public folder
+				Utility.copyFile(server.getCachePath() + ".session_" + session + ".log", public_path + session + "_" + getFilename(result) + ".log");
 			}
-			
-			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at \033[94m" + result + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
-			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at " + ((exception_str.isEmpty()) ? result: exception_str) + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")", server.getCachePath() + ".session_" + session + ".log");
-
-			//Move result to public folder
-			if(!Utility.isDirectory(result)){
-				Utility.copyFile(result, public_path + session + "_" + getFilename(result));
-			}else{
-				try{
-					FileUtils.copyDirectory(new File(result), new File(public_path + Utility.getFilename(result)));
-				}catch(Exception e) {e.printStackTrace();}
-
-				//Attach directory as a new endpoint
-				Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + Utility.getFilename(result)));
-				directory.setListingAllowed(true);
-				//component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", directory);
-
-				//Add CORS filter
-  			CorsFilter corsfilter = new CorsFilter(getContext(), directory);
-  			corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
-  			//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
-  			corsfilter.setAllowedCredentials(true);
-				component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", corsfilter);
-			}
-			
-			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder");
-			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder", server.getCachePath() + ".session_" + session + ".log");
-			
-			//copy log file to public folder
-			Utility.copyFile(server.getCachePath() + ".session_" + session + ".log", public_path + session + "_" + getFilename(result) + ".log");
 		}
 	}
 	
@@ -1182,7 +1194,9 @@ public class SoftwareServerRestlet extends ServerResource
 				
 			component.getDefaultHost().attach("/", application);
 			component.start();
-		}catch(Exception e) {e.printStackTrace();}
+		}catch(Exception e) {
+			e.printStackTrace();
+			}
 				
 	 	//Notify other services of our existence
 	 	if(distributed_server != null){
