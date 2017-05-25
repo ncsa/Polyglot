@@ -209,10 +209,11 @@ public class PolyglotRestlet extends ServerResource
 					if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
 						((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 					}else{
+						int jobid = polyglot.incrementAndGetJobID();
 						if(application == null){
-							result_file = polyglot.convertAndEmail(file, public_path, output, bd_useremail);
+							result_file = polyglot.convertAndEmail(jobid, file, public_path, output, bd_useremail);
 						}else{
-							result_file = polyglot.convertAndEmail(application, file, public_path, output, bd_useremail);
+							result_file = polyglot.convertAndEmail(jobid, application, file, public_path, output, bd_useremail);
 						}
 
 						if(result_file.equals("404")){
@@ -630,6 +631,8 @@ public class PolyglotRestlet extends ServerResource
 		String client = getClientInfo().getAddress();
 		Boolean MAIL = false;
 	
+		int jobid = 0;
+		
 		if(FORM_POST || TASK_POST || SOFTWARESERVER_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
 				DiskFileItemFactory factory = new DiskFileItemFactory();
@@ -721,7 +724,8 @@ public class PolyglotRestlet extends ServerResource
 									continue;
 								}
 							}else if(HOST_POSTED_FILES){
-								file = public_path + (fi.getName()).replace(" ","_").replace("?", "_");
+								jobid = polyglot.incrementAndGetJobID();
+								file = public_path + jobid + "_" + (fi.getName()).replace(" ","_").replace("?", "_");
 								fi.write(new File(file));
 
 								String extension = Utility.getFilenameExtension(fi.getName());
@@ -785,9 +789,9 @@ public class PolyglotRestlet extends ServerResource
 					((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 				}else{
 					if(application == null){
-						result_file = polyglot.convertAndEmail(file, public_path, output, bd_useremail);
+						result_file = polyglot.convertAndEmail(jobid, file, public_path, output, bd_useremail);
 					}else{
-						result_file = polyglot.convertAndEmail(application, file, public_path, output, bd_useremail);
+						result_file = polyglot.convertAndEmail(jobid, application, file, public_path, output, bd_useremail);
 					}
 				}
 

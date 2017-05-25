@@ -139,6 +139,15 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
         System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward]: Successfully connected to RabbitMQ: server: " + rabbitmq_server + ", vhost: " + rabbitmq_vhost + ".");
     }
 	
+		/**
+		 * Atomically increase current value of job_counter by one and return new jobid
+		 * @return a new jobid
+		 */
+		public int incrementAndGetJobID()
+		{
+			return job_counter.incrementAndGet();
+		}    
+    
 	/**
 	 * Initialize based on parameters within the given configuration file.
 	 * @param filename the file name of the configuration file
@@ -336,10 +345,23 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	 */
 	public String convertAndEmail(String input, String output_path, String output_format, String email)
 	{
+		int job_id = job_counter.incrementAndGet();
+		return convertAndEmail(job_id, input, output_path, output_format, email);
+	}
+	
+	/**
+	 * Convert a files format and email result.
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @param email address to send result to
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convertAndEmail(int job_id, String input, String output_path, String output_format, String email)
+	{
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode request, task;
 		ArrayNode path;
-		int job_id = job_counter.incrementAndGet();
 		String input_format;
 		Vector<Conversion<String,SoftwareServerApplication>> conversions;
 		boolean MULTIPLE_EXTENSIONS = true;
@@ -396,7 +418,6 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 			return "404";
 		}
 	}
-	
 	/**
 	 * Convert a files format and email result.
 	 * @param application the specific application to use
@@ -409,10 +430,26 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	@Override
 	public String convertAndEmail(String application, String input, String output_path, String output_format, String email)
 	{
+		int job_id = job_counter.incrementAndGet();
+		return convertAndEmail(job_id, application, input, output_path, output_format, email);
+	}
+	
+	/**
+	 * Convert a files format and email result.
+	 * @param application the specific application to use
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @param email address to send result to
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	@Override
+	public String convertAndEmail(int job_id, String application, String input, String output_path, String output_format, String email)
+	{
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode request, task;
 		ArrayNode path;
-		int job_id = job_counter.incrementAndGet();
+
 		String input_format = Utility.getFilenameExtension(SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(input)), true).toLowerCase();
 		boolean MULTIPLE_EXTENSIONS = true;
 			
