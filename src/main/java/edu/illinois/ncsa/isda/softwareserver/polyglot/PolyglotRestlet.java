@@ -209,11 +209,10 @@ public class PolyglotRestlet extends ServerResource
 					if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
 						((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 					}else{
-						int jobid = polyglot.incrementAndGetJobID();
 						if(application == null){
-							result_file = polyglot.convertAndEmail(jobid, file, public_path, output, bd_useremail);
+							result_file = polyglot.convertAndEmail(file, public_path, output, bd_useremail);
 						}else{
-							result_file = polyglot.convertAndEmail(jobid, application, file, public_path, output, bd_useremail);
+							result_file = polyglot.convertAndEmail(application, file, public_path, output, bd_useremail);
 						}
 
 						if(result_file.equals("404")){
