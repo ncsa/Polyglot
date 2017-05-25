@@ -59,7 +59,6 @@ public class PolyglotRestlet extends ServerResource
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
 	private static Component component;
-
 	//Logs
 	private static long start_time;
 	private static ArrayList<RequestInformation> requests = new ArrayList<RequestInformation>();
