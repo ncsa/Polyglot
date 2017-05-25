@@ -59,7 +59,7 @@ public class PolyglotRestlet extends ServerResource
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
 	private static Component component;
-	
+
 	//Logs
 	private static long start_time;
 	private static ArrayList<RequestInformation> requests = new ArrayList<RequestInformation>();
@@ -204,6 +204,15 @@ public class PolyglotRestlet extends ServerResource
 						}
 					}
 					
+					String parent_path = Utility.getFilenamePath(file);
+					String full_filename = Utility.getFilename(file);
+					String extension = Utility.getFilenameExtension(file);
+					try {
+						file = PolyglotRESTUtilities.truncateFileName(full_filename, extension);
+					} catch (Exception ex) {
+						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
+					}
+					file = parent_path + file; 
 					request = new RequestInformation(client, file, output);
 				
 					if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
@@ -722,8 +731,7 @@ public class PolyglotRestlet extends ServerResource
 								}
 							}else if(HOST_POSTED_FILES){
 								file = public_path + (fi.getName()).replace(" ","_").replace("?", "_");
-								fi.write(new File(file));
-
+								
 								String extension = Utility.getFilenameExtension(fi.getName());
 
 								if(extension.isEmpty()){		//If no extension add one
@@ -737,7 +745,15 @@ public class PolyglotRestlet extends ServerResource
 									
 									file += extension;
 								}
-
+								
+								try {
+									file = PolyglotRESTUtilities.truncateFileName(file, extension);
+								} catch (Exception ex) {
+									return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
+								}
+								file = public_path + file;
+								fi.write(new File(file));
+								
 								//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
 								file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file);
 								if(!nonadmin_user.isEmpty()) file = SoftwareServerUtility.addAuthentication(file, nonadmin_user + ":" + accounts.get(nonadmin_user));

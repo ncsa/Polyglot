@@ -1,6 +1,10 @@
 package edu.illinois.ncsa.isda.softwareserver.polyglot;
 import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.*;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.*;
+import org.restlet.data.MediaType;
+import org.restlet.representation.StringRepresentation;
 import com.mongodb.*;
 
 /**
@@ -9,6 +13,42 @@ import com.mongodb.*;
  */
 public class PolyglotRESTUtilities
 {
+	
+	/**
+	 * internal filename will be sessionid_jobid_filename.extension(.log)
+	 * 10 digits of MAX_INTEGER, 
+	 **/
+	private final static int DOT_LOG_EXTENSION_LENGTH = 3;
+	private final static int FILENAME_RESERVED_LENGTH = 22 + DOT_LOG_EXTENSION_LENGTH;
+	private final static int MAX_FILENAME_LENGTH = 255;
+	private final static int MAX_EXTENSION_LENGTH = 5;
+	
+	
+	/**
+	 * truncate filename to reasonable size
+	 * @param filename filename with .extension
+	 * @param extension extension of filename
+	 * @return truncated filename with Url valid encoding
+	 * @throws Exception
+	 */
+	public static String truncateFileName(String filename, String extension) throws Exception
+	{
+		if(extension.length() >= MAX_EXTENSION_LENGTH){
+			throw new Exception("do not support long extension file");
+		}
+		int loops = 0;
+		while(filename.length() - FILENAME_RESERVED_LENGTH >= Integer.MAX_VALUE || FILENAME_RESERVED_LENGTH + filename.length() >= MAX_FILENAME_LENGTH) {
+			int half = Math.min(MAX_FILENAME_LENGTH-FILENAME_RESERVED_LENGTH, filename.length())>>1;
+			filename = filename.substring(0, half);
+			filename = filename + "." + extension;
+			filename = URLEncoder.encode(filename, "UTF-8");
+			if(loops >= 1)
+				System.err.println("[truncateFileName]: repeates: " + loops + "; on " + filename);
+			loops++;
+		}
+		return filename;
+	}
+	
 	/**
 	 * Get a web form interface for this restful service.
 	 * @param polylgot the polyglot steward
