@@ -3,6 +3,7 @@ import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.*;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.*;
+import kgm.utility.Utility;
 import org.restlet.data.MediaType;
 import org.restlet.representation.StringRepresentation;
 import com.mongodb.*;
@@ -13,21 +14,25 @@ import com.mongodb.*;
  */
 public class PolyglotRESTUtilities
 {
-	//internal filename will be sessionid_jobid_filename.extension(.log), 10 digits of MAX_INTEGER 
-	private final static int DOT_LOG_EXTENSION_LENGTH = 3;
-	private final static int FILENAME_RESERVED_LENGTH = 22 + DOT_LOG_EXTENSION_LENGTH;
-	private final static int MAX_FILENAME_LENGTH = 255;
-	private final static int MAX_EXTENSION_LENGTH = 5;
 	
 	/**
-	 * truncate filename to reasonable size
-	 * @param filename filename with .extension
-	 * @param extension extension of filename
-	 * @return truncated filename with Url valid encoding
+	 * truncate filename to reasonable length
+	 * @param filepath full path of file
+	 * @return full path of file with truncated filename (containing valid Url encoding)
 	 * @throws Exception
 	 */
-	public static String truncateFileName(String filename, String extension) throws Exception
+	public static String truncateFileName(String filepath) throws Exception
 	{
+		//internal filename will be sessionid_jobid_filename.extension(.log), 10 digits of MAX_INTEGER 
+		final int DOT_LOG_EXTENSION_LENGTH = 3;
+		final int FILENAME_RESERVED_LENGTH = 22 + DOT_LOG_EXTENSION_LENGTH;
+		final int MAX_FILENAME_LENGTH = 255;
+		final int MAX_EXTENSION_LENGTH = 5;
+		
+		String extension = Utility.getFilenameExtension(filepath);
+		String parent_path = Utility.getFilenamePath(filepath);
+		String filename = Utility.getFilename(filepath);
+		
 		if(extension.length() >= MAX_EXTENSION_LENGTH){
 			throw new Exception("do not support long extension file");
 		}
@@ -46,7 +51,7 @@ public class PolyglotRESTUtilities
 			loops++;
 		}
       
-		return filename;
+		return parent_path + filename;
 	}
 	
 	/**

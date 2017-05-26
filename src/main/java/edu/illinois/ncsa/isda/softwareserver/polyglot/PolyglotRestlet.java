@@ -203,18 +203,13 @@ public class PolyglotRestlet extends ServerResource
 							}
 						}
 					}
-					
-					String parent_path = Utility.getFilenamePath(file);
-					String full_filename = Utility.getFilename(file);
-					String extension = Utility.getFilenameExtension(file);
                   
 					try {
-						file = PolyglotRESTUtilities.truncateFileName(full_filename, extension);
+						file = PolyglotRESTUtilities.truncateFileName(file);
 					} catch (Exception ex) {
 						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 					}
-                  
-					file = parent_path + file; 
+
 					request = new RequestInformation(client, file, output);
 				
 					if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
@@ -733,7 +728,7 @@ public class PolyglotRestlet extends ServerResource
 								}
 							}else if(HOST_POSTED_FILES){
 								file = public_path + (fi.getName()).replace(" ","_").replace("?", "_");
-								
+
 								String extension = Utility.getFilenameExtension(fi.getName());
 
 								if(extension.isEmpty()){		//If no extension add one
@@ -749,11 +744,10 @@ public class PolyglotRestlet extends ServerResource
 								}
 								
 								try {
-									file = PolyglotRESTUtilities.truncateFileName(file, extension);
+									file = PolyglotRESTUtilities.truncateFileName(file);
 								} catch (Exception ex) {
 									return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 								}
-								file = public_path + file;
 								fi.write(new File(file));
 								
 								//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
