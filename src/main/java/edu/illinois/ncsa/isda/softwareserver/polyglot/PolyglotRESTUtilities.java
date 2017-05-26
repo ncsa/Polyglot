@@ -37,7 +37,7 @@ public class PolyglotRESTUtilities
 			throw new Exception("do not support long extension file");
 		}
 		int loops = 0;
-		while(filename.length() - FILENAME_RESERVED_LENGTH >= Integer.MAX_VALUE || FILENAME_RESERVED_LENGTH + filename.length() >= MAX_FILENAME_LENGTH) {
+		while(filename.length() >= Integer.MAX_VALUE - FILENAME_RESERVED_LENGTH || filename.length() + FILENAME_RESERVED_LENGTH >= MAX_FILENAME_LENGTH) {
 			int half = Math.min(MAX_FILENAME_LENGTH-FILENAME_RESERVED_LENGTH, filename.length())>>1;
 			filename = filename.substring(0, half);
 			filename = filename + "." + extension;
