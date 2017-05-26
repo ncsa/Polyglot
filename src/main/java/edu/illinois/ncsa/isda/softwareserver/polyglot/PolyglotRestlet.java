@@ -59,6 +59,7 @@ public class PolyglotRestlet extends ServerResource
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
 	private static Component component;
+  
 	//Logs
 	private static long start_time;
 	private static ArrayList<RequestInformation> requests = new ArrayList<RequestInformation>();
@@ -206,11 +207,13 @@ public class PolyglotRestlet extends ServerResource
 					String parent_path = Utility.getFilenamePath(file);
 					String full_filename = Utility.getFilename(file);
 					String extension = Utility.getFilenameExtension(file);
+                  
 					try {
 						file = PolyglotRESTUtilities.truncateFileName(full_filename, extension);
 					} catch (Exception ex) {
 						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 					}
+                  
 					file = parent_path + file; 
 					request = new RequestInformation(client, file, output);
 				
