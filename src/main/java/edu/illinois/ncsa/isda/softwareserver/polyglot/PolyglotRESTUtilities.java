@@ -13,16 +13,11 @@ import com.mongodb.*;
  */
 public class PolyglotRESTUtilities
 {
-	
-	/**
-	 * internal filename will be sessionid_jobid_filename.extension(.log)
-	 * 10 digits of MAX_INTEGER, 
-	 **/
+	//internal filename will be sessionid_jobid_filename.extension(.log), 10 digits of MAX_INTEGER 
 	private final static int DOT_LOG_EXTENSION_LENGTH = 3;
 	private final static int FILENAME_RESERVED_LENGTH = 22 + DOT_LOG_EXTENSION_LENGTH;
 	private final static int MAX_FILENAME_LENGTH = 255;
 	private final static int MAX_EXTENSION_LENGTH = 5;
-	
 	
 	/**
 	 * truncate filename to reasonable size
@@ -36,16 +31,21 @@ public class PolyglotRESTUtilities
 		if(extension.length() >= MAX_EXTENSION_LENGTH){
 			throw new Exception("do not support long extension file");
 		}
+      
 		int loops = 0;
+      
 		while(filename.length() >= Integer.MAX_VALUE - FILENAME_RESERVED_LENGTH || filename.length() + FILENAME_RESERVED_LENGTH >= MAX_FILENAME_LENGTH) {
 			int half = Math.min(MAX_FILENAME_LENGTH-FILENAME_RESERVED_LENGTH, filename.length())>>1;
 			filename = filename.substring(0, half);
 			filename = filename + "." + extension;
 			filename = URLEncoder.encode(filename, "UTF-8");
+          
 			if(loops >= 1)
 				System.err.println("[truncateFileName]: repeates: " + loops + "; on " + filename);
+          
 			loops++;
 		}
+      
 		return filename;
 	}
 	
