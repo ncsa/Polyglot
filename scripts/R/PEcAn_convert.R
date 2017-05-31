@@ -70,6 +70,7 @@ db.close(con)
 
 if(grepl("\\.met$", outputfile)){
   if(is.element("model", input)){
+    print("ERROR: model not found.")
     quit(status=-1)
   } else {
     model <- input$model
