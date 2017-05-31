@@ -52,7 +52,7 @@ else
 fi
 
 # create image using temp id
-${DEBUG} docker build --tag polyglot_$$ docker/${app}
+${DEBUG} docker build --tag polyglot_$$ docker/polyglot
 if [ $? -ne 0 ]; then
     echo "FAILED build of docker/polyglot/Dockerfile"
     exit -1
