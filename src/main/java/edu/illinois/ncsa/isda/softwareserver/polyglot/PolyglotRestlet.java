@@ -737,8 +737,15 @@ public class PolyglotRestlet extends ServerResource
 									continue;
 								}
 							}else if(HOST_POSTED_FILES){
-								file = public_path + (fi.getName()).replace(" ","_").replace("?", "_");
-
+								String filename = fi.getName();
+								try {
+									filename = URLEncoder.encode(filename, "UTF-8");
+								}catch (UnsupportedEncodingException ex) {
+									ex.printStackTrace();
+								}
+								file = public_path + (filename);
+								fi.write(new File(file));
+								
 								String extension = Utility.getFilenameExtension(fi.getName());
 
 								if(extension.isEmpty()){		//If no extension add one
