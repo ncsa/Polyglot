@@ -731,7 +731,7 @@ public class PolyglotRestlet extends ServerResource
 								}catch (UnsupportedEncodingException ex) {
 									ex.printStackTrace();
 								}
-								HOST_POSTED_FILES = false;
+								
 								//2. rename posted file as uniqueness and copy to Polyglot folder
 								if(HOST_POSTED_FILES){ // add jobid_ as prefix and copy posted file to Public folder
 									file = public_path + jobid + "_" + (filename);
