@@ -33,7 +33,7 @@ public class PolyglotRESTUtilities
 		String parent_path = Utility.getFilenamePath(filepath);
 		String filename = Utility.getFilename(filepath);
 		
-		if(extension.length() >= MAX_EXTENSION_LENGTH){
+		if(extension.length() > MAX_EXTENSION_LENGTH){
 			throw new Exception("do not support long extension file");
 		}
       

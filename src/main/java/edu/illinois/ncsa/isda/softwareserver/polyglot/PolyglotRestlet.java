@@ -203,12 +203,6 @@ public class PolyglotRestlet extends ServerResource
 							}
 						}
 					}
-                  
-					try {
-						file = PolyglotRESTUtilities.truncateFileName(file);
-					} catch (Exception ex) {
-						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
-					}
 
 					request = new RequestInformation(client, file, output);
 				
@@ -226,11 +220,27 @@ public class PolyglotRestlet extends ServerResource
 							return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 						}
 					}
-
+					// create empty .log file
+					try {
+						String logfilename = PolyglotRESTUtilities.truncateFileName(Utility.getFilename(result_file));
+						Utility.touch(public_path + logfilename + ".log");
+					} catch (Exception ex) {
+						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
+					}
+					
 					if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;		//If a name wasn't suggested assume this.
 					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 					int job_id = SoftwareServerRestlet.getSession(result_url);
 
+					String truncate_file = Utility.getFilenameName(file) + "." + output;
+					try {
+						truncate_file = PolyglotRESTUtilities.truncateFileName(truncate_file);
+					} catch (Exception ex) {
+						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
+					}
+					result_file = job_id + "_" + truncate_file;
+					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
+					
 					if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 						request.setEndOfRequest(true);
 						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at \033[94m" + result_url + "\033[0m");
