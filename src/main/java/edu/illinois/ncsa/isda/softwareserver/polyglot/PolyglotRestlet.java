@@ -730,7 +730,6 @@ public class PolyglotRestlet extends ServerResource
 								}catch (UnsupportedEncodingException ex) {
 									ex.printStackTrace();
 								}
-								
 								file = public_path + jobid + "_" + (filename);
 								fi.write(new File(file));
 
@@ -799,7 +798,12 @@ public class PolyglotRestlet extends ServerResource
 					}else{
 						result_file = polyglot.convertAndEmail(jobid, application, file, public_path, output, bd_useremail);
 					}
+					// remove jobid_ added by convertAndEmail, since we already added extra jobid_ as the prefix of posted filename.
+					result_file = result_file.substring(result_file.indexOf('_')+1);
 				}
+				
+				// create empty .log file under public path
+				Utility.touch(public_path + result_file + ".log");
 
 				if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;
 				result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
