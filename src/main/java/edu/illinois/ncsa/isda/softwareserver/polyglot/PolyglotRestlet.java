@@ -648,7 +648,7 @@ public class PolyglotRestlet extends ServerResource
 						
 						if(fi.getName() == null){
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
-						}else{
+						}else{ // do checkin or copy posted file
 							if(part0.equals("checkin")) {
 								String filename, file_url;
 								String log_file, ss_log_file = "", sf_log, line;
@@ -722,7 +722,8 @@ public class PolyglotRestlet extends ServerResource
 									System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: File not being processed due to security concern - either the file id is non-numeric or the filename is invalid.");
 									continue;
 								}
-							}else if(HOST_POSTED_FILES){
+							}else {
+								//1. increate jobid and url encode input filename
 								jobid = polyglot.incrementAndGetJobID();
 								String filename = fi.getName();
 								try {
@@ -730,30 +731,34 @@ public class PolyglotRestlet extends ServerResource
 								}catch (UnsupportedEncodingException ex) {
 									ex.printStackTrace();
 								}
-								file = public_path + jobid + "_" + (filename);
-								fi.write(new File(file));
-
-								String extension = Utility.getFilenameExtension(fi.getName());
-
-								if(extension.isEmpty()){		//If no extension add one
-									String myCommand ="trid -r:1 -ae " + public_path + (fi.getName()).replace(" ","_") + " | grep % "+ "| awk  '{print tolower($2) }'" + "|  sed 's/^.\\(.*\\).$/\\1/'";
-									// the 'trid' command can be obtained at http://mark0.net/soft-trid-e.html
-									Process p = Runtime.getRuntime().exec(new String[] {"sh", "-c", myCommand});
-									p.waitFor();
-									BufferedReader buf = new BufferedReader(new InputStreamReader(p.getInputStream()));
-									extension = buf.readLine();
-									Utility.pause(1000);
-									
-									file += extension;
+								HOST_POSTED_FILES = false;
+								//2. rename posted file as uniqueness and copy to Polyglot folder
+								if(HOST_POSTED_FILES){ // add jobid_ as prefix and copy posted file to Public folder
+									file = public_path + jobid + "_" + (filename);
+									fi.write(new File(file));
+	
+									String extension = Utility.getFilenameExtension(fi.getName());
+	
+									if(extension.isEmpty()){		//If no extension add one
+										String myCommand ="trid -r:1 -ae " + public_path + (fi.getName()).replace(" ","_") + " | grep % "+ "| awk  '{print tolower($2) }'" + "|  sed 's/^.\\(.*\\).$/\\1/'";
+										// the 'trid' command can be obtained at http://mark0.net/soft-trid-e.html
+										Process p = Runtime.getRuntime().exec(new String[] {"sh", "-c", myCommand});
+										p.waitFor();
+										BufferedReader buf = new BufferedReader(new InputStreamReader(p.getInputStream()));
+										extension = buf.readLine();
+										Utility.pause(1000);
+										
+										file += extension;
+									}
+	
+									//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
+									file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file);
+									if(!nonadmin_user.isEmpty()) file = SoftwareServerUtility.addAuthentication(file, nonadmin_user + ":" + accounts.get(nonadmin_user));
+									System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Temporarily hosting file \"" + Utility.getFilename(file) + "\" for " + client + " at " + file);
+								}else{ // add jobid_ as prefix and copy posted file to Temp folder
+									file = temp_path + jobid + "_" + (filename);
+									fi.write(new File(file));
 								}
-
-								//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
-								file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file);
-								if(!nonadmin_user.isEmpty()) file = SoftwareServerUtility.addAuthentication(file, nonadmin_user + ":" + accounts.get(nonadmin_user));
-								System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Temporarily hosting file \"" + Utility.getFilename(file) + "\" for " + client + " at " + file);
-							}else{
-								file = temp_path + (fi.getName()).replace(" ","_");
-								fi.write(new File(file));
 							}
 						}
 					}
