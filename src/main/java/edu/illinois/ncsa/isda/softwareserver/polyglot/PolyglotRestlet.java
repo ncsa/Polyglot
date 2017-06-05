@@ -220,6 +220,7 @@ public class PolyglotRestlet extends ServerResource
 							return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 						}
 					}
+                  
 					// create empty .log file
 					try {
 						String logfilename = PolyglotRESTUtilities.truncateFileName(Utility.getFilename(result_file));
