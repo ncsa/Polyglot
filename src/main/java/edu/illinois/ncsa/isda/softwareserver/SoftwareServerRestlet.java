@@ -568,6 +568,7 @@ public class SoftwareServerRestlet extends ServerResource
 							}catch(Exception e) {e.printStackTrace();}
 
 							String truncated_file = file;
+                          
 							try {
 								truncated_file = PolyglotRESTUtilities.truncateFileName(file);
 							} catch (Exception ex) {
