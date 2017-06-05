@@ -16,7 +16,7 @@ public class PolyglotRESTUtilities
 {
 	
 	/**
-	 * truncate filename to reasonable length
+	 * Truncate filename to reasonable length
 	 * @param filepath full path of file
 	 * @return full path of file with truncated filename (containing valid Url encoding)
 	 * @throws Exception
