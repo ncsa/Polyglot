@@ -349,6 +349,7 @@ public class SoftwareServerRestlet extends ServerResource
 	
 						SoftwareServerUtility.setDefaultAuthentication(username + ":" + password);
 					}
+                  
 					// download file and rename to potentially truncated filename
 					String download_file = PolyglotRESTUtilities.truncateFileName(Utility.getFilename(file));
 					
