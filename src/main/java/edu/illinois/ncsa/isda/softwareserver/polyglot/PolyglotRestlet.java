@@ -233,11 +233,13 @@ public class PolyglotRestlet extends ServerResource
 					int job_id = SoftwareServerRestlet.getSession(result_url);
 
 					String truncate_file = Utility.getFilenameName(file) + "." + output;
+                  
 					try {
 						truncate_file = PolyglotRESTUtilities.truncateFileName(truncate_file);
 					} catch (Exception ex) {
 						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 					}
+                  
 					result_file = job_id + "_" + truncate_file;
 					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 					
@@ -765,6 +767,7 @@ public class PolyglotRestlet extends ServerResource
 								} catch (Exception ex) {
 									return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 								}
+                              
 								fi.write(new File(file));
 								
 								//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
