@@ -220,29 +220,25 @@ public class PolyglotRestlet extends ServerResource
 							return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 						}
 					}
-                  
-					// create empty .log file
-					try {
-						String logfilename = PolyglotRESTUtilities.truncateFileName(Utility.getFilename(result_file));
-						Utility.touch(public_path + logfilename + ".log");
-					} catch (Exception ex) {
-						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
-					}
+
+
 					
 					if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;		//If a name wasn't suggested assume this.
 					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 					int job_id = SoftwareServerRestlet.getSession(result_url);
 
 					String truncate_file = Utility.getFilenameName(file) + "." + output;
-                  
 					try {
-						truncate_file = PolyglotRESTUtilities.truncateFileName(truncate_file);
+						truncate_file = PolyglotRESTUtilities.truncateFileNameFromLeftMost(truncate_file);
 					} catch (Exception ex) {
 						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 					}
                   
 					result_file = job_id + "_" + truncate_file;
 					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
+					
+					// create empty .log file
+					Utility.touch(public_path + result_file + ".log");
 					
 					if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 						request.setEndOfRequest(true);
@@ -747,7 +743,6 @@ public class PolyglotRestlet extends ServerResource
 									ex.printStackTrace();
 								}
 								file = public_path + (filename);
-								fi.write(new File(file));
 								
 								String extension = Utility.getFilenameExtension(fi.getName());
 
@@ -764,7 +759,7 @@ public class PolyglotRestlet extends ServerResource
 								}
 								
 								try {
-									file = PolyglotRESTUtilities.truncateFileName(file);
+									file = PolyglotRESTUtilities.truncateFileNameFromLeftMost(file);
 								} catch (Exception ex) {
 									return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 								}

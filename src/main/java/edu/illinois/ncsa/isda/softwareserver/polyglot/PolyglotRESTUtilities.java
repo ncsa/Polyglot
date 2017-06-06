@@ -16,39 +16,51 @@ public class PolyglotRESTUtilities
 {
 	
 	/**
-	 * Truncate filename to reasonable length
+	 * Truncate filename from the leftmost filename to a reasonable length, 
+	 * so caller can put length of prefix (maximum FILENAME_PREFIX_RESERVED_LENGTH) before the truncated filename and DOT_LOG_EXTENSION_LENGTH length
+	 * as a new extension.
+	 * 
+	 * Note: 
+	 * 			if input filename starts with sessionid or jobid as prefix, then such prefix will be potentially truncated off.
+	 * 			it is the caller's responsibility to add such prefix back.
+	 *
+	 * Warning:
+	 * 			it is potentially to cut off multiple extensions when last_x_chars' length < multiple extensions' length
+	 * 
 	 * @param filepath full path of file
 	 * @return full path of file with truncated filename (containing valid Url encoding)
 	 * @throws Exception
 	 */
-	public static String truncateFileName(String filepath) throws Exception
+	public static String truncateFileNameFromLeftMost(String filepath) throws Exception
 	{
-		//internal filename will be sessionid_jobid_filename.extension(.log), 10 digits of MAX_INTEGER 
-		final int DOT_LOG_EXTENSION_LENGTH = 3;
-		final int FILENAME_RESERVED_LENGTH = 22 + DOT_LOG_EXTENSION_LENGTH;
-		final int MAX_FILENAME_LENGTH = 255;
-		final int MAX_EXTENSION_LENGTH = 5;
+		final int DOT_LOG_EXTENSION_LENGTH = 4; //.log
+		/**
+		 * before POL-194 merged, 
+		 * 		internal filename will sessionid_filename.extension(.log/.url) on Software Server.
+		 * 		internal filename will jobid_filename.extension(.log/.url) on Polyglot Server.
+		 * 
+		 * After POL-194 merged,
+		 * 		internal filename will be sessionid_jobid_filename.extension(.log), 10 digits of MAX_INTEGER
+		 */
+		final int FILENAME_PREFIX_RESERVED_LENGTH = 22;
+		final int FILENAME_RESERVED_LENGTH = FILENAME_PREFIX_RESERVED_LENGTH + DOT_LOG_EXTENSION_LENGTH;
+		final int MAX_FILENAME_LENGTH = 255; //maximum filename length is 255 on linux
+		final int MAX_EXTENSION_LENGTH = 5; //htmlz
 		
-		String extension = Utility.getFilenameExtension(filepath);
+		String last_extension = Utility.getFilenameExtension(filepath);
 		String parent_path = Utility.getFilenamePath(filepath);
 		String filename = Utility.getFilename(filepath);
 		
-		if(extension.length() > MAX_EXTENSION_LENGTH){
+		if(last_extension.length() > MAX_EXTENSION_LENGTH){
 			throw new Exception("do not support long extension file");
 		}
       
-		int loops = 0;
-      
-		while(filename.length() >= Integer.MAX_VALUE - FILENAME_RESERVED_LENGTH || filename.length() + FILENAME_RESERVED_LENGTH >= MAX_FILENAME_LENGTH) {
-			int half = Math.min(MAX_FILENAME_LENGTH-FILENAME_RESERVED_LENGTH, filename.length())>>1;
-			filename = filename.substring(0, half);
-			filename = filename + "." + extension;
-			filename = URLEncoder.encode(filename, "UTF-8");
-          
-			if(loops >= 1)
-				System.err.println("[truncateFileName]: repeates: " + loops + "; on " + filename);
-          
-			loops++;
+		if(filename.length() >= Integer.MAX_VALUE - FILENAME_RESERVED_LENGTH || filename.length() + FILENAME_RESERVED_LENGTH >= MAX_FILENAME_LENGTH) {
+			System.out.println("\t [truncateFileName]: before : " + filename);
+			int last_x_chars = Math.min(MAX_FILENAME_LENGTH, filename.length()) - FILENAME_RESERVED_LENGTH;
+			filename = filename.substring(filename.length()-last_x_chars);
+			filename = filename.replace("%", "_");
+			System.out.println("\t [truncateFileName]: after : " + filename);
 		}
       
 		return parent_path + filename;

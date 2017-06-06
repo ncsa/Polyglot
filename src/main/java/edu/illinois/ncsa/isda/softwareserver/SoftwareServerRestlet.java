@@ -351,14 +351,14 @@ public class SoftwareServerRestlet extends ServerResource
 					}
                   
 					// download file and rename to potentially truncated filename
-					String download_file = PolyglotRESTUtilities.truncateFileName(Utility.getFilename(file));
+					String downloaded_file = PolyglotRESTUtilities.truncateFileNameFromLeftMost(Utility.getFilename(file));
 					
 					if(download_method.equals("wget")){
 						try{
 							if(username != null && password != null){
-								DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(download_file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(download_file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
+								DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(downloaded_file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(downloaded_file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
 							}else{
-								DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(download_file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(download_file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
+								DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(downloaded_file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(downloaded_file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
 							}
 	
 							if(!DOWNLOAD_COMPLETED){
@@ -377,7 +377,7 @@ public class SoftwareServerRestlet extends ServerResource
 						Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase(), file);
 					}
 
-					file = SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(download_file));
+					file = SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(downloaded_file));
 				}
 			
 				task = getTask(application_alias, task_string, session + "_" + file, format);
@@ -570,7 +570,7 @@ public class SoftwareServerRestlet extends ServerResource
 							String truncated_file = file;
                           
 							try {
-								truncated_file = PolyglotRESTUtilities.truncateFileName(file);
+								truncated_file = PolyglotRESTUtilities.truncateFileNameFromLeftMost(file);
 							} catch (Exception ex) {
 								return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 							}
