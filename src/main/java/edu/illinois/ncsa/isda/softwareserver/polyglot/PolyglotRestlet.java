@@ -227,11 +227,10 @@ public class PolyglotRestlet extends ServerResource
 
 					try {
 						result_file = PolyglotRESTUtilities.truncateFileName(job_id, result_file);
-						result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 					} catch (Exception ex) {
 						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 					}
-					
+					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 					// create empty .log file
 					Utility.touch(public_path + result_file + ".log");
 					
