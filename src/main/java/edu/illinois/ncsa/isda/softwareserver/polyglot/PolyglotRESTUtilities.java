@@ -50,7 +50,7 @@ public class PolyglotRESTUtilities
 		filename = filename.substring(filename.length()-last_x_chars);
 		filename = filename.replace("%", "_");
 		System.out.println("\t [truncateFileName]: after : " + filename);
-    if(prefixId >= 1) return parent_path + prefixId + "_" + filename;
+        if(prefixId >= 1) return parent_path + prefixId + "_" + filename;
 		return parent_path + filename;
 	}
 	
