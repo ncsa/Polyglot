@@ -220,8 +220,6 @@ public class PolyglotRestlet extends ServerResource
 							return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 						}
 					}
-
-
 					
 					if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;		//If a name wasn't suggested assume this.
 					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
