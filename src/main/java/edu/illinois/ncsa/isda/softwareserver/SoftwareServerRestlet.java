@@ -351,7 +351,7 @@ public class SoftwareServerRestlet extends ServerResource
 					}
                   
 					// download file and rename to potentially truncated filename
-					String downloaded_file = PolyglotRESTUtilities.truncateFileNameFromLeftMost(Utility.getFilename(file));
+					String downloaded_file = PolyglotRESTUtilities.truncateFileName(-1, Utility.getFilename(file));
 					
 					if(download_method.equals("wget")){
 						try{
@@ -570,7 +570,7 @@ public class SoftwareServerRestlet extends ServerResource
 							String truncated_file = file;
                           
 							try {
-								truncated_file = PolyglotRESTUtilities.truncateFileNameFromLeftMost(file);
+								truncated_file = PolyglotRESTUtilities.truncateFileName(-1, file);
 							} catch (Exception ex) {
 								return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 							}

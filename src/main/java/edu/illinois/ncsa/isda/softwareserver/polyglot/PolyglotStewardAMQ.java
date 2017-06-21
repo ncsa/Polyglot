@@ -765,8 +765,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 
 						output_path = document.get("output_path").toString();
 						output_format = document.get("output_format").toString();
-					    // PolyglotRestlet urlencodes input file, so write raw input (possible url encode) into .url file
-						Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(document.get("input").toString(), MULTIPLE_EXTENSIONS) + "." + output_format + ".url", "[InternetShortcut]\nURL=" + input);
+					  // PolyglotRestlet urlencodes input file, decoded url as Link in .url may cause problem.
+						Utility.save(output_path + "/" + job_id + "_" + Utility.getFilenameName(document.get("input").toString(), MULTIPLE_EXTENSIONS) + "." + output_format + ".url", "[InternetShortcut]\nURL=" + URLDecoder.decode(input, "UTF-8"));
 						collection.remove(document);
 						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [steward] [" + job_id + "]: Job-" + job_id + " completed, result hosted at " + URLDecoder.decode(input, "UTF-8"));
 

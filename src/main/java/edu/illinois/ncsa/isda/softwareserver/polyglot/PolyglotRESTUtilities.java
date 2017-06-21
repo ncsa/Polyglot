@@ -14,24 +14,24 @@ import com.mongodb.*;
  */
 public class PolyglotRESTUtilities
 {
-	
+
 	/**
 	 * Truncate filename from the leftmost filename to a reasonable length, 
 	 * so caller can put length of prefix (maximum FILENAME_PREFIX_RESERVED_LENGTH) before the truncated filename and DOT_LOG_EXTENSION_LENGTH length
 	 * as a new extension.
-	 * 
+	 *
 	 * Note: 
-	 * 			if input filename starts with sessionid or jobid as prefix, then such prefix will be potentially truncated off.
-	 * 			it is the caller's responsibility to add such prefix back.
+	 * 			caller explicitly gives valid sessionid or jobid as the prefix of truncated filename.
 	 *
 	 * Warning:
 	 * 			it will cut off multiple extensions if the length of multiple extensions > 229, which is not possible.
 	 * 
+	 * @param prefixId if sessionid or jobid >= 1, then add such id as prefix of truncated filename, otherwise not.
 	 * @param filepath full path of file
 	 * @return full path of file with truncated filename (containing valid Url encoding)
 	 * @throws Exception
 	 */
-	public static String truncateFileNameFromLeftMost(String filepath) throws Exception
+	public static String truncateFileName(int prefixId, String filepath) throws Exception
 	{
 		final int DOT_LOG_EXTENSION_LENGTH = 4; //.log
 		final int FILENAME_PREFIX_RESERVED_LENGTH = 22;
@@ -40,15 +40,17 @@ public class PolyglotRESTUtilities
 		
 		String parent_path = Utility.getFilenamePath(filepath);
 		String filename = Utility.getFilename(filepath);
-      
-		if(filename.length() >= MAX_FILENAME_LENGTH - FILENAME_RESERVED_LENGTH) {
-			System.out.println("\t [truncateFileName]: before : " + filename);
-			int last_x_chars = Math.min(MAX_FILENAME_LENGTH, filename.length()) - FILENAME_RESERVED_LENGTH;
-			filename = filename.substring(filename.length()-last_x_chars);
-			filename = filename.replace("%", "_");
-			System.out.println("\t [truncateFileName]: after : " + filename);
+     
+		if(filename.length() < MAX_FILENAME_LENGTH - FILENAME_RESERVED_LENGTH) {
+			return filepath;
 		}
-      
+		
+		System.out.println("\t [truncateFileName]: before : " + filename);
+		int last_x_chars = Math.min(MAX_FILENAME_LENGTH, filename.length()) - FILENAME_RESERVED_LENGTH;
+		filename = filename.substring(filename.length()-last_x_chars);
+		filename = filename.replace("%", "_");
+		System.out.println("\t [truncateFileName]: after : " + filename);
+    if(prefixId >= 1) return parent_path + prefixId + "_" + filename;
 		return parent_path + filename;
 	}
 	

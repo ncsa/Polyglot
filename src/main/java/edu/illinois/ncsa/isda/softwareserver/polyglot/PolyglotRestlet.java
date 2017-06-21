@@ -220,20 +220,17 @@ public class PolyglotRestlet extends ServerResource
 							return new StringRepresentation("File doesn't exist", MediaType.TEXT_PLAIN);
 						}
 					}
-					
+
 					if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;		//If a name wasn't suggested assume this.
 					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 					int job_id = SoftwareServerRestlet.getSession(result_url);
 
-					String truncate_file = Utility.getFilenameName(file) + "." + output;
 					try {
-						truncate_file = PolyglotRESTUtilities.truncateFileNameFromLeftMost(truncate_file);
+						result_file = PolyglotRESTUtilities.truncateFileName(job_id, result_file);
+						result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 					} catch (Exception ex) {
 						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 					}
-                  
-					result_file = job_id + "_" + truncate_file;
-					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
 					
 					// create empty .log file
 					Utility.touch(public_path + result_file + ".log");
@@ -757,7 +754,7 @@ public class PolyglotRestlet extends ServerResource
 								}
 								
 								try {
-									file = PolyglotRESTUtilities.truncateFileNameFromLeftMost(file);
+									file = PolyglotRESTUtilities.truncateFileName(-1, file);
 								} catch (Exception ex) {
 									return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 								}
