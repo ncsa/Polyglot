@@ -222,7 +222,7 @@ public class PolyglotRestlet extends ServerResource
 					}
 
 					if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;		//If a name wasn't suggested assume this.
-					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
+					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;    //TODO: do we need this line still? or can we get the job_id after the truncation?
 					int job_id = SoftwareServerRestlet.getSession(result_url);
 
 					try {
