@@ -9,7 +9,7 @@
 #DEBUG=echo
 
 # make sure PROJECT ends with /
-PROJECT=${PROJECT:-"bingzhang"}
+PROJECT=${PROJECT:-"ncsapolyglot"}
 
 # copy dist file to docker folder
 ZIPFILE=$( /bin/ls -1rt target/polyglot-*.zip 2>/dev/null | tail -1 )
