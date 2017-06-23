@@ -730,6 +730,8 @@ public class PolyglotRestlet extends ServerResource
 									continue;
 								}
 							}else if(HOST_POSTED_FILES){
+                                //Check for invalid characters
+                                //file = public_path + (fi.getName()).replace(" ","_").replace("?", "_");
 								String filename = fi.getName();
 								try {
 									filename = URLEncoder.encode(filename, "UTF-8");
