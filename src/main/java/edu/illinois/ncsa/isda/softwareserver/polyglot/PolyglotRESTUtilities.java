@@ -14,7 +14,31 @@ import com.mongodb.*;
  */
 public class PolyglotRESTUtilities
 {
-
+	/**
+	 * Truncate filename to a reasonable length. This function will find the prefix positive integer delimited by '_'
+	 * if there is such integer in the prefix of filename, then it will be treated as prefixId and added back as prefix of truncated filename.
+	 * 
+	 * Warning, positive prefixId will take space of FILENAME_RESERVED_LENGTH. However, for current filename naming,
+	 * FILENAME_RESERVED_LENGTH is wide enough to hold (jobdId_ or sessionID_) + prefixId.
+	 *  
+	 * @param filepath full path of file
+	 * @return full path of file with truncated filename (containing valid Url encoding)
+	 */
+	public static String truncateFileName(String filepath)
+	{
+		int prefixId = -1;
+		String filename = Utility.getFilenameName(filepath);
+		int tmpi = filename.indexOf("_");
+		if(tmpi > 0) {
+			try{
+				prefixId = Integer.valueOf(filename.substring(0, tmpi));
+			} catch (Exception ex){
+				prefixId = -1;
+			}
+		}
+		return truncateFileName(prefixId, filepath);
+	}
+	
 	/**
 	 * Truncate filename from the leftmost filename to a reasonable length, 
 	 * so caller can put length of prefix (maximum FILENAME_PREFIX_RESERVED_LENGTH) before the truncated filename and DOT_LOG_EXTENSION_LENGTH length
@@ -29,9 +53,8 @@ public class PolyglotRESTUtilities
 	 * @param prefixId if sessionid or jobid >= 1, then add such id as prefix of truncated filename, otherwise not.
 	 * @param filepath full path of file
 	 * @return full path of file with truncated filename (containing valid Url encoding)
-	 * @throws Exception
 	 */
-	public static String truncateFileName(int prefixId, String filepath) throws Exception
+	public static String truncateFileName(int prefixId, String filepath)
 	{
 		final int DOT_LOG_EXTENSION_LENGTH = 4; //.log
 		final int FILENAME_PREFIX_RESERVED_LENGTH = 22;

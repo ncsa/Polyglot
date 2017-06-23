@@ -226,7 +226,7 @@ public class PolyglotRestlet extends ServerResource
 					int job_id = SoftwareServerRestlet.getSession(result_url);
 
 					try {
-						result_file = PolyglotRESTUtilities.truncateFileName(job_id, result_file);
+						result_file = PolyglotRESTUtilities.truncateFileName(result_file);
 					} catch (Exception ex) {
 						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 					}
@@ -730,9 +730,9 @@ public class PolyglotRestlet extends ServerResource
 									continue;
 								}
 							}else if(HOST_POSTED_FILES){
-                                //Check for invalid characters
-                                //file = public_path + (fi.getName()).replace(" ","_").replace("?", "_");
-								String filename = fi.getName();
+                //Check for invalid characters
+                //file = public_path + (fi.getName()).replace(" ","_").replace("?", "_");
+								String filename = fi.getName().replace(" ", "_");
 								try {
 									filename = URLEncoder.encode(filename, "UTF-8");
 								}catch (UnsupportedEncodingException ex) {
@@ -755,7 +755,7 @@ public class PolyglotRestlet extends ServerResource
 								}
 								
 								try {
-									file = PolyglotRESTUtilities.truncateFileName(-1, file);
+									file = PolyglotRESTUtilities.truncateFileName(file);
 								} catch (Exception ex) {
 									return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 								}
