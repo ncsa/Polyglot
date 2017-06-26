@@ -3,6 +3,7 @@ import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Application;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerRESTUtilities.*;
 import edu.illinois.ncsa.isda.softwareserver.datawolf.WorkflowUtilities;
+import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotRESTUtilities;
 import kgm.image.ImageUtility;
 import kgm.utility.*;
 import java.util.*;
@@ -348,13 +349,16 @@ public class SoftwareServerRestlet extends ServerResource
 	
 						SoftwareServerUtility.setDefaultAuthentication(username + ":" + password);
 					}
-	
+                  
+					// download file and rename to potentially truncated filename
+					String downloaded_file = PolyglotRESTUtilities.truncateFileName(Utility.getFilename(file));
+					
 					if(download_method.equals("wget")){
 						try{
 							if(username != null && password != null){
-								DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
+								DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(downloaded_file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(downloaded_file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
 							}else{
-								DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
+								DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(downloaded_file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(downloaded_file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
 							}
 	
 							if(!DOWNLOAD_COMPLETED){
@@ -372,8 +376,8 @@ public class SoftwareServerRestlet extends ServerResource
 					}else{
 						Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase(), file);
 					}
-	
-					file = SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(file));
+
+					file = SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(downloaded_file));
 				}
 			
 				task = getTask(application_alias, task_string, session + "_" + file, format);
@@ -563,6 +567,14 @@ public class SoftwareServerRestlet extends ServerResource
 								file = URLDecoder.decode(part4, "UTF-8");
 							}catch(Exception e) {e.printStackTrace();}
 
+							String truncated_file = file;
+                          
+							try {
+								truncated_file = PolyglotRESTUtilities.truncateFileName(-1, file);
+							} catch (Exception ex) {
+								return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
+							}
+							
 							session = -1;
 							//localhost = getReference().getBaseRef().toString();
 							//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
@@ -571,10 +583,10 @@ public class SoftwareServerRestlet extends ServerResource
 	
 							if(file.startsWith(Utility.endSlash(localhost))){																						//Locally cached files already have session ids
 								session = getSession(file);
-								result = Utility.endSlash(localhost) + "file/" + session + "_" + getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
+								result = Utility.endSlash(localhost) + "file/" + session + "_" + getFilenameName(truncated_file, MULTIPLE_EXTENSIONS) + "." + format;
 							}else{																																											//Remote files must be assigned a session id
 								session = server.getSession();
-								result = Utility.endSlash(localhost) + "file/" + session + "_" + Utility.getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
+								result = Utility.endSlash(localhost) + "file/" + session + "_" + Utility.getFilenameName(truncated_file, MULTIPLE_EXTENSIONS) + "." + format;
 							}
 				
 							if(GUESTS_ENABLED) result = result.substring(0, 7) + "guest:guest@" + result.substring(7);

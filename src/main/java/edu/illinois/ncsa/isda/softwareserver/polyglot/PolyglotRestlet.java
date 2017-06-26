@@ -59,7 +59,7 @@ public class PolyglotRestlet extends ServerResource
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
 	private static Component component;
-	
+  
 	//Logs
 	private static long start_time;
 	private static ArrayList<RequestInformation> requests = new ArrayList<RequestInformation>();
@@ -203,7 +203,7 @@ public class PolyglotRestlet extends ServerResource
 							}
 						}
 					}
-					
+
 					request = new RequestInformation(client, file, output);
 				
 					if(polyglot instanceof PolyglotSteward && SOFTWARE_SERVER_REST_INTERFACE){
@@ -222,9 +222,18 @@ public class PolyglotRestlet extends ServerResource
 					}
 
 					if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;		//If a name wasn't suggested assume this.
-					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
+					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;    //TODO: do we need this line still? or can we get the job_id after the truncation?
 					int job_id = SoftwareServerRestlet.getSession(result_url);
 
+					try {
+						result_file = PolyglotRESTUtilities.truncateURLFileName(result_file);
+					} catch (Exception ex) {
+						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
+					}
+					result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;
+					// create empty .log file
+					Utility.touch(public_path + result_file + ".log");
+					
 					if(Utility.existsAndNotEmpty(public_path + result_file) || Utility.existsAndNotEmpty(public_path + result_file + ".url")){
 						request.setEndOfRequest(true);
 						System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]" + (job_id >= 0 ? " [" + job_id + "]" : "") + ": " + client + " request for " + file + "->" + output + " will be at \033[94m" + result_url + "\033[0m");
@@ -725,7 +734,7 @@ public class PolyglotRestlet extends ServerResource
 							}else {
 								//1. increate jobid and url encode input filename
 								jobid = polyglot.incrementAndGetJobID();
-								String filename = fi.getName();
+								String filename = fi.getName().replace(" ", "_");
 								try {
 									filename = URLEncoder.encode(filename, "UTF-8");
 								}catch (UnsupportedEncodingException ex) {
@@ -735,10 +744,8 @@ public class PolyglotRestlet extends ServerResource
 								//2. rename posted file as uniqueness and copy to Polyglot folder
 								if(HOST_POSTED_FILES){ // add jobid_ as prefix and copy posted file to Public folder
 									file = public_path + jobid + "_" + (filename);
-									fi.write(new File(file));
-	
 									String extension = Utility.getFilenameExtension(fi.getName());
-	
+
 									if(extension.isEmpty()){		//If no extension add one
 										String myCommand ="trid -r:1 -ae " + public_path + (fi.getName()).replace(" ","_") + " | grep % "+ "| awk  '{print tolower($2) }'" + "|  sed 's/^.\\(.*\\).$/\\1/'";
 										// the 'trid' command can be obtained at http://mark0.net/soft-trid-e.html
@@ -750,7 +757,15 @@ public class PolyglotRestlet extends ServerResource
 										
 										file += extension;
 									}
-	
+									
+									try {
+										file = PolyglotRESTUtilities.truncateFileName(file);
+									} catch (Exception ex) {
+										return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
+									}
+	                              
+									fi.write(new File(file));
+									
 									//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
 									file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file);
 									if(!nonadmin_user.isEmpty()) file = SoftwareServerUtility.addAuthentication(file, nonadmin_user + ":" + accounts.get(nonadmin_user));

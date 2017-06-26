@@ -1,6 +1,11 @@
 package edu.illinois.ncsa.isda.softwareserver.polyglot;
 import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotAuxiliary.*;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.*;
+import kgm.utility.Utility;
+import org.restlet.data.MediaType;
+import org.restlet.representation.StringRepresentation;
 import com.mongodb.*;
 
 /**
@@ -9,6 +14,94 @@ import com.mongodb.*;
  */
 public class PolyglotRESTUtilities
 {
+	/**
+	 * Truncate filename to a reasonable length. This function will find the prefix positive integer delimited by '_'
+	 * if there is such integer in the prefix of filename, then it will be treated as prefixId and added back as prefix of truncated filename.
+	 * 
+	 * Warning, positive prefixId will take space of FILENAME_RESERVED_LENGTH. However, for current filename naming,
+	 * FILENAME_RESERVED_LENGTH is wide enough to hold (jobdId_ or sessionID_) + prefixId.
+	 *  
+	 * @param filepath full path of file
+	 * @return full path of file with truncated filename (containing valid Url encoding)
+	 */
+	public static String truncateFileName(String filepath)
+	{
+		int prefixId = -1;
+		String filename = Utility.getFilenameName(filepath);
+		int tmpi = filename.indexOf("_");
+		if(tmpi > 0) {
+			try{
+				prefixId = Integer.valueOf(filename.substring(0, tmpi));
+			} catch (Exception ex){
+				prefixId = -1;
+			}
+		}
+		return truncateFileName(prefixId, filepath);
+	}
+	
+	/**
+	 * truncate URL filename to a reasonable length. It will truncate the part of filename
+	 * without prefixid, and add back prefixid as prefix of truncated filename.
+	 * 
+	 * @param filepath full path of file
+	 * @return full path of file with truncated filename (containing valid Url encoding)
+	 */
+	public static String truncateURLFileName(String filepath)
+	{
+		int prefixId = -1;
+		String filename = Utility.getFilename(filepath);
+		String filename_without_prefixid = filename;
+		int tmpi = filename.indexOf("_");
+		if(tmpi > 0) {
+			try{
+				prefixId = Integer.valueOf(filename.substring(0, tmpi));
+				filename_without_prefixid = filename.substring(tmpi+1);
+			} catch (Exception ex){
+				prefixId = -1;
+			}
+		}
+		String parent_path = Utility.getFilenamePath(filepath);
+		return parent_path + prefixId + "_" + truncateFileName(-1, filename_without_prefixid);
+	}
+	
+	/**
+	 * Truncate filename from the leftmost filename to a reasonable length, 
+	 * so caller can put length of prefix (maximum FILENAME_PREFIX_RESERVED_LENGTH) before the truncated filename and DOT_LOG_EXTENSION_LENGTH length
+	 * as a new extension.
+	 *
+	 * Note: 
+	 * 			caller explicitly gives valid sessionid or jobid as the prefix of truncated filename.
+	 *
+	 * Warning:
+	 * 			it will cut off multiple extensions if the length of multiple extensions > 191, which is not possible.
+	 * 
+	 * @param prefixId if sessionid or jobid >= 1, then add such id as prefix of truncated filename, otherwise not.
+	 * @param filepath full path of file
+	 * @return full path of file with truncated filename (containing valid Url encoding)
+	 */
+	public static String truncateFileName(int prefixId, String filepath)
+	{
+		final int DOT_LOG_EXTENSION_LENGTH = 4; //.log
+		final int SINGLE_FILENAME_PREFIX_RESERVED_LENGTH = 11;
+		final int FILENAME_RESERVED_LENGTH = 2*SINGLE_FILENAME_PREFIX_RESERVED_LENGTH + DOT_LOG_EXTENSION_LENGTH;
+		final int MAX_FILENAME_LENGTH = 255; //maximum filename length is 255 on linux
+		
+		String parent_path = Utility.getFilenamePath(filepath);
+		String filename = Utility.getFilename(filepath);
+     
+		if(filename.length() <= MAX_FILENAME_LENGTH - FILENAME_RESERVED_LENGTH) {
+			return filepath;
+		}
+
+		System.out.println("\t [truncateFileName]: before : " + filename);
+		int last_x_chars = Math.min(MAX_FILENAME_LENGTH, filename.length()) - FILENAME_RESERVED_LENGTH - ((prefixId>0) ? SINGLE_FILENAME_PREFIX_RESERVED_LENGTH : 0);
+		filename = filename.substring(filename.length()-last_x_chars);
+		filename = filename.replace("%", "_");
+		System.out.println("\t [truncateFileName]: after : " + filename);
+        if(prefixId > 0) return parent_path + prefixId + "_" + filename;
+		return parent_path + filename;
+	}
+	
 	/**
 	 * Get a web form interface for this restful service.
 	 * @param polylgot the polyglot steward
