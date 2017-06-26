@@ -1,9 +1,3 @@
 PEcAn
-#PEcAn#AmerifluxSiteRaw
-#PEcAn#LINKAGES_convert
-#PEcAn#AmerifluxSite
-#PEcAn#Sipnet
-#PEcAn#Ameriflux
-#PEcAn#Site
-#PEcAn#ED2
-#PEcAn#DALEC
+PEcAn#old
+PEcAn#MetCF

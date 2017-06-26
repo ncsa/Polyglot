@@ -421,16 +421,16 @@ public class SoftwareServer implements Runnable
   	String source, target, temp;
   	String temp_target, temp_target_path;
   	String command = "";
-		String command_output = "";
+    String command_output = "";
   	String result = null;
   	boolean COMMAND_COMPLETED;
   	boolean TASK_COMPLETED = false;
-  	
-  	BUSY = true;  
+
+    BUSY = true;  
   	task_count++;
   	
   	//Execute each subtask in the task
-		for(int i=0; i<task_attempts; i++){
+	for(int i=0; i<task_attempts; i++){
 	  	for(int j=0; j<task.size(); j++){
 	  		subtask = task.get(j);
 	  		application = applications.get(subtask.application); application_set.add(subtask.application);
@@ -458,7 +458,7 @@ public class SoftwareServer implements Runnable
 	  			//Prevent applications from complaining about overwriting files by creating a temporary output directory (if a file with the same output name exists!)
 	  			temp_target = null;
 	  			
-	  			if(Utility.exists(target)){	
+	  			if(Utility.exists(target)){
 	  			  //Create a new temporary directory (important to not change name as scripts can use the name)
 	  				temp_target_path = temp_path + session + "_" + System.currentTimeMillis() + "/";				
 	  				if(!Utility.exists(temp_target_path)) new File(temp_target_path).mkdir();
@@ -473,8 +473,8 @@ public class SoftwareServer implements Runnable
 				//Suggest a name for a scratch space for the script to use. May be a folder, may be prepended to output files.
 				temp = temp_path + session + "_";
 				if(WINDOWS) temp = Utility.windowsPath(temp);
-		  
-		  	command = Script.getCommand(operation.script, source, temp_target != null ? temp_target : target, temp);
+		  	
+				command = Script.getCommand(operation.script, source, temp_target != null ? temp_target : target, temp);
 				System.out.print("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Executing, " + command + " ...");
 				SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [sserver] [" + session + "]: Executing, " + command + " ...", cache_path + ".session_" + session + ".log");
 		  	
@@ -516,15 +516,15 @@ public class SoftwareServer implements Runnable
 		  	
 		  	//Move the output if a temporary target was used
 		  	if(temp_target != null && Utility.exists(temp_target)){
-					if(!Utility.isDirectory(temp_target)){
-						Utility.copyFile(temp_target, target);
-					}else{
-						try{
-							FileUtils.copyDirectory(new File(temp_target), new File(target));
-						}catch(Exception e) {e.printStackTrace();}
-					}
+				if(!Utility.isDirectory(temp_target)){
+					Utility.copyFile(temp_target, target);
+				}else{
+					try{
+						FileUtils.copyDirectory(new File(temp_target), new File(target));
+					}catch(Exception e) {e.printStackTrace();}
 				}
-		  	
+			}
+		  		
 		  	//If we got past the last subtask then the task is complete!
 		  	if(j == task.size()-1) TASK_COMPLETED = true;
 	  	}
@@ -551,7 +551,7 @@ public class SoftwareServer implements Runnable
   	
   	status = "idle";
   	BUSY = false;
-  
+    
   	return result;
   }
   

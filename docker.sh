@@ -51,40 +51,28 @@ else
   PUSH=${PUSH:-""}
 fi
 
-#for app in polyglot converters-imagemagick converters-htmldoc; do
-for app in polyglot; do
-    if [ ! "${PROJECT}" = "" ]; then
-        if [ ! "$( echo $PROJECT | tail -c 2)" = "/" ]; then
-            REPO="${PROJECT}/${app}"
-        else
-            REPO="${app}"
-        fi
-    else
-        REPO="${app}"
+# create image using temp id
+${DEBUG} docker build --tag polyglot_$$ docker/polyglot
+if [ $? -ne 0 ]; then
+    echo "FAILED build of docker/polyglot/Dockerfile"
+    exit -1
+fi
+
+# tag all versions and push if need be
+for v in $VERSION; do
+    ${DEBUG} docker tag polyglot_$$ ${PROJECT}/polyglot:${v}
+    if [ ! -z "$PUSH" ]; then
+        ${DEBUG} docker push ${PROJECT}/polyglot:${v}
     fi
-
-    # create image using temp id
-    ${DEBUG} docker build --tag ${app}_$$ docker/${app}
-
-    if [ $? -ne 0 ]; then
-        echo "FAILED build of docker/${app}/Dockerfile"
-        exit -1
-    fi
-
-    # Tag this polyglot image as ncsa/polyglot:latest, since the converters are based on it.
-    if [ "$app" = "polyglot" ]; then
-        ${DEBUG} docker tag ${app}_$$ ncsapolyglot/polyglot:latest
-    fi
-
-    # tag all versions and push if need be
-    for v in $VERSION; do
-        ${DEBUG} docker tag ${app}_$$ ${REPO}:${v}
-        if [ ! -z "$PUSH" -a ! "$PROJECT" = "" ]; then
-            ${DEBUG} docker push ${REPO}:${v}
-        fi
-    done
-
-    # cleanup
-    ${DEBUG} docker rmi ${app}_$$
-    ${DEBUG} rm -rf ${FILES}
 done
+
+# tag as softwareserver:latest
+# HACK until we have a softwareserver code base
+${DEBUG} docker tag polyglot_$$ ${PROJECT}/softwareserver:latest
+if [ ! -z "$PUSH" ]; then
+    ${DEBUG} docker push ${PROJECT}/softwareserver:latest
+fi
+
+# cleanup
+${DEBUG} docker rmi polyglot_$$
+${DEBUG} rm -rf ${FILES}

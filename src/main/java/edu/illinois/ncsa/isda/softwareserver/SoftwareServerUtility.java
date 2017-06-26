@@ -17,6 +17,58 @@ import javax.xml.bind.DatatypeConverter;
  */
 public class SoftwareServerUtility
 {
+	/**
+	 * Remove credentials in the url string, like username:passwd
+	 * @param url_str url string
+	 * @return url string without username:passwd
+	 */
+	public static String removeCredentials(String url_str) 
+	{
+		return url_str.replaceFirst("//[^@]*@", "//");
+	}
+	
+  /**
+   * Delete temporary files for a session under parent_folder
+   * 
+   * session temporary files' names start with "sessionid_"
+   * session log is ".session_" + session + ".log"
+   * 
+   * @param parent_folder folder contains session generated temporary files
+   * @param session	session id
+   * @param logfilename associated log filename
+   */
+  public static void deleteStoreFiles(String parent_folder, int session, final String logfilename) 
+  {  	
+    File dir = new File(parent_folder);
+    final String prefix = session+"_";
+    
+    File[] files = dir.listFiles(new FileFilter() {
+      public boolean accept(File file) {	    	
+        if (file.getName().startsWith(prefix)) {
+          return true;
+        } else if (file.getName().equals(logfilename)){
+          return true;
+        } else {
+          return false;
+        }
+      }
+    });
+    
+    for (File file : files) {
+      Path path = Paths.get(file.getAbsolutePath());
+      try {
+        Files.delete(path);
+      } catch (NoSuchFileException x) {
+        System.err.format("%s: no such" + " file or directory%n", path);
+      } catch (DirectoryNotEmptyException x) {
+        System.err.format("%s not empty%n", path);
+      } catch (IOException x) {
+        // File permission problems are caught here.
+        System.err.println(x);
+      }
+    }
+  }
+  
   /**
    * Check if the specified URL exists.
    * @param url the URL to check
@@ -281,8 +333,8 @@ public class SoftwareServerUtility
   {
     Process process;
     TimedProcess timed_process;
-		String output = null;
-
+    String output = null;
+    
     if(!command.isEmpty()){
       try{
         process = Runtime.getRuntime().exec(command);

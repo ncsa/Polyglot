@@ -3,13 +3,18 @@ import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.*;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerAuxiliary.Application;
 import edu.illinois.ncsa.isda.softwareserver.SoftwareServerRESTUtilities.*;
 import edu.illinois.ncsa.isda.softwareserver.datawolf.WorkflowUtilities;
+import edu.illinois.ncsa.isda.softwareserver.polyglot.PolyglotRESTUtilities;
 import kgm.image.ImageUtility;
 import kgm.utility.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.io.*;
+import java.io.StringWriter;
 import java.nio.*;
 import java.nio.channels.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.net.*;
 import java.lang.management.*;
 import java.text.*;
@@ -63,8 +68,7 @@ public class SoftwareServerRestlet extends ServerResource
 	private static boolean USE_OPENSTACK_PUBLIC_IP = false;
 	private static String openstack_public_ipv4_url = "";		//Default value is "http://169.254.169.254/2009-04-04/meta-data/public-ipv4".
 	private static String public_ip = "";
-	// A unique ID for the SS that's put in the registration msg, now public_ip:pid:<last-8-chars-of-UUID-randomUUID>.
-	private static String UNIQUE_ID_STRING = "";
+	private static String UNIQUE_ID_STRING = "";                // A unique ID for the SS that's put in the registration msg, now public_ip:pid:<last-8-chars-of-UUID-randomUUID>.
 	private static String external_public_ip_services = "";
 	private static String download_method = "";
 	private static Component component;
@@ -322,96 +326,120 @@ public class SoftwareServerRestlet extends ServerResource
 		//localhost = getReference().getBaseRef().toString();
 		//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
 		localhost = public_ip;
-
+		
 		if(session >= 0){
-			if(file.startsWith(Utility.endSlash(localhost) + "file/")){	//Remove session id from filenames of locally cached files
-				//file = SoftwareServer.getFilename(Utility.getFilename(file));
-				file = getFilename(file);
-			}else{																											//Download remote files
-				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading \033[94m" + file + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
-				SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading " + file + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...", server.getCachePath() + ".session_" + session + ".log");
+			result = null;
+			String exception_str = "";
+			
+			// 1. execute this conversion and generate output file
+			try{
+				if(file.startsWith(Utility.endSlash(localhost) + "file/")){	//Remove session id from filenames of locally cached files
+					//file = SoftwareServer.getFilename(Utility.getFilename(file));
+					file = getFilename(file);
+				}else{																											//Download remote files
+					System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading \033[94m" + SoftwareServerUtility.removeCredentials(file) + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...");
+					SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Downloading " + SoftwareServerUtility.removeCredentials(file) + " (" + SoftwareServerUtility.getFileSizeHR(file) + ") ...", server.getCachePath() + ".session_" + session + ".log");
+
+					if(file.contains("@")){
+						String[] strings = file.split("@");
+						strings = strings[0].split("//");
+						strings = strings[1].split(":");
+						username = strings[0];
+						password = strings[1];
+	
+						SoftwareServerUtility.setDefaultAuthentication(username + ":" + password);
+					}
+                  
+					// download file and rename to potentially truncated filename
+					String downloaded_file = PolyglotRESTUtilities.truncateFileName(-1, Utility.getFilename(file));
 					
-				if(file.contains("@")){
-					String[] strings = file.split("@");
-					strings = strings[0].split("//");
-					strings = strings[1].split(":");
-					username = strings[0];
-					password = strings[1];
+					if(download_method.equals("wget")){
+						try{
+							if(username != null && password != null){
+								DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(downloaded_file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(downloaded_file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
+							}else{
+								DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(downloaded_file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(downloaded_file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
+							}
+	
+							if(!DOWNLOAD_COMPLETED){
+								System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + SoftwareServerUtility.removeCredentials(file) + " failed");
+								SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + SoftwareServerUtility.removeCredentials(file) + " failed", server.getCachePath() + ".session_" + session + ".log");
+							}
+						}catch(Exception e){e.printStackTrace();}
+					}else if(download_method.equals("nio")){
+						try{
+							URL website = new URL(file);
+							ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+							FileOutputStream fos = new FileOutputStream(server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase());
+							fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+						}catch(Exception e){e.printStackTrace();}
+					}else{
+						Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase(), file);
+					}
 
-					SoftwareServerUtility.setDefaultAuthentication(username + ":" + password);
+					file = SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(downloaded_file));
 				}
-
-				if(download_method.equals("wget")){
-					try{
-						if(username != null && password != null){
-							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --user=" + username + " --password=" + password + " -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
-						}else{
-							DOWNLOAD_COMPLETED = SoftwareServerUtility.executeAndWait("wget --verbose -O " + server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase() + " " + file, server.getMaxOperationTime(), true, false) != null;
-						}
-
-						if(!DOWNLOAD_COMPLETED){
-							System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + file + " failed");
-							SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Download of " + file + " failed", server.getCachePath() + ".session_" + session + ".log");
-						}
-					}catch(Exception e){e.printStackTrace();}
-				}else if(download_method.equals("nio")){
-					try{
-						URL website = new URL(file);
-						ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-						FileOutputStream fos = new FileOutputStream(server.getCachePath() + "/" + session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase());
-						fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-					}catch(Exception e){e.printStackTrace();}
+			
+				task = getTask(application_alias, task_string, session + "_" + file, format);
+				//Task.print(task, applications);
+			
+				if(ATOMIC_EXECUTION){	
+					result = server.executeTaskAtomically("localhost", session, task);
 				}else{
-					Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase(), file);
+					result = server.executeTask("localhost", session, task);
 				}
-
-				file = SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(file));
-			}
-		
-			task = getTask(application_alias, task_string, session + "_" + file, format);
-			//Task.print(task, applications);
-		
-			if(ATOMIC_EXECUTION){	
-				result = server.executeTaskAtomically("localhost", session, task);
-			}else{
-				result = server.executeTask("localhost", session, task);
-			}
+				
+				// check existence of output file.
+				Path path = Paths.get(result);
+				if(!Files.exists(path)) {
+					throw new Exception("server.executeTask fails to generate output file");
+				}
+				
+			} catch (Throwable t) {
+				result = null;
+				StringWriter exception = new StringWriter();
+				t.printStackTrace(new PrintWriter(exception));
+				exception_str = exception.toString(); // print exception into session log
+				t.printStackTrace(); // print exception in console.
+			} finally {
 							
-			//Create empty output if not created (e.g. when no conversion path was found)
-			if(result == null){
-				result = server.getCachePath() + session + "_" + Utility.getFilenameName(file) + "." + format;
-				Utility.touch(result);
+				//2. copy output file into public folder.
+				//Create empty output if not created (e.g. when no conversion path was found)
+				if(result == null){
+					result = server.getCachePath() + session + "_" + Utility.getFilenameName(file) + "." + format;
+					Utility.touch(result);
+				}
+				
+				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at \033[94m" + result + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
+				SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at " + ((exception_str.isEmpty()) ? result: exception_str) + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")", server.getCachePath() + ".session_" + session + ".log");
+	
+				//Move result to public folder
+				if(!Utility.isDirectory(result)){
+					Utility.copyFile(result, public_path + session + "_" + getFilename(result));
+				}else{
+					try{
+						FileUtils.copyDirectory(new File(result), new File(public_path + Utility.getFilename(result)));
+					}catch(Exception e) {e.printStackTrace();}
+	
+					//Attach directory as a new endpoint
+					Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + Utility.getFilename(result)));
+					directory.setListingAllowed(true);
+					//component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", directory);
+	
+					//Add CORS filter
+	  			CorsFilter corsfilter = new CorsFilter(getContext(), directory);
+	  			corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
+	  			//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
+	  			corsfilter.setAllowedCredentials(true);
+					component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", corsfilter);
+				}
+				
+				System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder");
+				SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder", server.getCachePath() + ".session_" + session + ".log");
+				
+				//copy log file to public folder
+				Utility.copyFile(server.getCachePath() + ".session_" + session + ".log", public_path + session + "_" + getFilename(result) + ".log");
 			}
-			
-			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at \033[94m" + result + "\033[0m (" + SoftwareServerUtility.getFileSizeHR(result) + ")");
-			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Execution complete, result at " + result + " (" + SoftwareServerUtility.getFileSizeHR(result) + ")", server.getCachePath() + ".session_" + session + ".log");
-
-			//Move result to public folder
-			if(!Utility.isDirectory(result)){
-				Utility.copyFile(result, public_path + session + "_" + getFilename(result));
-			}else{
-				try{
-					FileUtils.copyDirectory(new File(result), new File(public_path + Utility.getFilename(result)));
-				}catch(Exception e) {e.printStackTrace();}
-
-				//Attach directory as a new endpoint
-				Directory directory = new Directory(getContext(), "file://" + Utility.absolutePath(public_path + Utility.getFilename(result)));
-				directory.setListingAllowed(true);
-				//component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", directory);
-
-				//Add CORS filter
-  			CorsFilter corsfilter = new CorsFilter(getContext(), directory);
-  			corsfilter.setAllowedOrigins(new HashSet<String>(Arrays.asList("*")));
-  			//corsfilter.setAllowedHeaders(new HashSet<String>(Arrays.asList("x-requested-with", "Content-Type")));
-  			corsfilter.setAllowedCredentials(true);
-				component.getDefaultHost().attach("/file/" + Utility.getFilename(result) + "/", corsfilter);
-			}
-			
-			System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder");
-			SoftwareServerUtility.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet] [" + session + "]: Copied result to public folder", server.getCachePath() + ".session_" + session + ".log");
-		
-			//Move log file		
-			Utility.copyFile(server.getCachePath() + ".session_" + session + ".log", public_path + session + "_" + getFilename(result) + ".log");
 		}
 	}
 	
@@ -539,6 +567,14 @@ public class SoftwareServerRestlet extends ServerResource
 								file = URLDecoder.decode(part4, "UTF-8");
 							}catch(Exception e) {e.printStackTrace();}
 
+							String truncated_file = file;
+                          
+							try {
+								truncated_file = PolyglotRESTUtilities.truncateFileName(-1, file);
+							} catch (Exception ex) {
+								return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
+							}
+							
 							session = -1;
 							//localhost = getReference().getBaseRef().toString();
 							//localhost = "http://" + Utility.getLocalHostIP() + ":8182";
@@ -547,10 +583,10 @@ public class SoftwareServerRestlet extends ServerResource
 	
 							if(file.startsWith(Utility.endSlash(localhost))){																						//Locally cached files already have session ids
 								session = getSession(file);
-								result = Utility.endSlash(localhost) + "file/" + session + "_" + getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
+								result = Utility.endSlash(localhost) + "file/" + session + "_" + getFilenameName(truncated_file, MULTIPLE_EXTENSIONS) + "." + format;
 							}else{																																											//Remote files must be assigned a session id
 								session = server.getSession();
-								result = Utility.endSlash(localhost) + "file/" + session + "_" + Utility.getFilenameName(file, MULTIPLE_EXTENSIONS) + "." + format;
+								result = Utility.endSlash(localhost) + "file/" + session + "_" + Utility.getFilenameName(truncated_file, MULTIPLE_EXTENSIONS) + "." + format;
 							}
 				
 							if(GUESTS_ENABLED) result = result.substring(0, 7) + "guest:guest@" + result.substring(7);

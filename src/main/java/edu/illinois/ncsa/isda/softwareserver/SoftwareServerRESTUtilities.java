@@ -4,6 +4,8 @@ import edu.illinois.ncsa.isda.softwareserver.SoftwareServerUtility;
 import kgm.utility.Utility;
 import java.io.*;
 import java.net.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.text.*;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -493,7 +495,8 @@ public class SoftwareServerRESTUtilities
 		}
 
 		final String public_path_final = public_path;
-
+		final String cache_path_final = Paths.get(public_path).getParent().toString();
+      
 		//Set heartbeat
 		factory.setRequestedHeartbeat(180);
 
@@ -559,6 +562,7 @@ public class SoftwareServerRESTUtilities
 									public void run(){
 										ObjectMapper mapper = new ObjectMapper();
 										String api_call, result, checkin_call;
+										String api_call_without_credentials;
 
 										try{
 											JsonNode message = mapper.readValue(delivery.getBody(), JsonNode.class);
@@ -567,10 +571,11 @@ public class SoftwareServerRESTUtilities
 											int job_id = Integer.parseInt(message.get("job_id").asText());
 											int step = Integer.parseInt(message.get("step").asText());
 											String input = message.get("input").asText();
+											String input_without_credentials = SoftwareServerUtility.removeCredentials(input);
 											String application = message.get("application").asText();
 											String output_format = message.get("output_format").asText();
 											
-											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Consuming job-" + job_id + ", " + input + "->" + output_format + " via " + application);
+											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Consuming job-" + job_id + ", " + input_without_credentials + "->" + output_format + " via " + application);
 		  	    	
 											//Execute job using Software Server REST interface (leverage implementation)
 											if(step > 0){
@@ -578,8 +583,9 @@ public class SoftwareServerRESTUtilities
 											}else{
 												api_call = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(input, "UTF-8");
 											}
-
-											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: API call, " + api_call);
+											
+											api_call_without_credentials = "http://" + softwareserver_authentication_final + "localhost:" + port + "/software/" + application + "/convert/" + output_format + "/" + URLEncoder.encode(input_without_credentials, "UTF-8");
+											System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: API call, " + api_call_without_credentials);
 
 											result = SoftwareServerUtility.readURL(api_call, "text/plain");
 											//result = SoftwareServerUtility.addAuthentication(result, softwareserver_authentication_final);	//Make sure restlet doesn't already use guest!
@@ -611,6 +617,8 @@ public class SoftwareServerRESTUtilities
 														System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Rejecting job after second checkin un-acknowledged!");
 													}
 												}
+                                              
+												//TODO: possible to delete files under cache folder, currently CHECKIN_URL is always set to false.
 											}else{							//Checkin the actual output file
 												//The filename to post: <public_path>/<session>_<filename>. "result" is http://.../file/<session>_<filename>, so strip out the path (after last '/').
 												String filename = result.substring(result.lastIndexOf('/')+1);
@@ -643,6 +651,21 @@ public class SoftwareServerRESTUtilities
 														channel.basicReject(delivery.getEnvelope().getDeliveryTag(), false);
 														System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [rabbitm] [" + job_id + "]: Rejecting job after second checkin un-acknowledged!");
 													}
+												}
+												
+												String result_filename = Utility.getFilename(result);
+												int index = result_filename.indexOf('_');
+                                              
+												if(index != -1) {
+													int session = Integer.parseInt(result_filename.substring(0, index));
+													
+                                                    // delete files under cache folder.
+													final String tmp_sessionlog = ".session_" + session + ".log";
+													SoftwareServerUtility.deleteStoreFiles(cache_path_final, session, tmp_sessionlog);
+													
+                                                    // delete files under public folder.
+													final String public_sessionlog = result_filename + ".log";
+													SoftwareServerUtility.deleteStoreFiles(public_path_final, session, public_sessionlog);
 												}
 											}
 										}catch(Exception e) {e.printStackTrace();}
