@@ -807,8 +807,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 			// Other types of exceptions are ConsumerCancelledException, JsonRpcException, MalformedFrameException, MissedHeartbeatException, PossibleAuthenticationFailureException, ProtocolVersionMismatchException, TopologyRecoveryException. This AlreadyClosedException occured multiple types and haven't seen other types, so handle this for now. Can add handling of other exceptions while we see them.
 			connectToRabbitmq();
 		}catch(Exception e){
-			System.out.println("[process_jobs] exception, jobid: " + job_id + ", docid: " 
-						+ ((null != document) ? document.get("_id") : "document is null") + " input: " + input);
+			System.out.println("[process_jobs] exception, jobid: " + job_id + ", docid: " + ((null != document) ? document.get("_id") : "document is null") + " input: " + input);
 			e.printStackTrace();
 		}finally{
 			cursor.close();
