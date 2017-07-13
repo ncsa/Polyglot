@@ -696,13 +696,13 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 	public void process_jobs()
 	{
 		DBCursor cursor = collection.find();
-		DBObject document;
+		DBObject document = null;
 		ObjectMapper mapper = new ObjectMapper();
 		ObjectNode message;
-		int job_id, step, step_status;
+		int job_id = 0, step, step_status;
 		String input_file, output_file;
 		String email, bd_host = "", bd_token = "", type = "";
-		String polyglot_auth = "", input, application, output_format, output_path;
+		String polyglot_auth = "", input = null, application, output_format, output_path;
 		boolean MULTIPLE_EXTENSIONS;	//Was a path found for an input with multiple extensions
 		
 		if(polyglot_username != null && polyglot_password != null){
@@ -807,6 +807,7 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 			// Other types of exceptions are ConsumerCancelledException, JsonRpcException, MalformedFrameException, MissedHeartbeatException, PossibleAuthenticationFailureException, ProtocolVersionMismatchException, TopologyRecoveryException. This AlreadyClosedException occured multiple types and haven't seen other types, so handle this for now. Can add handling of other exceptions while we see them.
 			connectToRabbitmq();
 		}catch(Exception e){
+			System.out.println("[process_jobs] exception, jobid: " + job_id + ", docid: " + ((null != document) ? document.get("_id") : "document is null") + " input: " + input);
 			e.printStackTrace();
 		}finally{
 			cursor.close();
