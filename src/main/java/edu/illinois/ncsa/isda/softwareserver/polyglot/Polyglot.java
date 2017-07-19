@@ -37,13 +37,14 @@ public abstract class Polyglot
 	}
 	
 	/**
-	 * Should be overriden. Atomically increase current value of job_counter by one
+	 * Should be overridden. Atomically increase current value of job_counter by one
 	 * and return new jobid
+	 * If function does not be overridden by subclass, then RuntimeException will be thrown.
 	 * @return a new jobid
 	 */
 	public int incrementAndGetJobID()
 	{
-		return 0;
+		throw new RuntimeException("function should be overriden");
 	}
 	
 	/**
