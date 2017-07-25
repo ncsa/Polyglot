@@ -374,7 +374,7 @@ public class SoftwareServerRestlet extends ServerResource
 							fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 						}catch(Exception e){e.printStackTrace();}
 					}else{
-						Utility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase(), file);
+						SoftwareServerUtility.downloadFile(server.getCachePath(), session + "_" + Utility.getFilenameName(downloaded_file) + "." + SoftwareServerRESTUtilities.removeParameters(Utility.getFilenameExtension(file)).toLowerCase(), file);
 					}
 
 					file = SoftwareServerRESTUtilities.removeParameters(Utility.getFilename(downloaded_file));
