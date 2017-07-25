@@ -40,6 +40,31 @@ public class PolyglotRESTUtilities
 	}
 	
 	/**
+	 * truncate URL filename to a reasonable length. It will truncate the part of filename
+	 * without prefixid, and add back prefixid as prefix of truncated filename.
+	 * 
+	 * @param filepath full path of file
+	 * @return full path of file with truncated filename (containing valid Url encoding)
+	 */
+	public static String truncateURLFileName(String filepath)
+	{
+		int prefixId = -1;
+		String filename = Utility.getFilename(filepath);
+		String filename_without_prefixid = filename;
+		int tmpi = filename.indexOf("_");
+		if(tmpi > 0) {
+			try{
+				prefixId = Integer.valueOf(filename.substring(0, tmpi));
+				filename_without_prefixid = filename.substring(tmpi+1);
+			} catch (Exception ex){
+				prefixId = -1;
+			}
+		}
+		String parent_path = Utility.getFilenamePath(filepath);
+		return parent_path + prefixId + "_" + truncateFileName(-1, filename_without_prefixid);
+	}
+	
+	/**
 	 * Truncate filename from the leftmost filename to a reasonable length, 
 	 * so caller can put length of prefix (maximum FILENAME_PREFIX_RESERVED_LENGTH) before the truncated filename and DOT_LOG_EXTENSION_LENGTH length
 	 * as a new extension.
@@ -48,7 +73,7 @@ public class PolyglotRESTUtilities
 	 * 			caller explicitly gives valid sessionid or jobid as the prefix of truncated filename.
 	 *
 	 * Warning:
-	 * 			it will cut off multiple extensions if the length of multiple extensions > 229, which is not possible.
+	 * 			it will cut off multiple extensions if the length of multiple extensions > 191, which is not possible.
 	 * 
 	 * @param prefixId if sessionid or jobid >= 1, then add such id as prefix of truncated filename, otherwise not.
 	 * @param filepath full path of file
@@ -57,23 +82,23 @@ public class PolyglotRESTUtilities
 	public static String truncateFileName(int prefixId, String filepath)
 	{
 		final int DOT_LOG_EXTENSION_LENGTH = 4; //.log
-		final int FILENAME_PREFIX_RESERVED_LENGTH = 22;
-		final int FILENAME_RESERVED_LENGTH = FILENAME_PREFIX_RESERVED_LENGTH + DOT_LOG_EXTENSION_LENGTH;
+		final int SINGLE_FILENAME_PREFIX_RESERVED_LENGTH = 11;
+		final int FILENAME_RESERVED_LENGTH = 2*SINGLE_FILENAME_PREFIX_RESERVED_LENGTH + DOT_LOG_EXTENSION_LENGTH;
 		final int MAX_FILENAME_LENGTH = 255; //maximum filename length is 255 on linux
 		
 		String parent_path = Utility.getFilenamePath(filepath);
 		String filename = Utility.getFilename(filepath);
      
-		if(filename.length() < MAX_FILENAME_LENGTH - FILENAME_RESERVED_LENGTH) {
+		if(filename.length() <= MAX_FILENAME_LENGTH - FILENAME_RESERVED_LENGTH) {
 			return filepath;
 		}
-		
+
 		System.out.println("\t [truncateFileName]: before : " + filename);
-		int last_x_chars = Math.min(MAX_FILENAME_LENGTH, filename.length()) - FILENAME_RESERVED_LENGTH;
+		int last_x_chars = Math.min(MAX_FILENAME_LENGTH, filename.length()) - FILENAME_RESERVED_LENGTH - ((prefixId>0) ? SINGLE_FILENAME_PREFIX_RESERVED_LENGTH : 0);
 		filename = filename.substring(filename.length()-last_x_chars);
 		filename = filename.replace("%", "_");
 		System.out.println("\t [truncateFileName]: after : " + filename);
-        if(prefixId >= 1) return parent_path + prefixId + "_" + filename;
+        if(prefixId > 0) return parent_path + prefixId + "_" + filename;
 		return parent_path + filename;
 	}
 	
