@@ -77,7 +77,7 @@ if(grepl("\\.met$", outputfile)){
   }
 } else {
   #assign default model according to output file 
-  model <- unlist(strsplit(outputfile, "\\."))[-1]
+  model <- unlist(strsplit(outputfile, "\\.met\\."))[-1]
 }
 
 mettype <- ifelse(is.null(input$type), 'CRUNCEP', input$type)

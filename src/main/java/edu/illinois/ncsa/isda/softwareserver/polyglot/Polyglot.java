@@ -37,6 +37,17 @@ public abstract class Polyglot
 	}
 	
 	/**
+	 * Should be overridden. Atomically increase current value of job_counter by one
+	 * and return new jobid
+	 * If function does not be overridden by subclass, then RuntimeException will be thrown.
+	 * @return a new jobid
+	 */
+	public int incrementAndGetJobID()
+	{
+		throw new RuntimeException("function should be overriden");
+	}
+	
+	/**
 	 * Convert a files format.  Should be overriden, by default searches for a conversion path.
 	 * @param application the specific application to use
 	 * @param input the absolute name of the input file
@@ -64,6 +75,20 @@ public abstract class Polyglot
 	
 	/**
 	 * Convert a files format and email the result.  Should be overriden, by default searches for a conversion path.
+	 * @param job id of this conversion
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @param email address to send result to
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convertAndEmail(int jobid, String input, String output_path, String output_format, String email)
+	{
+		return convert(input, output_path, output_format);
+	}
+	
+	/**
+	 * Convert a files format and email the result.  Should be overriden, by default searches for a conversion path.
 	 * @param application the specific application to use
 	 * @param input the absolute name of the input file
 	 * @param output_path the output path
@@ -76,6 +101,21 @@ public abstract class Polyglot
 		return convert(application, input, output_path, output_format);
 	}
 
+	/**
+	 * Convert a files format and email the result.  Should be overriden, by default searches for a conversion path.
+	 * @param job id of this conversion
+	 * @param application the specific application to use
+	 * @param input the absolute name of the input file
+	 * @param output_path the output path
+	 * @param output_format the output format
+	 * @param email address to send result to
+	 * @return the output file name (if changed, null otherwise)
+	 */
+	public String convertAndEmail(int jobid, String application, String input, String output_path, String output_format, String email)
+	{
+		return convert(application, input, output_path, output_format);
+	}
+	
 	/**
 	 * Convert a files format (asynchronously).
 	 * @param input_filename the absolute name of the input file

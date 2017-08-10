@@ -226,7 +226,7 @@ public class PolyglotRestlet extends ServerResource
 					int job_id = SoftwareServerRestlet.getSession(result_url);
 
 					try {
-						result_file = PolyglotRESTUtilities.truncateFileName(result_file);
+						result_file = PolyglotRESTUtilities.truncateURLFileName(result_file);
 					} catch (Exception ex) {
 						return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
 					}
@@ -639,6 +639,8 @@ public class PolyglotRestlet extends ServerResource
 		String client = getClientInfo().getAddress();
 		Boolean MAIL = false;
 	
+		int jobid = 0;
+		
 		if(FORM_POST || TASK_POST || SOFTWARESERVER_POST){
 			if(MediaType.MULTIPART_FORM_DATA.equals(entity.getMediaType(), true)){
 				DiskFileItemFactory factory = new DiskFileItemFactory();
@@ -655,7 +657,7 @@ public class PolyglotRestlet extends ServerResource
 						
 						if(fi.getName() == null){
 							parameters.put(fi.getFieldName(), new String(fi.get(), "UTF-8"));
-						}else{
+						}else{ // do checkin or copy posted file
 							if(part0.equals("checkin")) {
 								String filename, file_url;
 								String log_file, ss_log_file = "", sf_log, line;
@@ -729,46 +731,49 @@ public class PolyglotRestlet extends ServerResource
 									System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: File not being processed due to security concern - either the file id is non-numeric or the filename is invalid.");
 									continue;
 								}
-							}else if(HOST_POSTED_FILES){
-                //Check for invalid characters
-                //file = public_path + (fi.getName()).replace(" ","_").replace("?", "_");
+							}else {
+								//1. increate jobid and url encode input filename
+								jobid = polyglot.incrementAndGetJobID();
 								String filename = fi.getName().replace(" ", "_");
 								try {
 									filename = URLEncoder.encode(filename, "UTF-8");
 								}catch (UnsupportedEncodingException ex) {
 									ex.printStackTrace();
 								}
-								file = public_path + (filename);
 								
-								String extension = Utility.getFilenameExtension(fi.getName());
+								//2. rename posted file as uniqueness and copy to Polyglot folder
+								if(HOST_POSTED_FILES){ // add jobid_ as prefix and copy posted file to Public folder
+									file = public_path + jobid + "_" + (filename);
+									String extension = Utility.getFilenameExtension(fi.getName());
 
-								if(extension.isEmpty()){		//If no extension add one
-									String myCommand ="trid -r:1 -ae " + public_path + (fi.getName()).replace(" ","_") + " | grep % "+ "| awk  '{print tolower($2) }'" + "|  sed 's/^.\\(.*\\).$/\\1/'";
-									// the 'trid' command can be obtained at http://mark0.net/soft-trid-e.html
-									Process p = Runtime.getRuntime().exec(new String[] {"sh", "-c", myCommand});
-									p.waitFor();
-									BufferedReader buf = new BufferedReader(new InputStreamReader(p.getInputStream()));
-									extension = buf.readLine();
-									Utility.pause(1000);
+									if(extension.isEmpty()){		//If no extension add one
+										String myCommand ="trid -r:1 -ae " + public_path + (fi.getName()).replace(" ","_") + " | grep % "+ "| awk  '{print tolower($2) }'" + "|  sed 's/^.\\(.*\\).$/\\1/'";
+										// the 'trid' command can be obtained at http://mark0.net/soft-trid-e.html
+										Process p = Runtime.getRuntime().exec(new String[] {"sh", "-c", myCommand});
+										p.waitFor();
+										BufferedReader buf = new BufferedReader(new InputStreamReader(p.getInputStream()));
+										extension = buf.readLine();
+										Utility.pause(1000);
+										
+										file += extension;
+									}
 									
-									file += extension;
+									try {
+										file = PolyglotRESTUtilities.truncateFileName(file);
+									} catch (Exception ex) {
+										return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
+									}
+	                              
+									fi.write(new File(file));
+									
+									//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
+									file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file);
+									if(!nonadmin_user.isEmpty()) file = SoftwareServerUtility.addAuthentication(file, nonadmin_user + ":" + accounts.get(nonadmin_user));
+									System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Temporarily hosting file \"" + Utility.getFilename(file) + "\" for " + client + " at " + file);
+								}else{ // add jobid_ as prefix and copy posted file to Temp folder
+									file = temp_path + jobid + "_" + (filename);
+									fi.write(new File(file));
 								}
-								
-								try {
-									file = PolyglotRESTUtilities.truncateFileName(file);
-								} catch (Exception ex) {
-									return new StringRepresentation(ex.toString(), MediaType.TEXT_PLAIN);
-								}
-                              
-								fi.write(new File(file));
-								
-								//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
-								file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file);
-								if(!nonadmin_user.isEmpty()) file = SoftwareServerUtility.addAuthentication(file, nonadmin_user + ":" + accounts.get(nonadmin_user));
-								System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Temporarily hosting file \"" + Utility.getFilename(file) + "\" for " + client + " at " + file);
-							}else{
-								file = temp_path + (fi.getName()).replace(" ","_");
-								fi.write(new File(file));
 							}
 						}
 					}
@@ -809,11 +814,16 @@ public class PolyglotRestlet extends ServerResource
 					((PolyglotSteward)polyglot).convertOverREST(file, public_path, output);
 				}else{
 					if(application == null){
-						result_file = polyglot.convertAndEmail(file, public_path, output, bd_useremail);
+						result_file = polyglot.convertAndEmail(jobid, file, public_path, output, bd_useremail);
 					}else{
-						result_file = polyglot.convertAndEmail(application, file, public_path, output, bd_useremail);
+						result_file = polyglot.convertAndEmail(jobid, application, file, public_path, output, bd_useremail);
 					}
+					// remove jobid_ added by convertAndEmail, since we already added extra jobid_ as the prefix of posted filename.
+					result_file = result_file.substring(result_file.indexOf('_')+1);
 				}
+				
+				// create empty .log file under public path
+				Utility.touch(public_path + result_file + ".log");
 
 				if(result_file == null) result_file = Utility.getFilenameName(file) + "." + output;
 				result_url = Utility.endSlash(getReference().getBaseRef().toString()) + "file/" + result_file;

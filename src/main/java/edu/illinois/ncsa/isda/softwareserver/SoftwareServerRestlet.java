@@ -351,7 +351,7 @@ public class SoftwareServerRestlet extends ServerResource
 					}
                   
 					// download file and rename to potentially truncated filename
-					String downloaded_file = PolyglotRESTUtilities.truncateFileName(-1, Utility.getFilename(file));
+					String downloaded_file = PolyglotRESTUtilities.truncateFileName(Utility.getFilename(file));
 					
 					if(download_method.equals("wget")){
 						try{
