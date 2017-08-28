@@ -24,10 +24,9 @@ public class SoftwareServerUtility
 	 * @param url  url of file
 	 */
   public static void downloadFile(String path, String name, String url) {
-	  URL website = null;
-	  String filename = Utility.getFilename(url);	  
 	  try {
-		website = new URL(url);
+	  	URL website = new URL(url);
+	  	String filename = Utility.getFilename(url);
 	  	//Override the filename
 	  	if(name != null){  	
 	  		String extension = Utility.getFilenameExtension(filename);
