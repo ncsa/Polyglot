@@ -41,11 +41,11 @@ public class SoftwareServerUtility
 	  	HttpURLConnection httpcon = (HttpURLConnection) website.openConnection();
 	    httpcon.addRequestProperty("User-Agent", "Mozilla/5.0");
 	    
-			ReadableByteChannel rbc = Channels.newChannel(httpcon.getInputStream());
-			FileOutputStream fos = new FileOutputStream(path+"/"+filename);
-			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-			fos.close();
-      rbc.close();
+		ReadableByteChannel rbc = Channels.newChannel(httpcon.getInputStream());
+		FileOutputStream fos = new FileOutputStream(path+"/"+filename);
+		fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+		fos.close();
+        rbc.close();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
