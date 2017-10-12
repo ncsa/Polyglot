@@ -78,9 +78,18 @@ if(grepl("\\.met$", outputfile)){
 } else {
   # assign default model according to output file 
   model <- unlist(strsplit(outputfile, "\\.met\\."))[-1]
-  # get model from input title
+
   if(identical(model, character(0))){
-    model <- unlist(strsplit(args[1], "\\."))[2]
+    if (grepl("\.ed.zip$", outputfile)) {
+      model <- "ED2"
+    } else if (grepl("\.cf$", outputfile)) {
+      model <- "LINKAGES"
+    } else if (grepl("\.clim$", outputfile)) {
+      model <- "SIPNET"
+    } else {
+      # get model from input title
+      model <- unlist(strsplit(args[1], "\\."))[2]
+    }
   }
 }
 
