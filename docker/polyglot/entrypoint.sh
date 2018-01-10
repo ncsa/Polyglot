@@ -62,6 +62,16 @@ elif [ "$1" = 'softwareserver' ]; then
 		# start softwareserver
 		exec /usr/bin/java -cp polyglot.jar:lib/* -Xmx1g edu.illinois.ncsa.isda.softwareserver.SoftwareServerRestlet
 	fi
+
+elif [ "$1" = 'shell' ]; then
+	# setup softwareserver
+	cd /home/polyglot/polyglot	
+	if [ "$RABBITMQ_URI" != "" ]; then
+		/bin/sed -i -e "s#RabbitMQURI=.*#RabbitMQURI=${RABBITMQ_URI}#" SoftwareServerRestlet.conf
+	fi
+	if [ "$PUBLICIP" != "" ]; then
+		/bin/echo "PublicIp=${PUBLICIP}" >> SoftwareServerRestlet.conf
+	fi
 fi
 
 exec "$@"
