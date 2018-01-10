@@ -72,6 +72,8 @@ elif [ "$1" = 'shell' ]; then
 	if [ "$PUBLICIP" != "" ]; then
 		/bin/echo "PublicIp=${PUBLICIP}" >> SoftwareServerRestlet.conf
 	fi
+
+	exec /bin/bash
 fi
 
 exec "$@"
