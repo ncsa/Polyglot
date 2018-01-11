@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## 0.3.0 - 2018-01-12
 ### Added
 - Added entrypoint option to load env vars.
-- Added downloadFile function in SoftwareServerUtility.java
+- Added downloadFile function (with HTTP header User-Agent) in SoftwareServerUtility.java
 
 ### Changed
 - updates PolyglotRestlet.sh to use correct polyglot-version-SNAPSHOT.jar
