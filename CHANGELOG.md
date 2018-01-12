@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - updates PolyglotRestlet.sh to use correct polyglot-version-SNAPSHOT.jar
+- add back old PEcAn file format to compatible with PEcAn. 
 
 ### Fixed
 - Fixed potential duplicate file overwritten when hosting posted file. [POL-194](https://opensource.ncsa.illinois.edu/jira/browse/POL-194)
