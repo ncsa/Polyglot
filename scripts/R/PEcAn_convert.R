@@ -2,7 +2,7 @@
 #PEcAn
 #data
 #xml
-#met, met.ED2, met.SIPNET, met.BIOCRO, met.DALEC, met.CLM45, met.PRELES, met.MAESPA, met.JULES, met.LINKAGES, met.FATES, met.GDAY, met.LPJGUESS, met.MAAT
+#met, met.ED2, met.SIPNET, met.BIOCRO, met.DALEC, met.CLM45, met.PRELES, met.MAESPA, met.JULES, met.LINKAGES, met.FATES, met.GDAY, met.LPJGUESS, met.MAAT, pecan.zip, pecan.nc, clim, ed.zip, linkages, dalec
 
 # input files is a xml file specifying what to get
 #<input>
@@ -51,19 +51,19 @@ dbparams <- list(user = "bety", dbname = "bety", password="bety", host="localhos
 site_lat   <- ifelse(is.null(input$lat), NA, input$lat)
 site_lon   <- ifelse(is.null(input$lon), NA, input$lon)
 
-#connect DB and get site name
+# connect DB and get site name
 con      <- db.open(dbparams)
-#query site based on location
+# query site based on location
 site <- db.query(paste0("SELECT id, sitename AS name FROM sites WHERE geometry = ST_GeogFromText('POINT(", site_lon, " ", site_lat, ")')"),con)
 if(length(site) < 0){
-  #query site based on name
+  # query site based on name
   site <- db.query(paste0("SELECT id, sitename AS name FROM sites WHERE sitename LIKE '%", input$site, "%'"),con)
 }
 if(length(site) < 0){
-  #insert site info
+  # insert site info
   quit(status=-1)
 } else {
-  #remove multiple entries. 
+  # remove multiple entries. 
   site <-list(id = site$id[1], name = site$name[1])
 }
 db.close(con)
@@ -76,10 +76,24 @@ if(grepl("\\.met$", outputfile)){
     model <- input$model
   }
 } else {
-  #assign default model according to output file 
-  model <- unlist(strsplit(outputfile, "\\."))[-1]
+  # assign default model according to output file 
+  model <- unlist(strsplit(outputfile, "\\.met\\."))[-1]
+
+  if(identical(model, character(0))){
+    if (grepl("\.ed.zip$", outputfile)) {
+      model <- "ED2"
+    } else if (grepl("\.cf$", outputfile)) {
+      model <- "LINKAGES"
+    } else if (grepl("\.clim$", outputfile)) {
+      model <- "SIPNET"
+    } else {
+      # get model from input title
+      model <- unlist(strsplit(args[1], "\\."))[2]
+    }
+  }
 }
 
+model <- toupper(model)
 mettype <- ifelse(is.null(input$type), 'CRUNCEP', input$type)
 input_met <- list(username = "pecan", source = mettype)
 start_date <- input$start_date
