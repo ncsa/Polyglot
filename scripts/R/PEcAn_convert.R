@@ -80,11 +80,11 @@ if(grepl("\\.met$", outputfile)){
   model <- unlist(strsplit(outputfile, "\\.met\\."))[-1]
 
   if(identical(model, character(0))){
-    if (grepl("\.ed.zip$", outputfile)) {
+    if (grepl("\\.ed.zip$", outputfile)) {
       model <- "ED2"
-    } else if (grepl("\.cf$", outputfile)) {
+    } else if (grepl("\\.cf$", outputfile)) {
       model <- "LINKAGES"
-    } else if (grepl("\.clim$", outputfile)) {
+    } else if (grepl("\\.clim$", outputfile)) {
       model <- "SIPNET"
     } else {
       # get model from input title
