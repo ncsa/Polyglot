@@ -1068,10 +1068,8 @@ public class PolyglotRestlet extends ServerResource
 			try{
 	    	Properties properties = new Properties();
 	    	properties.load(new FileInputStream("mongo.properties"));
-	    	mongo = new MongoClient(properties.getProperty("server"));
-	    	db = mongo.getDB(properties.getProperty("database"));
-	    	//db.authenticate(properties.getProperty("username"), properties.getProperty("password").toCharArray());
-	    	//DBCollection collection = db.getCollection(properties.getProperty("collection"));
+			mongo = new MongoClient(new MongoClientURI(properties.getProperty("uri")));
+	    	db = mongo.getDB(properties.getProperty("database_dap"));
 	    	db.getLastError();		//Test the connection, will cause an exception if not connected.
 			}catch(Exception e){
 				System.out.println("\nMongo database not found, disabling Mongo logging...");
