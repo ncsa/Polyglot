@@ -18,6 +18,40 @@ import javax.xml.bind.DatatypeConverter;
 public class SoftwareServerUtility
 {
 	/**
+	 * download file from given url
+	 * @param path path of downloaded file
+	 * @param name filename of the downloaded file
+	 * @param url  url of file
+	 */
+  public static void downloadFile(String path, String name, String url) {
+	  try {
+	  	URL website = new URL(url);
+	  	String filename = Utility.getFilename(url);
+	  	//Override the filename
+	  	if(name != null){  	
+	  		String extension = Utility.getFilenameExtension(filename);
+	  		String name_extension = Utility.getFilenameExtension(name);
+
+	  		if(name_extension.isEmpty() && !extension.isEmpty()){
+	  			filename = name + "." + extension;
+	  		}else{
+	  			filename = name;
+	  		}
+	  	}
+	  	HttpURLConnection httpcon = (HttpURLConnection) website.openConnection();
+	    httpcon.addRequestProperty("User-Agent", "Mozilla/5.0");
+	    
+		ReadableByteChannel rbc = Channels.newChannel(httpcon.getInputStream());
+		FileOutputStream fos = new FileOutputStream(path+"/"+filename);
+		fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+		fos.close();
+        rbc.close();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+  }
+  
+	/**
 	 * Remove credentials in the url string, like username:passwd
 	 * @param url_str url string
 	 * @return url string without username:passwd
