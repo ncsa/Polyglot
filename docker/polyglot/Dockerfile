@@ -11,7 +11,8 @@ ENV 	POL_IP="" \
 	MONGO_DATABASE="" \
 	MONGO_LOGGING="false" \
 	RABBITMQ_URI="" \
-	PUBLICIP=""
+	PUBLICIP="" \
+	POL_Authentication=""
 
 # install requirements
 RUN wget -qO - https://bintray.com/user/downloadSubjectPublicKey?username=bintray | apt-key add -
