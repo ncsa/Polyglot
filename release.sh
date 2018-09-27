@@ -11,7 +11,7 @@ set -e
 # BRANCH="master" SERVER=isda-registry.ncsa.illinois.edu/ ./release.sh
 
 # use DEBUG=echo ./release.sh to print all commands
-export DEBUG=${DEBUG:-"echo"}
+export DEBUG=${DEBUG:-""}
 
 # use SERVER=XYZ/ to push to a different server
 SERVER=${SERVER:-""}
@@ -28,8 +28,7 @@ if [ "${BRANCH}" = "master" ]; then
 elif [ "${BRANCH}" = "develop" ]; then
     VERSION="develop"
 else
-    VERSION="develop"
-    echo exit 0
+    exit 0
 fi
 
 # tag all images and push if needed
@@ -39,12 +38,12 @@ for x in $( find ${PWD} -name Dockerfile ); do
 
     for v in ${VERSION}; do
         if [ "$v" != "latest" -o "$SERVER" != "" ]; then
-            ${DEBUG} docker tag clowder/${NAME}:latest ${SERVER}clowder/${NAME}:${v}
+            ${DEBUG} docker tag ncsapolyglot/${NAME}:latest ${SERVER}ncsapolyglot/${NAME}:${v}
         fi
-        ${DEBUG} docker push ${SERVER}clowder/${NAME}:${v}
+        ${DEBUG} docker push ${SERVER}ncsapolyglot/${NAME}:${v}
         if [ "$v" != "latest" -o "$SERVER" != "" ]; then
-            ${DEBUG} docker rmi ${SERVER}clowder/${NAME}:${v}
+            ${DEBUG} docker rmi ${SERVER}ncsapolyglot/${NAME}:${v}
         fi
     done
-    ${DEBUG} docker rmi clowder/${NAME}:latest
+    ${DEBUG} docker rmi ncsapolyglot/${NAME}:latest
 done

@@ -8,7 +8,7 @@
 set -e
 
 # use DEBUG=echo ./release.sh to print all commands
-DEBUG=${DEBUG:-"echo"}
+DEBUG=${DEBUG:-""}
 
 # Create the docker containers
 for x in $( find ${PWD} -name Dockerfile ); do
