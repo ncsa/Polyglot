@@ -4,8 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
-
+## 2.4.0 - 2018-01-12
+### Added
+- Add docker.sh, release.sh.
 ### Fixed
 - Fixed issue where polyglot could not convert files posted in docker [BD-2239](https://opensource.ncsa.illinois.edu/jira/browse/BD-2239)
 
