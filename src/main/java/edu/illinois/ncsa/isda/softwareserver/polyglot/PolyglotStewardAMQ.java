@@ -75,9 +75,8 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 		try{
 			Properties properties = new Properties();
 			properties.load(new FileInputStream("mongo.properties"));
-			mongoClient = new MongoClient(properties.getProperty("server"));
-			//db = mongoClient.getDB(properties.getProperty("database"));
-			db = mongoClient.getDB("polyglot");		//Use this database as mongo.properties file will set this for DAP level
+			mongoClient = new MongoClient(new MongoClientURI(properties.getProperty("uri")));
+			db = mongoClient.getDB(properties.getProperty("database_polyglot"));
 			collection = db.getCollection("steward");
 		}catch(Exception e) {e.printStackTrace();}
 		
@@ -626,10 +625,17 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 			channel.queueDeclare(QUEUE_NAME, true, false, false, null);
 			channel.basicQos(1);		//Fetch only one message at a time.
 			channel.basicConsume(QUEUE_NAME, false, consumer);
-		}catch(com.rabbitmq.client.AlreadyClosedException e){		//Reconnect and set channel properly. Return to get other values properly set.
-			connectToRabbitmq();
+		}catch(ShutdownSignalException e){		//Reconnect and set channel properly. Return to get other values properly set.
+			e.printStackTrace();
+            connectToRabbitmq();
 			return;
-		}catch(Exception e){e.printStackTrace();}
+		}catch(ConsumerCancelledException e){		//Reconnect and set channel properly. Return to get other values properly set.
+			e.printStackTrace();
+            connectToRabbitmq();
+			return;
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 
 		QueueingConsumer.Delivery delivery;
 
@@ -840,10 +846,16 @@ public class PolyglotStewardAMQ extends Polyglot implements Runnable
 					}
 				}
 			}
-		}catch(com.rabbitmq.client.AlreadyClosedException e){
+		// "catch excp1 | expt2" is not working
+		}catch(ShutdownSignalException e){
 			// If the connection is closed, re-create the connection and channel. There seems no need to call connection.close() as it's already closed.
-			// Other types of exceptions are ConsumerCancelledException, JsonRpcException, MalformedFrameException, MissedHeartbeatException, PossibleAuthenticationFailureException, ProtocolVersionMismatchException, TopologyRecoveryException. This AlreadyClosedException occured multiple types and haven't seen other types, so handle this for now. Can add handling of other exceptions while we see them.
-			connectToRabbitmq();
+			// Other types of exceptions are ConsumerCancelledException, JsonRpcException, MalformedFrameException, 
+			// MissedHeartbeatException, PossibleAuthenticationFailureException, ProtocolVersionMismatchException, TopologyRecoveryException. 
+			// This AlreadyClosedException occured multiple types and haven't seen other types, so handle this for now. 
+			// Can add handling of other exceptions while we see them.
+		    System.out.println("[process_jobs] exception, jobid: " + job_id + ", docid: " + ((null != document) ? document.get("_id") : "document is null") + " input: " + input);
+			e.printStackTrace();	
+            connectToRabbitmq();
 		}catch(Exception e){
 			System.out.println("[process_jobs] exception, jobid: " + job_id + ", docid: " + ((null != document) ? document.get("_id") : "document is null") + " input: " + input);
 			e.printStackTrace();

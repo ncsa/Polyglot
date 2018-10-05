@@ -6,7 +6,7 @@
 #           the program will push if master or develop.
 # PROJECT : the project to add to the image, default is NCSA
 
-#DEBUG=echo
+# DEBUG=echo
 
 # make sure PROJECT ends with /
 PROJECT=${PROJECT:-"ncsapolyglot"}
@@ -37,7 +37,7 @@ VERSION=${VERSION:-""}
 if [ "$VERSION" = "" ]; then
   if [ "$BRANCH" = "master" ]; then
     PUSH=${PUSH:-"push"}
-    VERSION="latest"
+    VERSION=${VERSION:-"2.4.0 2.4 2 latest"}
   elif [ "$BRANCH" = "develop" ]; then
     PUSH=${PUSH:-"push"}
     VERSION="develop"
@@ -64,15 +64,20 @@ for v in $VERSION; do
     if [ ! -z "$PUSH" ]; then
         ${DEBUG} docker push ${PROJECT}/polyglot:${v}
     fi
+    ${DEBUG} docker rmi ${PROJECT}/polyglot:${v}
 done
 
-# tag as softwareserver:latest
+# tag softwareserver docker image
 # HACK until we have a softwareserver code base
-${DEBUG} docker tag polyglot_$$ ${PROJECT}/softwareserver:latest
-if [ ! -z "$PUSH" ]; then
-    ${DEBUG} docker push ${PROJECT}/softwareserver:latest
-fi
+for v in ${VERSION}; do
+  ${DEBUG} docker tag polyglot_$$ ${PROJECT}/softwareserver:${v}  
+  if [ ! -z "$PUSH" ]; then
+      ${DEBUG} docker push ${PROJECT}/softwareserver:${v}
+  fi
+  ${DEBUG} docker rmi ${PROJECT}/softwareserver:${v}
+done
 
 # cleanup
 ${DEBUG} docker rmi polyglot_$$
 ${DEBUG} rm -rf ${FILES}
+

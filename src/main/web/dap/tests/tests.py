@@ -341,7 +341,7 @@ def report(host, hostname, type, total, success, message, elapsed_time):
 				 "total": total, "success": success, "failures": (total - success),
 				 "message": message,
 				 "elapsed_time": elapsed_time, "date": datetime.datetime.utcnow() }
-	mc = MongoClient("mongo.ncsa.illinois.edu")
+	mc = MongoClient("mongodb://mongo.ncsa.illinois.edu:27017/")
 	db = mc['browndog']
 	tests = db['tests']
 	tests.insert(document)

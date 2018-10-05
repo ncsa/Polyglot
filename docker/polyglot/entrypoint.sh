@@ -13,6 +13,7 @@ if [ "$1" = 'polyglot' ]; then
 	cd /home/polyglot/polyglot
 	if [ "$POL_IP" != "" ]; then
 		/bin/echo "POLYGLOT_IP=${POL_IP}" >> PolyglotStewardAMQ.conf
+		/bin/echo "PublicIP=${POL_IP}" >> PolyglotRestlet.conf
 	fi
 	if [ "$POL_AUTH" != "" ]; then
 		/bin/sed -i -e "s#.*Authentication=.*#Authentication=${POL_AUTH}#" PolyglotRestlet.conf
@@ -25,16 +26,29 @@ if [ "$1" = 'polyglot' ]; then
 	# connect to other servers
 	if [ "$RABBITMQ_URI" != "" ]; then
 		/bin/sed -i -e "s#RabbitMQURI=.*#RabbitMQURI=${RABBITMQ_URI}#" PolyglotStewardAMQ.conf
-	fi	
+	fi
 	if [ "$MONGO_SERVER" != "" ]; then
 		/bin/sed -i -e "s/server=.*$/server=${MONGO_SERVER}/" mongo.properties
 	fi
-	if [ "$MONGO_DATABASE" != "" ]; then
-		/bin/sed -i -e "s/database=.*$/database=${MONGO_DATABASE}/" mongo.properties
+	if [ "$MONGO_SERVER_URI" != "" ]; then
+    	# /bin/sed -i -e "s#uri=.*#uri=${MONGO_SERVER_URI}#" mongo.properties
+    	/bin/echo "uri=${MONGO_SERVER_URI}" >> mongo.properties
+    fi
+	if [ "$MONGO_DATABASE_DAP" != "" ]; then
+		# /bin/sed -i -e "s/database_dap=.*$/database_dap=${MONGO_DATABASE_DAP}/" mongo.properties
+		/bin/echo "database_dap=${MONGO_DATABASE_DAP}" >> mongo.properties
 	fi
+    if [ "$MONGO_DATABASE_POLYGLOT" != "" ]; then
+    	# /bin/sed -i -e "s/database_polyglot=.*$/database_polyglot=${MONGO_DATABASE_POLYGLOT}/" mongo.properties
+    	/bin/echo "database_polyglot=${MONGO_DATABASE_POLYGLOT}" >> mongo.properties
+    fi
 	if [ "$MONGO_LOGGING" != "false" ]; then
 		/bin/sed -i -e "s/^#*MongoLogging=.*$/MongoLogging=${MONGO_LOGGING}/" PolyglotRestlet.conf
 	fi
+
+    if [ "$POL_Authentication" != "" ]; then
+    	/bin/echo "Authentication=${POL_Authentication}" >> PolyglotRestlet.conf
+    fi
 
 	# Sleep a while to wait for rabbitmq and mongo to start.
 	/bin/sleep 10

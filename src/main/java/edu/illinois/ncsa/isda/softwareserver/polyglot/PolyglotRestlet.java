@@ -59,13 +59,14 @@ public class PolyglotRestlet extends ServerResource
 	private static String temp_path = root_path + "Temp";
 	private static String public_path = root_path + "Public";
 	private static Component component;
-  
+	private static String public_ip = null;
+
 	//Logs
 	private static long start_time;
 	private static ArrayList<RequestInformation> requests = new ArrayList<RequestInformation>();
   private static MongoClient mongo;
 	private static DB db;
-	
+
 	/**
 	 * Set whether or not to return a URL as the result (as opposed to the file itself).
 	 * @param value true if the URL to the resulting file should be returned
@@ -197,7 +198,7 @@ public class PolyglotRestlet extends ServerResource
 							if(!part3.isEmpty()){
 								input = part3;
 								Utility.save(public_path + "/" + Utility.getFilenameName(file) + "." + input + ".url", "[InternetShortcut]\nURL=" + file);
-								file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file) + "." + input;
+								file = "http://" + public_ip + ":8184/file/" + Utility.getFilename(file) + "." + input;
 							}else{
 								return new StringRepresentation("Input format not specified", MediaType.TEXT_PLAIN);
 							}
@@ -767,7 +768,7 @@ public class PolyglotRestlet extends ServerResource
 									fi.write(new File(file));
 									
 									//file = "http://" + InetAddress.getLocalHost().getHostAddress() + ":8184/file/" + Utility.getFilename(file);
-									file = "http://" + Utility.getLocalHostIP() + ":8184/file/" + Utility.getFilename(file);
+									file = "http://" + public_ip + ":8184/file/" + Utility.getFilename(file);
 									if(!nonadmin_user.isEmpty()) file = SoftwareServerUtility.addAuthentication(file, nonadmin_user + ":" + accounts.get(nonadmin_user));
 									System.out.println("[" + SoftwareServerUtility.getTimeStamp() + "] [restlet]: Temporarily hosting file \"" + Utility.getFilename(file) + "\" for " + client + " at " + file);
 								}else{ // add jobid_ as prefix and copy posted file to Temp folder
@@ -1049,6 +1050,8 @@ public class PolyglotRestlet extends ServerResource
 								nonadmin_user = username;
 								if(polyglot instanceof PolyglotStewardAMQ) ((PolyglotStewardAMQ)polyglot).setAuthentication(username, password);
 							}
+	          } else if(key.equals("PublicIP")) {
+                public_ip = value;
 	          }
 	        }
 	      }
@@ -1056,6 +1059,10 @@ public class PolyglotRestlet extends ServerResource
 	    
 	    ins.close();
 	  }catch(Exception e) {e.printStackTrace();}
+
+	  if(public_ip == null) {
+        public_ip = Utility.getLocalHostIP();
+	  }
 	  
 	  //Start after configuration is loaded
 	  if(polyglot instanceof PolyglotStewardAMQ){
@@ -1068,10 +1075,8 @@ public class PolyglotRestlet extends ServerResource
 			try{
 	    	Properties properties = new Properties();
 	    	properties.load(new FileInputStream("mongo.properties"));
-	    	mongo = new MongoClient(properties.getProperty("server"));
-	    	db = mongo.getDB(properties.getProperty("database"));
-	    	//db.authenticate(properties.getProperty("username"), properties.getProperty("password").toCharArray());
-	    	//DBCollection collection = db.getCollection(properties.getProperty("collection"));
+			mongo = new MongoClient(new MongoClientURI(properties.getProperty("uri")));
+	    	db = mongo.getDB(properties.getProperty("database_dap"));
 	    	db.getLastError();		//Test the connection, will cause an exception if not connected.
 			}catch(Exception e){
 				System.out.println("\nMongo database not found, disabling Mongo logging...");
@@ -1209,6 +1214,6 @@ public class PolyglotRestlet extends ServerResource
 			component.start();
 		}catch(Exception e) {e.printStackTrace();}
   	
-		System.out.println("\nPolyglot restlet is running...\n");
+		System.out.println("\nPolyglot restlet is running... on" + public_ip);
 	}
 }
