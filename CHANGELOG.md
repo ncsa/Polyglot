@@ -32,4 +32,3 @@ use the uri variable instead of specifying the mongo server.
 ### Fixed
 - Fixed potential duplicate file overwritten when hosting posted file. [POL-194](https://opensource.ncsa.illinois.edu/jira/browse/POL-194)
 - Fixed shell option in entrypoint.
-

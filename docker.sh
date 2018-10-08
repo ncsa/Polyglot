@@ -80,4 +80,3 @@ done
 # cleanup
 ${DEBUG} docker rmi polyglot_$$
 ${DEBUG} rm -rf ${FILES}
-
