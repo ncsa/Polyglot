@@ -1,0 +1,10 @@
+[Unit]
+Description=Polyglot service allows for converting between a variety of file types
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/local/polyglot
+ExecStart=/usr/local/polyglot/SoftwareServerRestlet.sh
+ExecStop=/bin/kill -INT $MAINPID
+Restart=always
+

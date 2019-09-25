@@ -4,3 +4,7 @@ Utilizing a tool called a Software Server to program against functionality withi
 
 * Project Page: https://opensource.ncsa.illinois.edu/projects/POL
 * Documentation: http://opensource.ncsa.illinois.edu/projects/artifacts/POL/2.1.0-SNAPSHOT/documentation/manual/
+
+## Systemd setup
+
+To setup polyglot as a service in systemd, simply modify the bin/polyglot.service file so that WorkingDirctory and ExecStart point to the Polyglot install directory. Then copy or link the bin/polyglot.service file into /etc/systemd/system/. Now you can utilize normal systemd service commands to start/stop/enable/disable the polyglot service.
