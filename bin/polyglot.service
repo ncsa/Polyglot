@@ -3,8 +3,10 @@ Description=Polyglot service allows for converting between a variety of file typ
 
 [Service]
 Type=simple
-WorkingDirectory=/usr/local/polyglot
-ExecStart=/usr/local/polyglot/SoftwareServerRestlet.sh
+WorkingDirectory=/home/polyglot/polyglot
+ExecStart=/usr/bin/java/ -cp polyglot.jar:lib/* -Xmx1g edu.illinois.nca.isda.softwareserver.polyglot.PolyglotRestlet
 ExecStop=/bin/kill -INT $MAINPID
 Restart=always
 
+[Install]
+WantedBy=multi-user.target
